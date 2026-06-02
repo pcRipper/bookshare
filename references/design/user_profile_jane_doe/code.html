@@ -1,0 +1,323 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>User Profile - FolioShare</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary": "#565f67",
+                    "outline-variant": "#c1c8c2",
+                    "on-background": "#1b1c1a",
+                    "tertiary-fixed": "#ffdcbd",
+                    "tertiary-fixed-dim": "#f0bd8b",
+                    "primary-fixed": "#c6ebd6",
+                    "on-secondary-fixed-variant": "#3f484f",
+                    "surface-container-highest": "#e4e2de",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-container": "#765027",
+                    "on-primary-fixed-variant": "#2d4d3e",
+                    "surface-bright": "#fbf9f5",
+                    "surface-container-high": "#eae8e4",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#623f18",
+                    "on-error-container": "#93000a",
+                    "primary-container": "#3e5f4f",
+                    "on-tertiary": "#ffffff",
+                    "surface-dim": "#dbdad6",
+                    "surface-container-low": "#f5f3ef",
+                    "surface-variant": "#e4e2de",
+                    "on-secondary-fixed": "#141d23",
+                    "on-primary": "#ffffff",
+                    "on-tertiary-fixed": "#2c1600",
+                    "background": "#fbf9f5",
+                    "tertiary": "#5b3912",
+                    "surface": "#fbf9f5",
+                    "on-primary-container": "#b3d7c3",
+                    "secondary-fixed": "#dae4ed",
+                    "primary": "#274738",
+                    "primary-fixed-dim": "#aacfbb",
+                    "inverse-on-surface": "#f2f0ed",
+                    "error-container": "#ffdad6",
+                    "outline": "#727974",
+                    "secondary-container": "#dae4ed",
+                    "secondary-fixed-dim": "#bec8d1",
+                    "on-surface-variant": "#414844",
+                    "on-error": "#ffffff",
+                    "surface-tint": "#446555",
+                    "inverse-surface": "#30312e",
+                    "error": "#ba1a1a",
+                    "surface-container": "#efeeea",
+                    "on-tertiary-container": "#f9c592",
+                    "inverse-primary": "#aacfbb",
+                    "on-secondary-container": "#5c656d",
+                    "on-surface": "#1b1c1a",
+                    "on-primary-fixed": "#002114"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "base": "8px",
+                    "gutter": "24px",
+                    "lg": "48px",
+                    "xl": "80px",
+                    "xs": "4px",
+                    "container-max": "1200px",
+                    "md": "24px",
+                    "sm": "12px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": [
+                            "Playfair Display"
+                    ],
+                    "headline-xl": [
+                            "Playfair Display"
+                    ],
+                    "body-lg": [
+                            "Work Sans"
+                    ],
+                    "label-sm": [
+                            "Work Sans"
+                    ],
+                    "label-md": [
+                            "Work Sans"
+                    ],
+                    "headline-md": [
+                            "Playfair Display"
+                    ],
+                    "headline-lg": [
+                            "Playfair Display"
+                    ],
+                    "body-md": [
+                            "Work Sans"
+                    ]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": [
+                            "28px",
+                            {
+                                    "lineHeight": "1.3",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-xl": [
+                            "48px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "1.6",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "letterSpacing": "0.03em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "label-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "1.4",
+                                    "letterSpacing": "0.01em",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "1.4",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "1.3",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "1.6",
+                                    "fontWeight": "400"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+             font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="bg-surface border-b border-surface-container-highest w-full z-50">
+<div class="flex justify-between items-center w-full px-gutter max-w-container-max mx-auto h-16">
+<div class="flex items-center gap-md">
+<a class="font-headline-md text-headline-md font-bold text-primary" href="#">FolioShare</a>
+<!-- Search on Left (from JSON) -->
+<div class="hidden md:flex relative items-center">
+<span class="material-symbols-outlined absolute left-sm text-secondary">search</span>
+<input class="pl-lg pr-sm py-sm bg-surface-container-low border border-outline-variant rounded-DEFAULT focus:border-primary focus:ring-0 text-body-md font-body-md w-64 transition-colors" placeholder="Search books, authors..." type="text">
+</div>
+</div>
+<div class="hidden md:flex items-center gap-gutter h-full">
+<a class="h-full flex items-center text-secondary font-body-md text-body-md hover:text-primary transition-colors duration-200" href="#">My Library</a>
+<a class="h-full flex items-center text-primary border-b-2 border-primary font-body-md text-body-md" href="#">Discover</a>
+<a class="h-full flex items-center text-secondary font-body-md text-body-md hover:text-primary transition-colors duration-200" href="#">Activity</a>
+</div>
+<div class="flex items-center gap-md">
+<button aria-label="notifications" class="text-secondary hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button aria-label="bookmark" class="text-secondary hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="bookmark">bookmark</span>
+</button>
+<button aria-label="User profile photo" class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant">
+<img alt="Current User" data-alt="A small circular profile picture of a person with a warm smile. Lighting is soft and bright, suggesting a calm, modern environment. The color palette features neutral tones, aligning with a sophisticated, minimalist aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbheZpfgaxsKQqd38c1yJde7HjFEW4drBktWZMtLtuZTLpIk3tmTnnThpWtTezhLrFdogxdl5thFat-0NlJJmthLtCIM2oftgHXKEFzPrus4A6JAx00UFPV1-Phpsy6IDRgvfZ0BfAYYo0B4RdiBGsbh2L87ISi0CCBG7osYvpMtxEDBxAvS5ZgqtXHQjOacCunopOA9duk06Eq6id44cNMgwXJ3oStCBEpMmObDtOQZmainRBAQ34dCy-0Nc5QiXgZEf2i77qeGc">
+</button>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-grow w-full max-w-container-max mx-auto px-gutter py-xl">
+<!-- Profile Header Section -->
+<section class="flex flex-col md:flex-row items-start md:items-center gap-lg mb-xl">
+<div class="w-32 h-32 md:w-40 md:h-40 shrink-0 rounded-full overflow-hidden border-4 border-surface-container-lowest shadow-sm relative">
+<img alt="Elena Rostova Profile" class="w-full h-full object-cover" data-alt="A portrait of a woman looking thoughtfully towards the camera. The setting suggests a quiet, well-lit indoor space, perhaps near a large window. The mood is calm and scholarly. Colors are natural and warm, complementing a light-mode paper-like design system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoEk1gzl-zWOaJpe_2aipXx_hqUd6rKybJXs2RB3eGOO-h9O5nvqG_xgUUTxkrkNnlQ2eNXBgyvbAIegYZVpe59fX4QdO2Cj9VsFHIdCkCFOFUKmkmLFuX_dgiZ5sgMo9FKnttYJnsiuXdT9DVm-D8dTY0nzvMOxMCc9fOfC6-w1xLxs7td0zWkWtPXI0LAGS3OBpONrdFwaL_7hcP212qJQ96dk4etJeItf2_317W0PxRpwLLZQZyUM0B3lalvYfc9j-ICzcaTwQ">
+</div>
+<div class="flex-grow flex flex-col gap-base">
+<h1 class="font-headline-xl text-headline-xl text-on-surface">Elena Rostova</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
+                    Architectural historian and avid collector of urban design theory. Always looking to exchange perspectives on brutalism and sustainable city planning. Based in Seattle.
+                </p>
+<div class="flex flex-wrap gap-sm mt-sm">
+<span class="bg-[#F4EAE0] text-[#623f18] px-sm py-xs rounded-full font-label-sm text-label-sm border border-[#EAE7E0]">Architecture</span>
+<span class="bg-[#E8F0EA] text-[#2d4d3e] px-sm py-xs rounded-full font-label-sm text-label-sm border border-[#EAE7E0]">History</span>
+<span class="bg-[#EAE8E4] text-[#414844] px-sm py-xs rounded-full font-label-sm text-label-sm border border-[#EAE7E0]">142 Books</span>
+</div>
+</div>
+</section>
+<!-- Tabs -->
+<div class="border-b border-surface-container-highest mb-lg flex gap-md">
+<button class="pb-sm font-label-md text-label-md text-primary border-b-2 border-primary px-sm" id="tab-available">
+                Available to Borrow
+            </button>
+<button class="pb-sm font-label-md text-label-md text-secondary hover:text-primary transition-colors px-sm" id="tab-full">
+                Full Collection
+            </button>
+</div>
+<!-- Book Grid -->
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-gutter" id="book-grid">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest border border-[#EAE7E0] rounded-DEFAULT flex flex-col group overflow-hidden transition-all duration-300 hover:border-outline-variant">
+<div class="aspect-[2/3] w-full bg-surface-container-high relative">
+<img alt="Book Cover" class="w-full h-full object-cover" data-alt="A close up of a vintage architecture book lying on a wooden desk. The cover is slightly worn, showing character. Soft, diffused lighting highlights the texture of the paper, fitting a tactile, modern minimalist aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBE_p7vCExa2nozrt0_equnP4-5fON2qEfj7vYcDr5zMskS4PfMpqe83EYnNUTHIU062i68qht6PwHqUWV7qkka70Y8XE2hoJKXp6SB2OzKbkx_5VJGwJTjKlIfCafZOmYf5g6wohK2HR7KtcL_AppCYsCEguwax5tFABndEpxc_sD_Rq_dA3H8T-6dXHp3c11WWpE8ofW4KCYaReTGQWPQsw8Gs_wN4QKWaXP3hsR5py1t16_4c_nvoEmBomEYfSdXBBCQ5043uPo">
+<div class="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 transition-colors duration-300"></div>
+</div>
+<div class="p-sm flex flex-col flex-grow bg-surface-container-lowest">
+<h3 class="font-headline-md text-label-md text-on-surface line-clamp-1 mb-xs">The Image of the City</h3>
+<p class="font-body-md text-label-sm text-on-surface-variant mb-md">Kevin Lynch</p>
+<div class="mt-auto">
+<button class="w-full bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md py-sm px-md rounded-DEFAULT transition-colors flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">handshake</span> Request to Borrow
+                        </button>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest border border-[#EAE7E0] rounded-DEFAULT flex flex-col group overflow-hidden transition-all duration-300 hover:border-outline-variant">
+<div class="aspect-[2/3] w-full bg-surface-container-high relative">
+<img alt="Book Cover" class="w-full h-full object-cover" data-alt="A modern book cover with abstract geometric shapes in muted tones resting on a clean, light surface. The lighting is crisp and even, evoking a calm, scholarly digital environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtbN7M_QqvSQVRHqL0iQudREaSy7gUl6QBoLjbRcQBzYojAF7XhlhpfgOOBHbevCrNdTLS51S2DuwEe6f2qXPQnYxqJ4S_x5yDFw6FDlZjFoNVu2nkfcRN4WzI-p_SOkE899INMDXslW3XnglKPakIbesJzFuZvJDvIoeyV8RhC0ecRqrvnbQHgNlxtZOR_olMQ2vXntqzNOARGAV6Wz-okGRbVPrE2AUMiw6INT2kO1W554KpCVMGlDUcPPpsr9q8ALFZIVrkajk">
+<div class="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 transition-colors duration-300"></div>
+</div>
+<div class="p-sm flex flex-col flex-grow bg-surface-container-lowest">
+<h3 class="font-headline-md text-label-md text-on-surface line-clamp-1 mb-xs">Space, Time and Architecture</h3>
+<p class="font-body-md text-label-sm text-on-surface-variant mb-md">Sigfried Giedion</p>
+<div class="mt-auto">
+<button class="w-full bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md py-sm px-md rounded-DEFAULT transition-colors flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">handshake</span> Request to Borrow
+                        </button>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest border border-[#EAE7E0] rounded-DEFAULT flex flex-col group overflow-hidden transition-all duration-300 hover:border-outline-variant">
+<div class="aspect-[2/3] w-full bg-surface-container-high relative">
+<img alt="Book Cover" class="w-full h-full object-cover" data-alt="An old, thick hardcover book lying open, showing dense typography. The image captures the tactile quality of aged paper. The overall tone is warm and intellectual, suited for a minimalist bookstore interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCR85LLrURmjdoCwjtZv3qfyC9m1p7VtEI0sS484pR56Ks_JpwB03_nAN69UxIbdT7ojnVIondfr1A5a3l243c9s0eMpZsRQbAyg99bv1OiV8TH_6nL8sL33h1oU4qx2Iipc67Rz03Vd3f0YebVMmcayc_7xHtmK6HX3hvJjjE_tUF-zvqWsI_CSNN17RvfyUhjDwSdqEleINZkkGNYqdamOcUvTDDmzcyRYstsde62I4RiwuTtx5nXPoCNb_oUSPwo2WFg5-o4p0A">
+<div class="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 transition-colors duration-300"></div>
+</div>
+<div class="p-sm flex flex-col flex-grow bg-surface-container-lowest">
+<h3 class="font-headline-md text-label-md text-on-surface line-clamp-1 mb-xs">A Pattern Language</h3>
+<p class="font-body-md text-label-sm text-on-surface-variant mb-md">Christopher Alexander</p>
+<div class="mt-auto">
+<button class="w-full bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md py-sm px-md rounded-DEFAULT transition-colors flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">handshake</span> Request to Borrow
+                        </button>
+</div>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-container-lowest border border-[#EAE7E0] rounded-DEFAULT flex flex-col group overflow-hidden transition-all duration-300 hover:border-outline-variant">
+<div class="aspect-[2/3] w-full bg-surface-container-high relative">
+<img alt="Book Cover" class="w-full h-full object-cover" data-alt="A minimalist book cover design featuring a simple serif typography layout on an off-white background. The aesthetic is clean, timeless, and aligns perfectly with a paper-tone light mode UI design." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnJhIEmZ51NMmQwGv6RdVTrK8roV8kGBY1qLDQVKqXspNTGBDPquqY01rSaNq9daterWtz2-Uqw9Z6YZJDEr8QO-hHvOgwmmcS0d4U-PGBdDGsCQG8mrv1vX2_R5Mup-4NZoMAv0oG9F86XeeIlxFTVSdowcAEwKQaW0Elw8ixE-UkfSI5HxtKJqDD2Cs9VotpRtB5_iNOLNyKUkRxQhCV8_VT6ZI0WwO2Br7hCTW6KpgYLuF_v8TTpGwEr74dN5Y8u8_KYhfnb2M">
+<div class="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 transition-colors duration-300"></div>
+</div>
+<div class="p-sm flex flex-col flex-grow bg-surface-container-lowest">
+<h3 class="font-headline-md text-label-md text-on-surface line-clamp-1 mb-xs">Delirious New York</h3>
+<p class="font-body-md text-label-sm text-on-surface-variant mb-md">Rem Koolhaas</p>
+<div class="mt-auto">
+<button class="w-full bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md py-sm px-md rounded-DEFAULT transition-colors flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">handshake</span> Request to Borrow
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-low border-t border-surface-container-highest mt-auto">
+<div class="w-full py-xl px-gutter flex flex-col md:flex-row justify-between items-center max-w-container-max mx-auto">
+<div class="mb-lg md:mb-0 text-center md:text-left flex flex-col gap-sm">
+<span class="font-headline-md text-headline-md text-primary">FolioShare</span>
+<p class="font-body-md text-label-md text-on-surface-variant">© 2024 FolioShare. Curating stories for a thoughtful community.</p>
+</div>
+<div class="flex flex-wrap justify-center gap-md">
+<a class="font-label-md text-label-md text-on-surface-variant hover:underline hover:text-primary transition-all duration-200" href="#">Community Guidelines</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:underline hover:text-primary transition-all duration-200" href="#">About Us</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:underline hover:text-primary transition-all duration-200" href="#">Help Center</a>
+</div>
+</div>
+</footer>
+</body></html>

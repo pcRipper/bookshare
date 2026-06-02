@@ -1,0 +1,266 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>FolioShare | Activity Feed</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #fbf9f5;
+            -webkit-font-smoothing: antialiased;
+        }
+        .activity-card-shadow {
+            box-shadow: 0px 4px 12px rgba(35, 44, 51, 0.04);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#dbdad6",
+                        "on-error": "#ffffff",
+                        "on-secondary-container": "#5c656d",
+                        "inverse-on-surface": "#f2f0ed",
+                        "on-secondary": "#ffffff",
+                        "background": "#fbf9f5",
+                        "tertiary-container": "#765027",
+                        "inverse-surface": "#30312e",
+                        "surface-container-high": "#eae8e4",
+                        "primary": "#274738",
+                        "on-primary-fixed": "#002114",
+                        "primary-container": "#3e5f4f",
+                        "inverse-primary": "#aacfbb",
+                        "surface-container-highest": "#e4e2de",
+                        "surface-tint": "#446555",
+                        "on-background": "#1b1c1a",
+                        "outline": "#727974",
+                        "surface-container": "#efeeea",
+                        "on-tertiary-fixed": "#2c1600",
+                        "on-primary-container": "#b3d7c3",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#e4e2de",
+                        "on-tertiary-container": "#f9c592",
+                        "secondary": "#565f67",
+                        "primary-fixed": "#c6ebd6",
+                        "surface-bright": "#fbf9f5",
+                        "on-surface": "#1b1c1a",
+                        "surface": "#fbf9f5",
+                        "secondary-fixed": "#dae4ed",
+                        "outline-variant": "#c1c8c2",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#f0bd8b",
+                        "on-secondary-fixed-variant": "#3f484f",
+                        "tertiary": "#5b3912",
+                        "secondary-container": "#dae4ed",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#aacfbb",
+                        "on-surface-variant": "#414844",
+                        "tertiary-fixed": "#ffdcbd",
+                        "on-tertiary-fixed-variant": "#623f18",
+                        "surface-container-low": "#f5f3ef",
+                        "secondary-fixed-dim": "#bec8d1",
+                        "on-secondary-fixed": "#141d23",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#2d4d3e",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "sm": "12px",
+                        "xl": "80px",
+                        "md": "24px",
+                        "lg": "48px",
+                        "gutter": "24px",
+                        "base": "8px",
+                        "container-max": "1200px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Work Sans"],
+                        "headline-lg-mobile": ["Playfair Display"],
+                        "body-lg": ["Work Sans"],
+                        "label-sm": ["Work Sans"],
+                        "headline-xl": ["Playfair Display"],
+                        "headline-lg": ["Playfair Display"],
+                        "headline-md": ["Playfair Display"],
+                        "body-md": ["Work Sans"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", { "lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "1.2", "letterSpacing": "0.03em", "fontWeight": "600" }],
+                        "headline-xl": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface">
+<!-- Top Navigation Bar -->
+<header class="bg-surface docked full-width top-0 border-b border-outline-variant flex justify-between items-center px-gutter py-4 max-w-container-max mx-auto w-full z-50 sticky">
+<div class="font-headline-md text-headline-md font-bold text-primary">FolioShare</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant active:opacity-80 transition-all">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-on-surface-variant active:opacity-80 transition-all">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Sub-navigation (Internal App Links) -->
+<nav class="bg-surface flex justify-center gap-8 py-3 border-b border-outline-variant px-gutter">
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">My Library</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Discover</a>
+<a class="font-body-md text-body-md text-primary border-b-2 border-primary font-bold pb-1" href="#">Activity</a>
+</nav>
+<main class="max-w-screen-md mx-auto px-gutter py-8">
+<div class="flex justify-between items-end mb-8">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Recent Activity</h1>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Today</span>
+</div>
+<!-- Activity Feed -->
+<div class="space-y-6">
+<!-- Activity Item: Borrowing -->
+<div class="flex gap-4 p-4 bg-surface-container-lowest border border-outline-variant rounded-xl activity-card-shadow">
+<div class="flex-shrink-0">
+<img alt="Book Cover" class="w-16 h-24 object-cover rounded-sm border border-outline-variant" data-alt="A close-up photograph of a classic cloth-bound book with elegant gold foil lettering on the spine, resting on a textured cream paper surface. The lighting is warm and directional, casting soft shadows that emphasize the tactile quality of the linen cover. The overall aesthetic is one of a quiet, scholarly retreat in a modern library." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDiKGHtjYyRtyr4uKwtB65PLIcp3N8TOfiROgsRe3ZeFQ1xrE73sDczzp9dAkGwb1ywJJjHSUHn0O0nlZrcmMvEqFLIla8mzUFSZPv3sei-RWjuiWMOzC5WAPJPFkMgBfEiJQdC21wNF5ZmY1s0ScoMFVegz8ZUwEsU_A3vvW6MabM0ExzZ9Iaq5PyEZlOOuzq1GD3X7m-ZU58o0TlByJ3AJxzkrLJ7SuPX9YmF5kC585t-qXIKdVT5JUGdq68KYZ5Z37hySx_zcRE">
+</div>
+<div class="flex flex-col justify-center">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="menu_book">menu_book</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">New Borrow</p>
+</div>
+<p class="font-body-md text-body-md mb-1"><span class="font-bold">Elias Thorne</span> borrowed <span class="italic">The Silent Patient</span>.</p>
+<p class="font-label-md text-label-md text-outline">2 hours ago</p>
+</div>
+</div>
+<!-- Activity Item: Comment -->
+<div class="p-4 bg-surface-container-lowest border border-outline-variant rounded-xl activity-card-shadow">
+<div class="flex items-center gap-3 mb-3">
+<img alt="User Avatar" class="w-10 h-10 rounded-full border border-outline-variant object-cover" data-alt="A professional and warm portrait of a woman in a bright, minimalist setting. She is wearing a dark green sweater that complements the soft, natural morning light flooding the room. The background is slightly out of focus, showing the clean lines of a contemporary home library. The mood is friendly and intellectually engaged." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzkeOeRPWySzlmd4mhZXFc4dvDajIaQsynBgh5pmDhcKLEKaV4a_4NPb_oZ0oHlSRDUmpZ5Hj2haRwwV004bSZ_1dg8h9-4lm7jd_3kJX3BFliQab_7XNlPPCSnKjmGbG3j5e6YeFrhi1vIkloDVrSv0mvnolDKfCOkuPATGZJoUmOSX_C8x4LOf12t0uJCSThuUaQYye1QtC_WQL7hEOTihHeYUvl1Viio7DCqHEqtcgCScTNS5uIWS8F7HKqBaLeMdbjTFSLdME">
+<div>
+<p class="font-body-md text-body-md"><span class="font-bold">Sarah Jenkins</span> commented on your review</p>
+<p class="font-label-md text-label-md text-outline">4 hours ago</p>
+</div>
+</div>
+<div class="bg-surface-container p-3 rounded-lg border-l-4 border-primary ml-2">
+<p class="font-body-md text-body-md italic text-on-surface-variant">"I absolutely agree with your take on the third act. The pacing was unexpected but brilliant!"</p>
+</div>
+</div>
+<!-- Activity Item: Follow -->
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest border border-outline-variant rounded-xl activity-card-shadow">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-primary-fixed rounded-full flex items-center justify-center text-on-primary-fixed-variant">
+<span class="material-symbols-outlined" data-icon="person_add">person_add</span>
+</div>
+<div>
+<p class="font-body-md text-body-md"><span class="font-bold">Julian Vane</span> followed you</p>
+<p class="font-label-md text-label-md text-outline">Yesterday</p>
+</div>
+</div>
+<button class="px-4 py-2 bg-primary text-on-primary font-label-md text-label-md rounded-full active:opacity-80 transition-all">Follow Back</button>
+</div>
+<!-- Activity Item: New Book Addition -->
+<div class="flex gap-4 p-4 bg-surface-container-lowest border border-outline-variant rounded-xl activity-card-shadow">
+<div class="flex-shrink-0">
+<img alt="Book Cover" class="w-16 h-24 object-cover rounded-sm border border-outline-variant" data-alt="A vintage book cover featuring an intricate botanical illustration of a fern leaf, printed on aged, off-white paper. The design is minimalist yet detailed, reflecting a 19th-century scientific aesthetic. The background consists of a clean, light wood surface, providing a natural and grounded feel. The lighting is even and soft, capturing the fine texture of the paper." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCowyr43Cat7fDQQn89wnMGlGF3-2veciuZidpdSn9lR1a4KBz_uGpX_15Ndjzj-ZYF4ZG3opRBZD-YYggyX1lNglBtChGZC7sqWR1V_JwWjH_aSwbNiCFa_L6M8lBH8k3-Zgso0NDdNyWas0Z13uixfPmXZoBOxWICh-OQOVedR8x0oyihj0D_Z2X7Lr-B3HHnCE6-Y_Y2wKtOJ7cRcLA0ltdqMfuDdDDdIlQ-lB6JkaLmbQkqZ6U2PvBPLzUYm6we18AHSZilohk">
+</div>
+<div class="flex flex-col justify-center">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-tertiary text-[18px]" data-icon="auto_stories">auto_stories</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Collection Update</p>
+</div>
+<p class="font-body-md text-body-md mb-1"><span class="font-bold">The Community Library</span> added <span class="italic">Botanical Wonders</span> to the 'Nature' shelf.</p>
+<p class="font-label-md text-label-md text-outline">Yesterday</p>
+</div>
+</div>
+<!-- Load More Action -->
+<div class="pt-8 pb-12 flex justify-center">
+<button class="group flex flex-col items-center gap-2 text-on-surface-variant hover:text-primary transition-colors cursor-pointer" id="load-more">
+<span class="font-label-md text-label-md uppercase tracking-widest">Load More</span>
+<span class="material-symbols-outlined animate-bounce" data-icon="expand_more">expand_more</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-highest border-t border-outline-variant full-width mt-xl">
+<div class="flex flex-col md:flex-row justify-between items-center px-gutter py-lg max-w-container-max mx-auto w-full">
+<div class="font-headline-sm text-headline-sm text-primary mb-4 md:mb-0">FolioShare</div>
+<div class="flex flex-wrap justify-center gap-6 mb-4 md:mb-0">
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">About</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Help Center</a>
+</div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">© 2024 FolioShare. Curated for the community.</p>
+</div>
+</footer>
+<script>
+        // Micro-interaction for Load More button
+        document.getElementById('load-more').addEventListener('click', function() {
+            const btn = this;
+            const icon = btn.querySelector('.material-symbols-outlined');
+            
+            // Visual feedback
+            btn.style.opacity = '0.5';
+            icon.innerText = 'sync';
+            icon.classList.add('animate-spin');
+            icon.classList.remove('animate-bounce');
+
+            // Simulating a delay for loading content
+            setTimeout(() => {
+                btn.style.opacity = '1';
+                icon.innerText = 'expand_more';
+                icon.classList.remove('animate-spin');
+                icon.classList.add('animate-bounce');
+                
+                // In a real app, logic to append more cards would go here
+                alert('More activity loaded!');
+            }, 1200);
+        });
+
+        // Atmospheric Fade-in on Scroll
+        const observerOptions = {
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('opacity-100', 'translate-y-0');
+                    entry.target.classList.remove('opacity-0', 'translate-y-4');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.activity-card-shadow').forEach(card => {
+            card.classList.add('transition-all', 'duration-700', 'opacity-0', 'translate-y-4');
+            observer.observe(card);
+        });
+    </script>
+</body></html>

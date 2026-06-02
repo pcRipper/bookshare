@@ -1,0 +1,315 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#dbdad6",
+                    "on-error": "#ffffff",
+                    "on-secondary-container": "#5c656d",
+                    "inverse-on-surface": "#f2f0ed",
+                    "on-secondary": "#ffffff",
+                    "background": "#fbf9f5",
+                    "tertiary-container": "#765027",
+                    "inverse-surface": "#30312e",
+                    "surface-container-high": "#eae8e4",
+                    "primary": "#274738",
+                    "on-primary-fixed": "#002114",
+                    "primary-container": "#3e5f4f",
+                    "inverse-primary": "#aacfbb",
+                    "surface-container-highest": "#e4e2de",
+                    "surface-tint": "#446555",
+                    "on-background": "#1b1c1a",
+                    "outline": "#727974",
+                    "surface-container": "#efeeea",
+                    "on-tertiary-fixed": "#2c1600",
+                    "on-primary-container": "#b3d7c3",
+                    "on-error-container": "#93000a",
+                    "surface-variant": "#e4e2de",
+                    "on-tertiary-container": "#f9c592",
+                    "secondary": "#565f67",
+                    "primary-fixed": "#c6ebd6",
+                    "surface-bright": "#fbf9f5",
+                    "on-surface": "#1b1c1a",
+                    "surface": "#fbf9f5",
+                    "secondary-fixed": "#dae4ed",
+                    "outline-variant": "#c1c8c2",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed-dim": "#f0bd8b",
+                    "on-secondary-fixed-variant": "#3f484f",
+                    "tertiary": "#5b3912",
+                    "secondary-container": "#dae4ed",
+                    "on-primary": "#ffffff",
+                    "primary-fixed-dim": "#aacfbb",
+                    "on-surface-variant": "#414844",
+                    "tertiary-fixed": "#ffdcbd",
+                    "on-tertiary-fixed-variant": "#623f18",
+                    "surface-container-low": "#f5f3ef",
+                    "secondary-fixed-dim": "#bec8d1",
+                    "on-secondary-fixed": "#141d23",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed-variant": "#2d4d3e",
+                    "error-container": "#ffdad6",
+                    "error": "#ba1a1a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "sm": "12px",
+                    "xl": "80px",
+                    "md": "24px",
+                    "lg": "48px",
+                    "gutter": "24px",
+                    "base": "8px",
+                    "container-max": "1200px"
+            },
+            "fontFamily": {
+                    "label-md": ["Work Sans"],
+                    "headline-lg-mobile": ["Playfair Display"],
+                    "body-lg": ["Work Sans"],
+                    "label-sm": ["Work Sans"],
+                    "headline-xl": ["Playfair Display"],
+                    "headline-lg": ["Playfair Display"],
+                    "headline-md": ["Playfair Display"],
+                    "body-md": ["Work Sans"]
+            },
+            "fontSize": {
+                    "label-md": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.03em", "fontWeight": "600"}],
+                    "headline-xl": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-tab-indicator {
+            height: 2px;
+            background-color: #274738;
+            transition: all 0.3s ease;
+        }
+        body {
+            background-color: #fbf9f5;
+            color: #1b1c1a;
+        }
+        .book-card {
+            border: 1px solid #EAE7E0;
+            background: #ffffff;
+        }
+        .paper-shadow {
+            box-shadow: 0px 10px 30px rgba(35, 44, 51, 0.08);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="antialiased font-body-md text-body-md overflow-x-hidden">
+<!-- Top Navigation Bar -->
+<header class="bg-surface docked full-width top-0 border-b border-outline-variant flex justify-between items-center px-gutter py-4 w-full z-50 sticky">
+<div class="font-headline-md text-headline-md font-bold text-primary">FolioShare</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary cursor-pointer active:opacity-80 transition-all">notifications</span>
+<span class="material-symbols-outlined text-primary cursor-pointer active:opacity-80 transition-all">account_circle</span>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="max-w-container-max mx-auto pb-xl">
+<!-- Profile Summary Section -->
+<section class="px-gutter pt-8 pb-6">
+<div class="flex items-center gap-4 mb-6">
+<div class="w-20 h-20 rounded-full overflow-hidden border-2 border-primary-fixed">
+<img alt="Eleanor Vance" class="w-full h-full object-cover" data-alt="A sophisticated close-up portrait of Eleanor Vance, a woman with an intellectual and warm expression. She is set against a soft-focus background of a sunlit library with rows of vintage books. The lighting is natural and high-key, emphasizing the clean, light-mode paper white aesthetic of the UI. Her style is modern minimalist, reflecting the calm and scholarly atmosphere of a well-curated bookstore." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXxjqS-sdwHdgQT8tXTu4YULtzCcD0fjnfciZKrs7XQvU0uzsfjIZX-dLjXUKqrz9CaZLuV0QmxK2myiJhgk4SLbL21f_pIFohoOoCMdmp2fd_GDDnq8liB24Ss9gXpxd4s0Hit4OvypVc7nrvTJr4n3P1ADTV5cHH1ivcLhCaqbfOt5JbpEUxipDgv3-EgPp3OBCeuqOXW7bp6W69dU6a6cNFbQLxzI23j4qYP-DBq_WWIBrarg01f_GWbb4FddWHtQOGq59__Qs">
+</div>
+<div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-background">Eleanor Vance</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">Bibliophile &amp; Curator</p>
+</div>
+</div>
+<!-- Stats Bento Grid -->
+<div class="grid grid-cols-3 gap-xs">
+<div class="bg-surface-container-low p-4 rounded-lg text-center flex flex-col justify-center border border-outline-variant">
+<span class="font-headline-md text-headline-md text-primary">124</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Books</span>
+</div>
+<div class="bg-surface-container-low p-4 rounded-lg text-center flex flex-col justify-center border border-outline-variant">
+<span class="font-headline-md text-headline-md text-primary">48</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Shared</span>
+</div>
+<div class="bg-surface-container-low p-4 rounded-lg text-center flex flex-col justify-center border border-outline-variant">
+<span class="font-headline-md text-headline-md text-primary">12</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Loaned</span>
+</div>
+</div>
+</section>
+<!-- Tabbed Content Section -->
+<section class="mt-4">
+<!-- Tabs -->
+<div class="flex px-gutter border-b border-outline-variant sticky top-[72px] bg-background z-40">
+<button class="flex-1 py-4 font-label-md text-label-md text-primary font-bold border-b-2 border-primary transition-all" id="tab-my-books" onclick="switchTab('my-books')">My Books</button>
+<button class="flex-1 py-4 font-label-md text-label-md text-on-surface-variant hover:text-primary transition-all" id="tab-shared" onclick="switchTab('shared')">Shared</button>
+<button class="flex-1 py-4 font-label-md text-label-md text-on-surface-variant hover:text-primary transition-all" id="tab-loaned" onclick="switchTab('loaned')">Loaned</button>
+</div>
+<!-- Book Grid (Asymmetric) -->
+<div class="px-gutter py-md grid grid-cols-2 gap-md" id="book-grid">
+<!-- Card 1 -->
+<div class="book-card p-2 rounded flex flex-col gap-2">
+<div class="aspect-[2/3] w-full overflow-hidden bg-surface-container rounded-sm">
+<img class="w-full h-full object-cover" data-alt="A detailed shot of a book cover titled The Great Gatsby, featuring elegant Art Deco patterns in gold and deep navy. The lighting is soft and ambient, highlighting the paper texture. The aesthetic is tactile and refined, placed on a light wood surface that complements the warm bookstore atmosphere of the digital library." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhpgbKRR-jD38Q35wB5bmfErEmLxhQNHKbJkLb0gMiFB-PVT_z7vMhXYoSsw2z7cVI6NXR0NLnZNoa_AHXQ2Or-56JoZGroPfVo5ZDFhJ7BOm4naJY4W77UfA1Paegf-kM3lFMbzNhn79lHwgm39t3VjhB0PQ-iVrFf5PEnIyBhK08QLMzQEgk68UQLx7DMAKszUSWSZ8NlkqOBr3rq67MpUmBY85huCKbg2vAqwv5cWNLCm7wCj8fbjEw2NbD8QNi9evLZEu_ndY">
+</div>
+<div class="px-1">
+<span class="bg-[#F4EAE0] text-[#725232] font-label-sm text-label-sm px-2 py-0.5 rounded-full inline-block mb-1">History</span>
+<h3 class="font-headline-md text-[16px] leading-tight text-on-background line-clamp-2">The Great Gatsby</h3>
+<p class="font-label-md text-label-md text-on-surface-variant">F. Scott Fitzgerald</p>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="book-card p-2 rounded flex flex-col gap-2">
+<div class="aspect-[2/3] w-full overflow-hidden bg-surface-container rounded-sm">
+<img class="w-full h-full object-cover" data-alt="A modern minimalist book cover with a simple green leaf illustration on a cream paper background. The title is in a classic serif font, looking clean and scholarly. The book sits in a bright, airy environment with soft shadows, mirroring the design's focus on long-form reading and intellectual calm." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAadC76Ok7oHmLGa1Xuk-XqXz9D6wJlckdqqiM-YYfQSXL1e8pf2EHojWx168M5BSCvXi2WV2eSTuxw4MAwesMm3uye_lJyHbX9-WT28RXnPVe-thmr5mdWdasZTxpZAYXfKLdhp82vDTA1QkfQqA3eE2ELwxX6BwUL1ZvoGdsHa_k7xcOyMO3qVoeVkqSwFWkwn4sQp5wd7rt8-xLjI8_MB_-D-DxJrBhDJL_wptJvocupgUo_4j-rCXTaYwHNwkeMP3CxBDcDMYU">
+</div>
+<div class="px-1">
+<span class="bg-[#E8F0EA] text-[#274738] font-label-sm text-label-sm px-2 py-0.5 rounded-full inline-block mb-1">Nature</span>
+<h3 class="font-headline-md text-[16px] leading-tight text-on-background line-clamp-2">The Secret Life of Trees</h3>
+<p class="font-label-md text-label-md text-on-surface-variant">Peter Wohlleben</p>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="book-card p-2 rounded flex flex-col gap-2">
+<div class="aspect-[2/3] w-full overflow-hidden bg-surface-container rounded-sm">
+<img class="w-full h-full object-cover" data-alt="A vintage book cover with worn edges and gold embossed lettering, evoking a sense of history and collection. The lighting captures the physical texture of the old leather and the creaminess of the aged pages. This visual style reinforces the curated, library-like atmosphere of the application." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuQv7aWxv8kD0Vd71RhRklItvVhJfODc24x8S8jsu8pq__-z23GVlkp-PDtVXhoOGIaSBiwDWYkhjXLCe-ZPZkGC71oNhbdkYpkOj7jAQDj4dx09W_P8-NqAY92FKQSByOp2oXYybSJEJ_UYaEZ6M1pIQbyBGBDf-x94eVd1pndkqU3KmPck8FlW6cVAvV-r0gRKRhBXFViZxNop1qPAn4O8l_2g76cIGXIaz0n0ts_WQzypDyN-QHt31YrF6SCUdQuwtVSVhLG3o">
+</div>
+<div class="px-1">
+<span class="bg-[#E8EEF0] text-[#324D5c] font-label-sm text-label-sm px-2 py-0.5 rounded-full inline-block mb-1">Classic</span>
+<h3 class="font-headline-md text-[16px] leading-tight text-on-background line-clamp-2">Jane Eyre</h3>
+<p class="font-label-md text-label-md text-on-surface-variant">Charlotte Brontë</p>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="book-card p-2 rounded flex flex-col gap-2">
+<div class="aspect-[2/3] w-full overflow-hidden bg-surface-container rounded-sm">
+<img class="w-full h-full object-cover" data-alt="A contemporary book cover with bold typographic design and abstract geometric shapes in muted navy and bookstore green. The image feels intentional and calm, part of a sophisticated digital gallery of titles. The lighting is diffused, emphasizing the flat, tonal layers of the UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_2jH_695_xHFw28UnwPLM0HA-V8KCuDVZy8eswHawsezobMwETBJbK1NXt1L1PUpmVxWdJJ_cBar6BCxIBrkvZ1x9esUAuONX6bgqnHUzmMba4AHU8Y8gysuAYXgJlhj1Wb-_Ho2N9OxoLgUMd-GsPLWD-j8l1bnPq3pBVh9AOwUX6Rqjbv9CgJygOfuQfPoPH6Th1juvDjQs-KlEmPzokL4iNvQrm1Ijr6VCkAVCcHExWhCVHN3xWSF7lsnkYI5EtxsPSU_j-Co">
+</div>
+<div class="px-1">
+<span class="bg-[#F0E8ED] text-[#5C324E] font-label-sm text-label-sm px-2 py-0.5 rounded-full inline-block mb-1">Philosophy</span>
+<h3 class="font-headline-md text-[16px] leading-tight text-on-background line-clamp-2">Meditations</h3>
+<p class="font-label-md text-label-md text-on-surface-variant">Marcus Aurelius</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-24 right-gutter bg-primary text-on-primary w-14 h-14 rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform z-50">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">add</span>
+</button>
+<!-- Bottom Navigation Bar (Mobile) -->
+<nav class="fixed bottom-0 left-0 w-full bg-surface-container h-16 flex items-center justify-around border-t border-outline-variant z-50">
+<div class="flex flex-col items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">book_2</span>
+<span class="font-label-sm text-label-sm">My Library</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-label-sm text-label-sm">Discover</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">pulse_alert</span>
+<span class="font-label-sm text-label-sm">Activity</span>
+</div>
+</nav>
+<!-- Footer (Standard Shared Component) -->
+<footer class="bg-surface-container-highest border-t border-outline-variant flex flex-col justify-between items-center px-gutter py-lg w-full mt-xl mb-16">
+<div class="font-headline-sm text-headline-sm text-primary mb-4">FolioShare</div>
+<div class="flex flex-wrap justify-center gap-4 mb-6">
+<a class="text-on-surface-variant font-label-sm text-label-sm hover:text-primary transition-colors" href="#">About</a>
+<a class="text-on-surface-variant font-label-sm text-label-sm hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant font-label-sm text-label-sm hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="text-on-surface-variant font-label-sm text-label-sm hover:text-primary transition-colors" href="#">Help Center</a>
+</div>
+<p class="text-on-surface-variant font-label-sm text-label-sm text-center">© 2024 FolioShare. Curated for the community.</p>
+</footer>
+<script>
+        function switchTab(tab) {
+            const tabs = ['my-books', 'shared', 'loaned'];
+            const labels = {
+                'my-books': 'My Books',
+                'shared': 'Shared',
+                'loaned': 'Loaned'
+            };
+
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                if (t === tab) {
+                    btn.classList.add('text-primary', 'font-bold', 'border-b-2', 'border-primary');
+                    btn.classList.remove('text-on-surface-variant');
+                } else {
+                    btn.classList.remove('text-primary', 'font-bold', 'border-b-2', 'border-primary');
+                    btn.classList.add('text-on-surface-variant');
+                }
+            });
+
+            // Lightweight atmospheric effect for grid refresh
+            const grid = document.getElementById('book-grid');
+            grid.style.opacity = '0';
+            setTimeout(() => {
+                grid.style.opacity = '1';
+                grid.style.transition = 'opacity 0.4s ease';
+            }, 50);
+        }
+
+        // Ripple Effect for buttons
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', function(e) {
+                let ripple = document.createElement('span');
+                ripple.classList.add('ripple');
+                this.appendChild(ripple);
+                let x = e.clientX - e.target.offsetLeft;
+                let y = e.clientY - e.target.offsetTop;
+                ripple.style.left = `${x}px`;
+                ripple.style.top = `${y}px`;
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            });
+        });
+    </script>
+<style>
+        .ripple {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+            pointer-events: none;
+        }
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+    </style>
+</body></html>

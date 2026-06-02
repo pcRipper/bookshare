@@ -1,0 +1,271 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>FolioShare - Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                "surface-dim": "#dbdad6",
+                "on-error": "#ffffff",
+                "on-secondary-container": "#5c656d",
+                "inverse-on-surface": "#f2f0ed",
+                "on-secondary": "#ffffff",
+                "background": "#fbf9f5",
+                "tertiary-container": "#765027",
+                "inverse-surface": "#30312e",
+                "surface-container-high": "#eae8e4",
+                "primary": "#274738",
+                "on-primary-fixed": "#002114",
+                "primary-container": "#3e5f4f",
+                "inverse-primary": "#aacfbb",
+                "surface-container-highest": "#e4e2de",
+                "surface-tint": "#446555",
+                "on-background": "#1b1c1a",
+                "outline": "#727974",
+                "surface-container": "#efeeea",
+                "on-tertiary-fixed": "#2c1600",
+                "on-primary-container": "#b3d7c3",
+                "on-error-container": "#93000a",
+                "surface-variant": "#e4e2de",
+                "on-surface": "#1b1c1a",
+                "surface": "#fbf9f5",
+                "secondary": "#565f67",
+                "primary-fixed": "#c6ebd6",
+                "surface-bright": "#fbf9f5",
+                "on-surface": "#1b1c1a",
+                "surface": "#fbf9f5",
+                "secondary-fixed": "#dae4ed",
+                "outline-variant": "#c1c8c2",
+                "on-tertiary": "#ffffff",
+                "tertiary-fixed-dim": "#f0bd8b",
+                "on-secondary-fixed-variant": "#3f484f",
+                "tertiary": "#5b3912",
+                "secondary-container": "#dae4ed",
+                "on-primary": "#ffffff",
+                "primary-fixed-dim": "#aacfbb",
+                "on-surface-variant": "#414844",
+                "tertiary-fixed": "#ffdcbd",
+                "on-tertiary-fixed-variant": "#623f18",
+                "surface-container-low": "#f5f3ef",
+                "secondary-fixed-dim": "#bec8d1",
+                "on-secondary-fixed": "#141d23",
+                "surface-container-lowest": "#ffffff",
+                "on-primary-fixed-variant": "#2d4d3e",
+                "error-container": "#ffdad6",
+                "error": "#ba1a1a"
+              },
+              "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+              },
+              "spacing": {
+                "xs": "4px",
+                "sm": "12px",
+                "xl": "80px",
+                "md": "24px",
+                "lg": "48px",
+                "gutter": "24px",
+                "base": "8px",
+                "container-max": "1200px"
+              },
+              "fontFamily": {
+                "label-md": ["Work Sans"],
+                "headline-lg-mobile": ["Playfair Display"],
+                "body-lg": ["Work Sans"],
+                "label-sm": ["Work Sans"],
+                "headline-xl": ["Playfair Display"],
+                "headline-lg": ["Playfair Display"],
+                "headline-md": ["Playfair Display"],
+                "body-md": ["Work Sans"]
+              },
+              "fontSize": {
+                "label-md": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                "headline-lg-mobile": ["28px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                "label-sm": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.03em", "fontWeight": "600"}],
+                "headline-xl": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "headline-lg": ["32px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        body { background-color: #fbf9f5; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .paper-border { border: 1px solid #EAE7E0; }
+        .soft-shadow { box-shadow: 0px 10px 30px rgba(35, 44, 51, 0.08); }
+        input:focus, textarea:focus { outline: none; border-color: #274738 !important; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-on-surface">
+<!-- Top Navigation Bar -->
+<header class="bg-surface docked full-width top-0 border-b border-outline-variant flex justify-between items-center px-gutter py-4 max-w-container-max mx-auto w-full sticky z-50">
+<div class="flex items-center gap-2">
+<button aria-label="Go back" class="md:hidden p-2 -ml-2">
+<span class="material-symbols-outlined text-primary" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">FolioShare</h1>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-primary cursor-pointer" data-icon="account_circle" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+</div>
+</header>
+<main class="min-h-screen pb-xl">
+<!-- Settings Header Section -->
+<section class="px-gutter pt-8 pb-4">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-primary mb-2">Settings</h2>
+<p class="text-on-surface-variant font-body-md">Manage your account preferences and library presence.</p>
+</section>
+<!-- Vertical Navigation Links -->
+<nav class="px-gutter mb-lg">
+<div class="flex flex-col bg-surface-container-low rounded-xl overflow-hidden paper-border">
+<a class="flex items-center justify-between p-4 bg-primary text-on-primary-container font-bold border-b border-outline-variant active:opacity-80 transition-all" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-md text-label-md">Account Profile</span>
+</div>
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</a>
+<a class="flex items-center justify-between p-4 text-on-surface-variant hover:text-primary transition-colors border-b border-outline-variant" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined" data-icon="lock">lock</span>
+<span class="font-label-md text-label-md">Privacy</span>
+</div>
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</a>
+<a class="flex items-center justify-between p-4 text-on-surface-variant hover:text-primary transition-colors border-b border-outline-variant" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="font-label-md text-label-md">Notifications</span>
+</div>
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</a>
+<a class="flex items-center justify-between p-4 text-error transition-colors" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-label-md text-label-md">Sign Out</span>
+</div>
+</a>
+</div>
+</nav>
+<!-- Profile Edit Form -->
+<section class="px-gutter">
+<div class="bg-surface-container-lowest p-6 rounded-xl paper-border soft-shadow">
+<h3 class="font-headline-md text-headline-md text-primary mb-6">Edit Profile</h3>
+<form class="space-y-6">
+<!-- Photo Upload -->
+<div class="flex flex-col items-center gap-4 mb-8">
+<div class="relative w-24 h-24 rounded-full overflow-hidden border-2 border-primary-fixed bg-surface-container-high">
+<img alt="Profile" class="w-full h-full object-cover" data-alt="A professional headshot of a friendly individual with soft natural lighting, set against a warm beige background that matches a sophisticated library aesthetic. The photography is crisp and modern with a shallow depth of field, highlighting clean skin tones and an approachable expression. The lighting is diffused and airy, reinforcing a sense of intellectual calm and modern minimalism." src="https://lh3.googleusercontent.com/aida-public/AB6AXuANPNlYN887rHmLYGB5N2DYiRt6ZmAJQDz7dht-4QuLATxRMdHBf3gnKJZt8queobJbnGGWEylERNyENDOcNqTs97RtKoP9ENhuo8VhPr7y0b_0qelZ5pkp4rpd2kDsBys5f5QYnIg8PvE5BY4uk8NMCDJheF8N5WjBREzyG50FrExz0vEARxLMddNYcDlGBVoWYhDlQ8nbqNZRlNeVeEPsRFm4ZNzM-O2yMIqywbXrJt1TDfeK3fP8fFX049nxkIqibCx7IXtCtLw">
+</div>
+<button class="text-primary font-label-md text-label-md flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="photo_camera">photo_camera</span>
+                            Change Photo
+                        </button>
+</div>
+<!-- Name Field -->
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant ml-1" for="name">Display Name</label>
+<input class="w-full p-4 rounded-lg bg-surface-container-lowest border border-outline-variant font-body-md text-on-surface transition-all" id="name" type="text" value="Julian Barnes">
+</div>
+<!-- Bio Field -->
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant ml-1" for="bio">Biography</label>
+<textarea class="w-full p-4 rounded-lg bg-surface-container-lowest border border-outline-variant font-body-md text-on-surface transition-all resize-none" id="bio" rows="4">Collector of first editions and a lover of 20th-century literature. Always looking for my next favorite read.</textarea>
+</div>
+<!-- Location Field -->
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant ml-1" for="location">Location</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="location_on">location_on</span>
+<input class="w-full pl-12 pr-4 py-4 rounded-lg bg-surface-container-lowest border border-outline-variant font-body-md text-on-surface transition-all" id="location" type="text" value="Oxford, United Kingdom">
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="pt-4 flex flex-col gap-3">
+<button class="w-full py-4 bg-primary text-on-primary font-label-md text-label-md rounded-full active:scale-[0.98] transition-transform" type="submit">
+                            Save Changes
+                        </button>
+<button class="w-full py-4 border border-secondary text-secondary font-label-md text-label-md rounded-full active:scale-[0.98] transition-transform" type="button">
+                            Cancel
+                        </button>
+</div>
+</form>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container border-t border-outline-variant flex flex-col justify-between items-center px-gutter py-lg max-w-container-max mx-auto w-full">
+<div class="text-primary font-headline-sm text-headline-sm mb-4">FolioShare</div>
+<div class="flex flex-wrap justify-center gap-4 mb-6">
+<span class="text-on-surface-variant font-label-sm text-label-sm cursor-pointer hover:text-primary transition-colors">About</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm cursor-pointer hover:text-primary transition-colors">Privacy Policy</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm cursor-pointer hover:text-primary transition-colors">Terms of Service</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm cursor-pointer hover:text-primary transition-colors">Help Center</span>
+</div>
+<p class="text-on-surface-variant font-label-sm text-label-sm text-center">© 2024 FolioShare. Curated for the community.</p>
+</footer>
+<!-- Bottom Navigation Bar (Mobile specific) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-surface-container-highest border-t border-outline-variant flex justify-around items-center py-3 px-gutter z-50">
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span>
+<span class="text-[10px] font-label-sm">Library</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span class="text-[10px] font-label-sm">Discover</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="text-[10px] font-label-sm">Activity</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" data-icon="settings" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="text-[10px] font-label-sm">Settings</span>
+</div>
+</nav>
+<script>
+        // Simple touch feedback micro-interactions
+        document.querySelectorAll('button, a').forEach(el => {
+            el.addEventListener('touchstart', function() {
+                this.classList.add('opacity-70');
+            });
+            el.addEventListener('touchend', function() {
+                this.classList.remove('opacity-70');
+            });
+        });
+
+        // Form focus atmosphere
+        const inputs = document.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.classList.add('scale-[1.01]');
+                input.style.transition = 'all 0.3s ease';
+            });
+            input.addEventListener('blur', () => {
+                input.parentElement.classList.remove('scale-[1.01]');
+            });
+        });
+    </script>
+</body></html>

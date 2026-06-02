@@ -1,0 +1,237 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Create Account | FolioShare</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#dbdad6",
+                    "on-error": "#ffffff",
+                    "on-secondary-container": "#5c656d",
+                    "inverse-on-surface": "#f2f0ed",
+                    "on-secondary": "#ffffff",
+                    "background": "#fbf9f5",
+                    "tertiary-container": "#765027",
+                    "inverse-surface": "#30312e",
+                    "surface-container-high": "#eae8e4",
+                    "primary": "#274738",
+                    "on-primary-fixed": "#002114",
+                    "primary-container": "#3e5f4f",
+                    "inverse-primary": "#aacfbb",
+                    "surface-container-highest": "#e4e2de",
+                    "surface-tint": "#446555",
+                    "on-background": "#1b1c1a",
+                    "outline": "#727974",
+                    "surface-container": "#efeeea",
+                    "on-tertiary-fixed": "#2c1600",
+                    "on-primary-container": "#b3d7c3",
+                    "on-error-container": "#93000a",
+                    "surface-variant": "#e4e2de",
+                    "on-tertiary-container": "#f9c592",
+                    "secondary": "#565f67",
+                    "primary-fixed": "#c6ebd6",
+                    "surface-bright": "#fbf9f5",
+                    "on-surface": "#1b1c1a",
+                    "surface": "#fbf9f5",
+                    "secondary-fixed": "#dae4ed",
+                    "outline-variant": "#c1c8c2",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed-dim": "#f0bd8b",
+                    "on-secondary-fixed-variant": "#3f484f",
+                    "tertiary": "#5b3912",
+                    "secondary-container": "#dae4ed",
+                    "on-primary": "#ffffff",
+                    "primary-fixed-dim": "#aacfbb",
+                    "on-surface-variant": "#414844",
+                    "tertiary-fixed": "#ffdcbd",
+                    "on-tertiary-fixed-variant": "#623f18",
+                    "surface-container-low": "#f5f3ef",
+                    "secondary-fixed-dim": "#bec8d1",
+                    "on-secondary-fixed": "#141d23",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed-variant": "#2d4d3e",
+                    "error-container": "#ffdad6",
+                    "error": "#ba1a1a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "sm": "12px",
+                    "xl": "80px",
+                    "md": "24px",
+                    "lg": "48px",
+                    "gutter": "24px",
+                    "base": "8px",
+                    "container-max": "1200px"
+            },
+            "fontFamily": {
+                    "label-md": ["Work Sans"],
+                    "headline-lg-mobile": ["Playfair Display"],
+                    "body-lg": ["Work Sans"],
+                    "label-sm": ["Work Sans"],
+                    "headline-xl": ["Playfair Display"],
+                    "headline-lg": ["Playfair Display"],
+                    "headline-md": ["Playfair Display"],
+                    "body-md": ["Work Sans"]
+            },
+            "fontSize": {
+                    "label-md": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.03em", "fontWeight": "600"}],
+                    "headline-xl": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .paper-texture {
+            background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png");
+        }
+        .custom-focus:focus {
+            outline: none;
+            border-color: #274738;
+            box-shadow: 0 0 0 1px #274738;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md text-body-md min-h-screen flex flex-col paper-texture">
+<!-- Header Section (Transactional - Back Action) -->
+<header class="px-gutter py-md flex items-center justify-between">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors" onclick="history.back()">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<span class="font-headline-md text-headline-md text-primary font-bold">FolioShare</span>
+<div class="w-10"></div> <!-- Spacer for symmetry -->
+</header>
+<main class="flex-grow px-gutter pt-sm pb-xl">
+<div class="max-w-md mx-auto">
+<!-- Hero / Intro -->
+<div class="mb-lg">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-xs">Join the Community</h1>
+<p class="text-on-surface-variant font-body-md text-body-md">Start your personal digital library and connect with fellow readers today.</p>
+</div>
+<!-- Registration Form -->
+<form class="space-y-md" onsubmit="event.preventDefault();" style="transition: opacity 0.6s, transform 0.6s; opacity: 1; transform: translateY(0px);">
+<!-- Full Name -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs" for="full_name">Full Name</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">person</span>
+<input class="w-full pl-10 pr-md py-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md custom-focus transition-all placeholder:text-on-surface-variant/50" id="full_name" placeholder="Enter your name" type="text">
+</div>
+</div>
+<!-- Email -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs" for="email">Email Address</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">mail</span>
+<input class="w-full pl-10 pr-md py-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md custom-focus transition-all placeholder:text-on-surface-variant/50" id="email" placeholder="example@email.com" type="email">
+</div>
+</div>
+<!-- Password -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-xs" for="password">Password</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">lock</span>
+<input class="w-full pl-10 pr-12 py-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md custom-focus transition-all placeholder:text-on-surface-variant/50" id="password" placeholder="••••••••" type="password">
+<button class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant" type="button">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</div>
+<p class="mt-xs text-[11px] text-on-surface-variant leading-relaxed">
+                        Must be at least 8 characters with a mix of letters and numbers.
+                    </p>
+</div>
+<!-- Sign Up Button -->
+<button class="w-full bg-primary text-on-primary font-label-md text-label-md py-4 rounded-xl hover:bg-primary-container active:scale-[0.98] transition-all shadow-md mt-sm" type="submit">
+                    Sign Up
+                </button>
+</form>
+<!-- Divider -->
+<div class="flex items-center my-lg">
+<div class="flex-grow h-[1px] bg-outline-variant"></div>
+<span class="px-md font-label-sm text-label-sm text-on-surface-variant">OR CONTINUE WITH</span>
+<div class="flex-grow h-[1px] bg-outline-variant"></div>
+</div>
+<!-- Social Registration -->
+<div class="grid grid-cols-2 gap-md">
+<button class="flex items-center justify-center gap-base py-3 px-md border border-outline-variant rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container-high transition-colors">
+<img alt="Google" class="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSBmYv3Fw5bIWCag3Ree_pk-J0HEriy9HF3k6MtFmKkUHQa3Zd3dQlHDKSVKJA9lSVhhcuT1rSgm8Z7BjGKWWubQOuD-Po4Dmd5uE6OpfJJ1BRP-Hb59bsEOwuF-UpLSO1KYtzszzOcTCJYEB4eRoN3uTdFrs24b9a6LRxUP7mqpqatemnZwnkdpIOUOIwDqJkvEuKi4U6alWe0rDdJUvq_bLXSxHVoiShXMPGDK2TLpySMuRMYd2ISsMEp6gQM241p8Z9RCD0nzs">
+                    Google
+                </button>
+<button class="flex items-center justify-center gap-base py-3 px-md border border-outline-variant rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-weight="fill">account_circle</span>
+                    Apple ID
+                </button>
+</div>
+<!-- Login Link -->
+<p class="text-center mt-lg font-body-md text-body-md text-on-surface-variant">
+                Already have an account? 
+                <a class="text-primary font-bold hover:underline" href="#">Log In</a>
+</p>
+</div>
+</main>
+<!-- Decorative Illustration (Mobile-centric) -->
+<section class="mt-auto overflow-hidden relative h-48 w-full border-t border-outline-variant/30">
+<img class="w-full h-full object-cover opacity-20 filter grayscale" data-alt="An artistic, close-up photograph of aged library books with worn spines arranged in a cozy, warm-lit bookshelf. The image has a soft-focus background, evoking a quiet, scholarly atmosphere. The color palette consists of deep greens, muted browns, and warm cream tones, reflecting a tactile and timeless digital bookstore identity. The lighting is low-key and atmospheric, mimicking a rainy afternoon in a comfortable reading nook." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9l46ua81fwSasVDYcgAJYaxnGLTsSk_h8jyLV1CnITIeXDPlFUbU2cz5-V8tRM_ot7Nd8Q6hfiDaVwjQnQernAgi9IEcL_INlAzSspqthowjM0xGWmm_3bqNM3sbfa_J74hkfFcRBqMbMmn1k1wnf6_N7OimK6BrekMsd-6zEJf3fbVbyypvKPXH4fWgieJornnfTRxKPMSu1uhvOrtm-2mouUv0Z4OOnr5E34x27NjdzTWWzz4xuqGTziRbHswYvNsxir8zRTwA">
+<div class="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
+</section>
+<!-- Footer (Shared Component Simplified for Onboarding) -->
+<footer class="bg-surface-container dark:bg-surface-container-highest border-t border-outline-variant dark:border-outline py-md px-gutter text-center">
+<p class="font-label-sm text-label-sm text-on-surface-variant">
+            © 2024 FolioShare. Curated for the community.
+        </p>
+<div class="flex justify-center gap-md mt-xs">
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms</a>
+</div>
+</footer>
+<script>
+        // Micro-interaction: Visual feedback for password visibility
+        const passInput = document.getElementById('password');
+        const toggleBtn = passInput?.nextElementSibling;
+        
+        toggleBtn?.addEventListener('click', () => {
+            const isPass = passInput.type === 'password';
+            passInput.type = isPass ? 'text' : 'password';
+            toggleBtn.querySelector('.material-symbols-outlined').textContent = isPass ? 'visibility_off' : 'visibility';
+        });
+
+        // Atmospheric fade-in for the form
+        window.addEventListener('DOMContentLoaded', () => {
+            const form = document.querySelector('form');
+            form.style.opacity = '0';
+            form.style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                form.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                form.style.opacity = '1';
+                form.style.transform = 'translateY(0)';
+            }, 100);
+        });
+    </script>
+</body></html>

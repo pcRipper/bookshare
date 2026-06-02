@@ -1,0 +1,302 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Elena Rostova | FolioShare</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#dbdad6",
+                        "on-error": "#ffffff",
+                        "on-secondary-container": "#5c656d",
+                        "inverse-on-surface": "#f2f0ed",
+                        "on-secondary": "#ffffff",
+                        "background": "#fbf9f5",
+                        "tertiary-container": "#765027",
+                        "inverse-surface": "#30312e",
+                        "surface-container-high": "#eae8e4",
+                        "primary": "#274738",
+                        "on-primary-fixed": "#002114",
+                        "primary-container": "#3e5f4f",
+                        "inverse-primary": "#aacfbb",
+                        "surface-container-highest": "#e4e2de",
+                        "surface-tint": "#446555",
+                        "on-background": "#1b1c1a",
+                        "outline": "#727974",
+                        "surface-container": "#efeeea",
+                        "on-tertiary-fixed": "#2c1600",
+                        "on-primary-container": "#b3d7c3",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#e4e2de",
+                        "on-tertiary-container": "#f9c592",
+                        "secondary": "#565f67",
+                        "primary-fixed": "#c6ebd6",
+                        "surface-bright": "#fbf9f5",
+                        "on-surface": "#1b1c1a",
+                        "surface": "#fbf9f5",
+                        "secondary-fixed": "#dae4ed",
+                        "outline-variant": "#c1c8c2",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#f0bd8b",
+                        "on-secondary-fixed-variant": "#3f484f",
+                        "tertiary": "#5b3912",
+                        "secondary-container": "#dae4ed",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#aacfbb",
+                        "on-surface-variant": "#414844",
+                        "tertiary-fixed": "#ffdcbd",
+                        "on-tertiary-fixed-variant": "#623f18",
+                        "surface-container-low": "#f5f3ef",
+                        "secondary-fixed-dim": "#bec8d1",
+                        "on-secondary-fixed": "#141d23",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#2d4d3e",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "sm": "12px",
+                        "xl": "80px",
+                        "md": "24px",
+                        "lg": "48px",
+                        "gutter": "24px",
+                        "base": "8px",
+                        "container-max": "1200px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Work Sans"],
+                        "headline-lg-mobile": ["Playfair Display"],
+                        "body-lg": ["Work Sans"],
+                        "label-sm": ["Work Sans"],
+                        "headline-xl": ["Playfair Display"],
+                        "headline-lg": ["Playfair Display"],
+                        "headline-md": ["Playfair Display"],
+                        "body-md": ["Work Sans"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.03em", "fontWeight": "600"}],
+                        "headline-xl": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #fbf9f5; /* Paper White */
+        }
+        .book-card-shadow {
+            border: 1px solid #EAE7E0;
+        }
+        .paper-texture {
+            background-image: url("https://www.transparenttextures.com/patterns/felt.png");
+            opacity: 0.03;
+            pointer-events: none;
+        }
+        .active-tab-bar {
+            height: 2px;
+            bottom: -1px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-on-surface">
+<div class="fixed inset-0 paper-texture z-50"></div>
+<!-- TopNavBar (Mobile Shell) -->
+<header class="bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline fixed top-0 w-full z-40">
+<div class="flex justify-between items-center px-gutter py-4 w-full">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">FolioShare</span>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-primary cursor-pointer">notifications</span>
+<span class="material-symbols-outlined text-primary cursor-pointer">account_circle</span>
+</div>
+</div>
+</header>
+<main class="pt-20 pb-16 px-4 max-w-md mx-auto">
+<!-- Profile Header -->
+<section class="mb-lg">
+<div class="flex flex-col items-center text-center">
+<div class="relative mb-md">
+<div class="w-24 h-24 rounded-full overflow-hidden border-2 border-primary-fixed shadow-sm">
+<img class="w-full h-full object-cover" data-alt="A professional close-up portrait of Elena, a young woman with a thoughtful expression, set against a backdrop of floor-to-ceiling bookshelves in a warm, amber-lit library. The lighting is soft and flattering, highlighting her features with a cinematic quality. The aesthetic is sophisticated and academic, emphasizing her role as a dedicated collector and reader. The overall palette is rich in mahogany and muted greens." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_7G5H0-auodVWEy1UL4T3o6bFy-n2JLuBVrTx5669whdxhw-blXJanD2f1z4TOj6xGFNW_dr2x3RGe6P9uR8iEkUC6DoT3YyJ1-dFIuzddyK0BvKZ0wnQ_XA_Rjy8ejq_VAy1t9XCqUrVHI9W4zYXu1zr0TRGP3aO-nAO4qXFafqK1_kC9e2cRqG0aOVIJPCaHx7qLjOynp__2Gv6CP3_rbdSKBt3T9kQhDADpUn7UlhT5wJLriMp1mMQJxE6iXts_4qU_n0H5bc">
+</div>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-xs">Elena Rostova</h1>
+<p class="font-label-md text-label-md text-on-surface-variant mb-md flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-[16px]">location_on</span> Prague, Czech Republic
+                </p>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-xs leading-relaxed">
+                    Collector of rare 19th-century literature and modern philosophical essays. Believing that books are meant to be breathed in and shared.
+                </p>
+</div>
+</section>
+<!-- Stats & Tags -->
+<section class="mb-lg">
+<div class="flex justify-around py-md border-y border-outline-variant mb-md">
+<div class="text-center">
+<span class="block font-headline-md text-headline-md text-primary">124</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Books</span>
+</div>
+<div class="text-center">
+<span class="block font-headline-md text-headline-md text-primary">48</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Lends</span>
+</div>
+<div class="text-center">
+<span class="block font-headline-md text-headline-md text-primary">4.9</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Rating</span>
+</div>
+</div>
+<div class="flex flex-wrap gap-2 justify-center">
+<span class="px-3 py-1 rounded-full bg-[#f4eae0] text-[#623f18] font-label-sm text-label-sm">History</span>
+<span class="px-3 py-1 rounded-full bg-[#e8f0ea] text-[#274738] font-label-sm text-label-sm">Philosophy</span>
+<span class="px-3 py-1 rounded-full bg-[#dae4ed] text-[#141d23] font-label-sm text-label-sm">Classic Lit</span>
+<span class="px-3 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">+4 more</span>
+</div>
+</section>
+<!-- Tabs -->
+<nav class="flex border-b border-outline-variant mb-md sticky top-[60px] bg-background z-30">
+<button class="flex-1 py-3 font-label-md text-label-md text-primary border-b-2 border-primary font-bold relative transition-all" id="tab-available" onclick="switchTab('available')">
+                Available to Borrow
+            </button>
+<button class="flex-1 py-3 font-label-md text-label-md text-on-surface-variant hover:text-primary transition-all" id="tab-full" onclick="switchTab('full')">
+                Full Collection
+            </button>
+</nav>
+<!-- Content Grid -->
+<div class="grid grid-cols-2 gap-4" id="content-grid">
+<!-- Book Card 1 -->
+<div class="bg-surface-container-lowest book-card-shadow p-2 rounded-lg flex flex-col group">
+<div class="aspect-[2/3] overflow-hidden rounded-sm mb-2 relative">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A high-angle view of a thick, cloth-bound book titled 'The Philosophy of Being' resting on a white marble surface. Beside it lies a pair of gold-rimmed glasses and a dried sprig of lavender. The lighting is crisp, bright, and airy, following a minimalist and tactile design language. The color palette consists of cool grays, pristine whites, and deep sage green book spines." src="https://lh3.googleusercontent.com/aida-public/AB6AXuByxT7nQRYRGIii7P-NjM-1s7GeI0quDsYFo5FLYaZ0Uiz7iGwHc3U97ZFbgOTwLpDRFtOu7RS7NfVOmgGegyxLguukI_pfjF4FJvSYuFPh2GGn4SmUPf0-fkiZhpDiNfxpxNYOb2VeuVmI595GlpBrbNnRcpqpqctIGLsiaCiubd9oFcbXmx2vafQVdnje3QT7u4qgZxEKbH_md7hA2z0WeO51ryF9Kp1VY6LPXEMxsBxmL2cAVuZaG6AuKnf9qJ7UfTxTUEfCQAQ">
+<span class="absolute top-2 right-2 bg-primary text-on-primary text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Near Mint</span>
+</div>
+<h3 class="font-headline-md text-[14px] leading-tight mb-1 line-clamp-1">The Philosophy of Being</h3>
+<p class="font-label-sm text-[11px] text-on-surface-variant mb-3">Martin Heidegger</p>
+<button class="mt-auto w-full py-2 bg-primary text-on-primary font-label-md text-[12px] rounded-sm hover:opacity-90 active:scale-[0.98] transition-all">
+                    Request to Borrow
+                </button>
+</div>
+<!-- Book Card 2 -->
+<div class="bg-surface-container-lowest book-card-shadow p-2 rounded-lg flex flex-col group">
+<div class="aspect-[2/3] overflow-hidden rounded-sm mb-2 relative">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A collection of vintage leather-bound books stacked neatly on a rustic wooden table. One book, 'Meditations', is slightly open, showing aged yellowed pages. Soft, warm sunlight filters through a nearby window, creating gentle shadows and highlights on the textured leather surfaces. The mood is nostalgic, quiet, and intellectually rich, with a palette of deep browns and warm golds." src="https://lh3.googleusercontent.com/aida-public/AB6AXuChfn2vYNY6gEevWLszrDxRLtjAHuGFr1e9F7XeMuZsojTgIJ7UYxuxyOR5HojeWw4aC63j4vBKiYnwCTBUsJGn25yz54kdr_NbIBAO2Xgqy7tKxaZxv9N7GAeeCbPNzwGKjRya2EZobdjTv3vk_qgkzyGSW8aD41sUO2BlDu9vfAilG-dr-SFVcFKbA3aCyphZdlgwLiHBKTk6yN-rUcEgAgvq7kZNzCA0x1qt0YJ8WEFUMyiPSjjaGGC2WyLZ2RnHUKekWt3GBfw">
+</div>
+<h3 class="font-headline-md text-[14px] leading-tight mb-1 line-clamp-1">Meditations</h3>
+<p class="font-label-sm text-[11px] text-on-surface-variant mb-3">Marcus Aurelius</p>
+<button class="mt-auto w-full py-2 bg-primary text-on-primary font-label-md text-[12px] rounded-sm hover:opacity-90 active:scale-[0.98] transition-all">
+                    Request to Borrow
+                </button>
+</div>
+<!-- Book Card 3 -->
+<div class="bg-surface-container-lowest book-card-shadow p-2 rounded-lg flex flex-col group">
+<div class="aspect-[2/3] overflow-hidden rounded-sm mb-2 relative">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A modern book cover with minimalist typography and abstract organic shapes in earthy tones. The book is titled 'Notes on Silence'. It is placed against a textured 'paper' background with soft shadows. The lighting is diffused and natural, highlighting the tactile quality of the book's matte finish. The design feels contemporary yet deeply rooted in traditional reading culture." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdjk22BGXbiiaK0K3foT2FLEr0q3zEMy8UoSAOsyaJOcVqvdTqpgyGvHrQZ7p6nfWSauMB1u16Qcnk7AyJcdO78FZlFh2L3ORUvm5-OJd194SqDn-67mt8_36apkL-q5gIi-0S-8fkwECPYa3nOQKCSGfd_mgEvhguTzyNpisjLNZnOsCXk3wlhYpI2VTdGvBUuQolf0yxWU7Ic3a_2TfU-wxwymOhjMlmX56E9Na40NvArex995xcf3kCbP7gqlVLboKOMsRJpg8">
+</div>
+<h3 class="font-headline-md text-[14px] leading-tight mb-1 line-clamp-1">Notes on Silence</h3>
+<p class="font-label-sm text-[11px] text-on-surface-variant mb-3">Lao Tzu</p>
+<button class="mt-auto w-full py-2 bg-primary text-on-primary font-label-md text-[12px] rounded-sm hover:opacity-90 active:scale-[0.98] transition-all">
+                    Request to Borrow
+                </button>
+</div>
+<!-- Book Card 4 -->
+<div class="bg-surface-container-lowest book-card-shadow p-2 rounded-lg flex flex-col group">
+<div class="aspect-[2/3] overflow-hidden rounded-sm mb-2 relative">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="An elegant, dark green book with gold foil lettering that reads 'The Art of Solitude' lies on a soft linen sheet. A single feather rests on its cover. The scene is lit with a soft, warm glow, evoking a sense of calm and introspection. The overall aesthetic is one of quiet luxury and thoughtful curation, using colors like forest green, gold, and cream." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvRbZw0BqLZeOiDG01VSBE2pgYg32MmL_uND4OX2efaf07VKy0V89dEqx2b8QEN9HLl7JzmzitqmDSo1jFWA1hckIRq8WFBlCsGTdTWMZ_EXnw8tjVSf2M1gZ0HsA_mGGCvTN5_mdomF1xb6MXiVMGemCHH80hOLJz4ZXDBBGS7ssFB8Z8cgULz2EHc7JAcN9QOzcSCeyPHEJ8FwnDtVJa-3SospQu863QqlDL0eUNk-nHaXAq-4_VqbE87Qr30-3wnKoForLeFzA">
+</div>
+<h3 class="font-headline-md text-[14px] leading-tight mb-1 line-clamp-1">The Art of Solitude</h3>
+<p class="font-label-sm text-[11px] text-on-surface-variant mb-3">Storr &amp; Merton</p>
+<button class="mt-auto w-full py-2 bg-primary text-on-primary font-label-md text-[12px] rounded-sm hover:opacity-90 active:scale-[0.98] transition-all">
+                    Request to Borrow
+                </button>
+</div>
+</div>
+</main>
+<!-- Footer (Mobile suppressed for Bottom Nav) -->
+<!-- BottomNavBar (Mobile Shell) -->
+<nav class="fixed bottom-0 w-full bg-surface-container dark:bg-surface-container-highest border-t border-outline-variant z-40 md:hidden">
+<div class="flex justify-around items-center py-3">
+<div class="flex flex-col items-center text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-label-sm text-[10px]">Discover</span>
+</div>
+<div class="flex flex-col items-center text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">auto_stories</span>
+<span class="font-label-sm text-[10px]">My Library</span>
+</div>
+<div class="flex flex-col items-center text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">forum</span>
+<span class="font-label-sm text-[10px]">Activity</span>
+</div>
+<div class="flex flex-col items-center text-primary transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+<span class="font-label-sm text-[10px]">Profile</span>
+</div>
+</div>
+</nav>
+<script>
+        function switchTab(tab) {
+            const availableBtn = document.getElementById('tab-available');
+            const fullBtn = document.getElementById('tab-full');
+            const activeClass = ['text-primary', 'border-b-2', 'border-primary', 'font-bold'];
+            const inactiveClass = ['text-on-surface-variant'];
+
+            if (tab === 'available') {
+                availableBtn.classList.add(...activeClass);
+                availableBtn.classList.remove(...inactiveClass);
+                fullBtn.classList.remove(...activeClass);
+                fullBtn.classList.add(...inactiveClass);
+            } else {
+                fullBtn.classList.add(...activeClass);
+                fullBtn.classList.remove(...inactiveClass);
+                availableBtn.classList.remove(...activeClass);
+                availableBtn.classList.add(...inactiveClass);
+            }
+        }
+
+        // Simple animation on scroll
+        window.addEventListener('scroll', () => {
+            const cards = document.querySelectorAll('.book-card-shadow');
+            cards.forEach(card => {
+                const rect = card.getBoundingClientRect();
+                if (rect.top < window.innerHeight - 50) {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }
+            });
+        });
+        
+        // Initial set for scroll animation
+        document.querySelectorAll('.book-card-shadow').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
+        });
+        window.dispatchEvent(new Event('scroll'));
+    </script>
+</body></html>

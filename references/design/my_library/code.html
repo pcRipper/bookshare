@@ -1,0 +1,240 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>FolioShare - My Library</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary": "#565f67",
+                        "outline-variant": "#c1c8c2",
+                        "on-background": "#1b1c1a",
+                        "tertiary-fixed": "#ffdcbd",
+                        "tertiary-fixed-dim": "#f0bd8b",
+                        "primary-fixed": "#c6ebd6",
+                        "on-secondary-fixed-variant": "#3f484f",
+                        "surface-container-highest": "#e4e2de",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#765027",
+                        "on-primary-fixed-variant": "#2d4d3e",
+                        "surface-bright": "#fbf9f5",
+                        "surface-container-high": "#eae8e4",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#623f18",
+                        "on-error-container": "#93000a",
+                        "primary-container": "#3e5f4f",
+                        "on-tertiary": "#ffffff",
+                        "surface-dim": "#dbdad6",
+                        "surface-container-low": "#f5f3ef",
+                        "surface-variant": "#e4e2de",
+                        "on-secondary-fixed": "#141d23",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#2c1600",
+                        "background": "#fbf9f5",
+                        "tertiary": "#5b3912",
+                        "surface": "#fbf9f5",
+                        "on-primary-container": "#b3d7c3",
+                        "secondary-fixed": "#dae4ed",
+                        "primary": "#274738",
+                        "primary-fixed-dim": "#aacfbb",
+                        "inverse-on-surface": "#f2f0ed",
+                        "error-container": "#ffdad6",
+                        "outline": "#727974",
+                        "secondary-container": "#dae4ed",
+                        "secondary-fixed-dim": "#bec8d1",
+                        "on-surface-variant": "#414844",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#446555",
+                        "inverse-surface": "#30312e",
+                        "error": "#ba1a1a",
+                        "surface-container": "#efeeea",
+                        "on-tertiary-container": "#f9c592",
+                        "inverse-primary": "#aacfbb",
+                        "on-secondary-container": "#5c656d",
+                        "on-surface": "#1b1c1a",
+                        "on-primary-fixed": "#002114"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "gutter": "24px",
+                        "lg": "48px",
+                        "xl": "80px",
+                        "xs": "4px",
+                        "container-max": "1200px",
+                        "md": "24px",
+                        "sm": "12px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Playfair Display"],
+                        "headline-xl": ["Playfair Display"],
+                        "body-lg": ["Work Sans"],
+                        "label-sm": ["Work Sans"],
+                        "label-md": ["Work Sans"],
+                        "headline-md": ["Playfair Display"],
+                        "headline-lg": ["Playfair Display"],
+                        "body-md": ["Work Sans"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["28px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "headline-xl": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "1.2", "letterSpacing": "0.03em", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex flex-col">
+<!-- TopNavBar Component -->
+<nav class="bg-surface border-b border-surface-container-highest docked full-width top-0 z-50">
+<div class="flex justify-between items-center w-full px-gutter max-w-container-max mx-auto h-16">
+<div class="flex items-center gap-6">
+<span class="font-headline-md text-headline-md font-bold text-primary">FolioShare</span>
+<div class="hidden md:flex gap-6 items-center">
+<a class="font-label-md text-label-md text-primary border-b-2 border-primary pb-1 Active: opacity-80 transition-opacity" href="#">My Library</a>
+<a class="font-label-md text-label-md text-secondary hover:text-primary transition-colors duration-200" href="#">Discover</a>
+<a class="font-label-md text-label-md text-secondary hover:text-primary transition-colors duration-200" href="#">Activity</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button aria-label="notifications" class="text-primary hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button aria-label="bookmark" class="text-primary hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined">bookmark</span>
+</button>
+<img alt="User profile photo" class="w-8 h-8 rounded-full border border-outline-variant object-cover" data-alt="A small circular profile picture of a young professional in a softly lit, minimalist room. The color palette is muted with earthy tones, reflecting a calm, scholarly aesthetic consistent with a bookstore vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmWLVvpIkSCQsqPchEnACgX4Lmt__tW43KP4XT4lqD2IvSR8qLo5vryVQCm2oNW_E1v967TRxIhEc4z3_vPqVo1rHyCf80qXx1Qpk3lWV-ZsFdR9fgSn2JrSMAZvLAIsX7HJwBaTlYR6DGuKvjjYhA04aeum7h6mLQV4DSRT8qZwOLtLdHHtJDSLZP1c56Lm744BRbrxGWF795eSjaYUZ3nJMUiCQQXSuK-aEdtPeyMsRHs7pxEmrJ_z5p90alqEOG-0vcJ3xB2AI">
+</div>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="flex-grow w-full max-w-container-max mx-auto px-gutter py-xl flex flex-col gap-xl">
+<!-- Profile Header -->
+<section class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-lg border-b border-surface-container-highest">
+<div class="flex items-center gap-6">
+<div class="w-24 h-24 rounded-full overflow-hidden border border-outline-variant shrink-0">
+<img alt="Profile avatar" class="w-full h-full object-cover" data-alt="A portrait of a thoughtful reader in a quiet library setting. Soft, natural light illuminates their face, casting gentle shadows. The mood is serene and introspective, adhering to a minimalist aesthetic with warm 'paper' tones and scholarly greens in the background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkm5f78Prnl4hf5kL3XWqK5U2p_Z2MW4XYWVZYSM7KFDjy22Bf7hKmG74fyaJgsSuZOKikxin_a5KmRXnTprlhUGSw-Kp1-ON8mjkR7O59cjRUSDHMpohUcmuDB92kcqorXeWvtVZ_1X3vVpax-9Czq17XZMCZZWVSaheDeFCSrCgq0wpHlptY-3UHfnICMio5vtCNzGRgPqrTZUb6WS1eCSSVLRL1j6utTwC3sE_mwyUMvMYnNIhvSizwbiKq3UYJd0zteAE7bcs">
+</div>
+<div>
+<h1 class="font-headline-xl text-headline-xl text-on-background mb-2">Eleanor Vance</h1>
+<p class="font-body-md text-body-md text-secondary mb-4">Curating a collection of rare fiction and 20th-century poetry.</p>
+<div class="flex gap-6">
+<div class="flex flex-col">
+<span class="font-headline-md text-headline-md text-primary">142</span>
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Total Books</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-md text-headline-md text-primary">28</span>
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Shared</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-md text-headline-md text-primary">12</span>
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Loaned</span>
+</div>
+</div>
+</div>
+</div>
+<button class="bg-primary text-on-primary px-6 py-3 rounded hover:bg-primary-container transition-colors flex items-center gap-2 font-label-md text-label-md shadow-sm">
+<span class="material-symbols-outlined">add</span>
+                Add New Book
+            </button>
+</section>
+<!-- Library Content -->
+<section class="flex flex-col gap-md">
+<!-- Tabs -->
+<div class="flex gap-8 border-b border-surface-container-highest">
+<button class="font-label-md text-label-md text-on-background border-b-2 border-primary pb-2 font-semibold">My Books</button>
+<button class="font-label-md text-label-md text-secondary hover:text-on-background transition-colors pb-2">Shared</button>
+<button class="font-label-md text-label-md text-secondary hover:text-on-background transition-colors pb-2">Loaned</button>
+</div>
+<!-- Book Grid (Bento Style) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pt-sm">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest border border-surface-container-highest rounded-lg overflow-hidden flex flex-col group hover:border-outline-variant transition-colors">
+<div class="h-48 bg-surface-container-low overflow-hidden relative">
+<img alt="Book cover" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A vintage hardcover book lying flat on a smooth, white desk. The book cover is a deep, scholarly green with embossed gold lettering. Soft, diffused lighting creates a minimalist, tactile aesthetic, emphasizing the texture of the paper and binding." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXpnGhpKuCU37DkrX960xmL7x-RcavTypK2wGTHSoFfsKNk61U70nY2lApZ7MjRCYzQ4GpFUAbfKdLslnU53_cKGwEh3JDW6monyaleCzc8iD4YMZrujaUYI8fEN3ehmJhGiyCJ3E1UkfBFtMXIx6rt3Tz4oiPDKS9HCaNe10yuqukEVlYwM8Y3KFdwiO2_fsOTFtztjFZE9voqwSrKx8ZcrrvlAEfsVcTY4FTd_ARKHf42JrcneM5oh2Fndr0C2wddZJfrk0qyLE">
+<div class="absolute top-2 right-2 bg-surface-container-lowest/90 backdrop-blur-sm p-1 rounded">
+<span class="material-symbols-outlined text-secondary text-sm">visibility</span>
+</div>
+</div>
+<div class="p-4 flex flex-col flex-grow">
+<h3 class="font-headline-md text-[20px] leading-tight mb-1">The Great Gatsby</h3>
+<p class="font-body-md text-sm text-secondary mb-3">F. Scott Fitzgerald</p>
+<div class="flex flex-wrap gap-2 mt-auto pt-4 border-t border-surface-container-highest">
+<span class="px-2 py-1 bg-[#E8F0EA] text-[#2d4d3e] font-label-sm text-[10px] rounded">Fiction</span>
+<span class="px-2 py-1 bg-[#F4EAE0] text-[#623f18] font-label-sm text-[10px] rounded">Classic</span>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest border border-surface-container-highest rounded-lg overflow-hidden flex flex-col group hover:border-outline-variant transition-colors">
+<div class="h-48 bg-surface-container-low overflow-hidden relative">
+<img alt="Book cover" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A minimalist composition of a modern paperback book leaning against a plain wall. The cover is predominantly white with simple, elegant serif typography. The scene is bathed in bright, natural light, creating a clean, modern aesthetic with soft shadows." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjyVQMv2o_esUk6JQbK90LYXozZQN8SwMawXidTZIIKZCxy-Pxq-KPoEjUjdJ8arAO9zhs8i4e3pwKuMz7WLQpvqbAazOK72thpaK6L9DVyfpHJSw4fWARniKjgRMXjznKw9R5iPuk8PUsWTUV3R3IE6SREJ-gRkwNmjcR4Lu4Phw9-xyjHO1WgS5aYw2wTLCeI63EMxHW5afTffGDrUvdWa-oFHIBu_utQyTPppWbdccslATad49N5qos-BfRXlSY5WtPphGnwbY">
+</div>
+<div class="p-4 flex flex-col flex-grow">
+<h3 class="font-headline-md text-[20px] leading-tight mb-1">Dune</h3>
+<p class="font-body-md text-sm text-secondary mb-3">Frank Herbert</p>
+<div class="flex flex-wrap gap-2 mt-auto pt-4 border-t border-surface-container-highest">
+<span class="px-2 py-1 bg-[#dae4ed] text-[#3f484f] font-label-sm text-[10px] rounded">Sci-Fi</span>
+<span class="px-2 py-1 bg-[#f5f3ef] text-[#414844] font-label-sm text-[10px] rounded">Hardcover</span>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest border border-surface-container-highest rounded-lg overflow-hidden flex flex-col group hover:border-outline-variant transition-colors">
+<div class="h-48 bg-surface-container-low overflow-hidden relative">
+<img alt="Book cover" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A stack of aged, leather-bound books resting on a wooden table. The top book features ornate tooling. The lighting is warm and directional, highlighting the rich textures of the leather and the yellowed edges of the pages, evoking a sense of history." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsRvOZTluoOcu_jM75-_7iRyxrf1CKLKzTJnlREFspi2q1TDeDk2pCT-Dwr5MtaRkYqP3xYlSRcAKbB0kHbauhSLyk2QR9YuhmcJjg87BkHuY-1jZn9aeUXBSxWUvpseScu_RzbaegcMBg1-UynZpxMkOsKdiocXQqubhxsGnuGIpeBjOXoPQbABoA85N-xrMvU_GbPruxeBt4MuEyYr64LmyPK-2JJtVPzTQkUeG6g1SCqFVMCgciCr5hpFIXuSJFz9PjvqTJoO4">
+</div>
+<div class="p-4 flex flex-col flex-grow">
+<h3 class="font-headline-md text-[20px] leading-tight mb-1">Pride and Prejudice</h3>
+<p class="font-body-md text-sm text-secondary mb-3">Jane Austen</p>
+<div class="flex flex-wrap gap-2 mt-auto pt-4 border-t border-surface-container-highest">
+<span class="px-2 py-1 bg-[#E8F0EA] text-[#2d4d3e] font-label-sm text-[10px] rounded">Romance</span>
+<span class="px-2 py-1 bg-[#F4EAE0] text-[#623f18] font-label-sm text-[10px] rounded">Rare</span>
+</div>
+</div>
+</div>
+<!-- Card 4 (Placeholder for more) -->
+<div class="bg-surface-container-low border border-dashed border-outline-variant rounded-lg flex flex-col items-center justify-center p-6 text-center cursor-pointer hover:bg-surface-variant transition-colors min-h-[300px]">
+<span class="material-symbols-outlined text-primary text-4xl mb-2">add_circle</span>
+<h3 class="font-headline-md text-[18px] text-primary mb-1">Catalog a New Book</h3>
+<p class="font-body-md text-sm text-secondary">Scan barcode or enter manually.</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Component -->
+<footer class="bg-surface-container-low w-full py-xl px-gutter border-t border-surface-container-highest mt-auto">
+<div class="flex flex-col md:flex-row justify-between items-center max-w-container-max mx-auto gap-6">
+<span class="font-headline-md text-headline-md text-primary">FolioShare</span>
+<div class="flex gap-6">
+<a class="font-label-md text-label-md text-on-surface-variant hover:underline hover:text-primary transition-all duration-200" href="#">Community Guidelines</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:underline hover:text-primary transition-all duration-200" href="#">About Us</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:underline hover:text-primary transition-all duration-200" href="#">Help Center</a>
+</div>
+<p class="font-label-md text-label-md text-secondary">© 2024 FolioShare. Curating stories for a thoughtful community.</p>
+</div>
+</footer>
+</body></html>
