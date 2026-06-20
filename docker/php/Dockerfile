@@ -1,7 +1,12 @@
+# syntax=docker/dockerfile:1
+
 ARG PHP_VERSION=8.4
 FROM php:${PHP_VERSION}-fpm-alpine
 
 RUN apk add --no-cache \
+    bash \
+    nodejs \
+    npm \
     git \
     libpq-dev \
     libzip-dev \
@@ -41,8 +46,24 @@ RUN composer dump-autoload --optimize --no-dev \
     && mkdir -p var/cache var/log var/share var/sessions \
     && chown -R www-data:www-data var/
 
-COPY docker/php/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+COPY --chmod=0755 <<'EOF' /usr/local/bin/docker-entrypoint.sh
+#!/bin/bash
+set -e
+
+if [ ! -f /var/www/app/vendor/autoload.php ]; then
+    echo "==> Installing Composer dependencies..."
+    composer install --no-interaction --prefer-dist
+fi
+
+mkdir -p /var/www/app/var/cache \
+         /var/www/app/var/log \
+         /var/www/app/var/share \
+         /var/www/app/var/sessions
+
+chown -R www-data:www-data /var/www/app/var
+
+exec "$@"
+EOF
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 EXPOSE 9000
