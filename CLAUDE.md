@@ -34,6 +34,57 @@ bookshare/
 - `fetch('/api/…')` → Vite proxy → Symfony (`:8000`)
 - In prod, Nginx serves both `public/build/` (Vue) and proxies to PHP-FPM (Symfony)
 
+## Product
+
+### Overview
+FolioShare is a community book-sharing platform. Readers catalog their physical books, lend them to other community members, track borrow requests, and discover each other's collections. The UI brand name is **FolioShare**; the repo/project name is **Bookshare**.
+
+### Screens & Routes
+
+| Route | Design references | Description |
+|---|---|---|
+| `/login` | `login`, `login_mobile` | JWT sign-in form; email + password, "Remember me", "Forgot password", social auth links (UI only) |
+| `/register` | `create_account`, `create_account_mobile` | Sign-up form: full name, email, password (min 8 chars) |
+| `/library` | `my_library`, `my_library_mobile`, `my_library_incoming_requests`, `my_library_requests_tab_added`, `my_library_no_header_search` | Authenticated user's library. Profile header (avatar, name, bio, stats). Four tabs: **Collection** (book grid), **Lending** (lent-out books), **Requests** (incoming borrow requests — Approve / Decline actions), **History** |
+| `/discover` | `discover_mobile`, `discover_search` | Browse the community. Search bar, category filter pills, "Trending Near You" + "Recommended for You" grids, "Curator Choice" feature card |
+| `/activity` | `activity_feed`, `activity_feed_mobile`, `activity_feed_no_header_search` | Social feed. Activity types: *borrowed* (book + actor), *commented* (with quote preview + Reply), *followed*, *added_book* |
+| `/profile/:id` | `user_profile_jane_doe`, `user_profile_mobile` | Public user profile. Avatar, name, bio, stats (Total Books / Lending / Rating). Tabbed book collection with "Request to Borrow" buttons |
+| `/settings` | `settings`, `settings_mobile` | Left-sidebar: **Account Profile** (avatar upload, name, bio 300-char, location), **Privacy & Security**, **Notifications**, **Sign Out** |
+
+**Manage Book modal** — overlays `/library` (not a separate route). Triggered by "Add New Book" or clicking an existing book card. Fields: cover upload, title*, author*, ISBN, status dropdown, category chips.
+
+### Domain Model
+
+These are the entities to implement in `src/Entity/`:
+
+**User** — `id`, `email`, `password_hash`, `full_name`, `bio` (max 300 chars), `location`, `avatar_path`; derived stats: total books, shared count, loaned count, rating.
+
+**Book** — `id`, `title`*, `author`*, `isbn`, `cover_path`, `status` (enum: `own | lent | unavailable`); `owner → User`; `categories → Category[]` (many-to-many).
+
+**Category** — `id`, `name`, `color_hex` (muted accent tone per design).
+
+**LibraryRequest** — `id`, `book → Book`, `requester → User`, `status` (enum: `pending | approved | declined`), `requested_at`.
+
+**ActivityItem** — `id`, `actor → User`, `action_type` (enum: `borrowed | commented | followed | added_book`), `target_book → Book` (nullable), `target_user → User` (nullable), `comment_text` (nullable), `created_at`.
+
+### Design System
+Full token spec: `references/design/literary_commons/DESIGN.md`
+
+| Token | Value | Usage |
+|---|---|---|
+| Primary green | `#274738` | Primary buttons, focus rings, active tab indicator |
+| Paper white | `#fbf9f5` | Page background |
+| Surface | `#ffffff` | Cards, modals |
+| Error/destructive | `#ba1a1a` | Delete actions, error states |
+| Outline | `#727974` | Borders, dividers |
+| Headline font | Playfair Display (serif) | Page titles, modal headers, book titles on cards |
+| UI/body font | Work Sans (sans-serif) | All other text |
+| Border radius — standard | 4px | Buttons, inputs, cards |
+| Border radius — modals | 8px | Modal containers |
+| Border radius — tags | 9999px (pill) | Category chips |
+| Spacing base | 8px | All spacing is multiples of 8 |
+| Section separator | 80px (`xl`) | Between major page sections |
+
 ## Dev Commands
 
 ### Start both servers
