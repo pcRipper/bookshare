@@ -2,11 +2,11 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [vue()],
   root: '.',
   publicDir: false,
-  base: '/build/',
+  base: command === 'build' ? '/build/' : '/',
   build: {
     outDir: 'public/build',
     emptyOutDir: true,
@@ -20,9 +20,9 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost',   // Docker Nginx HTTP (HTTP_PORT=80)
         changeOrigin: true,
       },
     },
   },
-})
+}))

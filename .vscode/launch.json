@@ -7,9 +7,9 @@
             "request": "launch",
             "port": 9003,
             "pathMappings": {
-                "/var/www/app": "${workspaceFolder}"
+                "/var/www/app": "d:/code/php/bookshare"
             },
-            "log": false
+            "log": true
         }
     ]
 }

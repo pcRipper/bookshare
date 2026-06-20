@@ -1,6 +1,6 @@
-# Local overrides — not committed to git. Copy and uncomment what you need.
-#
+# Local overrides — not committed to git.
+# Example: override PHP memory limit without rebuilding
 # services:
 #   phpfpm:
 #     environment:
-#       XDEBUG_MODE: develop,debug
+#       PHP_MEMORY_LIMIT: 512M
