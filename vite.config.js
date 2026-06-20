@@ -20,8 +20,9 @@ export default defineConfig(({ command }) => ({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost',   // Docker Nginx HTTP (HTTP_PORT=80)
+        target: 'https://localhost',
         changeOrigin: true,
+        secure: false,  // self-signed cert in dev
       },
     },
   },
