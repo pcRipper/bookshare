@@ -28,7 +28,6 @@ class UserRepository extends ServiceEntityRepository
         $user = $this->findOneBy(['email' => $email]);
         if ($user) {
             $user->setGoogleId($googleId)->setAvatarUrl($avatarUrl);
-            $this->getEntityManager()->flush();
             return $user;
         }
 
@@ -39,7 +38,6 @@ class UserRepository extends ServiceEntityRepository
             ->setAvatarUrl($avatarUrl);
 
         $this->getEntityManager()->persist($user);
-        $this->getEntityManager()->flush();
 
         return $user;
     }

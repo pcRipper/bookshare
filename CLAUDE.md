@@ -129,6 +129,9 @@ All API endpoints live under `/api` prefix. Controllers in `src/Controller/` use
 ### Entities
 Defined with PHP attributes (`#[ORM\Entity]`, `#[ORM\Column]`, etc.) in `src/Entity/`. Doctrine uses underscore naming strategy and PostgreSQL identity columns for primary keys.
 
+### Persistence & flushing
+Repositories may `persist()` and mutate entities, but **must not call `flush()`** — the controller owns the transaction boundary and flushes **exactly once** per request, after all entity changes are staged. This keeps each request a single unit of work and avoids redundant/partial commits. Example: `UserRepository::findOrCreateFromGoogle()` only persists/mutates; `AuthController::googleCallback()` calls `$this->entityManager->flush()` once. A no-op flush (when nothing changed) is harmless.
+
 ### Frontend imports
 The `@` alias resolves to `assets/src/`. Use `import Foo from '@/components/Foo.vue'` everywhere.
 

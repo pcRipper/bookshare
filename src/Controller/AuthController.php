@@ -4,15 +4,20 @@ namespace App\Controller;
 
 use App\Repository\UserRepository;
 use App\Service\GoogleAuthService;
+use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\Service\Attribute\Required;
 
 #[Route('/api/auth')]
 class AuthController extends AbstractController
 {
+    #[Required]
+    public EntityManagerInterface $entityManager;
+
     #[Route('/google', methods: ['GET'])]
     public function googleAuth(GoogleAuthService $google): JsonResponse
     {
@@ -43,6 +48,8 @@ class AuthController extends AbstractController
             fullName: $info['name'],
             avatarUrl: $info['picture'] ?? null,
         );
+
+        $this->entityManager->flush();
 
         return $this->json([
             'token' => $jwt->create($user),
