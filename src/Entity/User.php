@@ -27,6 +27,12 @@ class User implements UserInterface
     #[ORM\Column(length: 500, nullable: true)]
     private ?string $avatarUrl = null;
 
+    #[ORM\Column(length: 300, nullable: true)]
+    private ?string $bio = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $location = null;
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
@@ -48,6 +54,12 @@ class User implements UserInterface
 
     public function getAvatarUrl(): ?string { return $this->avatarUrl; }
     public function setAvatarUrl(?string $avatarUrl): static { $this->avatarUrl = $avatarUrl; return $this; }
+
+    public function getBio(): ?string { return $this->bio; }
+    public function setBio(?string $bio): static { $this->bio = $bio; return $this; }
+
+    public function getLocation(): ?string { return $this->location; }
+    public function setLocation(?string $location): static { $this->location = $location; return $this; }
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
 

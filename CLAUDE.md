@@ -144,5 +144,8 @@ Handled by `nelmio/cors-bundle`. `CORS_ALLOW_ORIGIN` in `.env` defaults to a reg
 ## Environment Setup Notes (Windows-specific)
 
 - `ext-sodium` must be enabled in `php.ini` — required by `lexik/jwt-authentication-bundle` (dependency on `lcobucci/jwt`)
+- `extension=pdo_pgsql` and `extension=pgsql` must be enabled in `php.ini` — the app runs on PostgreSQL; without them `doctrine:*` CLI commands fail with "could not find driver"
 - JWT keypair was generated via the system OpenSSL CLI, not `php bin/console lexik:jwt:generate-keypair`, because PHP's `openssl_pkey_new()` has issues on this Windows install
 - PHP binary: `D:\code\Software\php-8.4.5\php.ini`
+- The dev DB password is `changeme` (matches `POSTGRES_PASSWORD`); `DATABASE_URL` uses it in `.env`
+- `lexik:jwt:generate-token <email>` mints a JWT for manual API testing — pass `--no-ansi` and strip whitespace before putting it in an `Authorization: Bearer` header (colour codes corrupt the header → nginx 400)

@@ -1,58 +1,78 @@
 <script setup>
-import { ref, computed } from 'vue'
-import { useAuthStore } from '@/stores/auth'
+import { ref, computed, onMounted, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useLibraryStore } from '@/stores/library'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BookCard from '@/components/library/BookCard.vue'
 import RequestCard from '@/components/library/RequestCard.vue'
+import ManageBookModal from '@/components/library/ManageBookModal.vue'
 
-const auth = useAuthStore()
-const user = computed(() => auth.user)
+const store = useLibraryStore()
+const { profile, stats, collection, lending, requests, history, loading } = storeToRefs(store)
 
 /* ── Tabs ─────────────────────────────────────────────────────────────── */
 const activeTab = ref('collection')
 
-const tabs = [
+const tabs = computed(() => [
   { key: 'collection', label: 'Collection' },
   { key: 'lending',    label: 'Lending' },
-  { key: 'requests',   label: 'Requests', badge: 3 },
+  { key: 'requests',   label: 'Requests', badge: requests.value.length || null },
   { key: 'history',    label: 'History' },
-]
-
-/* ── Mock data (replace with API calls) ──────────────────────────────── */
-const books = ref([
-  { id: 1, title: 'The Great Gatsby',        author: 'F. Scott Fitzgerald', categories: [{ id: 1, name: 'Fiction' }, { id: 2, name: 'Classic' }],   coverPath: null },
-  { id: 2, title: 'Dune',                    author: 'Frank Herbert',        categories: [{ id: 3, name: 'Sci-Fi' }],                                 coverPath: null },
-  { id: 3, title: 'Pride and Prejudice',     author: 'Jane Austen',          categories: [{ id: 4, name: 'Romance' }, { id: 2, name: 'Classic' }],   coverPath: null },
-  { id: 4, title: 'Jane Eyre',               author: 'Charlotte Brontë',     categories: [{ id: 2, name: 'Classic' }],                                coverPath: null },
-  { id: 5, title: 'Meditations',             author: 'Marcus Aurelius',      categories: [{ id: 5, name: 'Philosophy' }],                             coverPath: null },
-  { id: 6, title: 'The Secret History',      author: 'Donna Tartt',          categories: [{ id: 1, name: 'Fiction' }],                                coverPath: null },
-  { id: 7, title: 'The Secret Life of Trees',author: 'Peter Wohlleben',      categories: [{ id: 6, name: 'Nature' }, { id: 7, name: 'Non-Fiction' }], coverPath: null },
 ])
 
-const requests = ref([
-  { id: 1, requester: { fullName: 'Julian Black',    avatarUrl: null }, book: { title: 'The Secret History',                  author: 'Donna Tartt',       coverPath: null }, requestedAt: 'today' },
-  { id: 2, requester: { fullName: 'Eleanor Vance',   avatarUrl: null }, book: { title: 'The Haunting of Hill House',           author: 'Shirley Jackson',   coverPath: null }, requestedAt: '2 days ago' },
-  { id: 3, requester: { fullName: 'Arthur Dent',     avatarUrl: null }, book: { title: "The Hitchhiker's Guide to the Galaxy", author: 'Douglas Adams',     coverPath: null }, requestedAt: '3 days ago' },
+const statCards = computed(() => [
+  { label: 'Total Books', value: stats.value.totalBooks },
+  { label: 'Shared',      value: stats.value.shared },
+  { label: 'Loaned',      value: stats.value.loaned },
 ])
 
-const stats = computed(() => [
-  { label: 'Total Books', value: books.value.length },
-  { label: 'Shared',      value: 28 },
-  { label: 'Loaned',      value: 0 },
-])
+/* ── Data loading: collection + profile up front, others lazily ───────── */
+const loaded = ref({ lending: false, requests: false, history: false })
 
-/* ── Actions ─────────────────────────────────────────────────────────── */
-function handleApprove(id) {
-  requests.value = requests.value.filter(r => r.id !== id)
+onMounted(() => {
+  store.fetchMe()
+  store.fetchCollection()
+  store.fetchCategories()
+})
+
+watch(activeTab, tab => {
+  if (tab === 'lending'  && !loaded.value.lending)  { loaded.value.lending  = true; store.fetchLending() }
+  if (tab === 'requests' && !loaded.value.requests) { loaded.value.requests = true; store.fetchRequests() }
+  if (tab === 'history'  && !loaded.value.history)  { loaded.value.history  = true; store.fetchHistory() }
+})
+
+// Requests badge should reflect reality even before the tab is opened.
+onMounted(() => store.fetchRequests().then(() => { loaded.value.requests = true }))
+
+/* ── Request actions ─────────────────────────────────────────────────── */
+function handleApprove(id) { store.approveRequest(id) }
+function handleDecline(id) { store.declineRequest(id) }
+
+/* ── Manage Book modal ───────────────────────────────────────────────── */
+const modalOpen = ref(false)
+const editingBook = ref(null)
+
+function openCreate() {
+  editingBook.value = null
+  modalOpen.value = true
 }
-function handleDecline(id) {
-  requests.value = requests.value.filter(r => r.id !== id)
+function openEdit(book) {
+  editingBook.value = book
+  modalOpen.value = true
 }
-
-function handleAddBook() {
-  /* TODO: open ManageBookModal */
-  console.info('Add book modal — coming soon')
+async function onModalSave(payload) {
+  if (editingBook.value) {
+    await store.updateBook(editingBook.value.id, payload)
+  } else {
+    await store.createBook(payload)
+  }
+  if (loaded.value.lending) await store.fetchLending()
+  modalOpen.value = false
+}
+async function onModalDelete(id) {
+  await store.deleteBook(id)
+  modalOpen.value = false
 }
 </script>
 
@@ -64,16 +84,17 @@ function handleAddBook() {
       <section class="profile-header">
         <div class="profile-header__info">
           <BaseAvatar
-            :src="user?.avatarUrl"
-            :name="user?.fullName"
+            :src="profile?.avatarUrl"
+            :name="profile?.fullName"
             size="xl"
             class="profile-header__avatar"
           />
           <div>
-            <h1 class="profile-header__name">{{ user?.fullName }}</h1>
-            <p class="profile-header__bio">Curating a collection of rare fiction and 20th-century poetry.</p>
+            <h1 class="profile-header__name">{{ profile?.fullName }}</h1>
+            <p v-if="profile?.bio" class="profile-header__bio">{{ profile.bio }}</p>
+            <p v-else class="profile-header__bio profile-header__bio--muted">Add a short bio in settings.</p>
             <div class="profile-header__stats">
-              <div v-for="stat in stats" :key="stat.label" class="stat">
+              <div v-for="stat in statCards" :key="stat.label" class="stat">
                 <span class="stat__value">{{ stat.value }}</span>
                 <span class="stat__label">{{ stat.label }}</span>
               </div>
@@ -81,7 +102,7 @@ function handleAddBook() {
           </div>
         </div>
 
-        <button class="btn-add-book" @click="handleAddBook">
+        <button class="btn-add-book" @click="openCreate">
           <span class="material-symbols-outlined">add</span>
           Add New Book
         </button>
@@ -109,27 +130,35 @@ function handleAddBook() {
         <!-- Collection tab -->
         <div v-if="activeTab === 'collection'" class="book-grid" role="tabpanel">
           <BookCard
-            v-for="book in books"
+            v-for="book in collection"
             :key="book.id"
             :book="book"
+            @click="openEdit"
           />
           <!-- "Add new book" placeholder card -->
-          <div class="add-book-card" @click="handleAddBook" role="button" tabindex="0">
+          <div class="add-book-card" @click="openCreate" role="button" tabindex="0">
             <span class="material-symbols-outlined add-book-card__icon">add_circle</span>
             <h3 class="add-book-card__title">Catalog a New Book</h3>
-            <p class="add-book-card__hint">Scan barcode or enter manually.</p>
+            <p class="add-book-card__hint">Add a title to your collection.</p>
           </div>
         </div>
 
         <!-- Lending tab -->
-        <div v-else-if="activeTab === 'lending'" class="empty-state" role="tabpanel">
-          <span class="material-symbols-outlined empty-state__icon">local_library</span>
-          <p class="empty-state__text">No books currently lent out.</p>
+        <div v-else-if="activeTab === 'lending'" role="tabpanel">
+          <p v-if="loading.lending" class="empty-state__text loading-line">Loading…</p>
+          <div v-else-if="lending.length" class="book-grid">
+            <BookCard v-for="book in lending" :key="book.id" :book="book" @click="openEdit" />
+          </div>
+          <div v-else class="empty-state">
+            <span class="material-symbols-outlined empty-state__icon">local_library</span>
+            <p class="empty-state__text">No books currently lent out.</p>
+          </div>
         </div>
 
         <!-- Requests tab -->
         <div v-else-if="activeTab === 'requests'" class="request-grid" role="tabpanel">
-          <p v-if="requests.length === 0" class="empty-requests">All caught up — no pending requests.</p>
+          <p v-if="loading.requests" class="empty-requests">Loading…</p>
+          <p v-else-if="requests.length === 0" class="empty-requests">All caught up — no pending requests.</p>
           <RequestCard
             v-for="req in requests"
             :key="req.id"
@@ -140,9 +169,25 @@ function handleAddBook() {
         </div>
 
         <!-- History tab -->
-        <div v-else class="empty-state" role="tabpanel">
-          <span class="material-symbols-outlined empty-state__icon">history</span>
-          <p class="empty-state__text">Your lending history will appear here.</p>
+        <div v-else role="tabpanel">
+          <p v-if="loading.history" class="empty-state__text loading-line">Loading…</p>
+          <ul v-else-if="history.length" class="history-list">
+            <li v-for="item in history" :key="item.id" class="history-row">
+              <BaseAvatar :src="item.requester.avatarUrl" :name="item.requester.fullName" size="md" />
+              <div class="history-row__text">
+                <p class="history-row__main">
+                  <strong>{{ item.requester.fullName }}</strong> requested
+                  <em>{{ item.book.title }}</em>
+                </p>
+                <span class="history-row__date">{{ item.requestedAt }}</span>
+              </div>
+              <span class="history-badge" :class="`history-badge--${item.status}`">{{ item.status }}</span>
+            </li>
+          </ul>
+          <div v-else class="empty-state">
+            <span class="material-symbols-outlined empty-state__icon">history</span>
+            <p class="empty-state__text">Your lending history will appear here.</p>
+          </div>
         </div>
 
       </section>
@@ -152,10 +197,19 @@ function handleAddBook() {
     <button
       class="fab"
       aria-label="Add new book"
-      @click="handleAddBook"
+      @click="openCreate"
     >
       <span class="material-symbols-outlined">add</span>
     </button>
+
+    <!-- Add / edit book modal -->
+    <ManageBookModal
+      :open="modalOpen"
+      :book="editingBook"
+      @save="onModalSave"
+      @delete="onModalDelete"
+      @close="modalOpen = false"
+    />
   </AppLayout>
 </template>
 
@@ -428,6 +482,43 @@ function handleAddBook() {
 }
 .empty-state__icon { font-size: 48px; opacity: 0.5; }
 .empty-state__text { font-size: var(--text-body-md); margin: 0; }
+.loading-line { padding: var(--space-xl) 0; text-align: center; color: var(--color-on-surface-variant); }
+
+/* ── History list ─────────────────────────────────────────────────────── */
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-sm) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.history-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  background: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-surface-container-highest);
+  border-radius: var(--radius-default);
+}
+.history-row__text { flex: 1; min-width: 0; }
+.history-row__main { margin: 0; font-size: var(--text-label-md); color: var(--color-on-background); }
+.history-row__main em { font-style: italic; color: var(--color-secondary); }
+.history-row__date { font-size: var(--text-label-sm); color: var(--color-on-surface-variant); }
+
+.history-badge {
+  text-transform: capitalize;
+  font-size: var(--text-label-sm);
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+}
+.history-badge--approved { background: var(--color-primary-fixed); color: var(--color-on-primary-fixed-variant); }
+.history-badge--declined { background: var(--color-error-container); color: var(--color-error); }
+
+/* Muted placeholder bio */
+.profile-header__bio--muted { font-style: italic; opacity: 0.7; }
 
 /* ── Mobile FAB ───────────────────────────────────────────────────────── */
 .fab {
