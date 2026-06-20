@@ -2,17 +2,13 @@
 
 namespace App\Service;
 
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class GoogleAuthService
 {
     public function __construct(
-        #[Autowire(env: 'GOOGLE_CLIENT_ID')]
         private readonly string $clientId,
-        #[Autowire(env: 'GOOGLE_CLIENT_SECRET')]
         private readonly string $clientSecret,
-        #[Autowire(env: 'GOOGLE_REDIRECT_URI')]
         private readonly string $redirectUri,
         private readonly HttpClientInterface $httpClient,
     ) {}
