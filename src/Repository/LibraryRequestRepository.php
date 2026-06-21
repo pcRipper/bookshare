@@ -25,11 +25,17 @@ class LibraryRequestRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('r')
             ->join('r.book', 'b')
+            // Eager-load the lifecycle events (and their actors) so the timeline
+            // renders without an N+1 per request.
+            ->leftJoin('r.events', 'e')->addSelect('e')
+            ->leftJoin('e.actor', 'ea')->addSelect('ea')
             ->andWhere('b.owner = :owner')
             ->andWhere('r.status IN (:statuses)')
             ->setParameter('owner', $owner)
             ->setParameter('statuses', $statuses)
             ->orderBy('r.requestedAt', 'DESC')
+            ->addOrderBy('e.createdAt', 'ASC')
+            ->addOrderBy('e.id', 'ASC')
             ->getQuery()
             ->getResult();
     }
@@ -44,11 +50,15 @@ class LibraryRequestRepository extends ServiceEntityRepository
     public function findOutgoing(User $requester, array $statuses): array
     {
         return $this->createQueryBuilder('r')
+            ->leftJoin('r.events', 'e')->addSelect('e')
+            ->leftJoin('e.actor', 'ea')->addSelect('ea')
             ->andWhere('r.requester = :requester')
             ->andWhere('r.status IN (:statuses)')
             ->setParameter('requester', $requester)
             ->setParameter('statuses', $statuses)
             ->orderBy('r.requestedAt', 'DESC')
+            ->addOrderBy('e.createdAt', 'ASC')
+            ->addOrderBy('e.id', 'ASC')
             ->getQuery()
             ->getResult();
     }

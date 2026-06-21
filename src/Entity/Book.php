@@ -35,6 +35,16 @@ class Book
     #[ORM\JoinColumn(nullable: false)]
     private User $owner;
 
+    /**
+     * Who is physically holding the book right now: the owner while it sits on
+     * their shelf, or the borrower while it's lent out. Lets "is this taken?"
+     * and "who can return it?" be answered without walking the request history —
+     * it tracks the owner across the borrow→return loan lifecycle.
+     */
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false)]
+    private User $currentHolder;
+
     /** @var Collection<int, Category> */
     #[ORM\ManyToMany(targetEntity: Category::class)]
     #[ORM\JoinTable(name: 'book_category')]
@@ -67,7 +77,21 @@ class Book
     public function setStatus(BookStatus $status): static { $this->status = $status; return $this; }
 
     public function getOwner(): User { return $this->owner; }
-    public function setOwner(User $owner): static { $this->owner = $owner; return $this; }
+    public function setOwner(User $owner): static
+    {
+        $this->owner = $owner;
+        // A freshly catalogued book starts in its owner's hands.
+        if (!isset($this->currentHolder)) {
+            $this->currentHolder = $owner;
+        }
+        return $this;
+    }
+
+    public function getCurrentHolder(): User { return $this->currentHolder; }
+    public function setCurrentHolder(User $currentHolder): static { $this->currentHolder = $currentHolder; return $this; }
+
+    /** True when the book is on the owner's shelf and available to be requested. */
+    public function isHome(): bool { return $this->currentHolder === $this->owner; }
 
     /** @return Collection<int, Category> */
     public function getCategories(): Collection { return $this->categories; }

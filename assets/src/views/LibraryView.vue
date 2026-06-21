@@ -9,10 +9,11 @@ import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import BookCard from '@/components/library/BookCard.vue'
 import BorrowingCard from '@/components/library/BorrowingCard.vue'
 import RequestCard from '@/components/library/RequestCard.vue'
+import LoanHistoryCard from '@/components/library/LoanHistoryCard.vue'
 import ManageBookModal from '@/components/library/ManageBookModal.vue'
 
 const store = useLibraryStore()
-const { profile, stats, collection, lending, requests, history, borrowing, loading } = storeToRefs(store)
+const { profile, stats, collection, lending, requests, history, borrowing, borrowingHistory, loading } = storeToRefs(store)
 
 /* ── Tabs ─────────────────────────────────────────────────────────────── */
 const activeTab = ref('collection')
@@ -31,8 +32,24 @@ const statCards = computed(() => [
   { label: 'Loaned',      value: stats.value.loaned },
 ])
 
+/* ── History sub-views: lending (as owner) vs borrowing (as borrower) ──── */
+const historySide = ref('lending')
+
+const historyLoading = computed(() =>
+  historySide.value === 'lending' ? loading.value.history : loading.value.borrowingHistory,
+)
+const historyItems = computed(() =>
+  historySide.value === 'lending' ? history.value : borrowingHistory.value,
+)
+
 /* ── Data loading: collection + profile up front, others lazily ───────── */
-const loaded = ref({ borrowing: false, lending: false, requests: false, history: false })
+const loaded = ref({ borrowing: false, lending: false, requests: false, history: false, borrowingHistory: false })
+
+// Each history side fetches once, when first viewed.
+function loadHistorySide(side) {
+  if (side === 'lending' && !loaded.value.history) { loaded.value.history = true; store.fetchHistory() }
+  if (side === 'borrowing' && !loaded.value.borrowingHistory) { loaded.value.borrowingHistory = true; store.fetchBorrowingHistory() }
+}
 
 onMounted(() => {
   store.fetchMe()
@@ -44,8 +61,11 @@ watch(activeTab, tab => {
   if (tab === 'borrowing' && !loaded.value.borrowing) { loaded.value.borrowing = true; store.fetchBorrowing() }
   if (tab === 'lending'  && !loaded.value.lending)  { loaded.value.lending  = true; store.fetchLending() }
   if (tab === 'requests' && !loaded.value.requests) { loaded.value.requests = true; store.fetchRequests() }
-  if (tab === 'history'  && !loaded.value.history)  { loaded.value.history  = true; store.fetchHistory() }
+  if (tab === 'history') loadHistorySide(historySide.value)
 })
+
+// Switching the lending/borrowing toggle (while on the History tab) lazy-loads it.
+watch(historySide, side => { if (activeTab.value === 'history') loadHistorySide(side) })
 
 // Badges should reflect reality even before their tabs are opened.
 onMounted(() => store.fetchRequests().then(() => { loaded.value.requests = true }))
@@ -286,32 +306,49 @@ async function onModalDelete(id) {
 
         <!-- History tab -->
         <div v-else role="tabpanel">
-          <ul v-if="loading.history" class="history-list">
-            <li v-for="n in 5" :key="n" class="history-row">
-              <BaseSkeleton width="40px" height="40px" circle />
-              <div class="request-skeleton__lines" style="flex: 1">
-                <BaseSkeleton width="70%" height="14px" />
-                <BaseSkeleton width="30%" height="12px" />
+          <!-- Lending (as owner) vs Borrowing (as borrower) toggle -->
+          <div class="history-toggle" role="tablist">
+            <button
+              class="history-toggle__btn"
+              :class="{ 'history-toggle__btn--active': historySide === 'lending' }"
+              role="tab"
+              :aria-selected="historySide === 'lending'"
+              @click="historySide = 'lending'"
+            >Lent to others</button>
+            <button
+              class="history-toggle__btn"
+              :class="{ 'history-toggle__btn--active': historySide === 'borrowing' }"
+              role="tab"
+              :aria-selected="historySide === 'borrowing'"
+              @click="historySide = 'borrowing'"
+            >Borrowed by me</button>
+          </div>
+
+          <ul v-if="historyLoading" class="history-list">
+            <li v-for="n in 4" :key="n" class="history-card-skeleton">
+              <div class="history-card-skeleton__head">
+                <BaseSkeleton width="40px" height="40px" circle />
+                <div class="request-skeleton__lines" style="flex: 1">
+                  <BaseSkeleton width="60%" height="14px" />
+                  <BaseSkeleton width="35%" height="12px" />
+                </div>
+                <BaseSkeleton width="72px" height="22px" radius="var(--radius-full)" />
               </div>
-              <BaseSkeleton width="72px" height="22px" radius="var(--radius-full)" />
+              <BaseSkeleton width="100%" height="72px" radius="var(--radius-default)" />
             </li>
           </ul>
-          <ul v-else-if="history.length" class="history-list">
-            <li v-for="item in history" :key="item.id" class="history-row">
-              <BaseAvatar :src="item.requester.avatarUrl" :name="item.requester.fullName" size="md" />
-              <div class="history-row__text">
-                <p class="history-row__main">
-                  <strong>{{ item.requester.fullName }}</strong> requested
-                  <em>{{ item.book.title }}</em>
-                </p>
-                <span class="history-row__date">{{ item.requestedAt }}</span>
-              </div>
-              <span class="history-badge" :class="`history-badge--${item.status}`">{{ item.status }}</span>
-            </li>
+          <ul v-else-if="historyItems.length" class="history-list">
+            <LoanHistoryCard
+              v-for="item in historyItems"
+              :key="item.id"
+              :request="item"
+              :perspective="historySide"
+            />
           </ul>
           <div v-else class="empty-state">
             <span class="material-symbols-outlined empty-state__icon">history</span>
-            <p class="empty-state__text">Your lending history will appear here.</p>
+            <p v-if="historySide === 'lending'" class="empty-state__text">Your lending history will appear here.</p>
+            <p v-else class="empty-state__text">Your borrowing history will appear here.</p>
           </div>
         </div>
 
@@ -634,37 +671,56 @@ async function onModalDelete(id) {
 .request-skeleton__actions > * { flex: 1; }
 
 /* ── History list ─────────────────────────────────────────────────────── */
+/* Lending/borrowing segmented toggle */
+.history-toggle {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin: var(--space-sm) 0;
+  background: var(--color-surface-container-low);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-full);
+}
+.history-toggle__btn {
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-label-md);
+  font-weight: 500;
+  color: var(--color-secondary);
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+}
+.history-toggle__btn:hover:not(.history-toggle__btn--active) { color: var(--color-on-background); }
+.history-toggle__btn--active {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 600;
+}
+
 .history-list {
   list-style: none;
   margin: 0;
   padding: var(--space-sm) 0 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
-}
-.history-row {
-  display: flex;
-  align-items: center;
   gap: var(--space-sm);
-  padding: var(--space-sm);
+}
+
+/* History loading skeleton */
+.history-card-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
   background: var(--color-surface-container-lowest);
   border: 1px solid var(--color-surface-container-highest);
   border-radius: var(--radius-default);
 }
-.history-row__text { flex: 1; min-width: 0; }
-.history-row__main { margin: 0; font-size: var(--text-label-md); color: var(--color-on-background); }
-.history-row__main em { font-style: italic; color: var(--color-secondary); }
-.history-row__date { font-size: var(--text-label-sm); color: var(--color-on-surface-variant); }
-
-.history-badge {
-  text-transform: capitalize;
-  font-size: var(--text-label-sm);
-  font-weight: 600;
-  padding: 2px 10px;
-  border-radius: var(--radius-full);
+.history-card-skeleton__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
 }
-.history-badge--approved { background: var(--color-primary-fixed); color: var(--color-on-primary-fixed-variant); }
-.history-badge--declined { background: var(--color-error-container); color: var(--color-error); }
 
 /* Muted placeholder bio */
 .profile-header__bio--muted { font-style: italic; opacity: 0.7; }

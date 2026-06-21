@@ -7,6 +7,7 @@ use App\Entity\LibraryRequest;
 use App\Entity\User;
 use App\Enum\ActivityType;
 use App\Enum\BookStatus;
+use App\Enum\LibraryRequestEventType;
 use App\Enum\RequestStatus;
 use App\Repository\LibraryRequestRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -44,6 +45,7 @@ class LibraryRequestService
         $request = (new LibraryRequest())
             ->setBook($book)
             ->setRequester($requester);
+        $request->addEvent(LibraryRequestEventType::Requested, $requester);
 
         $this->em->persist($request);
 
@@ -59,7 +61,12 @@ class LibraryRequestService
             ->setStatus(RequestStatus::Approved)
             ->setResolvedAt(new \DateTimeImmutable())
             ->setDueDate($dueDate);
-        $request->getBook()->setStatus(BookStatus::Lent);
+        $request->addEvent(LibraryRequestEventType::Approved, $actor, $dueDate);
+
+        // The book is now lent: it leaves the owner's hands for the borrower's.
+        $book = $request->getBook();
+        $book->setStatus(BookStatus::Lent);
+        $book->setCurrentHolder($request->getRequester());
 
         $this->activity->record(
             $request->getRequester(),
@@ -75,6 +82,7 @@ class LibraryRequestService
         $this->assertStatusIn($request, [RequestStatus::Pending], 'This request has already been resolved.');
 
         $request->setStatus(RequestStatus::Declined)->setResolvedAt(new \DateTimeImmutable());
+        $request->addEvent(LibraryRequestEventType::Declined, $actor);
     }
 
     /** The borrower signals they've returned the book; awaits the owner's confirmation. */
@@ -83,8 +91,10 @@ class LibraryRequestService
         $this->assertRequester($request, $actor);
         $this->assertStatusIn($request, [RequestStatus::Approved], 'This loan is not active.');
 
-        // The book stays Lent until the owner confirms physical receipt.
+        // The book stays Lent (and in the borrower's hands) until the owner
+        // confirms physical receipt.
         $request->setStatus(RequestStatus::ReturnPending);
+        $request->addEvent(LibraryRequestEventType::ReturnRequested, $actor);
     }
 
     /**
@@ -102,7 +112,12 @@ class LibraryRequestService
         );
 
         $request->setStatus(RequestStatus::Returned)->setReturnedAt(new \DateTimeImmutable());
-        $request->getBook()->setStatus(BookStatus::Own);
+        $request->addEvent(LibraryRequestEventType::Returned, $actor);
+
+        // The loan closes: the book is back in the owner's hands and available.
+        $book = $request->getBook();
+        $book->setStatus(BookStatus::Own);
+        $book->setCurrentHolder($book->getOwner());
 
         $this->activity->record(
             $request->getRequester(),

@@ -5,6 +5,7 @@ namespace App\Api;
 use App\Entity\Book;
 use App\Entity\ActivityItem;
 use App\Entity\LibraryRequest;
+use App\Entity\LibraryRequestEvent;
 use App\Entity\User;
 
 /**
@@ -22,6 +23,9 @@ class ResponseMapper
             'isbn'       => $book->getIsbn(),
             'coverPath'  => $book->getCoverPath(),
             'status'     => $book->getStatus()->value,
+            // Who currently holds the book — owner while home, borrower while lent.
+            'currentHolder' => $this->userSummary($book->getCurrentHolder()),
+            'isHome'        => $book->isHome(),
             'categories' => array_map(
                 fn ($c) => ['id' => $c->getId(), 'name' => $c->getName(), 'colorHex' => $c->getColorHex()],
                 $book->getCategories()->toArray(),
@@ -65,6 +69,11 @@ class ResponseMapper
             'resolvedAt'  => $request->getResolvedAt()?->format(\DateTimeInterface::ATOM),
             'dueDate'     => $request->getDueDate()?->format(\DateTimeInterface::ATOM),
             'returnedAt'  => $request->getReturnedAt()?->format(\DateTimeInterface::ATOM),
+            // Full ordered lifecycle so the UI can render the step-by-step history.
+            'events'      => array_map(
+                fn (LibraryRequestEvent $e) => $this->requestEvent($e),
+                $request->getEvents()->toArray(),
+            ),
             'requester'   => $this->userSummary($request->getRequester()),
             'book'        => [
                 'id'        => $book->getId(),
@@ -81,6 +90,17 @@ class ResponseMapper
     public function requests(array $requests): array
     {
         return array_map(fn (LibraryRequest $r) => $this->request($r), $requests);
+    }
+
+    public function requestEvent(LibraryRequestEvent $event): array
+    {
+        return [
+            'id'        => $event->getId(),
+            'type'      => $event->getType()->value,
+            'createdAt' => $event->getCreatedAt()->format(\DateTimeInterface::ATOM),
+            'dueDate'   => $event->getDueDate()?->format(\DateTimeInterface::ATOM),
+            'actor'     => $this->userSummary($event->getActor()),
+        ];
     }
 
     public function me(User $user, array $stats): array

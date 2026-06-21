@@ -13,11 +13,12 @@ export const useLibraryStore = defineStore('library', () => {
   const collection = ref([])
   const lending = ref([])
   const requests = ref([])   // open incoming requests (pending + return-pending)
-  const history = ref([])    // resolved incoming requests (declined + returned)
+  const history = ref([])    // resolved incoming requests (declined + returned) — lending history
   const borrowing = ref([])  // active outgoing loans (books I'm borrowing)
+  const borrowingHistory = ref([]) // resolved outgoing requests — borrowing history
   const categories = ref([])
 
-  const loading = ref({ collection: false, lending: false, requests: false, history: false, borrowing: false })
+  const loading = ref({ collection: false, lending: false, requests: false, history: false, borrowing: false, borrowingHistory: false })
   const error = ref(null)
 
   // Map an API request payload to RequestCard's expected shape (relative date).
@@ -80,6 +81,17 @@ export const useLibraryStore = defineStore('library', () => {
       borrowing.value = data.map(toCardRequest)
     } finally {
       loading.value.borrowing = false
+    }
+  }
+
+  // The current user's past borrows (resolved outgoing requests: declined + returned).
+  async function fetchBorrowingHistory() {
+    loading.value.borrowingHistory = true
+    try {
+      const { data } = await api.get('/requests/outgoing', { params: { status: 'resolved' } })
+      borrowingHistory.value = data.map(toCardRequest)
+    } finally {
+      loading.value.borrowingHistory = false
     }
   }
 
@@ -149,8 +161,8 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   return {
-    profile, stats, collection, lending, requests, history, borrowing, categories, loading, error,
-    fetchMe, fetchCollection, fetchLending, fetchRequests, fetchHistory, fetchBorrowing, fetchCategories,
+    profile, stats, collection, lending, requests, history, borrowing, borrowingHistory, categories, loading, error,
+    fetchMe, fetchCollection, fetchLending, fetchRequests, fetchHistory, fetchBorrowing, fetchBorrowingHistory, fetchCategories,
     searchCategories, createCategory,
     createBook, updateBook, deleteBook,
     approveRequest, declineRequest, confirmReturn, returnBook,
