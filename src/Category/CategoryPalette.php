@@ -15,6 +15,12 @@ final class CategoryPalette
         '#F4EAE0', // warm terracotta
         '#dae4ed', // slate blue
         '#ffdad6', // soft red
+        '#EAE4F4', // muted lavender
+        '#F7E7C2', // soft amber
+        '#D6EFEA', // dusty mint
+        '#F4DCE8', // dusty rose
+        '#E4E8D0', // pale olive
+        '#E0DBD2', // warm stone
     ];
 
     /** @return string[] */

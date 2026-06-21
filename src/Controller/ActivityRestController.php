@@ -8,8 +8,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/api/activity')]
-class ActivityController extends AbstractController
+#[Route('/activity')]
+class ActivityRestController extends AbstractController
 {
     public function __construct(private readonly ResponseMapper $mapper) {}
 

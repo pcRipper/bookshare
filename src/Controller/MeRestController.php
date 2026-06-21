@@ -14,8 +14,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/api/me')]
-class MeController extends AbstractController
+#[Route('/me')]
+class MeRestController extends AbstractController
 {
     public function __construct(
         private readonly ResponseMapper $mapper,

@@ -7,5 +7,12 @@
 # To list all registered routes, run the following command:
 #   bin/console debug:router
 
+# All API controllers (App\Controller\*RestController) are imported here under a
+# single /api prefix. Controllers carry only their resource segment in #[Route]
+# (e.g. '/books'); the /api prefix lives here at the routing-config level.
 controllers:
-    resource: routing.controllers
+    resource:
+        path: ../src/Controller/
+        namespace: App\Controller
+    type: attribute
+    prefix: /api

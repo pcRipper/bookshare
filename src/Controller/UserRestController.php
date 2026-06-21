@@ -10,8 +10,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/api/users')]
-class UserController extends AbstractController
+#[Route('/users')]
+class UserRestController extends AbstractController
 {
     public function __construct(
         private readonly ResponseMapper $mapper,

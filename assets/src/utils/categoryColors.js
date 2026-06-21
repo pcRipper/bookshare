@@ -9,6 +9,12 @@ export const CATEGORY_PALETTE = [
   { bg: '#F4EAE0', text: '#4A3219', border: '#dfcbb3', label: 'Beige' },
   { bg: '#dae4ed', text: '#3f484f', border: '#bec8d1', label: 'Blue' },
   { bg: '#ffdad6', text: '#93000a', border: '#ba1a1a', label: 'Red' },
+  { bg: '#EAE4F4', text: '#3A2E55', border: '#d2c8e2', label: 'Lavender' },
+  { bg: '#F7E7C2', text: '#4A3A12', border: '#e4d2a4', label: 'Amber' },
+  { bg: '#D6EFEA', text: '#143F38', border: '#bce0d8', label: 'Mint' },
+  { bg: '#F4DCE8', text: '#5A2540', border: '#e3c2d3', label: 'Rose' },
+  { bg: '#E4E8D0', text: '#3A3F1E', border: '#ced3b6', label: 'Olive' },
+  { bg: '#E0DBD2', text: '#3D382E', border: '#ccc6ba', label: 'Stone' },
 ]
 
 const BY_BG = Object.fromEntries(

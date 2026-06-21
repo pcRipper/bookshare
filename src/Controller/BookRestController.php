@@ -21,8 +21,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/api/books')]
-class BookController extends AbstractController
+#[Route('/books')]
+class BookRestController extends AbstractController
 {
     public function __construct(
         private readonly ResponseMapper $mapper,

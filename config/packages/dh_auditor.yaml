@@ -1,0 +1,19 @@
+# Audit trail (damienharper/auditor-bundle).
+#
+# Auditing is a WHITELIST: only the entities listed under `entities` get an
+# `<table>_audit` companion table recording every insert/update/delete (with the
+# acting user, when a Security token is present). Append-only logs are
+# deliberately excluded — ActivityItem and LibraryRequestEvent are themselves
+# immutable event records, so auditing them would be redundant noise.
+dh_auditor:
+    providers:
+        doctrine:
+            table_suffix: '_audit'
+            entities:
+                App\Entity\Book: ~
+                App\Entity\User: ~
+                App\Entity\Category: ~
+                App\Entity\LibraryRequest: ~
+            # The bundle ships a built-in web viewer; this is a JSON API, so keep
+            # it off (its routes are not imported either).
+            viewer: false
