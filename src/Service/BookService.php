@@ -52,7 +52,7 @@ class BookService
             ->setStatus($input->status);
 
         $book->clearCategories();
-        foreach ($this->categories->findOrCreateByNames($input->categories) as $category) {
+        foreach ($this->categories->findByIds($input->categoryIds) as $category) {
             $book->addCategory($category);
         }
     }

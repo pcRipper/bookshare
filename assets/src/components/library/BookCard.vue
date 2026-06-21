@@ -5,7 +5,7 @@ defineProps({
   book: {
     type: Object,
     required: true,
-    /* shape: { id, title, author, coverPath: string|null, categories: [{id, name}] } */
+    /* shape: { id, title, author, coverPath: string|null, categories: [{id, name, colorHex}] } */
   },
 })
 
@@ -37,6 +37,7 @@ defineEmits(['click'])
           v-for="cat in book.categories"
           :key="cat.id"
           :label="cat.name"
+          :color="cat.colorHex"
         />
       </div>
     </div>

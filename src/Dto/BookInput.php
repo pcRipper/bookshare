@@ -24,7 +24,12 @@ class BookInput
     /** Denormalised from its string value; an invalid value yields a 422. */
     public BookStatus $status = BookStatus::Own;
 
-    /** @var string[] */
-    #[Assert\All([new Assert\Type('string'), new Assert\Length(max: 255)])]
-    public array $categories = [];
+    /**
+     * IDs of categories to attach. They must already exist — new categories are
+     * created up-front via POST /api/categories, then referenced here by id.
+     *
+     * @var int[]
+     */
+    #[Assert\All([new Assert\Type('integer'), new Assert\Positive()])]
+    public array $categoryIds = [];
 }

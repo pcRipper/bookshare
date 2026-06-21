@@ -75,6 +75,20 @@ export const useLibraryStore = defineStore('library', () => {
     categories.value = data
   }
 
+  // Search existing categories by name. Returns the matches (not stored) so the
+  // Manage Book picker can decide between "pick a match" and "create new".
+  async function searchCategories(q) {
+    const { data } = await api.get('/categories', { params: q ? { q } : {} })
+    return data
+  }
+
+  // Create a brand-new category, then keep the cached global list fresh.
+  async function createCategory(payload) {
+    const { data } = await api.post('/categories', payload)
+    if (!categories.value.some(c => c.id === data.id)) categories.value.push(data)
+    return data
+  }
+
   async function createBook(payload) {
     await api.post('/books', payload)
     await Promise.all([fetchCollection(), fetchMe()])
@@ -106,6 +120,7 @@ export const useLibraryStore = defineStore('library', () => {
   return {
     profile, stats, collection, lending, requests, history, categories, loading, error,
     fetchMe, fetchCollection, fetchLending, fetchRequests, fetchHistory, fetchCategories,
+    searchCategories, createCategory,
     createBook, updateBook, deleteBook, approveRequest, declineRequest,
   }
 })

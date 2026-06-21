@@ -23,7 +23,7 @@ class ResponseMapper
             'coverPath'  => $book->getCoverPath(),
             'status'     => $book->getStatus()->value,
             'categories' => array_map(
-                fn ($c) => ['id' => $c->getId(), 'name' => $c->getName()],
+                fn ($c) => ['id' => $c->getId(), 'name' => $c->getName(), 'colorHex' => $c->getColorHex()],
                 $book->getCategories()->toArray(),
             ),
         ];

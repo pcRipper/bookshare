@@ -8,11 +8,6 @@ use Doctrine\Persistence\ManagerRegistry;
 
 class CategoryRepository extends ServiceEntityRepository
 {
-    /** Muted earth-tone palette assigned to newly created categories. */
-    private const PALETTE = [
-        '#E8F0EA', '#F4EAE0', '#dae4ed', '#F0E8ED', '#E8EEF0', '#f5f0e8',
-    ];
-
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Category::class);
@@ -25,31 +20,53 @@ class CategoryRepository extends ServiceEntityRepository
     }
 
     /**
-     * Resolves a list of category names to Category entities, creating any that
-     * don't exist yet. New categories are persisted (caller flushes).
+     * Case-insensitive substring search by name, alphabetical, capped.
      *
-     * @param string[] $names
      * @return Category[]
      */
-    public function findOrCreateByNames(array $names): array
+    public function search(string $query, int $limit = 10): array
     {
-        $result = [];
-        foreach ($names as $rawName) {
-            $name = trim($rawName);
-            if ($name === '') {
-                continue;
-            }
+        // Wildcards in the input are escaped with a backslash, which is also
+        // PostgreSQL's default LIKE escape character — no ESCAPE clause needed.
+        return $this->createQueryBuilder('c')
+            ->where('LOWER(c.name) LIKE LOWER(:q)')
+            ->setParameter('q', '%' . $this->escapeLike($query) . '%')
+            ->orderBy('c.name', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 
-            $category = $this->findOneBy(['name' => $name]);
-            if (!$category) {
-                $category = (new Category())
-                    ->setName($name)
-                    ->setColorHex(self::PALETTE[abs(crc32($name)) % count(self::PALETTE)]);
-                $this->getEntityManager()->persist($category);
-            }
-            $result[$name] = $category;
+    /** Exact (case-insensitive) name lookup — used to guard against duplicates. */
+    public function findOneByNameInsensitive(string $name): ?Category
+    {
+        return $this->createQueryBuilder('c')
+            ->where('LOWER(c.name) = LOWER(:name)')
+            ->setParameter('name', $name)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
+     * @param int[] $ids
+     * @return Category[]
+     */
+    public function findByIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
         }
 
-        return array_values($result);
+        return $this->createQueryBuilder('c')
+            ->where('c.id IN (:ids)')
+            ->setParameter('ids', $ids)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** Escapes LIKE wildcards so user input is matched literally. */
+    private function escapeLike(string $value): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
     }
 }

@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
+import CategorySelector from '@/components/library/CategorySelector.vue'
 
 const props = defineProps({
   open:  { type: Boolean, default: false },
@@ -15,13 +16,13 @@ const STATUS_OPTIONS = [
 ]
 
 const form = ref(blank())
-const categoryDraft = ref('')
 const saving = ref(false)
 const errorMsg = ref(null)
 
 const isEdit = computed(() => !!props.book)
 
 function blank() {
+  // categories: array of { id, name, colorHex }
   return { title: '', author: '', isbn: '', status: 'own', coverPath: '', categories: [] }
 }
 
@@ -31,7 +32,6 @@ watch(
   () => {
     if (!props.open) return
     errorMsg.value = null
-    categoryDraft.value = ''
     form.value = props.book
       ? {
           title: props.book.title ?? '',
@@ -39,24 +39,12 @@ watch(
           isbn: props.book.isbn ?? '',
           status: props.book.status ?? 'own',
           coverPath: props.book.coverPath ?? '',
-          categories: (props.book.categories ?? []).map(c => c.name),
+          categories: [...(props.book.categories ?? [])],
         }
       : blank()
   },
   { immediate: true },
 )
-
-function addCategory() {
-  const name = categoryDraft.value.trim()
-  if (name && !form.value.categories.includes(name)) {
-    form.value.categories.push(name)
-  }
-  categoryDraft.value = ''
-}
-
-function removeCategory(name) {
-  form.value.categories = form.value.categories.filter(c => c !== name)
-}
 
 async function onSave() {
   if (!form.value.title.trim() || !form.value.author.trim()) {
@@ -72,7 +60,7 @@ async function onSave() {
       isbn: form.value.isbn.trim() || null,
       status: form.value.status,
       coverPath: form.value.coverPath.trim() || null,
-      categories: form.value.categories,
+      categoryIds: form.value.categories.map(c => c.id),
     })
   } finally {
     saving.value = false
@@ -134,23 +122,8 @@ async function onSave() {
           </div>
 
           <div class="field">
-            <label class="field__label" for="mb-cat">Categories</label>
-            <div class="chips">
-              <span v-for="cat in form.categories" :key="cat" class="chip">
-                {{ cat }}
-                <button type="button" class="chip__remove" :aria-label="`Remove ${cat}`" @click="removeCategory(cat)">
-                  <span class="material-symbols-outlined">close</span>
-                </button>
-              </span>
-            </div>
-            <input
-              id="mb-cat"
-              v-model="categoryDraft"
-              class="input"
-              type="text"
-              placeholder="Add category and press Enter"
-              @keydown.enter.prevent="addCategory"
-            />
+            <label class="field__label">Categories</label>
+            <CategorySelector v-model="form.categories" />
           </div>
 
           <p v-if="errorMsg" class="modal__error">{{ errorMsg }}</p>
@@ -270,26 +243,6 @@ async function onSave() {
   color: var(--color-outline);
 }
 .cover-preview img { width: 100%; height: 100%; object-fit: cover; }
-
-.chips { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 4px 2px 10px;
-  background: var(--color-secondary-container);
-  color: var(--color-on-secondary-fixed-variant);
-  border-radius: var(--radius-full);
-  font-size: var(--text-label-sm);
-  font-weight: 600;
-}
-.chip__remove {
-  display: flex;
-  color: inherit;
-  opacity: 0.7;
-}
-.chip__remove:hover { opacity: 1; }
-.chip__remove .material-symbols-outlined { font-size: 16px; }
 
 .modal__error {
   color: var(--color-error);

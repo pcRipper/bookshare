@@ -1,34 +1,28 @@
 <script setup>
 import { computed } from 'vue'
+import { CATEGORY_PALETTE, resolveCategoryColors } from '@/utils/categoryColors'
 
 const props = defineProps({
   label: { type: String, required: true },
+  color: { type: String, default: null },  // stored colorHex from the backend
 })
 
-/* Palette of muted earth-tone pairs (bg + text) */
-const PALETTE = [
-  { bg: '#E8F0EA', color: '#2d4d3e' },  // sage green
-  { bg: '#F4EAE0', color: '#623f18' },  // warm terracotta
-  { bg: '#dae4ed', color: '#3f484f' },  // slate blue
-  { bg: '#F0E8ED', color: '#5C324E' },  // dusty mauve
-  { bg: '#E8EEF0', color: '#324d5c' },  // cool blue-gray
-  { bg: '#f5f0e8', color: '#5a4a2a' },  // parchment
-]
-
-/* Deterministic hash: same category name → same color everywhere */
+// Prefer the category's stored colour. Fall back to a deterministic hash of the
+// name so legacy data (or callers that omit the colour) still renders stably.
 const colors = computed(() => {
+  if (props.color) return resolveCategoryColors(props.color)
   let hash = 0
   for (const ch of props.label) {
-    hash = (hash * 31 + ch.charCodeAt(0)) % PALETTE.length
+    hash = (hash * 31 + ch.charCodeAt(0)) % CATEGORY_PALETTE.length
   }
-  return PALETTE[Math.abs(hash)]
+  return CATEGORY_PALETTE[Math.abs(hash)]
 })
 </script>
 
 <template>
   <span
     class="category-tag"
-    :style="{ background: colors.bg, color: colors.color }"
+    :style="{ background: colors.bg, color: colors.text, borderColor: colors.border }"
   >
     {{ label }}
   </span>
@@ -38,6 +32,7 @@ const colors = computed(() => {
 .category-tag {
   display: inline-block;
   padding: 2px 8px;
+  border: 1px solid transparent;
   border-radius: var(--radius-full);
   font-family: var(--font-body);
   font-size: var(--text-label-sm);
