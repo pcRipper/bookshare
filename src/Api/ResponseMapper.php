@@ -63,12 +63,16 @@ class ResponseMapper
             'status'      => $request->getStatus()->value,
             'requestedAt' => $request->getRequestedAt()->format(\DateTimeInterface::ATOM),
             'resolvedAt'  => $request->getResolvedAt()?->format(\DateTimeInterface::ATOM),
+            'dueDate'     => $request->getDueDate()?->format(\DateTimeInterface::ATOM),
+            'returnedAt'  => $request->getReturnedAt()?->format(\DateTimeInterface::ATOM),
             'requester'   => $this->userSummary($request->getRequester()),
             'book'        => [
                 'id'        => $book->getId(),
                 'title'     => $book->getTitle(),
                 'author'    => $book->getAuthor(),
                 'coverPath' => $book->getCoverPath(),
+                // The book's owner — the lender, shown on the borrower's outgoing list.
+                'owner'     => $this->userSummary($book->getOwner()),
             ],
         ];
     }

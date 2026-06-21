@@ -1,24 +1,41 @@
 <script setup>
+import { ref, computed } from 'vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 
-defineProps({
+const props = defineProps({
   request: {
     type: Object,
     required: true,
     /* shape: {
-         id,
+         id, status,
          requester: { fullName, avatarUrl },
          book:      { title, author, coverPath },
          requestedAt: string,
        }
     */
   },
-  // Parent-controlled: 'approve' | 'decline' while that action is in flight.
+  // Parent-controlled: 'approve' | 'decline' | 'confirm-return' while in flight.
   pending: { type: String, default: null },
 })
 
-defineEmits(['approve', 'decline'])
+const emit = defineEmits(['approve', 'decline', 'confirm-return'])
+
+// A return-pending request is the borrower asking the owner to confirm receipt.
+const isReturn = computed(() => props.request.status === 'return_pending')
+
+/* ── Lender-set due date (pending requests only) ──────────────────────── */
+function plusDaysISO(days) {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+const todayISO = plusDaysISO(0)
+const dueDate = ref(plusDaysISO(14)) // sensible default — owner can change/clear
+
+function approve() {
+  emit('approve', props.request.id, dueDate.value || null)
+}
 </script>
 
 <template>
@@ -32,7 +49,9 @@ defineEmits(['approve', 'decline'])
       />
       <div>
         <h3 class="request-card__name">{{ request.requester.fullName }}</h3>
-        <p class="request-card__date">Requested {{ request.requestedAt }}</p>
+        <p class="request-card__date">
+          {{ isReturn ? 'Wants to return this book' : `Requested ${request.requestedAt}` }}
+        </p>
       </div>
     </div>
 
@@ -52,25 +71,46 @@ defineEmits(['approve', 'decline'])
       </div>
     </div>
 
-    <!-- Actions -->
-    <div class="request-card__actions">
-      <button
-        class="btn-outline"
-        :disabled="!!pending"
-        @click="$emit('decline', request.id)"
-      >
-        <BaseSpinner v-if="pending === 'decline'" size="sm" />
-        {{ pending === 'decline' ? 'Declining…' : 'Decline' }}
-      </button>
-      <button
-        class="btn-primary"
-        :disabled="!!pending"
-        @click="$emit('approve', request.id)"
-      >
-        <BaseSpinner v-if="pending === 'approve'" size="sm" />
-        {{ pending === 'approve' ? 'Approving…' : 'Approve' }}
-      </button>
-    </div>
+    <!-- Return confirmation (return-pending) -->
+    <template v-if="isReturn">
+      <div class="request-card__actions">
+        <button
+          class="btn-primary"
+          :disabled="!!pending"
+          @click="$emit('confirm-return', request.id)"
+        >
+          <BaseSpinner v-if="pending === 'confirm-return'" size="sm" />
+          <span v-else class="material-symbols-outlined">inventory</span>
+          {{ pending === 'confirm-return' ? 'Confirming…' : 'Confirm received' }}
+        </button>
+      </div>
+    </template>
+
+    <!-- Borrow request (pending): due-date picker + approve/decline -->
+    <template v-else>
+      <div class="request-card__due">
+        <label class="request-card__due-label" :for="`due-${request.id}`">Return by</label>
+        <input
+          :id="`due-${request.id}`"
+          v-model="dueDate"
+          class="request-card__due-input"
+          type="date"
+          :min="todayISO"
+          :disabled="!!pending"
+        />
+      </div>
+
+      <div class="request-card__actions">
+        <button class="btn-outline" :disabled="!!pending" @click="$emit('decline', request.id)">
+          <BaseSpinner v-if="pending === 'decline'" size="sm" />
+          {{ pending === 'decline' ? 'Declining…' : 'Decline' }}
+        </button>
+        <button class="btn-primary" :disabled="!!pending" @click="approve">
+          <BaseSpinner v-if="pending === 'approve'" size="sm" />
+          {{ pending === 'approve' ? 'Approving…' : 'Approve' }}
+        </button>
+      </div>
+    </template>
   </article>
 </template>
 
@@ -148,6 +188,32 @@ defineEmits(['approve', 'decline'])
   color: var(--color-secondary);
   margin: 0;
 }
+
+/* Due-date picker (pending borrow requests) */
+.request-card__due {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+.request-card__due-label {
+  font-size: var(--text-label-sm);
+  letter-spacing: var(--ls-label-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-on-surface-variant);
+}
+.request-card__due-input {
+  padding: 8px 10px;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-default);
+  background: var(--color-surface-container-lowest);
+  font-family: var(--font-body);
+  font-size: var(--text-label-md);
+  color: var(--color-on-background);
+}
+.request-card__due-input:focus { outline: none; border-color: var(--color-primary); }
+.request-card__due-input:disabled { opacity: 0.6; }
 
 /* Actions */
 .request-card__actions {

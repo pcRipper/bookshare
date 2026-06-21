@@ -50,12 +50,15 @@ class LibraryRequestService
         return $request;
     }
 
-    public function approve(LibraryRequest $request, User $actor): void
+    public function approve(LibraryRequest $request, User $actor, ?\DateTimeImmutable $dueDate = null): void
     {
         $this->assertOwner($request, $actor);
-        $this->assertPending($request);
+        $this->assertStatusIn($request, [RequestStatus::Pending], 'This request has already been resolved.');
 
-        $request->setStatus(RequestStatus::Approved)->setResolvedAt(new \DateTimeImmutable());
+        $request
+            ->setStatus(RequestStatus::Approved)
+            ->setResolvedAt(new \DateTimeImmutable())
+            ->setDueDate($dueDate);
         $request->getBook()->setStatus(BookStatus::Lent);
 
         $this->activity->record(
@@ -69,9 +72,44 @@ class LibraryRequestService
     public function decline(LibraryRequest $request, User $actor): void
     {
         $this->assertOwner($request, $actor);
-        $this->assertPending($request);
+        $this->assertStatusIn($request, [RequestStatus::Pending], 'This request has already been resolved.');
 
         $request->setStatus(RequestStatus::Declined)->setResolvedAt(new \DateTimeImmutable());
+    }
+
+    /** The borrower signals they've returned the book; awaits the owner's confirmation. */
+    public function requestReturn(LibraryRequest $request, User $actor): void
+    {
+        $this->assertRequester($request, $actor);
+        $this->assertStatusIn($request, [RequestStatus::Approved], 'This loan is not active.');
+
+        // The book stays Lent until the owner confirms physical receipt.
+        $request->setStatus(RequestStatus::ReturnPending);
+    }
+
+    /**
+     * The owner confirms the book was received back, closing the loan and freeing
+     * the book. Allowed from ReturnPending or directly from Approved, so the owner
+     * can always close a loan even if the borrower never marked it returned.
+     */
+    public function confirmReturn(LibraryRequest $request, User $actor): void
+    {
+        $this->assertOwner($request, $actor);
+        $this->assertStatusIn(
+            $request,
+            [RequestStatus::ReturnPending, RequestStatus::Approved],
+            'This loan is not active.',
+        );
+
+        $request->setStatus(RequestStatus::Returned)->setReturnedAt(new \DateTimeImmutable());
+        $request->getBook()->setStatus(BookStatus::Own);
+
+        $this->activity->record(
+            $request->getRequester(),
+            ActivityType::Returned,
+            targetBook: $request->getBook(),
+            targetUser: $actor,
+        );
     }
 
     private function assertOwner(LibraryRequest $request, User $actor): void
@@ -81,10 +119,18 @@ class LibraryRequestService
         }
     }
 
-    private function assertPending(LibraryRequest $request): void
+    private function assertRequester(LibraryRequest $request, User $actor): void
     {
-        if ($request->getStatus() !== RequestStatus::Pending) {
-            throw new \DomainException('This request has already been resolved.');
+        if ($request->getRequester() !== $actor) {
+            throw new AccessDeniedException('This is not your borrow request.');
+        }
+    }
+
+    /** @param RequestStatus[] $allowed */
+    private function assertStatusIn(LibraryRequest $request, array $allowed, string $message): void
+    {
+        if (!in_array($request->getStatus(), $allowed, true)) {
+            throw new \DomainException($message);
         }
     }
 }

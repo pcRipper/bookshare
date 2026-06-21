@@ -12,11 +12,12 @@ export const useLibraryStore = defineStore('library', () => {
   const stats = ref({ totalBooks: 0, shared: 0, loaned: 0 })
   const collection = ref([])
   const lending = ref([])
-  const requests = ref([])   // pending incoming requests
-  const history = ref([])    // resolved incoming requests
+  const requests = ref([])   // open incoming requests (pending + return-pending)
+  const history = ref([])    // resolved incoming requests (declined + returned)
+  const borrowing = ref([])  // active outgoing loans (books I'm borrowing)
   const categories = ref([])
 
-  const loading = ref({ collection: false, lending: false, requests: false, history: false })
+  const loading = ref({ collection: false, lending: false, requests: false, history: false, borrowing: false })
   const error = ref(null)
 
   // Map an API request payload to RequestCard's expected shape (relative date).
@@ -53,7 +54,8 @@ export const useLibraryStore = defineStore('library', () => {
   async function fetchRequests() {
     loading.value.requests = true
     try {
-      const { data } = await api.get('/requests/incoming', { params: { status: 'pending' } })
+      // "open" = pending borrow requests + return confirmations awaiting the owner.
+      const { data } = await api.get('/requests/incoming', { params: { status: 'open' } })
       requests.value = data.map(toCardRequest)
     } finally {
       loading.value.requests = false
@@ -67,6 +69,17 @@ export const useLibraryStore = defineStore('library', () => {
       history.value = data.map(toCardRequest)
     } finally {
       loading.value.history = false
+    }
+  }
+
+  // Books the current user is currently borrowing (active outgoing loans).
+  async function fetchBorrowing() {
+    loading.value.borrowing = true
+    try {
+      const { data } = await api.get('/requests/outgoing', { params: { status: 'active' } })
+      borrowing.value = data.map(toCardRequest)
+    } finally {
+      loading.value.borrowing = false
     }
   }
 
@@ -106,12 +119,12 @@ export const useLibraryStore = defineStore('library', () => {
     await Promise.all([fetchCollection(), fetchMe()])
   }
 
-  async function approveRequest(id) {
-    await api.post(`/requests/${id}/approve`)
+  async function approveRequest(id, dueDate = null) {
+    await api.post(`/requests/${id}/approve`, { dueDate })
     requests.value = requests.value.filter(r => r.id !== id)
-    // The request now lives in History, the book flipped to "lent", and stats
-    // changed — refresh all three so the other tabs reflect it without a reload.
-    await Promise.all([fetchMe(), fetchHistory(), fetchLending()])
+    // The book is now an active loan (lent) and stats changed — refresh Lending
+    // and the profile so the other tabs reflect it without a reload.
+    await Promise.all([fetchMe(), fetchLending()])
   }
 
   async function declineRequest(id) {
@@ -121,10 +134,25 @@ export const useLibraryStore = defineStore('library', () => {
     await fetchHistory()
   }
 
+  // Owner confirms a returned book was received: it leaves the open inbox, the
+  // book returns to the collection (own), and the loan closes into History.
+  async function confirmReturn(id) {
+    await api.post(`/requests/${id}/confirm-return`)
+    requests.value = requests.value.filter(r => r.id !== id)
+    await Promise.all([fetchMe(), fetchCollection(), fetchLending(), fetchHistory()])
+  }
+
+  // Borrower marks a borrowed book as returned (awaits the owner's confirmation).
+  async function returnBook(id) {
+    await api.post(`/requests/${id}/return`)
+    await fetchBorrowing()
+  }
+
   return {
-    profile, stats, collection, lending, requests, history, categories, loading, error,
-    fetchMe, fetchCollection, fetchLending, fetchRequests, fetchHistory, fetchCategories,
+    profile, stats, collection, lending, requests, history, borrowing, categories, loading, error,
+    fetchMe, fetchCollection, fetchLending, fetchRequests, fetchHistory, fetchBorrowing, fetchCategories,
     searchCategories, createCategory,
-    createBook, updateBook, deleteBook, approveRequest, declineRequest,
+    createBook, updateBook, deleteBook,
+    approveRequest, declineRequest, confirmReturn, returnBook,
   }
 })

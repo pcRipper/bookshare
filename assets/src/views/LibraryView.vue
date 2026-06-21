@@ -7,17 +7,19 @@ import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import BookCard from '@/components/library/BookCard.vue'
+import BorrowingCard from '@/components/library/BorrowingCard.vue'
 import RequestCard from '@/components/library/RequestCard.vue'
 import ManageBookModal from '@/components/library/ManageBookModal.vue'
 
 const store = useLibraryStore()
-const { profile, stats, collection, lending, requests, history, loading } = storeToRefs(store)
+const { profile, stats, collection, lending, requests, history, borrowing, loading } = storeToRefs(store)
 
 /* ── Tabs ─────────────────────────────────────────────────────────────── */
 const activeTab = ref('collection')
 
 const tabs = computed(() => [
   { key: 'collection', label: 'Collection' },
+  { key: 'borrowing',  label: 'Borrowing', badge: borrowing.value.length || null },
   { key: 'lending',    label: 'Lending' },
   { key: 'requests',   label: 'Requests', badge: requests.value.length || null },
   { key: 'history',    label: 'History' },
@@ -30,7 +32,7 @@ const statCards = computed(() => [
 ])
 
 /* ── Data loading: collection + profile up front, others lazily ───────── */
-const loaded = ref({ lending: false, requests: false, history: false })
+const loaded = ref({ borrowing: false, lending: false, requests: false, history: false })
 
 onMounted(() => {
   store.fetchMe()
@@ -39,25 +41,25 @@ onMounted(() => {
 })
 
 watch(activeTab, tab => {
+  if (tab === 'borrowing' && !loaded.value.borrowing) { loaded.value.borrowing = true; store.fetchBorrowing() }
   if (tab === 'lending'  && !loaded.value.lending)  { loaded.value.lending  = true; store.fetchLending() }
   if (tab === 'requests' && !loaded.value.requests) { loaded.value.requests = true; store.fetchRequests() }
   if (tab === 'history'  && !loaded.value.history)  { loaded.value.history  = true; store.fetchHistory() }
 })
 
-// Requests badge should reflect reality even before the tab is opened.
+// Badges should reflect reality even before their tabs are opened.
 onMounted(() => store.fetchRequests().then(() => { loaded.value.requests = true }))
+onMounted(() => store.fetchBorrowing().then(() => { loaded.value.borrowing = true }))
 
-/* ── Request actions ─────────────────────────────────────────────────── */
-// Per-request in-flight action ('approve' | 'decline') for button loaders.
+/* ── Request actions (owner inbox) ────────────────────────────────────── */
+// Per-request in-flight action ('approve' | 'decline' | 'confirm-return').
 const processing = reactive({})
 
-async function handleApprove(id) {
+async function handleApprove(id, dueDate) {
   processing[id] = 'approve'
   try {
-    await store.approveRequest(id)
-    // The store refreshed History + Lending; mark them loaded so opening those
-    // tabs doesn't trigger a redundant refetch.
-    loaded.value.history = true
+    await store.approveRequest(id, dueDate)
+    // The book is now an active loan — mark Lending loaded so it refetches fresh.
     loaded.value.lending = true
   } finally {
     delete processing[id]
@@ -70,6 +72,29 @@ async function handleDecline(id) {
     loaded.value.history = true
   } finally {
     delete processing[id]
+  }
+}
+async function handleConfirmReturn(id) {
+  processing[id] = 'confirm-return'
+  try {
+    await store.confirmReturn(id)
+    // The book returned to the collection and the loan closed into History.
+    loaded.value.history = true
+    loaded.value.lending = true
+  } finally {
+    delete processing[id]
+  }
+}
+
+/* ── Borrowing actions (borrower side) ────────────────────────────────── */
+const returning = reactive(new Set())
+async function handleReturn(id) {
+  if (returning.has(id)) return
+  returning.add(id)
+  try {
+    await store.returnBook(id)
+  } finally {
+    returning.delete(id)
   }
 }
 
@@ -196,6 +221,25 @@ async function onModalDelete(id) {
           </div>
         </div>
 
+        <!-- Borrowing tab (books I'm borrowing from others) -->
+        <div v-else-if="activeTab === 'borrowing'" role="tabpanel">
+          <BookGridSkeleton v-if="loading.borrowing && !borrowing.length" :count="4" />
+          <div v-else-if="borrowing.length" class="book-grid">
+            <BorrowingCard
+              v-for="loan in borrowing"
+              :key="loan.id"
+              :loan="loan"
+              :pending="returning.has(loan.id)"
+              @return="handleReturn"
+            />
+          </div>
+          <div v-else class="empty-state">
+            <span class="material-symbols-outlined empty-state__icon">auto_stories</span>
+            <p class="empty-state__text">You're not borrowing any books right now.</p>
+            <RouterLink to="/discover" class="empty-state__link">Discover books to borrow</RouterLink>
+          </div>
+        </div>
+
         <!-- Lending tab -->
         <div v-else-if="activeTab === 'lending'" role="tabpanel">
           <BookGridSkeleton v-if="loading.lending" :count="4" />
@@ -235,6 +279,7 @@ async function onModalDelete(id) {
               :pending="processing[req.id] || null"
               @approve="handleApprove"
               @decline="handleDecline"
+              @confirm-return="handleConfirmReturn"
             />
           </div>
         </div>
@@ -563,6 +608,8 @@ async function onModalDelete(id) {
 }
 .empty-state__icon { font-size: 48px; opacity: 0.5; }
 .empty-state__text { font-size: var(--text-body-md); margin: 0; }
+.empty-state__link { color: var(--color-primary); font-weight: 500; }
+.empty-state__link:hover { text-decoration: underline; }
 
 /* ── Loading skeletons ────────────────────────────────────────────────── */
 .profile-header__skeleton {

@@ -31,6 +31,14 @@ class LibraryRequest
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $resolvedAt = null;
 
+    /** Return-by date set by the lender on approval (no borrower approval needed). */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $dueDate = null;
+
+    /** When the owner confirmed the book was received back. */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $returnedAt = null;
+
     public function __construct()
     {
         $this->requestedAt = new \DateTimeImmutable();
@@ -51,4 +59,10 @@ class LibraryRequest
 
     public function getResolvedAt(): ?\DateTimeImmutable { return $this->resolvedAt; }
     public function setResolvedAt(?\DateTimeImmutable $resolvedAt): static { $this->resolvedAt = $resolvedAt; return $this; }
+
+    public function getDueDate(): ?\DateTimeImmutable { return $this->dueDate; }
+    public function setDueDate(?\DateTimeImmutable $dueDate): static { $this->dueDate = $dueDate; return $this; }
+
+    public function getReturnedAt(): ?\DateTimeImmutable { return $this->returnedAt; }
+    public function setReturnedAt(?\DateTimeImmutable $returnedAt): static { $this->returnedAt = $returnedAt; return $this; }
 }

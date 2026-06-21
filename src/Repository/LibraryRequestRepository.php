@@ -34,6 +34,25 @@ class LibraryRequestRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * Outgoing requests made by $requester (the borrower's side), filtered by
+     * status, newest first.
+     *
+     * @param RequestStatus[] $statuses
+     * @return LibraryRequest[]
+     */
+    public function findOutgoing(User $requester, array $statuses): array
+    {
+        return $this->createQueryBuilder('r')
+            ->andWhere('r.requester = :requester')
+            ->andWhere('r.status IN (:statuses)')
+            ->setParameter('requester', $requester)
+            ->setParameter('statuses', $statuses)
+            ->orderBy('r.requestedAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function countPendingForOwner(User $owner): int
     {
         return (int) $this->createQueryBuilder('r')
