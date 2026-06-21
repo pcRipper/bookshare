@@ -41,6 +41,14 @@ class User implements UserInterface
     #[ORM\Column(options: ['default' => false])]
     private bool $isPrivate = false;
 
+    /**
+     * Tweakable preferences (privacy/notification toggles), kept in their own
+     * table. Null until the user first touches their settings; callers treat
+     * null as "all defaults".
+     */
+    #[ORM\OneToOne(mappedBy: 'user', targetEntity: UserSettings::class, cascade: ['persist'])]
+    private ?UserSettings $settings = null;
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
@@ -71,6 +79,16 @@ class User implements UserInterface
 
     public function isPrivate(): bool { return $this->isPrivate; }
     public function setIsPrivate(bool $isPrivate): static { $this->isPrivate = $isPrivate; return $this; }
+
+    public function getSettings(): ?UserSettings { return $this->settings; }
+    public function setSettings(?UserSettings $settings): static
+    {
+        $this->settings = $settings;
+        if ($settings !== null) {
+            $settings->setUser($this);
+        }
+        return $this;
+    }
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
 

@@ -129,6 +129,31 @@ class ResponseMapperTest extends TestCase
         self::assertSame($stats, $data['stats']);
     }
 
+    public function testProfileHidesLocationWhenNotVisible(): void
+    {
+        $user = (new User())->setFullName('Jane')->setLocation('Lviv');
+        $stats = ['totalBooks' => 0, 'shared' => 0, 'loaned' => 0];
+
+        $data = $this->mapper()->profile($user, $stats, false, showLocation: false);
+
+        self::assertNull($data['location']);
+        self::assertSame('Jane', $data['fullName']);
+    }
+
+    public function testSettingsShape(): void
+    {
+        $settings = (new \App\Entity\UserSettings())
+            ->setAllowRequests(false)
+            ->setNotifyActivity(true);
+
+        $data = $this->mapper()->settings($settings);
+
+        self::assertFalse($data['allowRequests']);
+        self::assertTrue($data['showLocation']);
+        self::assertTrue($data['notifyActivity']);
+        self::assertFalse($data['notifyNewsletter']);
+    }
+
     public function testMeShapeIncludesEmailAndPrivacy(): void
     {
         $user = (new User())->setEmail('me@example.test')->setFullName('Me')->setIsPrivate(true);
