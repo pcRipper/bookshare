@@ -31,9 +31,9 @@ RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS linux-headers \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-COPY docker/php/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
-COPY docker/php/php.ini         /usr/local/etc/php/conf.d/app.ini
-COPY docker/php/xdebug.ini      /usr/local/etc/php/conf.d/xdebug.ini
+COPY docker/local/php/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
+COPY docker/local/php/php.ini         /usr/local/etc/php/conf.d/app.ini
+COPY docker/local/php/xdebug.ini      /usr/local/etc/php/conf.d/xdebug.ini
 
 WORKDIR /var/www/app
 

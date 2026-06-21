@@ -7,7 +7,9 @@ var/sessions
 var/tmp
 public/build
 .env.local
+.env.local.php
 .env.*.local
+config/jwt/*.pem
 *.md
 .editorconfig
 .eslintrc.cjs

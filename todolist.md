@@ -25,6 +25,10 @@
 
 
 # Deployment
-- add script to install all needed dependenices on droplet
-- droplet will be running prod-grade docker containers, they should be run from optimized two-stage images, cause memory on VHS is very low
-- frontend will be shipped built
+- [x] add script to install all needed dependenices on droplet(like docker to start up, git to pull a branch etc)
+- [x] droplet will be running prod-grade docker containers, they should be run from optimized two-stage images, cause memory on VHS is very low
+- [x] frontend will be shipped built
+- [x] docker folder should be split on local/production folders
+- [x] separate compose file for production images
+- [x] no debug or profiling for production, everything optimized
+- [x] no need for mailpit or grafana in production
