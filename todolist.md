@@ -8,3 +8,4 @@
 # UI
 - add loaders for buttons
 - add placeholders of ui elements(glowing or blinking blocks) instead of simple Loading... signs
+- add error page and not found page
