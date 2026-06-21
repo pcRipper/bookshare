@@ -7,6 +7,7 @@ use App\Entity\ActivityItem;
 use App\Entity\Book;
 use App\Entity\Category;
 use App\Entity\LibraryRequest;
+use App\Entity\Subscription;
 use App\Entity\User;
 use App\Enum\ActivityType;
 use App\Enum\BookStatus;
@@ -127,6 +128,53 @@ class ResponseMapperTest extends TestCase
         self::assertSame('Lviv', $data['location']);
         self::assertTrue($data['isSelf']);
         self::assertSame($stats, $data['stats']);
+    }
+
+    public function testProfileIncludesIsSubscribed(): void
+    {
+        $user = (new User())->setFullName('Jane');
+        $stats = ['totalBooks' => 0, 'shared' => 0, 'loaned' => 0];
+
+        self::assertFalse($this->mapper()->profile($user, $stats, true)['isSubscribed']);
+        self::assertTrue($this->mapper()->profile($user, $stats, false, isSubscribed: true)['isSubscribed']);
+    }
+
+    public function testSubscriptionShape(): void
+    {
+        $followed = (new User())->setFullName('Followed');
+        $subscription = (new Subscription())->setSubscriber(new User())->setSubscribedTo($followed);
+
+        $data = $this->mapper()->subscription($subscription);
+
+        self::assertSame('Followed', $data['user']['fullName']);
+        self::assertArrayHasKey('id', $data);
+        self::assertNotFalse(\DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $data['createdAt']));
+    }
+
+    public function testSubscriptionFeedGroupsUserAndDiscoverShapedBooks(): void
+    {
+        $followed = (new User())->setFullName('Followed');
+        $book = (new Book())->setOwner($followed)->setTitle('T')->setAuthor('A');
+
+        $data = $this->mapper()->subscriptionFeed($followed, [$book]);
+
+        self::assertSame('Followed', $data['user']['fullName']);
+        self::assertCount(1, $data['books']);
+        // Discover shape carries the owner so the feed reuses DiscoverBookCard.
+        self::assertSame('Followed', $data['books'][0]['owner']['fullName']);
+        // No pending requests passed → not flagged as requested.
+        self::assertFalse($data['books'][0]['requested']);
+    }
+
+    public function testSubscriptionFeedFlagsAlreadyRequestedBooks(): void
+    {
+        $followed = (new User())->setFullName('Followed');
+        $book = (new Book())->setOwner($followed)->setTitle('T')->setAuthor('A');
+
+        // Book id is null here, so use a lookup keyed on null to match getId().
+        $data = $this->mapper()->subscriptionFeed($followed, [$book], [$book->getId() => true]);
+
+        self::assertTrue($data['books'][0]['requested']);
     }
 
     public function testProfileHidesLocationWhenNotVisible(): void

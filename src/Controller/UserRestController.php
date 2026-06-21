@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Api\ResponseMapper;
 use App\Entity\User;
+use App\Repository\SubscriptionRepository;
 use App\Service\UserStatsProvider;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -16,6 +17,7 @@ class UserRestController extends AbstractController
     public function __construct(
         private readonly ResponseMapper $mapper,
         private readonly UserStatsProvider $stats,
+        private readonly SubscriptionRepository $subscriptions,
     ) {}
 
     /** Public profile of any user: identity and stats. Books are fetched separately via /api/books?owner={id}. */
@@ -38,11 +40,14 @@ class UserRestController extends AbstractController
         $settings = $user->getSettings();
         $showLocation = $isSelf || $settings === null || $settings->showsLocation();
 
+        $isSubscribed = !$isSelf && $this->subscriptions->isSubscribed($viewer, $user);
+
         return $this->json($this->mapper->profile(
             $user,
             $this->stats->forUser($user),
             $isSelf,
             $showLocation,
+            $isSubscribed,
         ));
     }
 }
