@@ -83,6 +83,26 @@ class ResponseMapper
         ];
     }
 
+    /**
+     * Public profile payload: just the user resource — identity, stats and the
+     * viewer-relative `isSelf` flag. The owner's books are a separate resource,
+     * fetched via `GET /api/books?owner={id}`.
+     *
+     * @param array{totalBooks:int, shared:int, loaned:int} $stats
+     */
+    public function profile(User $user, array $stats, bool $isSelf): array
+    {
+        return [
+            'id'        => $user->getId(),
+            'fullName'  => $user->getFullName(),
+            'avatarUrl' => $user->getAvatarUrl(),
+            'bio'       => $user->getBio(),
+            'location'  => $user->getLocation(),
+            'isSelf'    => $isSelf,
+            'stats'     => $stats,
+        ];
+    }
+
     public function category(\App\Entity\Category $category): array
     {
         return [

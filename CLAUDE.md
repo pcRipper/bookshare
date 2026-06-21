@@ -51,7 +51,7 @@ FolioShare is a community book-sharing platform. Readers catalog their physical 
 | `/profile/:id` | `user_profile_jane_doe`, `user_profile_mobile` | Public user profile. Avatar, name, bio, stats (Total Books / Lending / Rating). Tabbed book collection with "Request to Borrow" buttons |
 | `/settings` | `settings`, `settings_mobile` | Left-sidebar: **Account Profile** (avatar upload, name, bio 300-char, location), **Privacy & Security**, **Notifications**, **Sign Out** |
 
-**Manage Book modal** — overlays `/library` (not a separate route). Triggered by "Add New Book" or clicking an existing book card. Fields: cover upload, title*, author*, ISBN, status dropdown, category chips.
+**Manage Book modal** — overlays `/library` (not a separate route). Triggered by "Add New Book" or clicking an existing book card. Fields: cover upload, title*, author*, ISBN, status dropdown, and a **search-or-create category picker** (see _Categories_ under Key Conventions). On save it sends `categoryIds` (not names).
 
 ### Domain Model
 
@@ -101,8 +101,10 @@ npm run dev
 ```bash
 npm run build      # production build → public/build/
 npm run preview    # preview production build locally
-npm run lint       # ESLint over assets/src/
+npm run lint       # ESLint over assets/src/  ⚠ currently broken (see note below)
 ```
+
+> ⚠ `npm run lint` fails: ESLint is v9+ but the project still has the legacy `.eslintrc` format and no flat `eslint.config.js`. Migrate the config before relying on lint. There is **no JS test runner** wired up (no vitest/jest) — to verify frontend behaviour, build and drive the SPA in a browser.
 
 ### Symfony console
 ```bash
@@ -131,6 +133,13 @@ Defined with PHP attributes (`#[ORM\Entity]`, `#[ORM\Column]`, etc.) in `src/Ent
 
 ### Persistence & flushing
 Repositories may `persist()` and mutate entities, but **must not call `flush()`** — the controller owns the transaction boundary and flushes **exactly once** per request, after all entity changes are staged. This keeps each request a single unit of work and avoids redundant/partial commits. Example: `UserRepository::findOrCreateFromGoogle()` only persists/mutates; `AuthController::googleCallback()` calls `$this->entityManager->flush()` once. A no-op flush (when nothing changed) is harmless.
+
+### Categories
+Categories are a **shared, global vocabulary** (unique names), not per-user. The flow is _search-or-create_:
+- `GET /api/categories?q=…` searches by name (case-insensitive substring; empty result ⇒ the UI offers creation). Without `q` it lists all.
+- `POST /api/categories` (`{ name, colorHex }`) creates one explicitly — `422` blank name · `409` duplicate (case-insensitive) · `201` created.
+- **Books reference categories by id**, never by name: `BookInput.categoryIds` (int[]); `BookService` resolves ids via `CategoryRepository::findByIds()`. New categories are created up-front via the POST endpoint, then attached by id. (The old name-based auto-create path is gone.)
+- **Colour palette is a single source of truth, duplicated front+back — keep them in sync:** backend `App\Category\CategoryPalette::COLORS` (allowed `colorHex` values, enforced by `CategoryInput`'s `Assert\Choice`) mirrors frontend `assets/src/utils/categoryColors.js` (the `bg` of each `CATEGORY_PALETTE` entry, which also carries chip text/border styling). `ResponseMapper` emits `colorHex` on every category so chips/cards render the stored colour; `resolveCategoryColors()` falls back gracefully for legacy/unknown hexes.
 
 ### Frontend imports
 The `@` alias resolves to `assets/src/`. Use `import Foo from '@/components/Foo.vue'` everywhere.

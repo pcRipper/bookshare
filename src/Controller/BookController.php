@@ -8,6 +8,8 @@ use App\Entity\Book;
 use App\Entity\User;
 use App\Enum\BookStatus;
 use App\Repository\BookRepository;
+use App\Repository\LibraryRequestRepository;
+use App\Repository\UserRepository;
 use App\Service\BookService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -27,10 +29,23 @@ class BookController extends AbstractController
     ) {}
 
     #[Route('', methods: ['GET'])]
-    public function list(Request $request, BookRepository $repo): JsonResponse
-    {
-        /** @var User $user */
-        $user = $this->getUser();
+    public function list(
+        Request $request,
+        BookRepository $repo,
+        UserRepository $users,
+        LibraryRequestRepository $requests,
+    ): JsonResponse {
+        /** @var User $viewer */
+        $viewer = $this->getUser();
+
+        // ?owner={id} browses another member's shelf; absent ⇒ the current user's own.
+        $owner = $viewer;
+        if ($raw = $request->query->get('owner')) {
+            $owner = $users->find($raw);
+            if (!$owner instanceof User) {
+                return $this->json(['error' => 'User not found.'], Response::HTTP_NOT_FOUND);
+            }
+        }
 
         $status = null;
         if ($raw = $request->query->get('status')) {
@@ -40,7 +55,18 @@ class BookController extends AbstractController
             }
         }
 
-        return $this->json($this->mapper->books($repo->findByOwner($user, $status)));
+        $payload = $this->mapper->books($repo->findByOwner($owner, $status));
+
+        // Annotate viewer-relative borrow state when browsing someone else's shelf.
+        if ($owner !== $viewer) {
+            $pending = array_flip($requests->findPendingBookIdsForRequester($viewer));
+            $payload = array_map(
+                static fn (array $b) => $b + ['requested' => isset($pending[$b['id']])],
+                $payload,
+            );
+        }
+
+        return $this->json($payload);
     }
 
     #[Route('', methods: ['POST'])]

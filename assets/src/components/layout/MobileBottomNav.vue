@@ -1,13 +1,17 @@
 <script setup>
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
+const auth = useAuthStore()
 
-const items = [
+const items = computed(() => [
   { label: 'My Library', to: '/library',  icon: 'book_2' },
   { label: 'Discover',   to: '/discover', icon: 'explore' },
   { label: 'Activity',   to: '/activity', icon: 'pulse_alert' },
-]
+  { label: 'Profile',    to: `/profile/${auth.user?.id}`, icon: 'account_circle' },
+])
 
 function isActive(to) {
   return route.path.startsWith(to)

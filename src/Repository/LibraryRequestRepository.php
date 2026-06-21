@@ -47,6 +47,27 @@ class LibraryRequestRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    /**
+     * Ids of books the requester currently has a pending request for. Lets the
+     * public profile mark already-requested books so the borrow button reflects
+     * reality across reloads.
+     *
+     * @return int[]
+     */
+    public function findPendingBookIdsForRequester(User $requester): array
+    {
+        $rows = $this->createQueryBuilder('r')
+            ->select('IDENTITY(r.book) AS bookId')
+            ->andWhere('r.requester = :requester')
+            ->andWhere('r.status = :pending')
+            ->setParameter('requester', $requester)
+            ->setParameter('pending', RequestStatus::Pending)
+            ->getQuery()
+            ->getScalarResult();
+
+        return array_map(static fn (array $row) => (int) $row['bookId'], $rows);
+    }
+
     public function findPendingForBookAndRequester(int $bookId, User $requester): ?LibraryRequest
     {
         return $this->createQueryBuilder('r')
