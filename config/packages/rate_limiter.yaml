@@ -1,0 +1,42 @@
+# Rate limiting for the JSON API. Three limiters, keyed differently, are applied
+# by App\EventSubscriber\RateLimitSubscriber:
+#
+#   auth_ip      → keyed by client IP, guards the unauthenticated /api/auth
+#                  endpoints against credential/code brute-forcing.
+#   api_user     → keyed by the authenticated user, enforces per-account fair use
+#                  across every other /api call.
+#   api_ip_user  → keyed by IP + user, a tighter combined bucket that also reins
+#                  in a single client behind one address.
+#
+# Storage uses the cache pool (cache.rate_limiter); swap to a Redis/Lock-backed
+# pool for multi-node deployments so counters are shared.
+framework:
+    rate_limiter:
+        auth_ip:
+            policy: 'sliding_window'
+            limit: 20
+            interval: '15 minutes'
+        api_user:
+            policy: 'sliding_window'
+            limit: 300
+            interval: '1 minute'
+        api_ip_user:
+            policy: 'token_bucket'
+            limit: 120          # burst capacity
+            rate:
+                interval: '1 second'
+                amount: 5       # sustained refill: 5 req/s
+
+when@test:
+    # Keep tests deterministic: very high ceilings so the limiter never trips
+    # incidentally. The subscriber's own behaviour is unit-tested in isolation.
+    framework:
+        rate_limiter:
+            auth_ip:
+                limit: 100000
+            api_user:
+                limit: 100000
+            api_ip_user:
+                limit: 100000
+                rate:
+                    amount: 100000

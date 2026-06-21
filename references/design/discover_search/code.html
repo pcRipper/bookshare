@@ -1,0 +1,302 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>FolioShare - Discover</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&amp;family=Work+Sans:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary": "#565f67",
+                    "inverse-surface": "#30312e",
+                    "primary-fixed": "#c6ebd6",
+                    "surface-container-lowest": "#ffffff",
+                    "primary": "#274738",
+                    "on-primary-fixed-variant": "#2d4d3e",
+                    "on-tertiary-fixed-variant": "#623f18",
+                    "inverse-primary": "#aacfbb",
+                    "on-secondary-fixed": "#141d23",
+                    "primary-fixed-dim": "#aacfbb",
+                    "outline": "#727974",
+                    "on-primary-container": "#b3d7c3",
+                    "on-primary": "#ffffff",
+                    "on-surface": "#1b1c1a",
+                    "secondary-fixed": "#dae4ed",
+                    "on-error": "#ffffff",
+                    "background": "#fbf9f5",
+                    "surface-bright": "#fbf9f5",
+                    "error": "#ba1a1a",
+                    "secondary-container": "#dae4ed",
+                    "on-secondary-container": "#5c656d",
+                    "secondary-fixed-dim": "#bec8d1",
+                    "surface-tint": "#446555",
+                    "on-error-container": "#93000a",
+                    "primary-container": "#3e5f4f",
+                    "outline-variant": "#c1c8c2",
+                    "surface": "#fbf9f5",
+                    "on-tertiary-fixed": "#2c1600",
+                    "surface-container": "#efeeea",
+                    "on-tertiary-container": "#f9c592",
+                    "tertiary": "#5b3912",
+                    "tertiary-container": "#765027",
+                    "error-container": "#ffdad6",
+                    "tertiary-fixed-dim": "#f0bd8b",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-high": "#eae8e4",
+                    "tertiary-fixed": "#ffdcbd",
+                    "on-secondary-fixed-variant": "#3f484f",
+                    "surface-variant": "#e4e2de",
+                    "on-primary-fixed": "#002114",
+                    "inverse-on-surface": "#f2f0ed",
+                    "on-background": "#1b1c1a",
+                    "surface-dim": "#dbdad6",
+                    "surface-container-low": "#f5f3ef",
+                    "on-surface-variant": "#414844",
+                    "on-secondary": "#ffffff",
+                    "surface-container-highest": "#e4e2de"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "sm": "12px",
+                    "xl": "80px",
+                    "lg": "48px",
+                    "base": "8px",
+                    "md": "24px",
+                    "container-max": "1200px",
+                    "xs": "4px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "headline-md": [
+                            "Playfair Display"
+                    ],
+                    "headline-lg": [
+                            "Playfair Display"
+                    ],
+                    "label-sm": [
+                            "Work Sans"
+                    ],
+                    "headline-lg-mobile": [
+                            "Playfair Display"
+                    ],
+                    "label-md": [
+                            "Work Sans"
+                    ],
+                    "body-md": [
+                            "Work Sans"
+                    ],
+                    "body-lg": [
+                            "Work Sans"
+                    ],
+                    "headline-xl": [
+                            "Playfair Display"
+                    ]
+            },
+            "fontSize": {
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "1.4",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "1.3",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "label-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "letterSpacing": "0.03em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-lg-mobile": [
+                            "28px",
+                            {
+                                    "lineHeight": "1.3",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "label-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "1.4",
+                                    "letterSpacing": "0.01em",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "1.6",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "1.6",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-xl": [
+                            "48px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-surface-dim font-body-md text-body-md docked full-width top-0 border-b border-outline-variant dark:border-outline flat no shadows active:opacity-80 transition-all flex justify-between items-center px-gutter py-4 max-w-container-max mx-auto w-full z-50">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">
+            FolioShare
+        </div>
+<nav class="hidden md:flex gap-md">
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200" href="#">My Library</a>
+<a class="text-primary dark:text-primary-fixed-dim border-b-2 border-primary font-bold pb-1 hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200" href="#">Discover</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200" href="#">Activity</a>
+</nav>
+<div class="flex gap-sm items-center text-primary dark:text-primary-fixed-dim">
+<button class="hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<main class="flex-grow flex flex-col items-center w-full max-w-container-max mx-auto px-gutter pb-xl pt-lg md:pt-xl">
+<!-- Search Hero Section -->
+<section class="w-full max-w-3xl flex flex-col items-center text-center space-y-md mb-xl">
+<h1 class="font-headline-xl text-headline-xl text-on-surface w-full">Explore the Archives</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Find your next literary obsession, uncover hidden gems, and connect with fellow readers in the curated commons.</p>
+<div class="w-full relative mt-lg">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" data-icon="search">search</span>
+<input class="w-full pl-lg pr-md py-sm bg-surface-container-lowest border border-outline-variant focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary rounded font-body-lg text-body-lg text-on-surface shadow-sm transition-colors placeholder:text-on-surface-variant" placeholder="Search for books, authors, or readers..." type="text">
+</div>
+<!-- Trending Tags -->
+<div class="flex flex-wrap justify-center gap-sm mt-sm">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Trending:</span>
+<button class="font-label-sm text-label-sm bg-surface-container hover:bg-surface-container-high text-on-surface px-sm py-xs rounded border border-outline-variant transition-colors">Historical Fiction</button>
+<button class="font-label-sm text-label-sm bg-surface-container hover:bg-surface-container-high text-on-surface px-sm py-xs rounded border border-outline-variant transition-colors">Dune</button>
+<button class="font-label-sm text-label-sm bg-surface-container hover:bg-surface-container-high text-on-surface px-sm py-xs rounded border border-outline-variant transition-colors">Margaret Atwood</button>
+<button class="font-label-sm text-label-sm bg-surface-container hover:bg-surface-container-high text-on-surface px-sm py-xs rounded border border-outline-variant transition-colors">Sci-Fi Novellas</button>
+</div>
+</section>
+<!-- Recommended Section (Bento Grid Style) -->
+<section class="w-full space-y-md mb-xl">
+<div class="flex items-end justify-between border-b border-outline-variant pb-xs mb-md">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Recommended for You</h2>
+<a class="font-label-md text-label-md text-primary hover:underline" href="#">View all</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Main Feature Book -->
+<article class="col-span-1 md:col-span-8 bg-surface-container-lowest border border-outline-variant rounded flex flex-col md:flex-row overflow-hidden hover:shadow-md transition-shadow group">
+<div class="w-full md:w-1/2 h-64 md:h-auto bg-surface-container relative">
+<img alt="Book cover" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A beautifully bound hardcover book lying open on a solid oak wooden desk, illuminated by warm, ambient, natural light pouring in from a nearby window. The setting evokes a quiet, intellectual bookstore aesthetic with deep greens, rich browns, and soft white paper tones. The atmosphere is serene, scholarly, and tactile, emphasizing a modern minimalist yet classic feel." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3dmgHk7HzSNdzUTObSSD51lE90vX00ll_9DhnlFuedw84zSwTz73yReEvCHR6cD-9Om7HBFOqRT6sjXlH6nhcqpqwCEnsb-LFUd6sTI0baXjW5fFaqAxecONCrYBT52Sea6QPR-7HOkgtgMwUMTIvdxP1dQ2L2cUlStJp8d0wwN7zTQfYMXluDL5awqxleayNY_phh8jeTTvLNGrUInDm_4_iim0POP99rHo1WKbEOynFaFcY88r_2pZvad5eh90sbeIoqXNvmzU">
+</div>
+<div class="p-md flex flex-col justify-center w-full md:w-1/2 space-y-sm">
+<span class="inline-block px-sm py-xs rounded bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-label-sm w-max">Staff Pick</span>
+<h3 class="font-headline-lg text-headline-lg text-on-surface">The Secret History</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Donna Tartt</p>
+<p class="font-body-md text-body-md text-on-surface line-clamp-3 mt-xs">Under the influence of their charismatic classics professor, a group of clever, eccentric misfits at an elite New England college discover a way of thinking and living that is a world away from the humdrum existence of their contemporaries.</p>
+</div>
+</article>
+<!-- Reader Profile Snippet -->
+<article class="col-span-1 md:col-span-4 bg-surface-container-lowest border border-outline-variant rounded p-md flex flex-col items-center text-center space-y-sm hover:shadow-md transition-shadow">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider w-full text-left mb-xs border-b border-outline-variant pb-xs">Featured Reader</h3>
+<div class="w-24 h-24 rounded-full overflow-hidden border-2 border-surface bg-surface-container mt-sm">
+<img alt="User avatar" class="w-full h-full object-cover" data-alt="A portrait of a thoughtful young woman wearing round wire-rimmed glasses, sitting in a softly lit, minimalist cafe or library environment. The color palette features muted earth tones, warm paper whites, and subtle shadows. The mood is calm, studious, and inviting, matching the curated bookstore aesthetic of the application." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmfrwiIoUIWL0ZAgLBa8ovGOWj4qa42HtSUnNbsIrMJLzDgU1t-qLoyDatZGXZklM7RS5CMzHxGKuVetvzYYHWG-NSmJJA7R2ic7Luz9zRF4amU9k_k0tI1PeOenFzw_QVv86qIAt7Kui1POCd2vnfOuQV5hPqKBBTOo9NkqkwDKrW8zDSOFtstpFCRxk9yr6fZEqAaajmI3zv_9Ou_4YJYgGtrQdPWKfmyXQzuQUTkQuej_QGFEUEypIsQFVXvPgxiETfxMSxQBM">
+</div>
+<h4 class="font-headline-md text-headline-md text-on-surface mt-xs">Eleanor Vance</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Avid collector of Mid-Century Gothic and Architectural non-fiction.</p>
+<button class="mt-auto px-md py-sm bg-surface-container border border-outline-variant text-on-surface font-label-md text-label-md rounded hover:bg-surface-variant transition-colors w-full">View Library</button>
+</article>
+<!-- Standard Card 1 -->
+<article class="col-span-1 md:col-span-4 bg-surface-container-lowest border border-outline-variant rounded flex flex-col overflow-hidden hover:shadow-md transition-shadow">
+<div class="h-48 w-full bg-surface-container overflow-hidden">
+<img alt="Book cover" class="w-full h-full object-cover" data-alt="A stark, minimalist arrangement of several weathered paperback books stacked neatly against a soft, creamy white background. The lighting is diffused and even, creating subtle tonal shifts rather than harsh drop shadows. The visual aesthetic is clean, academic, and highly tactile, focusing on the texture of the worn paper covers." src="https://lh3.googleusercontent.com/aida-public/AB6AXuACHZygI9I0YeYj1EzIryBPMjS-zk_RdbtlGeh3nPls53v6O4YDIBgU5WMSH3milrR0At94D2LeI1eDrrflKcVELvb7T1j8JpPW8VR0SuQOdtGyr5emq3kEmwy5OJ2R3d3HVYpxQM8PJd3cxSHtm0XLS0aAHmk-OWbhbvqetpA60HM5AHum20YVxGIhR_E2NOWQf2fCuh7ckzduQCmActkbj-LnSHr-O5ZQObwUGqJuHKKkdgUu73zSJGx0w_zUfSq2h1oW3uspNzM">
+</div>
+<div class="p-sm flex flex-col flex-grow">
+<h3 class="font-headline-md text-headline-md text-on-surface line-clamp-1">To the Lighthouse</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-sm">Virginia Woolf</p>
+<div class="mt-auto flex gap-xs">
+<span class="px-xs py-[2px] bg-secondary-container text-on-secondary-container font-label-sm text-label-sm rounded">Modernist</span>
+</div>
+</div>
+</article>
+<!-- Standard Card 2 -->
+<article class="col-span-1 md:col-span-4 bg-surface-container-lowest border border-outline-variant rounded flex flex-col overflow-hidden hover:shadow-md transition-shadow">
+<div class="h-48 w-full bg-surface-container overflow-hidden">
+<img alt="Book cover" class="w-full h-full object-cover" data-alt="An open notebook with elegant handwritten text, lying flat next to a classic fountain pen on a smooth, pale paper-toned surface. The color scheme relies heavily on warm off-whites, subtle grays, and muted black ink, offering a deeply tactile, analog feel. The lighting provides soft ambient occlusion to emphasize the physicality of the objects without heavy shadows." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwi-lzytcveGE1qjHQ3qPRd_UQtCDggXdPoIJ8zXulH5thKFHVK3Uygqd9Cfgn6hO0RkB1eLygdNFp5K4FBFWfam3Z6NW9p-GQD-KFbLMM6YZmSAtN6S8ycHHn5AbgQEuOV469TztLcXyNpMxiGEuFxAtG1yREVmxa3l5R9kFGCDkIHMOC3f1ExnZSrUAYbo9kJG7Iut4MQVSCy5lIsNURKhdtk7E1sO6G4VzviI8FbgSIJ2TKMA6KygLq-VZ_P0sh-zls5lsp6r4">
+</div>
+<div class="p-sm flex flex-col flex-grow">
+<h3 class="font-headline-md text-headline-md text-on-surface line-clamp-1">Notes on Camp</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-sm">Susan Sontag</p>
+<div class="mt-auto flex gap-xs">
+<span class="px-xs py-[2px] bg-tertiary-container text-on-tertiary-container font-label-sm text-label-sm rounded">Essays</span>
+</div>
+</div>
+</article>
+<!-- Standard Card 3 -->
+<article class="col-span-1 md:col-span-4 bg-surface-container-lowest border border-outline-variant rounded flex flex-col overflow-hidden hover:shadow-md transition-shadow">
+<div class="h-48 w-full bg-surface-container overflow-hidden">
+<img alt="Book cover" class="w-full h-full object-cover" data-alt="A close-up shot of a vintage book spine with faded gold foil lettering, resting on a textured wooden shelf. The visual mood is nostalgic, scholarly, and refined, capturing the essence of a well-curated personal library. The lighting highlights the tactile grain of the book cloth against the soft, out-of-focus background in muted dark green and brown tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBpU-JqSsgPC9uPkT0jxFcv5k-1aikTUT5SWilO5u2hQ7dSYOuWPxqfOEeE62tBgF5yxzfp8tudgxL_3Po2lUJIgKZe34d-FM9O2yplumNZUQIW692-NCEJ60jFQ2KjWaF134uhScoW2nBH0aLseLfRQIn_OhlXKbwH9zsZymdQM0er7uhcF18o66vOw5ydtBaLJiJrdC2Tvn0VsevgEyz6ngmhYSoe2v-ZAlFdINh0_vD5ToGWDIJWBNRJ-HXa0ULLTRXqfiB_kD8">
+</div>
+<div class="p-sm flex flex-col flex-grow">
+<h3 class="font-headline-md text-headline-md text-on-surface line-clamp-1">Ficciones</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-sm">Jorge Luis Borges</p>
+<div class="mt-auto flex gap-xs">
+<span class="px-xs py-[2px] bg-surface-variant text-on-surface-variant font-label-sm text-label-sm rounded border border-outline-variant">Surrealism</span>
+</div>
+</div>
+</article>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container dark:bg-surface-container-highest font-label-sm text-label-sm full-width border-t border-outline-variant dark:border-outline flat no shadows cursor-pointer flex flex-col md:flex-row justify-between items-center px-gutter py-lg max-w-container-max mx-auto w-full mt-xl text-on-surface-variant dark:text-on-surface">
+<div class="font-headline-sm text-headline-sm text-primary dark:text-primary-fixed-dim mb-md md:mb-0 font-headline-md">
+            FolioShare
+        </div>
+<div class="flex flex-wrap justify-center gap-md mb-md md:mb-0">
+<a class="text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors" href="#">About</a>
+<a class="text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors" href="#">Terms of Service</a>
+<a class="text-on-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors" href="#">Help Center</a>
+</div>
+<div class="text-on-surface-variant">
+            © 2024 FolioShare. Curated for the community.
+        </div>
+</footer>
+</body></html>

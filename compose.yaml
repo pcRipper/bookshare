@@ -1,25 +1,165 @@
+name: bookshare
 
 services:
-###> doctrine/doctrine-bundle ###
-  database:
-    image: postgres:${POSTGRES_VERSION:-16}-alpine
+
+  # ── PHP-FPM ────────────────────────────────────────────────────────────────
+  phpfpm:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      args:
+        PHP_VERSION: ${PHP_VERSION:-8.4}
+    restart: unless-stopped
+    volumes:
+      - .:/var/www/app
+    env_file:
+      - docker/php/app.env          # static literals (APP_ENV, CORS, MAILER_DSN …)
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-app}
-      # You should definitely change the password in production
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
-      POSTGRES_USER: ${POSTGRES_USER:-app}
+      # Secrets and compose-time substitutions — sourced from .env / .env.local
+      APP_SECRET: ${APP_SECRET:-change_me_in_dot_env_local}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-changeme}@postgresql:5432/${POSTGRES_DB:-bookshare}?serverVersion=16&charset=utf8
+      JWT_PASSPHRASE: ${JWT_PASSPHRASE:-}
+      # PHP runtime tuning — edit in .env to tune without rebuilding
+      PHP_MEMORY_LIMIT: ${PHP_MEMORY_LIMIT:-256M}
+      PHP_UPLOAD_MAX: ${PHP_UPLOAD_MAX:-50M}
+      PHP_POST_MAX: ${PHP_POST_MAX:-50M}
+      PHP_MAX_EXEC: ${PHP_MAX_EXEC:-60}
+    extra_hosts:
+      # Allows Xdebug inside the container to reach the IDE on the host machine
+      - "host.docker.internal:host-gateway"
     healthcheck:
-      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB:-app}", "-U", "${POSTGRES_USER:-app}"]
+      # cgi-fcgi is provided by the `fcgi` Alpine package installed in the Dockerfile.
+      # It sends a real FastCGI ping request — more reliable than a plain TCP check.
+      test: ["CMD-SHELL", "SCRIPT_NAME=/fpm-ping SCRIPT_FILENAME=/fpm-ping REQUEST_METHOD=GET cgi-fcgi -bind -connect 127.0.0.1:9000 | grep -q pong"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    networks:
+      - app
+
+  # ── Nginx ──────────────────────────────────────────────────────────────────
+  # A self-signed TLS certificate is generated automatically on first start
+  # via docker/nginx/docker-entrypoint.d/init-certs.sh.
+  # Replace docker/nginx/certs/{cert,key}.pem with mkcert output for a
+  # browser-trusted cert.
+  nginx:
+    build:
+      context: docker/nginx
+      dockerfile: Dockerfile
+      args:
+        NGINX_VERSION: ${NGINX_VERSION:-1.27}
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-8000}:80"
+      - "${HTTPS_PORT:-8443}:443"
+    volumes:
+      - .:/var/www/app:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./docker/nginx/certs:/etc/nginx/certs   # writable so init-certs.sh can create them
+    depends_on:
+      phpfpm:
+        condition: service_healthy              # wait for fpm to be accepting connections
+    networks:
+      - app
+
+  # ── PostgreSQL ─────────────────────────────────────────────────────────────
+  postgresql:
+    image: ${POSTGRES_IMAGE:-postgres:16-alpine}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-bookshare}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB:-bookshare}", "-U", "${POSTGRES_USER:-app}"]
       timeout: 5s
       retries: 5
       start_period: 60s
     volumes:
-      - database_data:/var/lib/postgresql/data:rw
-      # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
-      # - ./docker/db/data:/var/lib/postgresql/data:rw
-###< doctrine/doctrine-bundle ###
+      - postgresql_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    networks:
+      - app
+
+  # ── Mailpit (SMTP catcher + web UI) ───────────────────────────────────────
+  mailpit:
+    image: ${MAILPIT_IMAGE:-axllent/mailpit:latest}
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+    networks:
+      - app
+
+  # ── Monitoring (optional) ──────────────────────────────────────────────────
+  # Start with: docker compose --profile logs up -d
+  #
+  # Alloy scrapes nginx/FPM/PostgreSQL metrics and remote-writes to Prometheus.
+  # Grafana connects to Prometheus as its default datasource (pre-provisioned).
+
+  prometheus:
+    image: ${PROMETHEUS_IMAGE:-prom/prometheus:v2.55.1}
+    profiles: [logs]
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yaml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-remote-write-receiver
+    volumes:
+      - prometheus_data:/prometheus
+      - ./docker/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+    networks:
+      - monitoring
+
+  alloy:
+    image: ${ALLOY_IMAGE:-grafana/alloy:v1.5.0}
+    profiles: [logs]
+    restart: unless-stopped
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --storage.path=/var/lib/alloy/data
+    environment:
+      # Constructed from substitutions — must stay here, not in env_file
+      POSTGRES_DSN: "postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-changeme}@postgresql:5432/${POSTGRES_DB:-bookshare}?sslmode=disable"
+    volumes:
+      - ./docker/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - alloy_data:/var/lib/alloy/data
+    depends_on:
+      - prometheus
+    networks:
+      - app
+      - monitoring
+
+  grafana:
+    image: ${GRAFANA_IMAGE:-grafana/grafana:11.4.0}
+    profiles: [logs]
+    restart: unless-stopped
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    env_file:
+      - docker/monitoring/grafana.env  # static Grafana config
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring
+
+networks:
+  app:
+    driver: bridge
+  monitoring:
+    driver: bridge
 
 volumes:
-###> doctrine/doctrine-bundle ###
-  database_data:
-###< doctrine/doctrine-bundle ###
+  postgresql_data:
+  grafana_data:
+  prometheus_data:
+  alloy_data:

@@ -1,0 +1,263 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Work Sans', sans-serif;
+            background-color: #fbf9f5;
+        }
+        .serif-text {
+            font-family: 'Playfair Display', serif;
+        }
+        /* Custom scrollbar for horizontal categories */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-dim": "#dbdad6",
+                      "on-error": "#ffffff",
+                      "on-secondary-container": "#5c656d",
+                      "inverse-on-surface": "#f2f0ed",
+                      "on-secondary": "#ffffff",
+                      "background": "#fbf9f5",
+                      "tertiary-container": "#765027",
+                      "inverse-surface": "#30312e",
+                      "surface-container-high": "#eae8e4",
+                      "primary": "#274738",
+                      "on-primary-fixed": "#002114",
+                      "primary-container": "#3e5f4f",
+                      "inverse-primary": "#aacfbb",
+                      "surface-container-highest": "#e4e2de",
+                      "surface-tint": "#446555",
+                      "on-background": "#1b1c1a",
+                      "outline": "#727974",
+                      "surface-container": "#efeeea",
+                      "on-tertiary-fixed": "#2c1600",
+                      "on-primary-container": "#b3d7c3",
+                      "on-error-container": "#93000a",
+                      "surface-variant": "#e4e2de",
+                      "on-surface": "#1b1c1a",
+                      "surface": "#fbf9f5",
+                      "secondary-fixed": "#dae4ed",
+                      "outline-variant": "#c1c8c2",
+                      "on-tertiary": "#ffffff",
+                      "tertiary-fixed-dim": "#f0bd8b",
+                      "on-secondary-fixed-variant": "#3f484f",
+                      "tertiary": "#5b3912",
+                      "secondary-container": "#dae4ed",
+                      "on-primary": "#ffffff",
+                      "primary-fixed-dim": "#aacfbb",
+                      "on-surface-variant": "#414844",
+                      "tertiary-fixed": "#ffdcbd",
+                      "on-tertiary-fixed-variant": "#623f18",
+                      "surface-container-low": "#f5f3ef",
+                      "secondary-fixed-dim": "#bec8d1",
+                      "on-secondary-fixed": "#141d23",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-fixed-variant": "#2d4d3e",
+                      "error-container": "#ffdad6",
+                      "error": "#ba1a1a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "xs": "4px",
+                      "sm": "12px",
+                      "xl": "80px",
+                      "md": "24px",
+                      "lg": "48px",
+                      "gutter": "24px",
+                      "base": "8px",
+                      "container-max": "1200px"
+              },
+              "fontFamily": {
+                      "label-md": ["Work Sans"],
+                      "headline-lg-mobile": ["Playfair Display"],
+                      "body-lg": ["Work Sans"],
+                      "label-sm": ["Work Sans"],
+                      "headline-xl": ["Playfair Display"],
+                      "headline-lg": ["Playfair Display"],
+                      "headline-md": ["Playfair Display"],
+                      "body-md": ["Work Sans"]
+              },
+              "fontSize": {
+                      "label-md": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                      "headline-lg-mobile": ["28px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                      "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                      "label-sm": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.03em", "fontWeight": "600"}],
+                      "headline-xl": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "headline-lg": ["32px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                      "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                      "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface">
+<!-- TopNavBar -->
+<header class="bg-surface border-b border-outline-variant fixed top-0 left-0 right-0 z-50">
+<div class="flex justify-between items-center px-gutter py-4 max-w-container-max mx-auto w-full">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">FolioShare</h1>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer">account_circle</span>
+</div>
+</div>
+</header>
+<main class="pt-[72px] pb-[80px]">
+<!-- Search Section -->
+<section class="px-gutter pt-lg pb-md">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-sm">Discover</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Explore new perspectives and community favorites.</p>
+<div class="relative group">
+<div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline">search</span>
+</div>
+<input class="w-full bg-surface-container-lowest border border-outline-variant rounded-xl py-4 pl-12 pr-4 font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-sm" placeholder="Search titles, authors, or curators..." type="text">
+</div>
+</section>
+<!-- Trending Tags -->
+<section class="mb-lg">
+<div class="px-gutter flex items-center justify-between mb-sm">
+<h3 class="font-label-md text-label-md text-on-surface uppercase tracking-wider">Trending Near You</h3>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar gap-sm px-gutter">
+<button class="flex-none px-md py-2 bg-[#E8F0EA] text-[#1a3a2a] rounded-full font-label-md text-label-md whitespace-nowrap active:opacity-80 transition-all border border-[#d1e0d5]">Classic Lit</button>
+<button class="flex-none px-md py-2 bg-[#F4EAE0] text-[#4d3623] rounded-full font-label-md text-label-md whitespace-nowrap active:opacity-80 transition-all border border-[#ebdccf]">Modern History</button>
+<button class="flex-none px-md py-2 bg-[#E6EBF5] text-[#2c3e5e] rounded-full font-label-md text-label-md whitespace-nowrap active:opacity-80 transition-all border border-[#d4deee]">Sci-Fi Classics</button>
+<button class="flex-none px-md py-2 bg-[#F5E6EF] text-[#5e2c4c] rounded-full font-label-md text-label-md whitespace-nowrap active:opacity-80 transition-all border border-[#eed4e4]">Poetry</button>
+<button class="flex-none px-md py-2 bg-surface-container-high text-on-surface-variant rounded-full font-label-md text-label-md whitespace-nowrap active:opacity-80 transition-all border border-outline-variant">Philosophy</button>
+</div>
+</section>
+<!-- Recommended for You (Bento-style list) -->
+<section class="px-gutter mb-xl">
+<div class="flex items-center justify-between mb-md">
+<h3 class="font-headline-md text-headline-md">Recommended for You</h3>
+<span class="font-label-md text-label-md text-primary cursor-pointer hover:underline">See All</span>
+</div>
+<!-- Single Column Feed -->
+<div class="space-y-md">
+<!-- Book Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden group active:scale-[0.98] transition-transform">
+<div class="flex">
+<div class="w-1/3 aspect-[2/3] relative">
+<img alt="Book Cover" class="w-full h-full object-cover" data-alt="A moody, high-contrast book cover featuring a single withered leaf on a textured cream paper background. The lighting is soft and directional, evoking a quiet, scholarly atmosphere typical of a boutique library. The aesthetic is clean and minimalist, utilizing rich, dark greens and off-whites to match a modern light-mode interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAajcggklEbWWOWv4pNF_LCsARLBu-MM6wgHAcMZS6WgdCx7zezTizPf9OdYCqLy16Vs4LiWkbjYk9mujHQ00BdtK_sQ0jzi8tvY2Eng0qOG3sHJVj9qluHnFgTV_TjkRxsCbgLw_iwKlWDo-oLXh3msDWn5yeHFiIrXOU-Ma5VzPrDHeWgwInyhX8IEMwoUw74HKZOB2W3XKM96I5W3cEsC541MJZNGms9736F2wHVc67v-RYnkV_mx_eQAamq4YBP9p0op3Eb_sU">
+</div>
+<div class="w-2/3 p-md flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<span class="font-label-sm text-label-sm text-[#5b3912] bg-[#F4EAE0] px-2 py-0.5 rounded mb-xs">Philosophy</span>
+<span class="material-symbols-outlined text-outline text-lg">bookmark</span>
+</div>
+<h4 class="font-headline-md text-headline-md serif-text mt-xs leading-tight">The Quiet Mind</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Elena Vance</p>
+</div>
+<div class="mt-md flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] fill">star</span> 4.8
+                                </span>
+<button class="bg-primary text-on-primary font-label-md text-label-md px-4 py-2 rounded-lg transition-colors hover:bg-primary-container">View</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Book Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden group active:scale-[0.98] transition-transform">
+<div class="flex">
+<div class="w-1/3 aspect-[2/3] relative">
+<img alt="Book Cover" class="w-full h-full object-cover" data-alt="A macro photograph of an antique fountain pen resting on an open journal with yellowed, deckled edges. The scene is bathed in the warm, golden glow of a quiet afternoon in a vintage study. The color palette emphasizes warm paper tones and deep library greens, creating a tactile and intellectual mood that feels both timeless and sophisticated." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7HorToaCWnmA7_aSjln-2azYSZ_5IB15-bNEWBfiu2iGNvpKlAh_ynR5CI0Ivg97dsIxinsGFWH6kHb9p00sb4h5reQX7eXZm8HqgzmG6R7DSLkYI5Hm8_hdtqGhIYw5NoUo3SAZjbaUh0tTGhY4XfHjbafo7YADGlqGYWxxJPWQ_EtPKh8-mSAVfHfl3SrSLJ_rTSeKMHal2P6Vr_J3wlIY09zgtQe-xpacgSare7xIEBNl-1NfUfKODFMp5zQ1UzjBoZZ92jso">
+</div>
+<div class="w-2/3 p-md flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<span class="font-label-sm text-label-sm text-[#1a3a2a] bg-[#E8F0EA] px-2 py-0.5 rounded mb-xs">History</span>
+<span class="material-symbols-outlined text-outline text-lg">bookmark</span>
+</div>
+<h4 class="font-headline-md text-headline-md serif-text mt-xs leading-tight">Echoes of Time</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Julian Barnes</p>
+</div>
+<div class="mt-md flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">star</span> 4.2
+                                </span>
+<button class="bg-primary text-on-primary font-label-md text-label-md px-4 py-2 rounded-lg transition-colors hover:bg-primary-container">View</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Featured Curator (Asymmetric Layout) -->
+<div class="bg-primary-container text-on-primary-container rounded-xl p-md mt-lg relative overflow-hidden">
+<div class="relative z-10">
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-on-primary-container/80">Curator Choice</span>
+<h4 class="font-headline-md text-headline-md serif-text mt-xs mb-sm">The 1920s Re-read</h4>
+<p class="font-body-md text-body-md mb-md opacity-90">"A collection that captures the frantic energy and quiet despair of the lost generation."</p>
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-primary border border-on-primary-container/20"></div>
+<span class="font-label-md text-label-md font-bold">Curated by Sarah L.</span>
+</div>
+</div>
+<div class="absolute -bottom-8 -right-8 w-32 h-32 bg-primary/20 rounded-full blur-2xl"></div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 right-0 bg-surface shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-50 md:hidden">
+<div class="flex justify-around items-center h-16 px-gutter max-w-container-max mx-auto">
+<div class="flex flex-col items-center justify-center text-on-surface-variant cursor-pointer active:opacity-80 transition-all">
+<span class="material-symbols-outlined">library_books</span>
+<span class="font-label-sm text-label-sm mt-1">My Library</span>
+</div>
+<div class="flex flex-col items-center justify-center text-primary font-bold cursor-pointer active:opacity-80 transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">explore</span>
+<span class="font-label-sm text-label-sm mt-1">Discover</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant cursor-pointer active:opacity-80 transition-all">
+<span class="material-symbols-outlined">notifications</span>
+<span class="font-label-sm text-label-sm mt-1">Activity</span>
+</div>
+</div>
+</nav>
+<script>
+        // Simple micro-interaction for search input focus
+        const searchInput = document.querySelector('input');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('scale-[1.02]');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('scale-[1.02]');
+        });
+
+        // Add active state styles from JSON to the Discover tab
+        // JSON style for active: "text-primary dark:text-primary-fixed-dim border-b-2 border-primary font-bold pb-1"
+        // Since this is mobile bottom nav, we adapt the logic for the "Discover" tab
+    </script>
+</body></html>

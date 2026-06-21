@@ -1,0 +1,15 @@
+.git
+node_modules
+vendor
+var/cache
+var/log
+var/sessions
+var/tmp
+public/build
+.env.local
+.env.*.local
+*.md
+.editorconfig
+.eslintrc.cjs
+.prettierrc
+references/

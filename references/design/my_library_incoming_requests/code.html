@@ -1,0 +1,302 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>My Library - Requests - FolioShare</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&amp;family=Work+Sans:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-lowest": "#ffffff",
+                      "primary": "#274738",
+                      "on-tertiary-fixed": "#2c1600",
+                      "surface-bright": "#fbf9f5",
+                      "surface-tint": "#446555",
+                      "inverse-on-surface": "#f2f0ed",
+                      "tertiary-fixed": "#ffdcbd",
+                      "secondary": "#565f67",
+                      "surface-container-low": "#f5f3ef",
+                      "outline": "#727974",
+                      "on-secondary-container": "#5c656d",
+                      "on-secondary-fixed": "#141d23",
+                      "on-primary-fixed": "#002114",
+                      "inverse-surface": "#30312e",
+                      "tertiary-fixed-dim": "#f0bd8b",
+                      "outline-variant": "#c1c8c2",
+                      "tertiary-container": "#765027",
+                      "surface-container-high": "#eae8e4",
+                      "on-error": "#ffffff",
+                      "on-surface": "#1b1c1a",
+                      "background": "#fbf9f5",
+                      "surface-variant": "#e4e2de",
+                      "error-container": "#ffdad6",
+                      "primary-container": "#3e5f4f",
+                      "surface-container": "#efeeea",
+                      "secondary-fixed": "#dae4ed",
+                      "on-tertiary-container": "#f9c592",
+                      "on-background": "#1b1c1a",
+                      "on-primary-container": "#b3d7c3",
+                      "on-tertiary-fixed-variant": "#623f18",
+                      "on-primary": "#ffffff",
+                      "on-secondary-fixed-variant": "#3f484f",
+                      "on-primary-fixed-variant": "#2d4d3e",
+                      "surface-container-highest": "#e4e2de",
+                      "secondary-container": "#dae4ed",
+                      "on-surface-variant": "#414844",
+                      "inverse-primary": "#aacfbb",
+                      "surface-dim": "#dbdad6",
+                      "on-error-container": "#93000a",
+                      "on-secondary": "#ffffff",
+                      "error": "#ba1a1a",
+                      "primary-fixed-dim": "#aacfbb",
+                      "on-tertiary": "#ffffff",
+                      "tertiary": "#5b3912",
+                      "surface": "#fbf9f5",
+                      "primary-fixed": "#c6ebd6",
+                      "secondary-fixed-dim": "#bec8d1"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "xl": "80px",
+                      "container-max": "1200px",
+                      "xs": "4px",
+                      "gutter": "24px",
+                      "base": "8px",
+                      "sm": "12px",
+                      "lg": "48px",
+                      "md": "24px"
+              },
+              "fontFamily": {
+                      "headline-md": [
+                              "Playfair Display"
+                      ],
+                      "headline-lg": [
+                              "Playfair Display"
+                      ],
+                      "label-md": [
+                              "Work Sans"
+                      ],
+                      "body-md": [
+                              "Work Sans"
+                      ],
+                      "headline-xl": [
+                              "Playfair Display"
+                      ],
+                      "headline-lg-mobile": [
+                              "Playfair Display"
+                      ],
+                      "label-sm": [
+                              "Work Sans"
+                      ],
+                      "body-lg": [
+                              "Work Sans"
+                      ]
+              },
+              "fontSize": {
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "1.3",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-xl": [
+                              "48px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "28px",
+                              {
+                                      "lineHeight": "1.3",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "0.03em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-md text-body-md">
+<!-- TopNavBar -->
+<header class="bg-surface border-b border-surface-container-highest w-full sticky top-0 z-50">
+<div class="flex justify-between items-center w-full px-gutter max-w-container-max mx-auto h-16">
+<div class="flex items-center gap-gutter">
+<a class="font-headline-md text-headline-md font-bold text-primary" href="#">FolioShare</a>
+<nav class="hidden md:flex gap-gutter h-full items-center">
+<a class="text-primary border-b-2 border-primary pb-1 h-full flex items-center mt-1 font-label-md text-label-md" href="#">My Library</a>
+<a class="text-secondary hover:text-primary transition-colors duration-200 h-full flex items-center font-label-md text-label-md" href="#">Discover</a>
+<a class="text-secondary hover:text-primary transition-colors duration-200 h-full flex items-center font-label-md text-label-md" href="#">Activity</a>
+</nav>
+</div>
+<div class="flex items-center gap-sm">
+<button aria-label="notifications" class="text-secondary hover:text-primary transition-colors duration-200 p-2">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button aria-label="bookmark" class="text-secondary hover:text-primary transition-colors duration-200 p-2">
+<span class="material-symbols-outlined" data-icon="bookmark">bookmark</span>
+</button>
+<button class="ml-2 w-8 h-8 rounded-full overflow-hidden bg-surface-variant border border-outline-variant">
+<img alt="User profile photo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADK2pR6tYqDDhSpdS2VwZA5vG30I6LmVx6Zh_VNyJ2HVEjRCuNNGAOrAf7T-s70RDju4prIWdQf3MySScrDlPzqSNbOWiXm6srgo4weHtjstTPGziPIfC5EIReUB4lrfGiopZk3hGPtWqSum4vSfGD3lGtSu1TPLBKDddLJ6b8F2z1SYZ0Rr3BO6MeaUMqZg6CtRmBxJTb6JF7brFuf46EM88LTHInT9ahsBru6z3B8WxvjNYuvWxcE70t1MBbIFGT8jQizkdAd4s">
+</button>
+</div>
+</div>
+</header>
+<main class="flex-grow flex flex-col w-full px-gutter max-w-container-max mx-auto py-lg md:py-xl">
+<!-- Page Header -->
+<div class="mb-lg">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-background mb-sm">My Library</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Manage your collection and community requests.</p>
+</div>
+<!-- Library Tabs -->
+<div class="flex border-b border-surface-container-highest mb-lg overflow-x-auto no-scrollbar">
+<button class="px-md py-sm font-label-md text-label-md text-secondary hover:text-primary transition-colors whitespace-nowrap">Collection</button>
+<button class="px-md py-sm font-label-md text-label-md text-secondary hover:text-primary transition-colors whitespace-nowrap">Lending</button>
+<button class="px-md py-sm font-label-md text-label-md text-primary border-b-2 border-primary font-semibold whitespace-nowrap">Requests</button>
+<button class="px-md py-sm font-label-md text-label-md text-secondary hover:text-primary transition-colors whitespace-nowrap">History</button>
+</div>
+<!-- Requests Content -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+<!-- Request Card 1 -->
+<div class="bg-surface-container-lowest border border-surface-variant rounded-lg p-md flex flex-col hover:border-outline-variant transition-colors group">
+<div class="flex items-start justify-between mb-md">
+<div class="flex items-center gap-sm">
+<img alt="Requester Profile" class="w-10 h-10 rounded-full object-cover border border-surface-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxxotJYBPdi4xngrkMEsFrVlUKNCJ9eMdz1682dLPVHQp_UK5M0inc086lf1LugghvBsIYtG82KahU7hERNWhRe2y4nC67sg-Paek4dpAIP0VSQhOAhbHIwLucxF9DDX0F6nmO3QKieQNpIIpw0wsiZITSViIMd67BbyXLxHCV4SZ9P3wVD4a4dge91bVxZ-kovTAdebVqpnOhsEqxxuLyScZYgSvmZzIOmNLfSo9QjXaO3JUpouVfnX447jBdsMNsBsa6x1ebxVY">
+<div>
+<h3 class="font-label-md text-label-md text-on-background font-semibold">Julian Black</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Requested today</p>
+</div>
+</div>
+</div>
+<div class="flex gap-md bg-surface-container-low p-sm rounded border border-surface-variant mb-md flex-grow items-center">
+<div class="w-16 h-24 flex-shrink-0 bg-surface-variant rounded overflow-hidden border border-outline-variant shadow-sm">
+<img alt="Book Cover" class="w-full h-full object-cover" data-alt="A close up shot of a hardcover book titled 'The Secret History' resting on a polished wooden desk in a warm, inviting library setting. The lighting is soft and natural, casting gentle shadows that highlight the book's textured cover. The atmosphere is quiet, scholarly, and deeply tactile, aligning perfectly with a sophisticated bookstore aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAQHwPCEnBpyjLPeDD97OWOVWtX4_-XYdpMnAp7YGn-T7RY-PKJCCkuA3dIbVqXbNxeRCKSs_tGqX57chZwI6t-yRkIjMghVnLAnvozRlJ_XOGW-6_AHXHCHvMKPrYoASfAV8sP0KrhY4GIKwYkF7Et7Q7wX-ByDTycv5SJ4KPOjnanC8qGZXHvD5eFF7J1vF6eaODI6yYBqDveiHk_9kR6J_dUvFcajY_0V5KhLw1OsxWxhqfKqwyGL9iBADOutRiJG7Re0In9-A">
+</div>
+<div class="flex flex-col justify-center">
+<h4 class="font-headline-md text-headline-md text-on-background text-lg leading-tight mb-xs">The Secret History</h4>
+<p class="font-label-md text-label-md text-secondary">Donna Tartt</p>
+</div>
+</div>
+<div class="flex gap-sm mt-auto">
+<button class="flex-1 bg-surface-container-lowest border border-secondary text-on-surface-variant px-md py-sm rounded hover:bg-surface-container-low transition-colors font-label-md text-label-md text-center">Decline</button>
+<button class="flex-1 bg-primary text-on-primary px-md py-sm rounded hover:bg-surface-tint transition-colors font-label-md text-label-md text-center shadow-sm">Approve</button>
+</div>
+</div>
+<!-- Request Card 2 -->
+<div class="bg-surface-container-lowest border border-surface-variant rounded-lg p-md flex flex-col hover:border-outline-variant transition-colors group">
+<div class="flex items-start justify-between mb-md">
+<div class="flex items-center gap-sm">
+<img alt="Requester Profile" class="w-10 h-10 rounded-full object-cover border border-surface-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZUGLAo3GyrmrzQG2rUeheiKou-d9z-UmqhaHCHRbQjRfovdtKnM7FH9-InldnbhIpyNPr5KrEwo0Z_s2rI8hy5gV1InUu1BYVYyiRI7phTWWU4iRR7iJmqA9yQOaiGHqZTLHkI4kK0vVecKNbc0hJkpVh2q4TeEVscJSB6T7Ivgd_2GUmcxTc2ckh0JucwNXhvhe5Jn4AbxAfuWp3IR2P2YYA1b2mQaEcbpYerEN-ssaURsG7pgorgH9JfXUjNZ4l9eRTGlnnIcA">
+<div>
+<h3 class="font-label-md text-label-md text-on-background font-semibold">Eleanor Vance</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Requested 2 days ago</p>
+</div>
+</div>
+</div>
+<div class="flex gap-md bg-surface-container-low p-sm rounded border border-surface-variant mb-md flex-grow items-center">
+<div class="w-16 h-24 flex-shrink-0 bg-surface-variant rounded overflow-hidden border border-outline-variant shadow-sm">
+<img alt="Book Cover" class="w-full h-full object-cover" data-alt="A vintage, slightly worn paperback book titled 'The Haunting of Hill House' resting on a linen textured surface. The lighting is slightly dim, evoking a moody, classic horror atmosphere suitable for a cozy evening read. The aesthetic is tactile, emphasizing the physical nature of the book within a curated library setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5TQmaEj3FS1yDCmchn4PzSSuZdoAJa_Iz7NooNh48nOJXwGBS4dW4NUrHkKITJMSd56SQjwHGBh-1hz8uZ73OzhzA2n1Wv4-Hgi8TNdN7s1xwOcYlVJy3Hd-6eY3kBZ3OA-DqO-5pCn9VQLghjrbHV4drVsGyCVuj-Fa5cuUAZJ_mg6o8mtBgU1jVPg-ETF7ZKtP0Ur88CyYsVanrl6Ixdg8nY4_vAfrAVjtDidgvO1i5NqCeNVWSDYyUm1WK2tTKF49wXe9IXIs">
+</div>
+<div class="flex flex-col justify-center">
+<h4 class="font-headline-md text-headline-md text-on-background text-lg leading-tight mb-xs">The Haunting of Hill House</h4>
+<p class="font-label-md text-label-md text-secondary">Shirley Jackson</p>
+</div>
+</div>
+<div class="flex gap-sm mt-auto">
+<button class="flex-1 bg-surface-container-lowest border border-secondary text-on-surface-variant px-md py-sm rounded hover:bg-surface-container-low transition-colors font-label-md text-label-md text-center">Decline</button>
+<button class="flex-1 bg-primary text-on-primary px-md py-sm rounded hover:bg-surface-tint transition-colors font-label-md text-label-md text-center shadow-sm">Approve</button>
+</div>
+</div>
+<!-- Request Card 3 -->
+<div class="bg-surface-container-lowest border border-surface-variant rounded-lg p-md flex flex-col hover:border-outline-variant transition-colors group">
+<div class="flex items-start justify-between mb-md">
+<div class="flex items-center gap-sm">
+<img alt="Requester Profile" class="w-10 h-10 rounded-full object-cover border border-surface-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtotnRMBh5g0RtAxayz2Twx6ilcL1WvYde_8QuUKMgoh8bjG3IITOQ-OcxR_b7rRUnhWUSe-F5b2GotWwNxaFazSk0M7BkkZT8W2dIi7cYtaODi3yErWO07FMZNX6C29fXfw2e1N8em0ON7Rutb9SlW8CbgfQtADI7M1Mh5kx2FKKvSJSCqMH0Lia7CIByXKwhZs9TyhZgz_kvZ44KDn3FwaCrx8rmk49Lq634kNZuO7g0zs1b0zpAAq_mCtHz6p575lHa9775caQ">
+<div>
+<h3 class="font-label-md text-label-md text-on-background font-semibold">Arthur Dent</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Requested 3 days ago</p>
+</div>
+</div>
+</div>
+<div class="flex gap-md bg-surface-container-low p-sm rounded border border-surface-variant mb-md flex-grow items-center">
+<div class="w-16 h-24 flex-shrink-0 bg-surface-variant rounded overflow-hidden border border-outline-variant shadow-sm">
+<img alt="Book Cover" class="w-full h-full object-cover" data-alt="A bright, colorful hardcover book titled 'The Hitchhiker's Guide to the Galaxy' placed on a clean, light-colored desk next to a cup of coffee. The lighting is crisp and modern, highlighting the vibrant cover design. The scene conveys a relaxed, enjoyable reading session in a contemporary, intellectual environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFRo7NfZ7ygTWynTiW5_em_4_k8DKyYLual0DTsgX67ok4IeovvcJDqfvgfx0n3RM8jFXNF6q7voE7ZUV3LRNC9E6GZMdomP4bXfQn4NgzC9mZvyWFHhIynR-mgFbA0FOjYBiY6tE3iNIKV0AnmLROgluL2wLY_xTYnwrbN-kmtQ6k9DEN2HOnhp6vg2N6n-zakXOlnNUQl6FQ_grCyE9qvJ_UCE_nstwz7hkRQFvje_cWNTLJ4rBX1HQ0QyeB712c5QKinHMDm8Q">
+</div>
+<div class="flex flex-col justify-center">
+<h4 class="font-headline-md text-headline-md text-on-background text-lg leading-tight mb-xs">The Hitchhiker's Guide</h4>
+<p class="font-label-md text-label-md text-secondary">Douglas Adams</p>
+</div>
+</div>
+<div class="flex gap-sm mt-auto">
+<button class="flex-1 bg-surface-container-lowest border border-secondary text-on-surface-variant px-md py-sm rounded hover:bg-surface-container-low transition-colors font-label-md text-label-md text-center">Decline</button>
+<button class="flex-1 bg-primary text-on-primary px-md py-sm rounded hover:bg-surface-tint transition-colors font-label-md text-label-md text-center shadow-sm">Approve</button>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-low border-t border-surface-container-highest mt-auto w-full">
+<div class="w-full py-xl px-gutter flex flex-col md:flex-row justify-between items-center max-w-container-max mx-auto gap-md">
+<div class="font-headline-md text-headline-md text-primary">FolioShare</div>
+<nav class="flex gap-md md:gap-lg font-label-md text-label-md text-on-surface-variant">
+<a class="hover:underline hover:text-primary transition-all duration-200" href="#">Community Guidelines</a>
+<a class="hover:underline hover:text-primary transition-all duration-200" href="#">About Us</a>
+<a class="hover:underline hover:text-primary transition-all duration-200" href="#">Help Center</a>
+</nav>
+<div class="font-label-md text-label-md text-secondary">
+                © 2024 FolioShare. Curating stories for a thoughtful community.
+            </div>
+</div>
+</footer>
+</body></html>

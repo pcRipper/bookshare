@@ -1,3 +1,11 @@
+<script setup>
+import AppErrorBoundary from '@/components/AppErrorBoundary.vue'
+import ToastHost from '@/components/ui/ToastHost.vue'
+</script>
+
 <template>
-  <RouterView />
+  <AppErrorBoundary>
+    <RouterView />
+  </AppErrorBoundary>
+  <ToastHost />
 </template>

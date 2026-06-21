@@ -1,0 +1,37 @@
+// Grafana Alloy configuration — bookshare monitoring
+// Collects metrics from nginx, PHP-FPM, and PostgreSQL and forwards to Prometheus.
+
+// ── Nginx stub_status metrics ────────────────────────────────────────────────
+prometheus.exporter.nginx "nginx" {
+  scrape_uri = "http://nginx/nginx_status"
+}
+
+// ── PHP-FPM metrics (requires pm.status_path = /fpm-status in php-fpm pool) ─
+prometheus.exporter.php_fpm "phpfpm" {
+  scrape_uri  = "fcgi://phpfpm:9000/fpm-status"
+  status_path = "/fpm-status"
+}
+
+// ── PostgreSQL metrics ───────────────────────────────────────────────────────
+// DSN is injected via the POSTGRES_DSN environment variable in compose.yaml.
+prometheus.exporter.postgres "postgresql" {
+  data_source_names = [env("POSTGRES_DSN")]
+}
+
+// ── Scrape all exporters ─────────────────────────────────────────────────────
+prometheus.scrape "exporters" {
+  targets = concat(
+    prometheus.exporter.nginx.nginx.targets,
+    prometheus.exporter.php_fpm.phpfpm.targets,
+    prometheus.exporter.postgres.postgresql.targets,
+  )
+  scrape_interval = "15s"
+  forward_to      = [prometheus.remote_write.prometheus.receiver]
+}
+
+// ── Remote-write to local Prometheus ────────────────────────────────────────
+prometheus.remote_write "prometheus" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+  }
+}

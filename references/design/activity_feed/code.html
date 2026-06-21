@@ -1,0 +1,225 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>FolioShare - Activity Feed</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&amp;family=Work+Sans:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error": "#ba1a1a",
+                        "on-secondary": "#ffffff",
+                        "tertiary": "#5b3912",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed-dim": "#aacfbb",
+                        "secondary-fixed-dim": "#bec8d1",
+                        "primary-fixed": "#c6ebd6",
+                        "surface": "#fbf9f5",
+                        "on-tertiary-fixed-variant": "#623f18",
+                        "on-primary": "#ffffff",
+                        "surface-container-highest": "#e4e2de",
+                        "secondary-container": "#dae4ed",
+                        "on-surface-variant": "#414844",
+                        "inverse-primary": "#aacfbb",
+                        "on-secondary-fixed-variant": "#3f484f",
+                        "on-primary-fixed-variant": "#2d4d3e",
+                        "surface-dim": "#dbdad6",
+                        "on-error-container": "#93000a",
+                        "surface-container-high": "#eae8e4",
+                        "tertiary-container": "#765027",
+                        "tertiary-fixed-dim": "#f0bd8b",
+                        "outline-variant": "#c1c8c2",
+                        "on-surface": "#1b1c1a",
+                        "on-error": "#ffffff",
+                        "primary-container": "#3e5f4f",
+                        "surface-variant": "#e4e2de",
+                        "error-container": "#ffdad6",
+                        "background": "#fbf9f5",
+                        "on-primary-container": "#b3d7c3",
+                        "secondary-fixed": "#dae4ed",
+                        "on-tertiary-container": "#f9c592",
+                        "on-background": "#1b1c1a",
+                        "surface-container": "#efeeea",
+                        "on-tertiary-fixed": "#2c1600",
+                        "primary": "#274738",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#f2f0ed",
+                        "surface-tint": "#446555",
+                        "surface-bright": "#fbf9f5",
+                        "surface-container-low": "#f5f3ef",
+                        "outline": "#727974",
+                        "tertiary-fixed": "#ffdcbd",
+                        "secondary": "#565f67",
+                        "inverse-surface": "#30312e",
+                        "on-secondary-fixed": "#141d23",
+                        "on-primary-fixed": "#002114",
+                        "on-secondary-container": "#5c656d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "xl": "80px",
+                        "xs": "4px",
+                        "gutter": "24px",
+                        "base": "8px",
+                        "container-max": "1200px",
+                        "md": "24px",
+                        "sm": "12px",
+                        "lg": "48px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Playfair Display"],
+                        "headline-md": ["Playfair Display"],
+                        "label-sm": ["Work Sans"],
+                        "body-lg": ["Work Sans"],
+                        "headline-xl": ["Playfair Display"],
+                        "headline-lg-mobile": ["Playfair Display"],
+                        "body-md": ["Work Sans"],
+                        "label-md": ["Work Sans"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "label-sm": ["12px", { "lineHeight": "1.2", "letterSpacing": "0.03em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-xl": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: theme('colors.background'); color: theme('colors.on-background'); }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .material-symbols-outlined[data-weight="fill"] { font-variation-settings: 'FILL' 1; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-body-md text-body-md">
+<!-- TopNavBar -->
+<header class="bg-surface border-b border-outline-variant w-full sticky top-0 z-50">
+<div class="flex justify-between items-center px-gutter py-4 max-w-container-max mx-auto w-full">
+<div class="font-headline-md text-headline-md font-bold text-primary">FolioShare</div>
+<nav class="hidden md:flex space-x-md">
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">My Library</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Discover</a>
+<a class="text-primary border-b-2 border-primary font-bold pb-1 transition-all" href="#">Activity</a>
+</nav>
+<div class="flex items-center space-x-md text-primary">
+<button class="hover:text-primary transition-colors duration-200 active:opacity-80">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+<button class="hover:text-primary transition-colors duration-200 active:opacity-80">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="hover:text-primary transition-colors duration-200 active:opacity-80">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow w-full max-w-container-max mx-auto px-gutter py-xl">
+<header class="mb-lg">
+<h1 class="font-headline-lg text-headline-lg text-primary mb-xs">Recent Activity</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Stay updated with your literary circle.</p>
+</header>
+<!-- Activity Feed -->
+<div class="space-y-base relative before:absolute before:inset-y-0 before:left-[28px] before:w-px before:bg-outline-variant before:-z-10">
+<!-- Activity Item 1 -->
+<article class="bg-surface-container rounded-lg p-md border border-outline-variant hover:border-primary transition-colors duration-300 flex gap-md items-start group">
+<div class="shrink-0 w-14 h-14 rounded-full overflow-hidden border-2 border-surface bg-surface-variant z-10">
+<img alt="Elena's Avatar" class="w-full h-full object-cover" data-alt="A close-up portrait of a young woman with a warm smile, set against a soft, light-toned background. The lighting is natural and flattering, creating a calm and inviting atmosphere. The overall aesthetic is modern, clean, and professional, aligning with a sophisticated light-mode design system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA1kq34JdiRKUzuU_Le2clEjP6eTkl9mBpUFAOxxfSo4Hg0sadW3Ryzj0qCpaU7mi7_-puJy6Teu4Bc5x_XTmZdr1p1w4TofzOmlVeQc1Jmu-lsLsZilCqtpVulVhGvudjeWwfcN132aWosy0mV9gFqi16L3dURIrLdHHziIU6DAATresQ9XzQT4BXNrnJKhszQDvZEtz6Yq4waraEiMP_VooDgtw_w8jfL20EG65F2rAw5LNZd0TD3jl4LSjDxsb1B5pURbjZVBpg">
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-baseline mb-xs">
+<h3 class="font-label-md text-label-md text-on-surface"><span class="font-bold">Elena</span> borrowed <span class="italic">Dune</span> from you.</h3>
+<time class="font-label-sm text-label-sm text-on-surface-variant shrink-0">2 hours ago</time>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-sm">She promised to return it pristine.</p>
+<button class="bg-primary text-on-primary px-gutter py-sm rounded-DEFAULT font-label-md text-label-md hover:bg-surface-tint transition-colors">View Book</button>
+</div>
+</article>
+<!-- Activity Item 2 -->
+<article class="bg-surface-container rounded-lg p-md border border-outline-variant hover:border-primary transition-colors duration-300 flex gap-md items-start group">
+<div class="shrink-0 w-14 h-14 rounded-full overflow-hidden border-2 border-surface bg-surface-variant z-10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="forum">forum</span>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-baseline mb-xs">
+<h3 class="font-label-md text-label-md text-on-surface">New comment on <span class="italic">Pride and Prejudice</span>.</h3>
+<time class="font-label-sm text-label-sm text-on-surface-variant shrink-0">5 hours ago</time>
+</div>
+<div class="bg-surface p-sm border border-outline-variant rounded-DEFAULT mb-sm">
+<p class="font-body-md text-body-md text-on-surface-variant italic">"Darcy's character arc remains unparalleled..."</p>
+</div>
+<button class="border border-primary text-primary px-gutter py-sm rounded-DEFAULT font-label-md text-label-md hover:bg-surface transition-colors">Reply</button>
+</div>
+</article>
+<!-- Activity Item 3 -->
+<article class="bg-surface-container rounded-lg p-md border border-outline-variant hover:border-primary transition-colors duration-300 flex gap-md items-start group">
+<div class="shrink-0 w-14 h-14 rounded-full overflow-hidden border-2 border-surface bg-primary text-on-primary z-10 flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="person_add">person_add</span>
+</div>
+<div class="flex-grow flex flex-col justify-center min-h-[56px]">
+<div class="flex justify-between items-baseline">
+<h3 class="font-label-md text-label-md text-on-surface">You started following <span class="font-bold">Marcus</span>.</h3>
+<time class="font-label-sm text-label-sm text-on-surface-variant shrink-0">Yesterday</time>
+</div>
+</div>
+</article>
+<!-- Activity Item 4 -->
+<article class="bg-surface-container rounded-lg p-md border border-outline-variant hover:border-primary transition-colors duration-300 flex gap-md items-start group">
+<div class="shrink-0 w-14 h-14 rounded-full overflow-hidden border-2 border-surface bg-surface-variant z-10">
+<img alt="Marcus's Avatar" class="w-full h-full object-cover" data-alt="A headshot of a thoughtful man looking slightly off-camera, captured with soft, diffused lighting. The background is a muted, light paper tone, creating a serene and sophisticated mood. The overall aesthetic is clean, modern, and aligned with a minimalist design system favoring subtle depth." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXWvzf7GK-RtAq8E5gDtvaualnO9IdqkiKeSmBJxCGgFeaW07jbysGj8oIs1581eQWBN_IEmVFpqVTo1rBgyyQSENWoZe-a5NhLZAQtGQvfe6h7LjFnpXTmrLpUM1sMmeLIU7TOcWQB_yDgXHBHJGg2LaSyDaXLIYLOyp740cpm3yWPKdTRCVk0SiyS0pkk3U4YtWjVMFRX0scDpmDTZlMqHqeo23aA_t62am6UNBihRBgLzzrL0mA-ug-Fg0BL_k6OxaEszXR0OM">
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-baseline mb-xs">
+<h3 class="font-label-md text-label-md text-on-surface"><span class="font-bold">Marcus</span> added a new book to their collection.</h3>
+<time class="font-label-sm text-label-sm text-on-surface-variant shrink-0">2 days ago</time>
+</div>
+<div class="flex gap-sm items-center mt-sm">
+<div class="w-12 h-16 bg-surface-variant border border-outline-variant rounded-sm overflow-hidden shrink-0">
+<img alt="Book Cover" class="w-full h-full object-cover" data-alt="A minimalist book cover design featuring an elegant serif typography title on a textured, off-white paper background. The cover has a subtle embossed feel, hinting at a tactile reading experience. The aesthetic is sophisticated, quiet, and intellectual, fitting perfectly within a refined, curated digital library interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkEv0Lfbe-W974Yu2mJbbc17WUd-KNTcpDlXXD6JAccSbJqDZJq5YvTx3sRNuWWXrekcguhE-YBj3xpaNkGGmmvEY3jOwKe6_oSQZwzDlAdY2lnlt2KNEp1Y_0NVLv5_WBQSIarPco8On3DjuIMCIXPDurhp2RbBgJMvhMWGe8YWDENiU9aanKrUUTMCt7kzXdbZ38g1p3Ey8RE1Ypkhj6Q4RDFP0i228JCeDsi6ywfRU5Y9IYMcE-I2HHPBqzB2Z5DsDTQq2QQsU">
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-bold">The Secret History</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Donna Tartt</span>
+</div>
+</div>
+</div>
+</article>
+</div>
+<div class="mt-lg text-center">
+<button class="border border-primary text-primary px-gutter py-sm rounded-DEFAULT font-label-md text-label-md hover:bg-surface transition-colors">Load More Activity</button>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container border-t border-outline-variant w-full mt-xl">
+<div class="flex flex-col md:flex-row justify-between items-center px-gutter py-lg max-w-container-max mx-auto w-full">
+<div class="font-headline-sm text-headline-sm text-primary mb-md md:mb-0">FolioShare</div>
+<nav class="flex flex-wrap justify-center gap-md font-label-sm text-label-sm">
+<a class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer" href="#">About</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer" href="#">Terms of Service</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer" href="#">Help Center</a>
+</nav>
+<div class="font-label-sm text-label-sm text-on-surface-variant mt-md md:mt-0">
+                © 2024 FolioShare. Curated for the community.
+            </div>
+</div>
+</footer>
+</body></html>

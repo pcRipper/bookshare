@@ -1,0 +1,326 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Profile Settings - FolioShare</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary": "#565f67",
+                      "outline-variant": "#c1c8c2",
+                      "on-background": "#1b1c1a",
+                      "tertiary-fixed": "#ffdcbd",
+                      "tertiary-fixed-dim": "#f0bd8b",
+                      "primary-fixed": "#c6ebd6",
+                      "on-secondary-fixed-variant": "#3f484f",
+                      "surface-container-highest": "#e4e2de",
+                      "surface-container-lowest": "#ffffff",
+                      "tertiary-container": "#765027",
+                      "on-primary-fixed-variant": "#2d4d3e",
+                      "surface-bright": "#fbf9f5",
+                      "surface-container-high": "#eae8e4",
+                      "on-secondary": "#ffffff",
+                      "on-tertiary-fixed-variant": "#623f18",
+                      "on-error-container": "#93000a",
+                      "primary-container": "#3e5f4f",
+                      "on-tertiary": "#ffffff",
+                      "surface-dim": "#dbdad6",
+                      "surface-container-low": "#f5f3ef",
+                      "surface-variant": "#e4e2de",
+                      "on-secondary-fixed": "#141d23",
+                      "on-primary": "#ffffff",
+                      "on-tertiary-fixed": "#2c1600",
+                      "background": "#fbf9f5",
+                      "tertiary": "#5b3912",
+                      "surface": "#fbf9f5",
+                      "on-primary-container": "#b3d7c3",
+                      "secondary-fixed": "#dae4ed",
+                      "primary": "#274738",
+                      "primary-fixed-dim": "#aacfbb",
+                      "inverse-on-surface": "#f2f0ed",
+                      "error-container": "#ffdad6",
+                      "outline": "#727974",
+                      "secondary-container": "#dae4ed",
+                      "secondary-fixed-dim": "#bec8d1",
+                      "on-surface-variant": "#414844",
+                      "on-error": "#ffffff",
+                      "surface-tint": "#446555",
+                      "inverse-surface": "#30312e",
+                      "error": "#ba1a1a",
+                      "surface-container": "#efeeea",
+                      "on-tertiary-container": "#f9c592",
+                      "inverse-primary": "#aacfbb",
+                      "on-secondary-container": "#5c656d",
+                      "on-surface": "#1b1c1a",
+                      "on-primary-fixed": "#002114"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "base": "8px",
+                      "gutter": "24px",
+                      "lg": "48px",
+                      "xl": "80px",
+                      "xs": "4px",
+                      "container-max": "1200px",
+                      "md": "24px",
+                      "sm": "12px"
+              },
+              "fontFamily": {
+                      "headline-lg-mobile": [
+                              "Playfair Display"
+                      ],
+                      "headline-xl": [
+                              "Playfair Display"
+                      ],
+                      "body-lg": [
+                              "Work Sans"
+                      ],
+                      "label-sm": [
+                              "Work Sans"
+                      ],
+                      "label-md": [
+                              "Work Sans"
+                      ],
+                      "headline-md": [
+                              "Playfair Display"
+                      ],
+                      "headline-lg": [
+                              "Playfair Display"
+                      ],
+                      "body-md": [
+                              "Work Sans"
+                      ]
+              },
+              "fontSize": {
+                      "headline-lg-mobile": [
+                              "28px",
+                              {
+                                      "lineHeight": "1.3",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-xl": [
+                              "48px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "0.03em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "1.3",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        body {
+            background-color: #fbf9f5;
+            color: #1b1c1a;
+        }
+        
+        /* Subtle texture overlay for "paper" feel */
+        .texture-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.02;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+        
+        .input-focus-ring:focus-within {
+            border-color: #274738;
+        }
+    </style>
+</head>
+<body class="bg-background min-h-screen flex flex-col font-body-md text-on-background relative">
+<div class="texture-overlay"></div>
+<!-- TopNavBar -->
+<header class="bg-surface border-b border-surface-container-highest docked full-width top-0 sticky z-50">
+<div class="flex justify-between items-center w-full px-gutter max-w-container-max mx-auto h-16">
+<!-- Brand -->
+<div class="flex items-center gap-md">
+<a class="font-headline-md text-headline-md font-bold text-primary" href="#">FolioShare</a>
+<!-- Nav Links (Desktop) -->
+<nav class="hidden md:flex items-center gap-gutter ml-lg">
+<a class="font-label-md text-label-md text-secondary hover:text-primary transition-colors duration-200" href="#">My Library</a>
+<a class="font-label-md text-label-md text-secondary hover:text-primary transition-colors duration-200" href="#">Discover</a>
+<a class="font-label-md text-label-md text-secondary hover:text-primary transition-colors duration-200" href="#">Activity</a>
+</nav>
+</div>
+<!-- Actions -->
+<div class="flex items-center gap-md">
+<button aria-label="Search" class="text-secondary hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">search</span>
+</button>
+<button aria-label="Notifications" class="text-secondary hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
+</button>
+<button aria-label="Bookmarks" class="text-secondary hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">bookmark</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant cursor-pointer ml-sm">
+<img alt="User profile photo" class="w-full h-full object-cover" data-alt="A close-up portrait of a thoughtful person in a bright, minimalist setting, representing a user profile photo. The lighting is soft and natural, emphasizing a calm and professional mood suitable for a modern bookstore or library application." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgBMuhJHjsAxdt-HKqkFvlqSSC2Fmi7yxsDwJ-LE_HysDgkaylOso7ZZ1JTqypn8zmLgiiDqjM36epBzUJJNpAf_I97tSbUeGaQ-Gu5qswhlcpYLHzc5ws0vrYaz_Rfu9m2AblUeyihA1eLbSvejNr4uS-o-QKq-M64udBrUFAy0eL7lhTazZ4rczKNfUvUP1fpknVV8iQfH6BZ1LPpAH2gwtQRgLMSBLy-jftnMeTNV5ZlA9z6vPuPrNsgL3XNFpsRFXHroGjShI">
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-grow w-full max-w-container-max mx-auto px-gutter py-lg flex flex-col md:flex-row gap-lg">
+<!-- Sidebar Settings Nav -->
+<aside class="w-full md:w-64 flex-shrink-0">
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-background mb-lg">Settings</h1>
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-sm px-4 py-3 rounded-DEFAULT bg-surface-container-high border-l-2 border-primary text-primary font-label-md text-label-md font-semibold transition-all" href="#">
+<span class="material-symbols-outlined">person</span>
+                    Account Profile
+                </a>
+<a class="flex items-center gap-sm px-4 py-3 rounded-DEFAULT text-secondary hover:bg-surface-container-low hover:text-primary font-label-md text-label-md transition-all" href="#">
+<span class="material-symbols-outlined">lock</span>
+                    Privacy &amp; Security
+                </a>
+<a class="flex items-center gap-sm px-4 py-3 rounded-DEFAULT text-secondary hover:bg-surface-container-low hover:text-primary font-label-md text-label-md transition-all" href="#">
+<span class="material-symbols-outlined">notifications</span>
+                    Notifications
+                </a>
+<a class="flex items-center gap-sm px-4 py-3 rounded-DEFAULT text-secondary hover:bg-surface-container-low hover:text-primary font-label-md text-label-md transition-all mt-lg border-t border-surface-container-highest" href="#">
+<span class="material-symbols-outlined">logout</span>
+                    Sign Out
+                </a>
+</nav>
+</aside>
+<!-- Settings Form Area (Cards) -->
+<div class="flex-grow flex flex-col gap-lg max-w-3xl">
+<h2 class="font-headline-md text-headline-md text-on-background border-b border-surface-container-highest pb-sm">Public Profile</h2>
+<!-- Profile Photo Section -->
+<section class="bg-surface-container-lowest border border-surface-container-highest rounded-lg p-md flex flex-col sm:flex-row items-center gap-lg">
+<div class="relative w-32 h-32 flex-shrink-0 group">
+<img alt="Current Profile Photo" class="w-full h-full object-cover rounded-full border border-surface-container-highest" data-alt="A portrait of a thoughtful person in a bright, minimalist setting, representing a user profile photo. The lighting is soft and natural, emphasizing a calm and professional mood suitable for a modern bookstore or library application. The image is circular and framed simply." src="https://lh3.googleusercontent.com/aida-public/AB6AXuACQnCLLoCgDF6S9n2WpU_Htv7RDsjCAFBfhGTEqUAnH3JcFdgvnunMdeRUnu3YU5Dnl11WfyEgU_y0IiXWXTrbZNrCrcfKpIC08qAB99x1PcFcatuiGAfQUdH_TBt8Fr5eet4k6dmuZyV9z3MoCBhq43cT778VwU3VhllnEgUaPHJf2Sl3-dd36FMq2Nw0My7QOwR1KdqAWWs5qmM65xbAmFd2i1qXUsQOYR9zijLKsjZMTn2Fni7kfT-fqNXe1MzE0yEkAZE1EjY">
+<button aria-label="Change photo" class="absolute inset-0 bg-inverse-surface bg-opacity-60 text-on-secondary rounded-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+<span class="material-symbols-outlined mb-1">photo_camera</span>
+<span class="font-label-sm text-label-sm text-white">Change</span>
+</button>
+</div>
+<div class="flex flex-col gap-sm text-center sm:text-left">
+<h3 class="font-label-md text-label-md text-on-surface font-semibold">Profile Photo</h3>
+<p class="font-body-md text-body-md text-secondary text-sm">Upload a high-res picture. Recommended size is 256x256px. JPG, GIF or PNG.</p>
+<div class="flex items-center justify-center sm:justify-start gap-md mt-sm">
+<button class="px-6 py-2 bg-primary text-on-primary font-label-md text-label-md rounded-DEFAULT hover:bg-primary-container transition-colors">Upload new</button>
+<button class="px-6 py-2 border border-outline text-secondary font-label-md text-label-md rounded-DEFAULT hover:bg-surface-container-low transition-colors">Remove</button>
+</div>
+</div>
+</section>
+<!-- Personal Info Form -->
+<section class="bg-surface-container-lowest border border-surface-container-highest rounded-lg p-md">
+<form class="flex flex-col gap-md">
+<div class="flex flex-col sm:flex-row gap-md">
+<div class="flex-1 flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant" for="firstName">First Name</label>
+<div class="input-focus-ring border border-surface-container-highest rounded-DEFAULT bg-surface-container-lowest flex items-center px-sm py-2 transition-colors duration-200">
+<input class="w-full bg-transparent border-none outline-none font-body-md text-body-md text-on-background p-0 focus:ring-0" id="firstName" type="text" value="Elena">
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant" for="lastName">Last Name</label>
+<div class="input-focus-ring border border-surface-container-highest rounded-DEFAULT bg-surface-container-lowest flex items-center px-sm py-2 transition-colors duration-200">
+<input class="w-full bg-transparent border-none outline-none font-body-md text-body-md text-on-background p-0 focus:ring-0" id="lastName" type="text" value="Rostova">
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-xs mt-sm">
+<label class="font-label-sm text-label-sm text-on-surface-variant" for="bio">Biography</label>
+<div class="input-focus-ring border border-surface-container-highest rounded-DEFAULT bg-surface-container-lowest flex p-sm transition-colors duration-200">
+<textarea class="w-full bg-transparent border-none outline-none font-body-md text-body-md text-on-background p-0 focus:ring-0 resize-none" id="bio" rows="4">Avid reader of historical fiction and collector of rare first editions. Always looking for the next great story to share.</textarea>
+</div>
+<p class="font-label-sm text-label-sm text-secondary mt-1 text-right">112 / 300</p>
+</div>
+<div class="flex flex-col gap-xs mt-sm">
+<label class="font-label-sm text-label-sm text-on-surface-variant" for="location">Location</label>
+<div class="input-focus-ring border border-surface-container-highest rounded-DEFAULT bg-surface-container-lowest flex items-center px-sm py-2 transition-colors duration-200">
+<span class="material-symbols-outlined text-secondary mr-2 text-sm">location_on</span>
+<input class="w-full bg-transparent border-none outline-none font-body-md text-body-md text-on-background p-0 focus:ring-0" id="location" type="text" value="Seattle, WA">
+</div>
+</div>
+<div class="flex items-center justify-end gap-md mt-lg pt-md border-t border-surface-container-highest">
+<button class="px-6 py-2 text-secondary font-label-md text-label-md hover:text-on-background transition-colors" type="button">Cancel</button>
+<button class="px-6 py-2 bg-primary text-on-primary font-label-md text-label-md rounded-DEFAULT hover:bg-primary-container transition-colors shadow-sm" type="submit">Save Changes</button>
+</div>
+</form>
+</section>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-low border-t border-surface-container-highest mt-auto">
+<div class="w-full py-xl px-gutter flex flex-col md:flex-row justify-between items-center max-w-container-max mx-auto gap-lg md:gap-0">
+<div class="font-headline-md text-headline-md text-primary font-bold">FolioShare</div>
+<div class="flex flex-wrap justify-center gap-gutter text-secondary font-label-md text-label-md">
+<a class="hover:underline hover:text-primary transition-all duration-200" href="#">Community Guidelines</a>
+<a class="hover:underline hover:text-primary transition-all duration-200" href="#">About Us</a>
+<a class="hover:underline hover:text-primary transition-all duration-200" href="#">Help Center</a>
+</div>
+<div class="text-secondary font-body-md text-body-md text-sm">
+                © 2024 FolioShare. Curating stories for a thoughtful community.
+            </div>
+</div>
+</footer>
+</body></html>

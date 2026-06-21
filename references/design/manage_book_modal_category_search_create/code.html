@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FolioShare - Add/Edit Book</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&amp;family=Work+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary": "#565f67",
+                        "outline-variant": "#c1c8c2",
+                        "on-background": "#1b1c1a",
+                        "tertiary-fixed": "#ffdcbd",
+                        "tertiary-fixed-dim": "#f0bd8b",
+                        "primary-fixed": "#c6ebd6",
+                        "on-secondary-fixed-variant": "#3f484f",
+                        "surface-container-highest": "#e4e2de",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-container": "#765027",
+                        "on-primary-fixed-variant": "#2d4d3e",
+                        "surface-bright": "#fbf9f5",
+                        "surface-container-high": "#eae8e4",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#623f18",
+                        "on-error-container": "#93000a",
+                        "primary-container": "#3e5f4f",
+                        "on-tertiary": "#ffffff",
+                        "surface-dim": "#dbdad6",
+                        "surface-container-low": "#f5f3ef",
+                        "surface-variant": "#e4e2de",
+                        "on-secondary-fixed": "#141d23",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#2c1600",
+                        "background": "#fbf9f5",
+                        "tertiary": "#5b3912",
+                        "surface": "#fbf9f5",
+                        "on-primary-container": "#b3d7c3",
+                        "secondary-fixed": "#dae4ed",
+                        "primary": "#274738",
+                        "primary-fixed-dim": "#aacfbb",
+                        "inverse-on-surface": "#f2f0ed",
+                        "error-container": "#ffdad6",
+                        "outline": "#727974",
+                        "secondary-container": "#dae4ed",
+                        "secondary-fixed-dim": "#bec8d1",
+                        "on-surface-variant": "#414844",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#446555",
+                        "inverse-surface": "#30312e",
+                        "error": "#ba1a1a",
+                        "surface-container": "#efeeea",
+                        "on-tertiary-container": "#f9c592",
+                        "inverse-primary": "#aacfbb",
+                        "on-secondary-container": "#5c656d",
+                        "on-surface": "#1b1c1a",
+                        "on-primary-fixed": "#002114"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "gutter": "24px",
+                        "lg": "48px",
+                        "xl": "80px",
+                        "xs": "4px",
+                        "container-max": "1200px",
+                        "md": "24px",
+                        "sm": "12px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Playfair Display"],
+                        "headline-xl": ["Playfair Display"],
+                        "body-lg": ["Work Sans"],
+                        "label-sm": ["Work Sans"],
+                        "label-md": ["Work Sans"],
+                        "headline-md": ["Playfair Display"],
+                        "headline-lg": ["Playfair Display"],
+                        "body-md": ["Work Sans"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["28px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "headline-xl": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "1.2", "letterSpacing": "0.03em", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }]
+                    },
+                    boxShadow: {
+                        'level-2': '0px 10px 30px rgba(35, 44, 51, 0.08)'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-md text-body-md relative overflow-hidden">
+<!-- TopNavBar -->
+<nav class="bg-surface border-b border-surface-container-highest w-full top-0 z-10 flex justify-between items-center px-gutter max-w-container-max mx-auto h-16 blur-sm transition-all duration-300">
+<div class="flex items-center gap-gutter">
+<span class="font-headline-md text-headline-md font-bold text-primary">FolioShare</span>
+<div class="hidden md:flex gap-gutter">
+<a class="text-primary border-b-2 border-primary pb-1 font-label-md text-label-md" href="#">My Library</a>
+<a class="text-secondary hover:text-primary transition-colors duration-200 font-label-md text-label-md" href="#">Discover</a>
+<a class="text-secondary hover:text-primary transition-colors duration-200 font-label-md text-label-md" href="#">Activity</a>
+</div>
+</div>
+<div class="flex items-center gap-md text-primary">
+<span class="material-symbols-outlined cursor-pointer hover:opacity-80 transition-opacity">search</span>
+<span class="material-symbols-outlined cursor-pointer hover:opacity-80 transition-opacity">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:opacity-80 transition-opacity">bookmark</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant">
+<img alt="User profile photo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAHelE65BHf7iAQbHr2_gKgtcku4EcETHMzt2TJOXx1TJvi80lRusiYLN4-bha7Yq6tymN4rrS7KPXpXbjcqfufLWCpKSk_3V9vq-fanXutJBERMS7AyyPiUmVPxYUxcNwn002nDY6CP78pV4Ec1yqJ3R8seHQbER2jId09p39b295yWzPk1AjkE8wkVc7WzUj28t3ZaiC-mdg7B1X0M2YpX73Lkw4O2bpxFCgOr7hCu7lctU3c_OFChyFblK29ULd3w6JSBPrJbjI"/>
+</div>
+</div>
+</nav>
+<!-- Main Content Background (Blurred) -->
+<main class="flex-grow w-full max-w-container-max mx-auto px-gutter py-xl blur-sm transition-all duration-300">
+<div class="grid grid-cols-4 md:grid-cols-8 lg:grid-cols-12 gap-gutter">
+<!-- Dummy Library Content -->
+<div class="col-span-4 md:col-span-8 lg:col-span-12 flex justify-between items-end mb-lg">
+<div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface mb-base">My Library</h1>
+<p class="font-body-lg text-body-lg text-secondary">Organizing 142 titles</p>
+</div>
+<button class="bg-primary text-on-primary px-gutter py-sm rounded border border-primary font-label-md text-label-md">Add Book</button>
+</div>
+<!-- Dummy Cards -->
+<div class="col-span-4 md:col-span-4 lg:col-span-3 bg-surface-container-lowest border border-surface-container-highest rounded-lg overflow-hidden flex flex-col">
+<div class="h-64 bg-surface-container-high relative"></div>
+<div class="p-md flex flex-col gap-base">
+<h3 class="font-headline-md text-headline-md text-on-surface">The Architecture of Happiness</h3>
+<p class="font-body-md text-body-md text-secondary">Alain de Botton</p>
+</div>
+</div>
+<div class="col-span-4 md:col-span-4 lg:col-span-3 bg-surface-container-lowest border border-surface-container-highest rounded-lg overflow-hidden flex flex-col">
+<div class="h-64 bg-surface-container-high relative"></div>
+<div class="p-md flex flex-col gap-base">
+<h3 class="font-headline-md text-headline-md text-on-surface">Thinking, Fast and Slow</h3>
+<p class="font-body-md text-body-md text-secondary">Daniel Kahneman</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 bg-[#001424] bg-opacity-40 z-50 flex items-center justify-center px-gutter backdrop-blur-[2px]">
+<!-- Modal Container -->
+<div class="bg-surface-container-lowest w-full max-w-2xl rounded-xl shadow-level-2 border border-surface-container-highest flex flex-col max-h-[921px] overflow-hidden">
+<!-- Modal Header -->
+<div class="flex justify-between items-center p-md border-b border-surface-container-highest">
+<h2 class="font-headline-md text-headline-md text-on-surface">Add / Edit Book</h2>
+<button aria-label="Close" class="text-secondary hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Modal Body (Scrollable) -->
+<div class="p-md overflow-y-auto flex flex-col gap-lg flex-grow">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Cover Upload Area -->
+<div class="md:col-span-1 flex flex-col gap-sm">
+<label class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Book Cover</label>
+<div class="border-2 border-dashed border-outline-variant rounded-lg bg-surface flex flex-col items-center justify-center p-lg aspect-[2/3] hover:border-primary hover:bg-surface-container-low transition-colors cursor-pointer group relative overflow-hidden">
+<span class="material-symbols-outlined text-secondary group-hover:text-primary mb-base" style="font-size: 32px;">add_photo_alternate</span>
+<span class="font-label-md text-label-md text-secondary group-hover:text-primary text-center">Click or Drag to Upload</span>
+<!-- Image preview would go here, optionally layered over the dashed area -->
+<img alt="Book cover preview" class="absolute inset-0 w-full h-full object-cover opacity-0 hover:opacity-90 transition-opacity" data-alt="A close up shot of a hardcover book laying flat on a clean wooden desk. The lighting is soft and natural, emphasizing the texture of the paper and the minimalist aesthetic of the surrounding space. The overall tone is calm, academic, and modern, fitting a high-end digital library interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAERX5R6Glne-WqqRe1kVMmWU1r5gO_p1W0ekNjK7crzGIxgVhsHMVuEVVZjd-E4O3MRJxN9Uyw8r0qqB5KGGuOAuTSAs81TGr4637N-8W4uYSZqi1LxbGCS_wGhSDb7vTR0rSa1YRXNfq5pS37ji-kWkabs86dRsrkonhxpXbCV2w-3AdbQpX7HepT5UU0iQ-7PV3s5e9MFgDzZ_EjmFdAujg2cLaU_xGU9fryo-l5mjT99L0LHwzcdXgIiuFBw4SwZOJdR9LaNiE"/>
+</div>
+</div>
+<!-- Form Fields -->
+<div class="md:col-span-2 flex flex-col gap-md">
+<!-- Title -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-secondary" for="book-title">Book Title *</label>
+<input class="bg-surface-container-lowest border border-outline-variant rounded px-sm py-xs font-body-md text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow" id="book-title" placeholder="Enter title" type="text" value="Design as Art"/>
+</div>
+<!-- Author -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-secondary" for="book-author">Author *</label>
+<input class="bg-surface-container-lowest border border-outline-variant rounded px-sm py-xs font-body-md text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow" id="book-author" placeholder="Enter author name" type="text" value="Bruno Munari"/>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- ISBN -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-secondary" for="book-isbn">ISBN (Optional)</label>
+<input class="bg-surface-container-lowest border border-outline-variant rounded px-sm py-xs font-body-md text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow" id="book-isbn" placeholder="e.g. 978-..." type="text" value="978-0141035819"/>
+</div>
+<!-- Status Dropdown -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-secondary" for="book-status">Status</label>
+<select class="bg-surface-container-lowest border border-outline-variant rounded px-sm py-xs font-body-md text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow appearance-none" id="book-status">
+<option selected="" value="own">Own</option>
+<option value="sharing">Sharing</option>
+<option value="loaned">Loaned Out</option>
+</select>
+</div>
+</div>
+<!-- Category Tags (Multi-select simulation) -->
+<div class="flex flex-col gap-xs mt-sm">
+<label class="font-label-sm text-label-sm text-secondary">Categories</label>
+<div class="flex flex-wrap gap-sm">
+<span class="bg-[#E8F0EA] text-[#1B3625] px-sm py-[2px] rounded-full border border-[#c4dbc9] font-label-sm text-label-sm flex items-center gap-xs cursor-pointer">
+                                    Design
+                                    <span class="material-symbols-outlined" style="font-size: 14px;">close</span>
+</span>
+<span class="bg-[#F4EAE0] text-[#4A3219] px-sm py-[2px] rounded-full border border-[#dfcbb3] font-label-sm text-label-sm flex items-center gap-xs cursor-pointer">
+                                    Theory
+                                    <span class="material-symbols-outlined" style="font-size: 14px;">close</span>
+</span>
+<div class="flex flex-col gap-sm w-full mt-xs">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-2 text-secondary" style="font-size: 18px;">search</span>
+<input class="bg-surface-container-low border border-outline-variant rounded px-sm py-xs pl-8 font-body-md text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow w-full" placeholder="Search or create category..." type="text"/>
+</div>
+<div class="flex items-center justify-between p-sm bg-surface-container-low rounded border border-dashed border-outline-variant">
+<div class="flex flex-col gap-xs">
+<span class="text-label-sm text-secondary uppercase tracking-wider">Create New Category</span>
+<div class="flex gap-xs">
+<button aria-label="Green" class="w-6 h-6 rounded-full bg-[#E8F0EA] border border-[#c4dbc9] hover:ring-2 ring-primary transition-all"></button>
+<button aria-label="Beige" class="w-6 h-6 rounded-full bg-[#F4EAE0] border border-[#dfcbb3] hover:ring-2 ring-primary transition-all"></button>
+<button aria-label="Blue" class="w-6 h-6 rounded-full bg-[#dae4ed] border border-[#bec8d1] hover:ring-2 ring-primary transition-all"></button>
+<button aria-label="Red" class="w-6 h-6 rounded-full bg-[#ffdad6] border border-[#ba1a1a] hover:ring-2 ring-primary transition-all"></button>
+</div>
+</div>
+<button class="bg-primary text-on-primary p-xs rounded-full flex items-center justify-center hover:bg-primary-container hover:text-on-primary-container transition-colors">
+<span class="material-symbols-outlined" style="font-size: 20px;">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Modal Footer (Actions) -->
+<div class="flex justify-between items-center p-md border-t border-surface-container-highest bg-surface">
+<button class="text-error font-label-md text-label-md hover:underline flex items-center gap-xs">
+<span class="material-symbols-outlined" style="font-size: 18px;">delete</span> Delete Book
+                </button>
+<div class="flex gap-md">
+<button class="bg-transparent text-secondary border border-outline-variant px-gutter py-sm rounded font-label-md text-label-md hover:bg-surface-container-high transition-colors">Cancel</button>
+<button class="bg-primary text-on-primary border border-primary px-gutter py-sm rounded font-label-md text-label-md hover:bg-primary-container hover:text-on-primary-container transition-colors">Save Changes</button>
+</div>
+</div>
+</div>
+</div>
+</body></html>
