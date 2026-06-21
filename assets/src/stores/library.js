@@ -13,9 +13,9 @@ export const useLibraryStore = defineStore('library', () => {
   const collection = ref([])
   const lending = ref([])
   const requests = ref([])   // open incoming requests (pending + return-pending)
-  const history = ref([])    // resolved incoming requests (declined + returned) — lending history
+  const history = ref([])    // all incoming requests, any state — lending history (full timeline)
   const borrowing = ref([])  // active outgoing loans (books I'm borrowing)
-  const borrowingHistory = ref([]) // resolved outgoing requests — borrowing history
+  const borrowingHistory = ref([]) // all outgoing requests, any state — borrowing history (full timeline)
   const categories = ref([])
 
   const loading = ref({ collection: false, lending: false, requests: false, history: false, borrowing: false, borrowingHistory: false })
@@ -66,7 +66,8 @@ export const useLibraryStore = defineStore('library', () => {
   async function fetchHistory() {
     loading.value.history = true
     try {
-      const { data } = await api.get('/requests/incoming', { params: { status: 'resolved' } })
+      // Every incoming request, in-progress or finished, so History shows each step.
+      const { data } = await api.get('/requests/incoming', { params: { status: 'all' } })
       history.value = data.map(toCardRequest)
     } finally {
       loading.value.history = false
@@ -84,11 +85,11 @@ export const useLibraryStore = defineStore('library', () => {
     }
   }
 
-  // The current user's past borrows (resolved outgoing requests: declined + returned).
+  // The current user's borrows — every outgoing request, in-progress or finished.
   async function fetchBorrowingHistory() {
     loading.value.borrowingHistory = true
     try {
-      const { data } = await api.get('/requests/outgoing', { params: { status: 'resolved' } })
+      const { data } = await api.get('/requests/outgoing', { params: { status: 'all' } })
       borrowingHistory.value = data.map(toCardRequest)
     } finally {
       loading.value.borrowingHistory = false

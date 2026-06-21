@@ -17,6 +17,16 @@ const isBorrowing = computed(() => props.perspective === 'borrowing')
 const counterpart = computed(() =>
   isBorrowing.value ? props.request.book.owner : props.request.requester,
 )
+
+// Human label for the current status badge (the raw enum has underscores).
+const STATUS_LABELS = {
+  pending: 'Pending',
+  approved: 'On loan',
+  return_pending: 'Return pending',
+  returned: 'Returned',
+  declined: 'Declined',
+}
+const statusLabel = computed(() => STATUS_LABELS[props.request.status] ?? props.request.status)
 </script>
 
 <template>
@@ -38,7 +48,7 @@ const counterpart = computed(() =>
         </p>
         <span class="history-card__author">{{ request.book.author }}</span>
       </div>
-      <span class="history-badge" :class="`history-badge--${request.status}`">{{ request.status }}</span>
+      <span class="history-badge" :class="`history-badge--${request.status}`">{{ statusLabel }}</span>
     </div>
     <RequestTimeline :events="request.events" class="history-card__timeline" />
   </li>
@@ -69,15 +79,22 @@ const counterpart = computed(() =>
 }
 
 .history-badge {
-  text-transform: capitalize;
   font-size: var(--text-label-sm);
   font-weight: 600;
   padding: 2px 10px;
   border-radius: var(--radius-full);
   flex-shrink: 0;
   align-self: flex-start;
+  white-space: nowrap;
 }
+/* Finished / active-loan states */
 .history-badge--approved,
 .history-badge--returned { background: var(--color-primary-fixed); color: var(--color-on-primary-fixed-variant); }
+/* In-progress states */
+.history-badge--pending,
+.history-badge--return_pending {
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface-variant);
+}
 .history-badge--declined { background: var(--color-error-container); color: var(--color-error); }
 </style>

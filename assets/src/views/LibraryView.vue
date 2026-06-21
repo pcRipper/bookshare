@@ -43,12 +43,13 @@ const historyItems = computed(() =>
 )
 
 /* ── Data loading: collection + profile up front, others lazily ───────── */
-const loaded = ref({ borrowing: false, lending: false, requests: false, history: false, borrowingHistory: false })
+const loaded = ref({ borrowing: false, lending: false, requests: false })
 
-// Each history side fetches once, when first viewed.
+// History shows in-progress loans too, whose state changes as the owner/borrower
+// acts in other tabs — so refetch the visible side each time it's viewed.
 function loadHistorySide(side) {
-  if (side === 'lending' && !loaded.value.history) { loaded.value.history = true; store.fetchHistory() }
-  if (side === 'borrowing' && !loaded.value.borrowingHistory) { loaded.value.borrowingHistory = true; store.fetchBorrowingHistory() }
+  if (side === 'lending') store.fetchHistory()
+  if (side === 'borrowing') store.fetchBorrowingHistory()
 }
 
 onMounted(() => {
@@ -89,7 +90,6 @@ async function handleDecline(id) {
   processing[id] = 'decline'
   try {
     await store.declineRequest(id)
-    loaded.value.history = true
   } finally {
     delete processing[id]
   }
@@ -98,8 +98,7 @@ async function handleConfirmReturn(id) {
   processing[id] = 'confirm-return'
   try {
     await store.confirmReturn(id)
-    // The book returned to the collection and the loan closed into History.
-    loaded.value.history = true
+    // The book returned to the collection and the loan closed.
     loaded.value.lending = true
   } finally {
     delete processing[id]

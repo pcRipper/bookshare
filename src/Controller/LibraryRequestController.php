@@ -75,6 +75,15 @@ class LibraryRequestController extends AbstractController
             'open'     => [RequestStatus::Pending, RequestStatus::ReturnPending],
             'active'   => [RequestStatus::Approved, RequestStatus::ReturnPending],
             'resolved' => [RequestStatus::Declined, RequestStatus::Returned],
+            // Every state — powers the History views, which show the full timeline
+            // of each loan whether it's in progress or finished.
+            'all'      => [
+                RequestStatus::Pending,
+                RequestStatus::Approved,
+                RequestStatus::Declined,
+                RequestStatus::ReturnPending,
+                RequestStatus::Returned,
+            ],
             default    => null,
         };
     }
