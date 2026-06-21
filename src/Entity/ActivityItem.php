@@ -21,12 +21,14 @@ class ActivityItem
     #[ORM\Column(enumType: ActivityType::class)]
     private ActivityType $actionType;
 
+    // Activity is an append-only log: when the referenced book/user is deleted we
+    // keep the actor's history entry and just detach the dangling reference.
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?Book $targetBook = null;
 
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?User $targetUser = null;
 
     #[ORM\Column(type: 'text', nullable: true)]

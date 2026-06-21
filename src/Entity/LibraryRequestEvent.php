@@ -21,7 +21,7 @@ class LibraryRequestEvent
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'events')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private LibraryRequest $request;
 
     #[ORM\Column(enumType: LibraryRequestEventType::class)]
