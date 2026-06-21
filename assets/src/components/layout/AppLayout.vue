@@ -24,8 +24,9 @@ import MobileBottomNav from './MobileBottomNav.vue'
 
 .app-layout__main {
   flex: 1;
-  /* Reserve space for fixed mobile bottom nav */
-  padding-bottom: 64px;
+  min-width: 0;
+  /* Reserve space for the fixed mobile bottom nav (+ iOS home indicator). */
+  padding-bottom: calc(64px + env(safe-area-inset-bottom));
 }
 @media (min-width: 768px) {
   .app-layout__main { padding-bottom: 0; }

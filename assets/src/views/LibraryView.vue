@@ -170,39 +170,43 @@ async function onModalDelete(id) {
 
       <!-- ── Profile header ────────────────────────────────────────────── -->
       <section class="profile-header">
-        <div class="profile-header__info">
-          <!-- Real header -->
-          <template v-if="profile">
-            <BaseAvatar
-              :src="profile.avatarUrl"
-              :name="profile.fullName"
-              size="xl"
-              class="profile-header__avatar"
-            />
-            <div>
-              <h1 class="profile-header__name">{{ profile.fullName }}</h1>
-              <p v-if="profile.bio" class="profile-header__bio">{{ profile.bio }}</p>
-              <p v-else class="profile-header__bio profile-header__bio--muted">Add a short bio in settings.</p>
-              <div class="profile-header__stats">
-                <div v-for="stat in statCards" :key="stat.label" class="stat">
-                  <span class="stat__value">{{ stat.value }}</span>
-                  <span class="stat__label">{{ stat.label }}</span>
-                </div>
+        <div class="profile-header__lead">
+          <div class="profile-header__info">
+            <!-- Real header -->
+            <template v-if="profile">
+              <BaseAvatar
+                :src="profile.avatarUrl"
+                :name="profile.fullName"
+                size="xl"
+                class="profile-header__avatar"
+              />
+              <div class="profile-header__text">
+                <h1 class="profile-header__name">{{ profile.fullName }}</h1>
+                <p v-if="profile.bio" class="profile-header__bio">{{ profile.bio }}</p>
+                <p v-else class="profile-header__bio profile-header__bio--muted">Add a short bio in settings.</p>
               </div>
-            </div>
-          </template>
+            </template>
 
-          <!-- Skeleton while the profile loads -->
-          <template v-else>
-            <BaseSkeleton width="96px" height="96px" circle />
-            <div class="profile-header__skeleton">
-              <BaseSkeleton width="180px" height="28px" />
-              <BaseSkeleton width="260px" height="14px" />
-              <div class="profile-header__stats">
-                <BaseSkeleton v-for="n in 3" :key="n" width="64px" height="44px" />
+            <!-- Skeleton while the profile loads -->
+            <template v-else>
+              <BaseSkeleton width="96px" height="96px" circle />
+              <div class="profile-header__skeleton">
+                <BaseSkeleton width="180px" height="28px" />
+                <BaseSkeleton width="260px" height="14px" />
               </div>
+            </template>
+          </div>
+
+          <!-- Stat bar (full-width; flat bar on mobile, inline on desktop) -->
+          <section v-if="profile" class="profile-stats">
+            <div v-for="stat in statCards" :key="stat.label" class="stat">
+              <span class="stat__value">{{ stat.value }}</span>
+              <span class="stat__label">{{ stat.label }}</span>
             </div>
-          </template>
+          </section>
+          <section v-else class="profile-stats">
+            <BaseSkeleton v-for="n in 3" :key="n" width="56px" height="40px" />
+          </section>
         </div>
 
         <button class="btn-add-book" @click="openCreate">
@@ -422,6 +426,8 @@ async function onModalDelete(id) {
   align-items: center;
   gap: var(--space-md);
 }
+/* Let the text column shrink so long names/bios wrap instead of widening the row. */
+.profile-header__info > * { min-width: 0; }
 @media (max-width: 767px) {
   .profile-header__info { align-items: flex-start; }
 }
@@ -435,6 +441,7 @@ async function onModalDelete(id) {
   font-weight: 700;
   color: var(--color-on-background);
   margin: 0 0 4px;
+  overflow-wrap: anywhere;
 }
 @media (min-width: 768px) {
   .profile-header__name {
@@ -454,40 +461,51 @@ async function onModalDelete(id) {
   .profile-header__bio { margin-bottom: var(--space-md); }
 }
 
-.profile-header__stats {
+/* Lead column groups the avatar/name/bio row with the stat bar so the bar can
+   span full width on mobile and sit beneath the header on desktop. */
+.profile-header__lead {
   display: flex;
+  flex-direction: column;
   gap: var(--space-md);
+  min-width: 0;
 }
-@media (max-width: 767px) {
-  /* On mobile, stats become a 3-col bordered grid */
-  .profile-header__stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-xs);
-    width: 100%;
-  }
-  .stat {
-    background: var(--color-surface-container-low);
-    border: 1px solid var(--color-outline-variant);
-    border-radius: var(--radius-default);
-    padding: var(--space-sm);
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+
+/* Stat bar: a flat, full-width bar on mobile (no cramped boxes), and a
+   borderless inline row on desktop. Mirrors ProfileView's stat bar. */
+.profile-stats {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-sm) 0;
+  border-top: 1px solid var(--color-outline-variant);
+  border-bottom: 1px solid var(--color-outline-variant);
+}
+@media (min-width: 768px) {
+  .profile-stats {
+    justify-content: flex-start;
+    gap: var(--space-xl);
+    width: auto;
+    border: none;
+    padding: var(--space-base) 0 0;
   }
 }
 
 .stat {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
 }
+@media (min-width: 768px) { .stat { align-items: flex-start; flex: none; } }
 
 .stat__value {
   font-family: var(--font-display);
   font-size: var(--text-headline-md);
   line-height: var(--lh-headline-md);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-primary);
 }
 
@@ -498,6 +516,7 @@ async function onModalDelete(id) {
   font-weight: 600;
   color: var(--color-secondary);
   text-transform: uppercase;
+  text-align: center;
 }
 
 .btn-add-book {
@@ -662,7 +681,6 @@ async function onModalDelete(id) {
   flex-direction: column;
   gap: var(--space-sm);
 }
-.profile-header__skeleton .profile-header__stats { margin-top: var(--space-xs); }
 
 .request-skeleton {
   background: var(--color-surface-container-lowest);
@@ -736,7 +754,7 @@ async function onModalDelete(id) {
 /* ── Mobile FAB ───────────────────────────────────────────────────────── */
 .fab {
   position: fixed;
-  bottom: calc(64px + var(--space-md)); /* above bottom nav */
+  bottom: calc(64px + var(--space-md) + env(safe-area-inset-bottom)); /* above bottom nav */
   right: var(--space-gutter);
   width: 56px;
   height: 56px;

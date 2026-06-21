@@ -387,6 +387,7 @@ async function onBookDelete(id) {
   font-weight: 700;
   color: var(--color-on-surface);
   margin: 0;
+  overflow-wrap: anywhere;
 }
 @media (min-width: 768px) {
   .profile-header__name {
