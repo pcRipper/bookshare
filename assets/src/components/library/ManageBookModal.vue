@@ -25,6 +25,10 @@ const errorMsg = ref(null)
 
 const isEdit = computed(() => !!props.book)
 
+// A book that's out on loan is locked server-side (BookVoter): show its details
+// but block any mutation until it's returned. `canEdit` comes from the API.
+const readOnly = computed(() => isEdit.value && props.book?.canEdit === false)
+
 function blank() {
   // categories: array of { id, name, colorHex }
   return { title: '', author: '', isbn: '', status: 'own', coverPath: '', categories: [] }
@@ -52,6 +56,7 @@ watch(
 )
 
 function onSave() {
+  if (readOnly.value) return
   if (!form.value.title.trim() || !form.value.author.trim()) {
     errorMsg.value = 'Title and author are required.'
     return
@@ -88,6 +93,12 @@ function onDelete() {
         </header>
 
         <div class="modal__body">
+          <!-- On-loan notice: the book is locked until it's returned -->
+          <p v-if="readOnly" class="modal__notice">
+            <span class="material-symbols-outlined">lock</span>
+            This book is out on loan and can't be edited until it's returned.
+          </p>
+
           <!-- Cover preview + URL -->
           <div class="field">
             <label class="field__label" for="mb-cover">Cover image URL</label>
@@ -102,28 +113,29 @@ function onDelete() {
                 class="input"
                 type="url"
                 placeholder="https://…"
+                :disabled="readOnly"
               />
             </div>
           </div>
 
           <div class="field">
             <label class="field__label" for="mb-title">Title <span class="req">*</span></label>
-            <input id="mb-title" v-model="form.title" class="input" type="text" placeholder="Enter title" />
+            <input id="mb-title" v-model="form.title" class="input" type="text" placeholder="Enter title" :disabled="readOnly" />
           </div>
 
           <div class="field">
             <label class="field__label" for="mb-author">Author <span class="req">*</span></label>
-            <input id="mb-author" v-model="form.author" class="input" type="text" placeholder="Enter author name" />
+            <input id="mb-author" v-model="form.author" class="input" type="text" placeholder="Enter author name" :disabled="readOnly" />
           </div>
 
           <div class="field-row">
             <div class="field">
               <label class="field__label" for="mb-isbn">ISBN</label>
-              <input id="mb-isbn" v-model="form.isbn" class="input" type="text" placeholder="e.g. 978-…" />
+              <input id="mb-isbn" v-model="form.isbn" class="input" type="text" placeholder="e.g. 978-…" :disabled="readOnly" />
             </div>
             <div class="field">
               <label class="field__label" for="mb-status">Status</label>
-              <select id="mb-status" v-model="form.status" class="input">
+              <select id="mb-status" v-model="form.status" class="input" :disabled="readOnly">
                 <option v-for="opt in STATUS_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
               </select>
             </div>
@@ -131,25 +143,32 @@ function onDelete() {
 
           <div class="field">
             <label class="field__label">Categories</label>
-            <CategorySelector v-model="form.categories" />
+            <CategorySelector v-model="form.categories" :disabled="readOnly" />
           </div>
 
           <p v-if="errorMsg" class="modal__error">{{ errorMsg }}</p>
         </div>
 
         <footer class="modal__footer">
-          <button v-if="isEdit" class="btn-delete" type="button" :disabled="busy" @click="onDelete">
-            <BaseSpinner v-if="busy && pendingAction === 'delete'" size="sm" />
-            <span v-else class="material-symbols-outlined">delete</span>
-            {{ busy && pendingAction === 'delete' ? 'Deleting…' : 'Delete' }}
-          </button>
-          <div class="modal__footer-actions">
-            <button class="btn-secondary" type="button" :disabled="busy" @click="emit('close')">Cancel</button>
-            <button class="btn-primary" type="button" :disabled="busy" @click="onSave">
-              <BaseSpinner v-if="busy && pendingAction === 'save'" size="sm" />
-              {{ busy && pendingAction === 'save' ? 'Saving…' : 'Save' }}
+          <template v-if="readOnly">
+            <div class="modal__footer-actions">
+              <button class="btn-primary" type="button" @click="emit('close')">Close</button>
+            </div>
+          </template>
+          <template v-else>
+            <button v-if="isEdit" class="btn-delete" type="button" :disabled="busy" @click="onDelete">
+              <BaseSpinner v-if="busy && pendingAction === 'delete'" size="sm" />
+              <span v-else class="material-symbols-outlined">delete</span>
+              {{ busy && pendingAction === 'delete' ? 'Deleting…' : 'Delete' }}
             </button>
-          </div>
+            <div class="modal__footer-actions">
+              <button class="btn-secondary" type="button" :disabled="busy" @click="emit('close')">Cancel</button>
+              <button class="btn-primary" type="button" :disabled="busy" @click="onSave">
+                <BaseSpinner v-if="busy && pendingAction === 'save'" size="sm" />
+                {{ busy && pendingAction === 'save' ? 'Saving…' : 'Save' }}
+              </button>
+            </div>
+          </template>
         </footer>
       </div>
     </div>
@@ -258,6 +277,26 @@ function onDelete() {
   color: var(--color-error);
   font-size: var(--text-label-md);
   margin: 0;
+}
+
+/* On-loan lock notice */
+.modal__notice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin: 0;
+  padding: var(--space-sm) var(--space-base);
+  border-radius: var(--radius-default);
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface-variant);
+  font-size: var(--text-label-md);
+}
+.modal__notice .material-symbols-outlined { font-size: 18px; }
+
+.input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--color-surface-container-low);
 }
 
 .modal__footer {

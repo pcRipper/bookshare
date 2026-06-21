@@ -11,6 +11,7 @@ use App\Repository\BookRepository;
 use App\Repository\CategoryRepository;
 use App\Repository\LibraryRequestRepository;
 use App\Repository\UserRepository;
+use App\Security\Voter\BookVoter;
 use App\Service\BookService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -128,7 +129,7 @@ class BookController extends AbstractController
     #[Route('/{id}', methods: ['PATCH'], requirements: ['id' => '\d+'])]
     public function update(Book $book, #[MapRequestPayload] BookInput $input): JsonResponse
     {
-        $this->denyUnlessOwner($book);
+        $this->denyAccessUnlessGranted(BookVoter::EDIT, $book, self::lockedMessage($book));
 
         $this->books->update($book, $input);
         $this->em->flush();
@@ -139,7 +140,7 @@ class BookController extends AbstractController
     #[Route('/{id}', methods: ['DELETE'], requirements: ['id' => '\d+'])]
     public function delete(Book $book): JsonResponse
     {
-        $this->denyUnlessOwner($book);
+        $this->denyAccessUnlessGranted(BookVoter::DELETE, $book, self::lockedMessage($book));
 
         $this->books->delete($book);
         $this->em->flush();
@@ -147,10 +148,14 @@ class BookController extends AbstractController
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 
-    private function denyUnlessOwner(Book $book): void
+    /**
+     * Picks the access-denied reason: a book that's owned but out on loan is
+     * locked until returned; anything else is a plain ownership violation.
+     */
+    private function lockedMessage(Book $book): string
     {
-        if ($book->getOwner() !== $this->getUser()) {
-            throw $this->createAccessDeniedException('You do not own this book.');
-        }
+        return $book->getOwner() === $this->getUser() && !$book->isHome()
+            ? 'This book is out on loan and can\'t be edited until it\'s returned.'
+            : 'You do not own this book.';
     }
 }

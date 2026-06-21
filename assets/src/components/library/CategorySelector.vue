@@ -14,6 +14,8 @@ import { CATEGORY_PALETTE, resolveCategoryColors } from '@/utils/categoryColors'
  */
 const props = defineProps({
   modelValue: { type: Array, default: () => [] }, // [{ id, name, colorHex }]
+  // Read-only: render the selected chips but hide search/create/remove controls.
+  disabled: { type: Boolean, default: false },
 })
 const emit = defineEmits(['update:modelValue'])
 
@@ -188,6 +190,7 @@ function chipStyle(colorHex) {
       >
         {{ cat.name }}
         <button
+          v-if="!disabled"
           type="button"
           class="cat__chip-remove"
           :aria-label="`Remove ${cat.name}`"
@@ -197,8 +200,10 @@ function chipStyle(colorHex) {
         </button>
       </span>
     </div>
+    <p v-if="disabled && !modelValue.length" class="cat__hint">No categories.</p>
 
     <!-- Search -->
+    <template v-if="!disabled">
     <div class="cat__search">
       <span class="material-symbols-outlined cat__search-icon">search</span>
       <input
@@ -273,6 +278,7 @@ function chipStyle(colorHex) {
     >
       Already added.
     </p>
+    </template>
   </div>
 </template>
 

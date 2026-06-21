@@ -7,6 +7,8 @@ use App\Entity\ActivityItem;
 use App\Entity\LibraryRequest;
 use App\Entity\LibraryRequestEvent;
 use App\Entity\User;
+use App\Security\Voter\BookVoter;
+use Symfony\Bundle\SecurityBundle\Security;
 
 /**
  * Produces the exact JSON shapes the Vue frontend components expect.
@@ -14,6 +16,10 @@ use App\Entity\User;
  */
 class ResponseMapper
 {
+    public function __construct(
+        private readonly Security $security,
+    ) {}
+
     public function book(Book $book): array
     {
         return [
@@ -26,6 +32,9 @@ class ResponseMapper
             // Who currently holds the book — owner while home, borrower while lent.
             'currentHolder' => $this->userSummary($book->getCurrentHolder()),
             'isHome'        => $book->isHome(),
+            // Server-authoritative: may the current viewer edit this book? False
+            // for books they don't own and for their own books that are on loan.
+            'canEdit'       => $this->security->isGranted(BookVoter::EDIT, $book),
             'categories' => array_map(
                 fn ($c) => ['id' => $c->getId(), 'name' => $c->getName(), 'colorHex' => $c->getColorHex()],
                 $book->getCategories()->toArray(),
