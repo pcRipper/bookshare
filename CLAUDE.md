@@ -10,18 +10,32 @@ Bookshare is a **monorepo** where the Symfony project is the repo root. The fron
 bookshare/
 ├── assets/src/          # Vue 3 SPA source (Composition API, JS)
 │   ├── main.js          # App bootstrap — registers router + pinia, mounts #app
-│   ├── App.vue          # Root component (<RouterView />)
-│   ├── router/          # vue-router (history mode)
-│   ├── stores/          # Pinia stores
-│   └── components/
+│   ├── App.vue          # Root: <AppErrorBoundary> → <RouterView /> + <ToastHost />
+│   ├── api/index.js     # axios instance (baseURL '/api', Bearer + 401 interceptors)
+│   ├── router/          # vue-router (history mode) + auth guard
+│   ├── stores/          # Pinia stores (auth, library, discover, profile, toast)
+│   ├── views/           # Route-level pages
+│   ├── components/      # layout/, library/, discover/, profile/, ui/
+│   └── utils/           # categoryColors, apiError, time
 ├── src/                 # Symfony PHP source (autowired, autoconfigured)
-│   ├── Controller/      # API controllers — all routes use #[Route] attributes
+│   ├── Controller/      # API controllers — *RestController, #[Route] attributes
 │   ├── Entity/          # Doctrine entities — mapped via PHP attributes
-│   ├── Repository/      # Doctrine repositories
+│   ├── Enum/            # Backed enums (BookStatus, RequestStatus, …)
+│   ├── Repository/      # Doctrine repositories (read queries; persist, never flush)
+│   ├── Service/         # Domain logic (BookService, LibraryRequestService, …)
+│   ├── Dto/             # Request payload objects (#[MapRequestPayload]) + Assert
+│   ├── Api/             # ResponseMapper — entity → JSON shaping
+│   ├── Category/        # CategoryPalette (colour allow-list, single source of truth)
+│   ├── Security/Voter/  # BookVoter — edit/delete authorization
+│   ├── EventSubscriber/ # RateLimitSubscriber (kernel.request)
 │   └── DataFixtures/    # Dev seed data (AppFixtures)
 ├── config/
-│   ├── packages/        # Bundle config (doctrine, security, nelmio_cors, lexik_jwt…)
+│   ├── packages/        # Bundle config (doctrine, security, nelmio_cors, lexik_jwt,
+│   │                    #   rate_limiter, dh_auditor…)
+│   ├── routes.yaml      # Imports src/Controller/ under the shared `/api` prefix
 │   └── jwt/             # RSA keypair — gitignored, generated once
+├── migrations/          # Doctrine migrations (incl. *_audit tables)
+├── tests/               # PHPUnit suite (unit-level: Entity/Service/Dto/Api/Security…)
 ├── public/
 │   ├── index.php        # Symfony front controller
 │   └── build/           # Vite production output — gitignored
@@ -34,38 +48,82 @@ bookshare/
 - `fetch('/api/…')` → Vite proxy → Symfony (`:8000`)
 - In prod, Nginx serves both `public/build/` (Vue) and proxies to PHP-FPM (Symfony)
 
+## Tech Stack
+
+**Backend** — Symfony **7.4** LTS on **PHP 8.4**, PostgreSQL via Doctrine ORM 3.
+
+| Concern | Package |
+|---|---|
+| Framework | `symfony/framework-bundle` 7.4, `console`, `dotenv`, `flex`, `runtime` |
+| ORM / DB | `doctrine/orm` ^3.6, `doctrine-bundle` ^3.2, `doctrine-migrations-bundle` ^4 |
+| Auth | `lexik/jwt-authentication-bundle` ^3.2, `symfony/security-bundle` |
+| HTTP / serialization | `symfony/serializer`, `validator`, `property-access`, `property-info`, `http-client` |
+| CORS | `nelmio/cors-bundle` ^2.6 |
+| Rate limiting | `symfony/rate-limiter` |
+| Audit | `damienharper/auditor-bundle` `6.3.*` (see _Audit trail_) |
+| Dev/test | `phpunit/phpunit` ^13.2, `doctrine-fixtures-bundle`, `maker-bundle`, `browser-kit`, `css-selector`, `debug-bundle` |
+
+**Frontend** — Vue 3 SPA, plain JS (no TypeScript), Composition API throughout.
+
+| Concern | Package |
+|---|---|
+| Core | `vue` ^3.5, `vue-router` ^4.5 (history mode), `pinia` ^3 |
+| HTTP | `axios` ^1.16 (single instance in `assets/src/api/index.js`) |
+| Build/tooling | `vite` ^6.3, `@vitejs/plugin-vue` ^5.2, `eslint` ^10, `eslint-plugin-vue`, `prettier` |
+
 ## Product
 
 ### Overview
-FolioShare is a community book-sharing platform. Readers catalog their physical books, lend them to other community members, track borrow requests, and discover each other's collections. The UI brand name is **FolioShare**; the repo/project name is **Bookshare**.
+FolioShare is a community book-sharing platform. Readers catalog their physical books, lend them to other community members, track borrow requests through a full lifecycle, and discover each other's collections. The UI brand name is **FolioShare**; the repo/project name is **Bookshare**.
 
-### Screens & Routes
+### Authentication & access
+Sign-in is **Google OAuth only** (the original email/password + register screens were not built). Flow: `LoginView` → `GET /api/auth/google` returns an authorization URL → Google → `POST /api/auth/google/callback` mints a **JWT** (lexik). The SPA stores `token` + `user` in `localStorage` (Pinia `auth` store); axios attaches `Authorization: Bearer <token>` and, on a `401`, drops the stale credentials and bounces to `/login`. The router guard gates every non-public route on `isAuthenticated`.
 
-| Route | Design references | Description |
+### Screens & Routes (SPA, vue-router)
+
+| Route | View | Description |
 |---|---|---|
-| `/login` | `login`, `login_mobile` | JWT sign-in form; email + password, "Remember me", "Forgot password", social auth links (UI only) |
-| `/register` | `create_account`, `create_account_mobile` | Sign-up form: full name, email, password (min 8 chars) |
-| `/library` | `my_library`, `my_library_mobile`, `my_library_incoming_requests`, `my_library_requests_tab_added`, `my_library_no_header_search` | Authenticated user's library. Profile header (avatar, name, bio, stats). Four tabs: **Collection** (book grid), **Lending** (lent-out books), **Requests** (incoming borrow requests — Approve / Decline actions), **History** |
-| `/discover` | `discover_mobile`, `discover_search` | Browse the community. Search bar, category filter pills, "Trending Near You" + "Recommended for You" grids, "Curator Choice" feature card |
-| `/activity` | `activity_feed`, `activity_feed_mobile`, `activity_feed_no_header_search` | Social feed. Activity types: *borrowed* (book + actor), *commented* (with quote preview + Reply), *followed*, *added_book* |
-| `/profile/:id` | `user_profile_jane_doe`, `user_profile_mobile` | Public user profile. Avatar, name, bio, stats (Total Books / Lending / Rating). Tabbed book collection with "Request to Borrow" buttons |
-| `/settings` | `settings`, `settings_mobile` | Left-sidebar: **Account Profile** (avatar upload, name, bio 300-char, location), **Privacy & Security**, **Notifications**, **Sign Out** |
+| `/login` | `LoginView` | "Continue with Google" button; surfaces `?error=` from the callback |
+| `/auth/google/callback` | `GoogleCallbackView` | Exchanges the OAuth code, stores JWT, redirects to `/library` |
+| `/library` | `LibraryView` | The signed-in user's library. Profile header (avatar, name, bio, stats) + tabs: **Collection** (book grid), **Lending/Borrowing**, **Requests** (incoming — Approve/Decline), **History** (loan timeline) |
+| `/discover` | `DiscoverView` | Browse the community. Search, category filter pills, trending/recommended grids |
+| `/profile/:id` | `ProfileView` | Public profile. Avatar, bio, stats; book collection with "Request to Borrow" |
+| `/settings` | `SettingsView` | Account profile (avatar, name, bio 300-char, location), **privacy toggle**, sign out |
+| `/` | — | Redirects to `/library` |
+| `/:pathMatch(.*)*` | `NotFoundView` | Catch-all 404 |
 
-**Manage Book modal** — overlays `/library` (not a separate route). Triggered by "Add New Book" or clicking an existing book card. Fields: cover upload, title*, author*, ISBN, status dropdown, and a **search-or-create category picker** (see _Categories_ under Key Conventions). On save it sends `categoryIds` (not names).
+> **Activity feed**: the backend (`ActivityItem`, `ActivityRestController` at `/api/activity`, `ActivityRecorder`) exists and records events, but there is **no SPA route or header link** for it — the nav entry was deliberately removed. Don't re-add it without a product decision.
 
-### Domain Model
+**Manage Book modal** — overlays `/library` (not a route), `ManageBookModal.vue`. Triggered by "Add New Book" or clicking a book card. Fields: cover, title*, author*, ISBN, status, and a **search-or-create category picker** (`CategorySelector.vue`). Saves `categoryIds` (not names). When a book is out on loan the modal is **read-only** (see _Authorization_): inputs disabled, a lock notice shows, only Close is offered (driven by the server's `canEdit` flag).
 
-These are the entities to implement in `src/Entity/`:
+### Domain Model (`src/Entity/`, implemented)
 
-**User** — `id`, `email`, `password_hash`, `full_name`, `bio` (max 300 chars), `location`, `avatar_path`; derived stats: total books, shared count, loaned count, rating.
+**User** — `email`, `password_hash` (unused for Google users), `full_name`, `bio` (≤300), `location`, `avatar_url`, `is_private` (hides profile + collection from others), `roles`. Derived stats (total books / shared / loaned) come from `UserStatsProvider`, not stored.
 
-**Book** — `id`, `title`*, `author`*, `isbn`, `cover_path`, `status` (enum: `own | lent | unavailable`); `owner → User`; `categories → Category[]` (many-to-many).
+**Book** — `title`*, `author`*, `isbn`, `cover_path`, `status` (`own | lent | unavailable`); `owner → User` **and `current_holder → User`**; `categories → Category[]` (many-to-many). `isHome()` ⇔ `currentHolder === owner` (the book is physically with its owner); this gates editability.
 
-**Category** — `id`, `name`, `color_hex` (muted accent tone per design).
+**Category** — `name` (unique, global), `color_hex` (one of `CategoryPalette::COLORS`).
 
-**LibraryRequest** — `id`, `book → Book`, `requester → User`, `status` (enum: `pending | approved | declined`), `requested_at`.
+**LibraryRequest** — `book`, `requester`, `status` (`RequestStatus`: `pending | approved | declined | return_pending | returned`), `requested_at`, `resolved_at`, **`due_date`**, **`returned_at`**, and an ordered **`events → LibraryRequestEvent[]`** timeline.
 
-**ActivityItem** — `id`, `actor → User`, `action_type` (enum: `borrowed | commented | followed | added_book`), `target_book → Book` (nullable), `target_user → User` (nullable), `comment_text` (nullable), `created_at`.
+**LibraryRequestEvent** — append-only audit of a request: `type` (`requested | approved | declined | return_requested | returned`), `actor`, `due_date?`, `created_at`. Rendered as a timeline (`RequestTimeline.vue`).
+
+**ActivityItem** — `actor`, `action_type` (`borrowed | returned | commented | followed | added_book`), nullable `target_book` / `target_user`, `comment_text?`, `created_at`.
+
+### Lending lifecycle (the request state machine)
+Owned by `LibraryRequestService`; each transition appends a `LibraryRequestEvent` and the controller flushes once.
+
+```
+requester creates ──▶ pending
+owner approve(dueDate) ──▶ approved   (book.status=lent, current_holder=requester, due_date set)
+owner decline ──▶ declined
+requester requestReturn ──▶ return_pending
+owner confirmReturn ──▶ returned   (book.status=own, current_holder=owner, returned_at set)
+```
+
+**Time-landing rule** (a product requirement): the **due date is set unilaterally by the lending (owner) side at approval** — the borrower neither proposes nor approves it.
+
+Authorization within the machine: only the **owner** may approve / decline / confirm-return; only the **requester** may request a return. You can't borrow your own book, a book that isn't available, from a private library, or file a duplicate pending request. Ownership violations → `AccessDeniedException` (403); business-rule violations → `\DomainException` (409).
 
 ### Design System
 Full token spec: `references/design/literary_commons/DESIGN.md`
@@ -85,14 +143,14 @@ Full token spec: `references/design/literary_commons/DESIGN.md`
 | Spacing base | 8px | All spacing is multiples of 8 |
 | Section separator | 80px (`xl`) | Between major page sections |
 
+Category chips use a curated **10-tone muted palette** (see _Categories_). The footer year is rendered dynamically (`new Date().getFullYear()`).
+
 ## Dev Commands
 
 ### Start both servers
 ```bash
 # Terminal 1 — Symfony API
-symfony server:start
-# or: php -S localhost:8000 -t public/
-
+symfony server:start          # or: php -S localhost:8000 -t public/
 # Terminal 2 — Vue SPA (http://localhost:5173)
 npm run dev
 ```
@@ -101,60 +159,72 @@ npm run dev
 ```bash
 npm run build      # production build → public/build/
 npm run preview    # preview production build locally
-npm run lint       # ESLint over assets/src/  ⚠ currently broken (see note below)
+npm run lint       # ESLint over assets/src/  ⚠ currently broken (see note)
 ```
 
-> ⚠ `npm run lint` fails: ESLint is v9+ but the project still has the legacy `.eslintrc` format and no flat `eslint.config.js`. Migrate the config before relying on lint. There is **no JS test runner** wired up (no vitest/jest) — to verify frontend behaviour, build and drive the SPA in a browser.
+> ⚠ `npm run lint` fails: ESLint is v10 (flat-config only) but the repo still ships a legacy `.eslintrc.cjs` and no `eslint.config.js`. Migrate the config before relying on lint. There is **no JS test runner** — verify frontend behaviour by building and driving the SPA in a browser.
 
 ### Symfony console
 ```bash
-php bin/console make:entity          # scaffold entity + repository
-php bin/console make:controller      # scaffold controller
-php bin/console doctrine:migrations:diff   # generate migration from entity changes
+php bin/console make:entity                  # scaffold entity + repository
+php bin/console doctrine:migrations:diff     # generate migration from entity changes
 php bin/console doctrine:migrations:migrate
-php bin/console doctrine:fixtures:load     # load dev seed data
-php bin/console debug:router         # list all registered routes
-php bin/console debug:autowiring     # list injectable services
+php bin/console doctrine:fixtures:load       # load dev seed data
+php bin/console debug:router                 # list all registered routes
+php bin/console lint:container               # verify service wiring
 ```
 
-### Database
+### Tests
 ```bash
-php bin/console doctrine:database:create
-php bin/console doctrine:migrations:migrate
+php bin/phpunit            # full suite (config: phpunit.dist.xml)
 ```
 
 ## Key Conventions
 
 ### API routes
-All API endpoints live under `/api` prefix. Controllers in `src/Controller/` use `#[Route]` PHP attributes. Return `JsonResponse` — never render Twig templates (there are none).
+All endpoints live under the **`/api`** prefix. The prefix is applied **once, at the routing-config level** (`config/routes.yaml` imports `src/Controller/` with `prefix: /api`); individual controllers carry only their resource segment (e.g. `#[Route('/books')]`). Controllers are named **`*RestController`** (`BookRestController`, `AuthRestController`, …) and always return `JsonResponse` — there are no Twig templates for app output. Auto-generated route names therefore look like `app_bookrest_list`; nothing references route names, so renaming controllers is safe.
 
 ### Entities
-Defined with PHP attributes (`#[ORM\Entity]`, `#[ORM\Column]`, etc.) in `src/Entity/`. Doctrine uses underscore naming strategy and PostgreSQL identity columns for primary keys.
+PHP attributes (`#[ORM\Entity]`, `#[ORM\Column]`) in `src/Entity/`. Doctrine uses the **underscore naming strategy** and **PostgreSQL identity columns** for primary keys. Enums are backed enums in `src/Enum/`.
 
 ### Persistence & flushing
-Repositories may `persist()` and mutate entities, but **must not call `flush()`** — the controller owns the transaction boundary and flushes **exactly once** per request, after all entity changes are staged. This keeps each request a single unit of work and avoids redundant/partial commits. Example: `UserRepository::findOrCreateFromGoogle()` only persists/mutates; `AuthController::googleCallback()` calls `$this->entityManager->flush()` once. A no-op flush (when nothing changed) is harmless.
+Repositories and services may `persist()` and mutate entities, but **must not call `flush()`** — the controller owns the transaction boundary and flushes **exactly once** per request, after all changes are staged. This keeps each request a single unit of work. A no-op flush is harmless.
 
 ### Categories
-Categories are a **shared, global vocabulary** (unique names), not per-user. The flow is _search-or-create_:
-- `GET /api/categories?q=…` searches by name (case-insensitive substring; empty result ⇒ the UI offers creation). Without `q` it lists all.
-- `POST /api/categories` (`{ name, colorHex }`) creates one explicitly — `422` blank name · `409` duplicate (case-insensitive) · `201` created.
-- **Books reference categories by id**, never by name: `BookInput.categoryIds` (int[]); `BookService` resolves ids via `CategoryRepository::findByIds()`. New categories are created up-front via the POST endpoint, then attached by id. (The old name-based auto-create path is gone.)
-- **Colour palette is a single source of truth, duplicated front+back — keep them in sync:** backend `App\Category\CategoryPalette::COLORS` (allowed `colorHex` values, enforced by `CategoryInput`'s `Assert\Choice`) mirrors frontend `assets/src/utils/categoryColors.js` (the `bg` of each `CATEGORY_PALETTE` entry, which also carries chip text/border styling). `ResponseMapper` emits `colorHex` on every category so chips/cards render the stored colour; `resolveCategoryColors()` falls back gracefully for legacy/unknown hexes.
+A **shared, global vocabulary** (unique names), not per-user. Flow is _search-or-create_:
+- `GET /api/categories?q=…` — case-insensitive substring search (empty ⇒ UI offers creation); without `q`, lists all.
+- `POST /api/categories` (`{ name, colorHex }`) — `422` blank name · `409` duplicate · `201` created.
+- **Books reference categories by id**, never by name: `BookInput.categoryIds` (int[]); `BookService` resolves via `CategoryRepository::findByIds()`.
+- **Colour palette is one source of truth, duplicated front+back — keep in sync:** backend `App\Category\CategoryPalette::COLORS` (enforced by `CategoryInput`'s `Assert\Choice`) mirrors frontend `assets/src/utils/categoryColors.js` `CATEGORY_PALETTE` (each entry adds chip text/border styling). There are **10 muted tones**. `ResponseMapper` emits `colorHex` on every category; `resolveCategoryColors()` falls back gracefully for legacy/unknown hexes.
 
-### Frontend imports
-The `@` alias resolves to `assets/src/`. Use `import Foo from '@/components/Foo.vue'` everywhere.
+### Authorization (voters)
+`App\Security\Voter\BookVoter` decides `BOOK_EDIT` / `BOOK_DELETE`: the actor must be the **owner** *and* the book must be **home** (`isHome()`) — a book that's out on loan is frozen. Controllers call `denyAccessUnlessGranted(...)`; `ResponseMapper` emits a **`canEdit`** boolean on every book so the SPA disables the Manage Book modal without re-deriving the rule client-side. Private profiles: `UserRestController::show` returns 403 to non-owners (mirrors the private-library book listing).
 
-### Authentication
-JWT via `lexik/jwt-authentication-bundle`. Keys are in `config/jwt/` (gitignored). The passphrase is in `.env` (`JWT_PASSPHRASE`). Security firewall and `access_control` rules are configured in `config/packages/security.yaml`.
+### Rate limiting
+`config/packages/rate_limiter.yaml` defines three limiters — `auth_ip` (per-IP, guards `/api/auth/*`), `api_user` (per authenticated user), `api_ip_user` (IP+user). `App\EventSubscriber\RateLimitSubscriber` applies them on `kernel.request` at **priority 6** (after the firewall at 8, so the user is resolved). Over-limit → **429 + Retry-After**. The `when@test` block raises limits so tests aren't throttled.
+
+### Audit trail
+`damienharper/auditor-bundle` (`config/packages/dh_auditor.yaml`) writes an `<table>_audit` companion (insert/update/delete diffs + acting user) for a **whitelist**: `Book`, `User`, `Category`, `LibraryRequest`. Append-only logs (`ActivityItem`, `LibraryRequestEvent`) are intentionally excluded. The bundle's web **viewer is disabled** (this is a JSON API); its Twig/asset/translation deps come along only to satisfy the bundle and are unused. Pinned to `6.3.*` because 7.x requires Symfony 8.
+
+### Frontend imports & UX patterns
+- The `@` alias resolves to `assets/src/` — `import Foo from '@/components/Foo.vue'`.
+- **Errors → toasts, not error pages.** `AppErrorBoundary` only catches truly unexpected render errors (→ `ErrorView`); expected API failures must be caught locally and surfaced via the `toast` store (`toast.error(apiErrorMessage(e, fallback))`). `utils/apiError.js` reads RFC7807 `detail`, then `error`, then `message`. `<ToastHost>` lives at the App root.
+- **Loading states** use shimmer skeletons (`ui/BaseSkeleton`, `BookCardSkeleton`, `BookGridSkeleton`) and `BaseSpinner` (also for in-button loading), never bare "Loading…" text. `ui/StatusScreen` renders empty/error states.
+- **State** lives in Pinia stores (`auth`, `library`, `discover`, `profile`, `toast`); use `storeToRefs` to keep reactivity when destructuring.
 
 ### CORS
-Handled by `nelmio/cors-bundle`. `CORS_ALLOW_ORIGIN` in `.env` defaults to a regex matching any `localhost` port, which covers the Vite dev server. Adjust for production in `.env.local` or deployment config.
+`nelmio/cors-bundle`. `CORS_ALLOW_ORIGIN` in `.env` defaults to a regex matching any `localhost` port (covers the Vite dev server). Adjust for production in `.env.local` / deployment config.
+
+### Testing
+PHPUnit suite under `tests/`, run with `php bin/phpunit`. It is **unit-level** (mirrors `src/`: `Entity/`, `Service/`, `Dto/`, `Api/`, `Security/Voter/`, `EventSubscriber/`, `Category/`) — no kernel boot or DB, so it runs fast and doesn't need the audit tables. `phpunit.dist.xml` sets `failOnDeprecation` / `failOnNotice` / `failOnWarning` = **true**, so under PHPUnit 13: use `createStub()` (not `createMock()`) when you only need a return value, and pair `->with(...)` with an explicit `->expects(...)`. There is no HTTP/`WebTestCase` layer (the test env disables the firewall: `when@test: security: ~`).
 
 ## Environment Setup Notes (Windows-specific)
 
-- `ext-sodium` must be enabled in `php.ini` — required by `lexik/jwt-authentication-bundle` (dependency on `lcobucci/jwt`)
-- `extension=pdo_pgsql` and `extension=pgsql` must be enabled in `php.ini` — the app runs on PostgreSQL; without them `doctrine:*` CLI commands fail with "could not find driver"
-- JWT keypair was generated via the system OpenSSL CLI, not `php bin/console lexik:jwt:generate-keypair`, because PHP's `openssl_pkey_new()` has issues on this Windows install
-- PHP binary: `D:\code\Software\php-8.4.5\php.ini`
-- The dev DB password is `changeme` (matches `POSTGRES_PASSWORD`); `DATABASE_URL` uses it in `.env`
-- `lexik:jwt:generate-token <email>` mints a JWT for manual API testing — pass `--no-ansi` and strip whitespace before putting it in an `Authorization: Bearer` header (colour codes corrupt the header → nginx 400)
+- **PHP ini extensions** to enable in `D:\code\Software\php-8.4.5\php.ini`:
+  - `ext-sodium` — `lexik/jwt-authentication-bundle` (via `lcobucci/jwt`)
+  - `pdo_pgsql` + `pgsql` — PostgreSQL; without them `doctrine:*` fails with "could not find driver"
+  - `intl` — required by `auditor-bundle` (`php_intl.dll` + ICU DLLs already ship with this PHP)
+- **Dumped-env gotcha:** a committed `.env.local.php` exists, and Symfony reads **only** it in dev (ignoring `.env`). After editing `.env`, run `composer dump-env dev` — otherwise you get `Environment variable not found: "…"`.
+- JWT keypair was generated via the system **OpenSSL CLI**, not `lexik:jwt:generate-keypair` (PHP's `openssl_pkey_new()` misbehaves on this Windows install).
+- Dev DB password is `changeme` (matches `POSTGRES_PASSWORD`); `DATABASE_URL` uses it in `.env`.
+- `lexik:jwt:generate-token <email>` mints a JWT for manual API testing — pass `--no-ansi` and strip whitespace before putting it in an `Authorization: Bearer` header (colour codes corrupt the header → nginx 400).
