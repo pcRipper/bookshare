@@ -20,3 +20,9 @@
 
 # Functional
 - [x] Time landing: lending side is saying when will be the due date for book return, no approval from requester side needed, its the requirement of the lending side only
+
+
+# Deployment
+- add script to install all needed dependenices on droplet
+- droplet will be running prod-grade docker containers, they should be run from optimized two-stage images, cause memory on VHS is very low
+- frontend will be shipped built
