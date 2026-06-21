@@ -7,6 +7,7 @@ use App\Entity\User;
 use App\Service\UserStatsProvider;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/users')]
@@ -24,10 +25,18 @@ class UserController extends AbstractController
         /** @var User $viewer */
         $viewer = $this->getUser();
 
+        $isSelf = $viewer->getId() === $user->getId();
+
+        // A private profile is hidden from everyone but its owner — same rule the
+        // book listing applies to a private library.
+        if (!$isSelf && $user->isPrivate()) {
+            return $this->json(['error' => 'This profile is private.'], Response::HTTP_FORBIDDEN);
+        }
+
         return $this->json($this->mapper->profile(
             $user,
             $this->stats->forUser($user),
-            $viewer->getId() === $user->getId(),
+            $isSelf,
         ));
     }
 }

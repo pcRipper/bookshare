@@ -8,7 +8,7 @@ use App\Entity\LibraryRequest;
 use App\Entity\LibraryRequestEvent;
 use App\Entity\User;
 use App\Security\Voter\BookVoter;
-use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 /**
  * Produces the exact JSON shapes the Vue frontend components expect.
@@ -17,7 +17,7 @@ use Symfony\Bundle\SecurityBundle\Security;
 class ResponseMapper
 {
     public function __construct(
-        private readonly Security $security,
+        private readonly AuthorizationCheckerInterface $authChecker,
     ) {}
 
     public function book(Book $book): array
@@ -34,7 +34,7 @@ class ResponseMapper
             'isHome'        => $book->isHome(),
             // Server-authoritative: may the current viewer edit this book? False
             // for books they don't own and for their own books that are on loan.
-            'canEdit'       => $this->security->isGranted(BookVoter::EDIT, $book),
+            'canEdit'       => $this->authChecker->isGranted(BookVoter::EDIT, $book),
             'categories' => array_map(
                 fn ($c) => ['id' => $c->getId(), 'name' => $c->getName(), 'colorHex' => $c->getColorHex()],
                 $book->getCategories()->toArray(),

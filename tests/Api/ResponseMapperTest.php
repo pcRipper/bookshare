@@ -1,0 +1,185 @@
+<?php
+
+namespace App\Tests\Api;
+
+use App\Api\ResponseMapper;
+use App\Entity\ActivityItem;
+use App\Entity\Book;
+use App\Entity\Category;
+use App\Entity\LibraryRequest;
+use App\Entity\User;
+use App\Enum\ActivityType;
+use App\Enum\BookStatus;
+use App\Enum\LibraryRequestEventType;
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
+
+class ResponseMapperTest extends TestCase
+{
+    private function mapper(bool $canEdit = true): ResponseMapper
+    {
+        $auth = $this->createStub(AuthorizationCheckerInterface::class);
+        $auth->method('isGranted')->willReturn($canEdit);
+
+        return new ResponseMapper($auth);
+    }
+
+    public function testBookShapeIncludesHolderAndCanEdit(): void
+    {
+        $owner = (new User())->setFullName('Jane');
+        $book = (new Book())->setOwner($owner)->setTitle('Dune')->setAuthor('Herbert')->setStatus(BookStatus::Own);
+        $book->addCategory((new Category())->setName('Sci-Fi')->setColorHex('#E8F0EA'));
+
+        $data = $this->mapper(true)->book($book);
+
+        self::assertSame('Dune', $data['title']);
+        self::assertSame('Herbert', $data['author']);
+        self::assertSame('own', $data['status']);
+        self::assertTrue($data['isHome']);
+        self::assertTrue($data['canEdit']);
+        self::assertSame('Jane', $data['currentHolder']['fullName']);
+        self::assertCount(1, $data['categories']);
+        self::assertSame('Sci-Fi', $data['categories'][0]['name']);
+        self::assertSame('#E8F0EA', $data['categories'][0]['colorHex']);
+    }
+
+    public function testBookCanEditReflectsTheAuthorizationChecker(): void
+    {
+        $book = (new Book())->setOwner((new User())->setFullName('Owner'))->setTitle('T')->setAuthor('A');
+
+        self::assertFalse($this->mapper(false)->book($book)['canEdit']);
+    }
+
+    public function testUserSummaryShape(): void
+    {
+        $user = (new User())->setFullName('Bob')->setAvatarUrl('/a.png');
+
+        self::assertSame(
+            ['id' => null, 'fullName' => 'Bob', 'avatarUrl' => '/a.png'],
+            $this->mapper()->userSummary($user),
+        );
+    }
+
+    public function testRequestShapeIncludesEventsRequesterAndBookOwner(): void
+    {
+        $owner = (new User())->setFullName('Owner');
+        $requester = (new User())->setFullName('Borrower');
+        $book = (new Book())->setOwner($owner)->setTitle('Book')->setAuthor('Auth');
+        $request = (new LibraryRequest())->setBook($book)->setRequester($requester);
+        $request->addEvent(LibraryRequestEventType::Requested, $requester);
+
+        $data = $this->mapper()->request($request);
+
+        self::assertSame('pending', $data['status']);
+        self::assertSame('Borrower', $data['requester']['fullName']);
+        self::assertSame('Book', $data['book']['title']);
+        self::assertSame('Owner', $data['book']['owner']['fullName']);
+        self::assertCount(1, $data['events']);
+        self::assertSame('requested', $data['events'][0]['type']);
+        // Timestamps are serialised as ISO-8601.
+        self::assertNotFalse(\DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $data['requestedAt']));
+    }
+
+    public function testRequestEventShape(): void
+    {
+        $actor = (new User())->setFullName('Actor');
+        $request = new LibraryRequest();
+        $due = new \DateTimeImmutable('2030-01-01');
+        $event = $request->addEvent(LibraryRequestEventType::Approved, $actor, $due);
+
+        $data = $this->mapper()->requestEvent($event);
+
+        self::assertSame('approved', $data['type']);
+        self::assertSame('Actor', $data['actor']['fullName']);
+        self::assertNotFalse(\DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $data['createdAt']));
+        self::assertNotFalse(\DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $data['dueDate']));
+    }
+
+    public function testRequestEventDueDateIsNullForNonApproval(): void
+    {
+        $request = new LibraryRequest();
+        $event = $request->addEvent(LibraryRequestEventType::Declined, (new User())->setFullName('Owner'));
+
+        self::assertNull($this->mapper()->requestEvent($event)['dueDate']);
+    }
+
+    public function testDiscoverBookAddsOwner(): void
+    {
+        $owner = (new User())->setFullName('Owner');
+        $book = (new Book())->setOwner($owner)->setTitle('T')->setAuthor('A');
+
+        $data = $this->mapper()->discoverBook($book);
+
+        self::assertArrayHasKey('owner', $data);
+        self::assertSame('Owner', $data['owner']['fullName']);
+        self::assertArrayHasKey('canEdit', $data);
+    }
+
+    public function testProfileShape(): void
+    {
+        $user = (new User())->setFullName('Jane')->setBio('Bio')->setLocation('Lviv');
+        $stats = ['totalBooks' => 3, 'shared' => 2, 'loaned' => 1];
+
+        $data = $this->mapper()->profile($user, $stats, true);
+
+        self::assertSame('Jane', $data['fullName']);
+        self::assertSame('Bio', $data['bio']);
+        self::assertSame('Lviv', $data['location']);
+        self::assertTrue($data['isSelf']);
+        self::assertSame($stats, $data['stats']);
+    }
+
+    public function testMeShapeIncludesEmailAndPrivacy(): void
+    {
+        $user = (new User())->setEmail('me@example.test')->setFullName('Me')->setIsPrivate(true);
+        $stats = ['totalBooks' => 0, 'shared' => 0, 'loaned' => 0];
+
+        $data = $this->mapper()->me($user, $stats);
+
+        self::assertSame('me@example.test', $data['email']);
+        self::assertTrue($data['isPrivate']);
+        self::assertSame($stats, $data['stats']);
+    }
+
+    public function testCategoryShape(): void
+    {
+        $category = (new Category())->setName('Poetry')->setColorHex('#dae4ed');
+
+        self::assertSame(
+            ['id' => null, 'name' => 'Poetry', 'colorHex' => '#dae4ed'],
+            $this->mapper()->category($category),
+        );
+    }
+
+    public function testActivityShapeWithBookAndUser(): void
+    {
+        $actor = (new User())->setFullName('Actor');
+        $targetUser = (new User())->setFullName('Target');
+        $book = (new Book())->setOwner($actor)->setTitle('B')->setAuthor('A');
+
+        $item = (new ActivityItem())
+            ->setActor($actor)
+            ->setActionType(ActivityType::Borrowed)
+            ->setTargetBook($book)
+            ->setTargetUser($targetUser);
+
+        $data = $this->mapper()->activity($item);
+
+        self::assertSame('borrowed', $data['actionType']);
+        self::assertSame('Actor', $data['actor']['fullName']);
+        self::assertSame('B', $data['targetBook']['title']);
+        self::assertSame('Target', $data['targetUser']['fullName']);
+    }
+
+    public function testActivityShapeWithNullTargets(): void
+    {
+        $item = (new ActivityItem())
+            ->setActor((new User())->setFullName('Actor'))
+            ->setActionType(ActivityType::Followed);
+
+        $data = $this->mapper()->activity($item);
+
+        self::assertNull($data['targetBook']);
+        self::assertNull($data['targetUser']);
+    }
+}

@@ -7,9 +7,9 @@
 - implement server sent events
 
 ## Security & Tests
-- add all possible unit tests
-- validate all possible security breaches
-- add ratelimiters for ip, user, ip + user
+- [x] add all possible unit tests
+- [x] validate all possible security breaches
+- [x] add ratelimiters for ip, user, ip + user
 
 
 # UI
