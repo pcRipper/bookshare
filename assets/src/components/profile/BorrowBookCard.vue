@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 
 const props = defineProps({
   book: {
@@ -9,6 +10,8 @@ const props = defineProps({
   },
   // When true the viewer owns this profile — borrowing is hidden.
   isSelf: { type: Boolean, default: false },
+  // Parent-controlled: true while this book's borrow request is in flight.
+  pending: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['request', 'edit'])
@@ -57,13 +60,14 @@ function onAction() {
       <button
         class="borrow-card__action"
         :class="`borrow-card__action--${action.state}`"
-        :disabled="action.state === 'requested' || action.state === 'disabled'"
+        :disabled="action.state === 'requested' || action.state === 'disabled' || pending"
         @click.stop="onAction"
       >
-        <span v-if="action.state === 'available'" class="material-symbols-outlined">handshake</span>
+        <BaseSpinner v-if="pending" size="sm" />
+        <span v-else-if="action.state === 'available'" class="material-symbols-outlined">handshake</span>
         <span v-else-if="action.state === 'requested'" class="material-symbols-outlined">check</span>
         <span v-else-if="action.state === 'manage'" class="material-symbols-outlined">edit</span>
-        {{ action.label }}
+        {{ pending ? 'Requesting…' : action.label }}
       </button>
     </div>
   </article>

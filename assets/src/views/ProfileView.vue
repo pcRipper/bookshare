@@ -1,10 +1,12 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useProfileStore } from '@/stores/profile'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
+import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
+import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
 import BorrowBookCard from '@/components/profile/BorrowBookCard.vue'
 import EditProfileModal from '@/components/profile/EditProfileModal.vue'
@@ -74,20 +76,35 @@ function load() {
 onMounted(load)
 watch(() => route.params.id, load)
 
-function onRequest(bookId) {
-  store.requestBorrow(bookId)
+/* ── Borrow requests (per-book in-flight tracking for button loaders) ──── */
+const requesting = reactive(new Set())
+async function onRequest(bookId) {
+  if (requesting.has(bookId)) return
+  requesting.add(bookId)
+  try {
+    await store.requestBorrow(bookId)
+  } finally {
+    requesting.delete(bookId)
+  }
 }
 
 /* ── Own-profile editing (only when profile.isSelf) ───────────────────── */
 const editProfileOpen = ref(false)
+const editBusy = ref(false)
 
 async function onProfileSave(payload) {
-  await store.updateProfile(payload)
-  editProfileOpen.value = false
+  editBusy.value = true
+  try {
+    await store.updateProfile(payload)
+    editProfileOpen.value = false
+  } finally {
+    editBusy.value = false
+  }
 }
 
 /* ── Own-profile book management (reuses the library's Manage Book modal) ─ */
 const bookModalOpen = ref(false)
+const bookBusy = ref(false)
 const editingBook = ref(null)
 
 function openAddBook() {
@@ -99,13 +116,23 @@ function openEditBook(book) {
   bookModalOpen.value = true
 }
 async function onBookSave(payload) {
-  if (editingBook.value) await store.updateBook(editingBook.value.id, payload)
-  else await store.createBook(payload)
-  bookModalOpen.value = false
+  bookBusy.value = true
+  try {
+    if (editingBook.value) await store.updateBook(editingBook.value.id, payload)
+    else await store.createBook(payload)
+    bookModalOpen.value = false
+  } finally {
+    bookBusy.value = false
+  }
 }
 async function onBookDelete(id) {
-  await store.deleteBook(id)
-  bookModalOpen.value = false
+  bookBusy.value = true
+  try {
+    await store.deleteBook(id)
+    bookModalOpen.value = false
+  } finally {
+    bookBusy.value = false
+  }
 }
 </script>
 
@@ -114,9 +141,17 @@ async function onBookDelete(id) {
     <div class="profile-page">
 
       <!-- Loading -->
-      <div v-if="loading" class="profile-state">
-        <span class="material-symbols-outlined profile-state__icon spin">progress_activity</span>
-        <p>Loading profile…</p>
+      <div v-if="loading" class="profile-skeleton">
+        <section class="profile-skeleton__header">
+          <BaseSkeleton width="96px" height="96px" circle />
+          <div class="profile-skeleton__lines">
+            <BaseSkeleton width="55%" height="28px" />
+            <BaseSkeleton width="35%" height="14px" />
+            <BaseSkeleton width="90%" height="14px" />
+            <BaseSkeleton width="70%" height="14px" />
+          </div>
+        </section>
+        <BookGridSkeleton :count="8" />
       </div>
 
       <!-- Not found / private / error -->
@@ -206,6 +241,7 @@ async function onBookDelete(id) {
             :key="book.id"
             :book="book"
             :is-self="profile.isSelf"
+            :pending="requesting.has(book.id)"
             @request="onRequest"
             @edit="openEditBook"
           />
@@ -234,12 +270,14 @@ async function onBookDelete(id) {
     <EditProfileModal
       :open="editProfileOpen"
       :profile="profile"
+      :busy="editBusy"
       @save="onProfileSave"
       @close="editProfileOpen = false"
     />
     <ManageBookModal
       :open="bookModalOpen"
       :book="editingBook"
+      :busy="bookBusy"
       @save="onBookSave"
       @delete="onBookDelete"
       @close="bookModalOpen = false"
@@ -273,8 +311,28 @@ async function onBookDelete(id) {
 }
 .profile-state__icon { font-size: 48px; opacity: 0.6; }
 .profile-state__link { color: var(--color-primary); font-weight: 500; }
-.spin { animation: spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Loading skeleton ─────────────────────────────────────────────────── */
+.profile-skeleton { display: flex; flex-direction: column; gap: var(--space-lg); }
+.profile-skeleton__header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  padding-bottom: var(--space-md);
+}
+@media (min-width: 768px) {
+  .profile-skeleton__header { flex-direction: row; align-items: center; gap: var(--space-lg); }
+}
+.profile-skeleton__lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  width: 100%;
+  max-width: 32rem;
+  align-items: center;
+}
+@media (min-width: 768px) { .profile-skeleton__lines { align-items: flex-start; } }
 
 /* ── Header ───────────────────────────────────────────────────────────── */
 .profile-header {

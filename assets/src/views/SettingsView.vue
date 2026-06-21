@@ -5,6 +5,8 @@ import api from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
+import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -182,7 +184,24 @@ function signOut() {
           <template v-if="section === 'account'">
             <h2 class="settings-panel__heading">Public Profile</h2>
 
-            <div v-if="loading" class="settings-loading">Loading…</div>
+            <div v-if="loading" class="settings-skeleton">
+              <section class="card photo-card">
+                <BaseSkeleton width="96px" height="96px" circle />
+                <div class="photo-card__body">
+                  <BaseSkeleton width="40%" height="16px" />
+                  <BaseSkeleton width="80%" height="12px" />
+                  <BaseSkeleton width="100%" height="40px" />
+                </div>
+              </section>
+              <section class="card">
+                <BaseSkeleton width="30%" height="12px" />
+                <BaseSkeleton width="100%" height="40px" />
+                <BaseSkeleton width="30%" height="12px" />
+                <BaseSkeleton width="100%" height="92px" />
+                <BaseSkeleton width="30%" height="12px" />
+                <BaseSkeleton width="100%" height="40px" />
+              </section>
+            </div>
 
             <template v-else>
               <!-- Profile photo -->
@@ -238,6 +257,7 @@ function signOut() {
                   </transition>
                   <button class="btn-text" type="button" :disabled="!dirty || saving" @click="cancel">Cancel</button>
                   <button class="btn-primary" type="button" :disabled="!dirty || saving" @click="save">
+                    <BaseSpinner v-if="saving" size="sm" />
                     {{ saving ? 'Saving…' : 'Save Changes' }}
                   </button>
                 </footer>
@@ -386,7 +406,7 @@ function signOut() {
   padding-bottom: var(--space-sm);
   border-bottom: 1px solid var(--color-surface-container-highest);
 }
-.settings-loading { color: var(--color-on-surface-variant); padding: var(--space-lg) 0; }
+.settings-skeleton { display: flex; flex-direction: column; gap: var(--space-md); }
 
 .card {
   background: var(--color-surface-container-lowest);

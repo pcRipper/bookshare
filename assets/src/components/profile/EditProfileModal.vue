@@ -1,9 +1,12 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
+import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 
 const props = defineProps({
   open:    { type: Boolean, default: false },
   profile: { type: Object, default: null }, // { bio, location }
+  // Parent-controlled: true while the save request is in flight.
+  busy:    { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['save', 'close'])
@@ -12,7 +15,6 @@ const BIO_MAX = 300
 const LOCATION_MAX = 255
 
 const form = ref({ bio: '', location: '' })
-const saving = ref(false)
 const errorMsg = ref(null)
 
 watch(
@@ -30,21 +32,17 @@ watch(
 
 const bioRemaining = computed(() => BIO_MAX - form.value.bio.length)
 
-async function onSave() {
+function onSave() {
   if (form.value.bio.length > BIO_MAX || form.value.location.length > LOCATION_MAX) {
     errorMsg.value = 'Please shorten the highlighted fields.'
     return
   }
-  saving.value = true
   errorMsg.value = null
-  try {
-    await emit('save', {
-      bio: form.value.bio.trim() || null,
-      location: form.value.location.trim() || null,
-    })
-  } finally {
-    saving.value = false
-  }
+  // The parent performs the request and toggles `busy`, closing the modal on success.
+  emit('save', {
+    bio: form.value.bio.trim() || null,
+    location: form.value.location.trim() || null,
+  })
 }
 </script>
 
@@ -91,9 +89,10 @@ async function onSave() {
         </div>
 
         <footer class="modal__footer">
-          <button class="btn-secondary" type="button" @click="emit('close')">Cancel</button>
-          <button class="btn-primary" type="button" :disabled="saving" @click="onSave">
-            {{ saving ? 'Saving…' : 'Save Changes' }}
+          <button class="btn-secondary" type="button" :disabled="busy" @click="emit('close')">Cancel</button>
+          <button class="btn-primary" type="button" :disabled="busy" @click="onSave">
+            <BaseSpinner v-if="busy" size="sm" />
+            {{ busy ? 'Saving…' : 'Save Changes' }}
           </button>
         </footer>
       </div>
@@ -191,12 +190,13 @@ async function onSave() {
   transition: background 0.2s, color 0.2s;
 }
 .btn-primary { background: var(--color-primary); color: var(--color-on-primary); }
-.btn-primary:hover { background: var(--color-primary-container); }
+.btn-primary:hover:not(:disabled) { background: var(--color-primary-container); }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn-secondary {
   background: var(--color-surface-container-lowest);
   border: 1px solid var(--color-secondary);
   color: var(--color-on-surface-variant);
 }
-.btn-secondary:hover { background: var(--color-surface-container-low); }
+.btn-secondary:hover:not(:disabled) { background: var(--color-surface-container-low); }
+.btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>

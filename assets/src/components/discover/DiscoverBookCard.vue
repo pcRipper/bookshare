@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
+import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
 
 const props = defineProps({
@@ -9,6 +10,8 @@ const props = defineProps({
     required: true,
     /* shape: { id, title, author, coverPath, status, requested, categories, owner } */
   },
+  // Parent-controlled: true while this book's borrow request is in flight.
+  pending: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['request'])
@@ -65,12 +68,13 @@ function onAction() {
       <button
         class="discover-card__action"
         :class="`discover-card__action--${action.state}`"
-        :disabled="action.state !== 'available'"
+        :disabled="action.state !== 'available' || pending"
         @click="onAction"
       >
-        <span v-if="action.state === 'available'" class="material-symbols-outlined">handshake</span>
+        <BaseSpinner v-if="pending" size="sm" />
+        <span v-else-if="action.state === 'available'" class="material-symbols-outlined">handshake</span>
         <span v-else-if="action.state === 'requested'" class="material-symbols-outlined">check</span>
-        {{ action.label }}
+        {{ pending ? 'Requesting…' : action.label }}
       </button>
     </div>
   </article>

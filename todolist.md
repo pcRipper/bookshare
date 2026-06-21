@@ -6,6 +6,6 @@
 
 
 # UI
-- add loaders for buttons
-- add placeholders of ui elements(glowing or blinking blocks) instead of simple Loading... signs
-- add error page and not found page
+- [x] add loaders for buttons
+- [x] add placeholders of ui elements(glowing or blinking blocks) instead of simple Loading... signs
+- [x] add error page and not found page

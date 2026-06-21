@@ -41,6 +41,12 @@ const router = createRouter({
       path: '/',
       redirect: '/library',
     },
+    // Catch-all → 404. Keep last so real routes match first.
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('@/views/NotFoundView.vue'),
+    },
   ],
 })
 

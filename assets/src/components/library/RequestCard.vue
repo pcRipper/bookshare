@@ -1,5 +1,6 @@
 <script setup>
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
+import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 
 defineProps({
   request: {
@@ -13,6 +14,8 @@ defineProps({
        }
     */
   },
+  // Parent-controlled: 'approve' | 'decline' while that action is in flight.
+  pending: { type: String, default: null },
 })
 
 defineEmits(['approve', 'decline'])
@@ -53,15 +56,19 @@ defineEmits(['approve', 'decline'])
     <div class="request-card__actions">
       <button
         class="btn-outline"
+        :disabled="!!pending"
         @click="$emit('decline', request.id)"
       >
-        Decline
+        <BaseSpinner v-if="pending === 'decline'" size="sm" />
+        {{ pending === 'decline' ? 'Declining…' : 'Decline' }}
       </button>
       <button
         class="btn-primary"
+        :disabled="!!pending"
         @click="$emit('approve', request.id)"
       >
-        Approve
+        <BaseSpinner v-if="pending === 'approve'" size="sm" />
+        {{ pending === 'approve' ? 'Approving…' : 'Approve' }}
       </button>
     </div>
   </article>
@@ -152,25 +159,30 @@ defineEmits(['approve', 'decline'])
 .btn-outline,
 .btn-primary {
   flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-default);
   font-size: var(--text-label-md);
   font-weight: 500;
-  text-align: center;
-  transition: background 0.2s, color 0.2s;
+  transition: background 0.2s, color 0.2s, opacity 0.2s;
 }
+.btn-outline:disabled,
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .btn-outline {
   border: 1px solid var(--color-secondary);
   color: var(--color-on-surface-variant);
   background: var(--color-surface-container-lowest);
 }
-.btn-outline:hover { background: var(--color-surface-container-low); }
+.btn-outline:hover:not(:disabled) { background: var(--color-surface-container-low); }
 
 .btn-primary {
   background: var(--color-primary);
   color: var(--color-on-primary);
   border: 1px solid transparent;
 }
-.btn-primary:hover { background: var(--color-surface-tint); }
+.btn-primary:hover:not(:disabled) { background: var(--color-surface-tint); }
 </style>

@@ -1,3 +1,9 @@
+<script setup>
+import AppErrorBoundary from '@/components/AppErrorBoundary.vue'
+</script>
+
 <template>
-  <RouterView />
+  <AppErrorBoundary>
+    <RouterView />
+  </AppErrorBoundary>
 </template>

@@ -1,9 +1,11 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useLibraryStore } from '@/stores/library'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
+import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
+import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import BookCard from '@/components/library/BookCard.vue'
 import RequestCard from '@/components/library/RequestCard.vue'
 import ManageBookModal from '@/components/library/ManageBookModal.vue'
@@ -46,20 +48,34 @@ watch(activeTab, tab => {
 onMounted(() => store.fetchRequests().then(() => { loaded.value.requests = true }))
 
 /* ── Request actions ─────────────────────────────────────────────────── */
+// Per-request in-flight action ('approve' | 'decline') for button loaders.
+const processing = reactive({})
+
 async function handleApprove(id) {
-  await store.approveRequest(id)
-  // The store refreshed History + Lending; mark them loaded so opening those
-  // tabs doesn't trigger a redundant refetch.
-  loaded.value.history = true
-  loaded.value.lending = true
+  processing[id] = 'approve'
+  try {
+    await store.approveRequest(id)
+    // The store refreshed History + Lending; mark them loaded so opening those
+    // tabs doesn't trigger a redundant refetch.
+    loaded.value.history = true
+    loaded.value.lending = true
+  } finally {
+    delete processing[id]
+  }
 }
 async function handleDecline(id) {
-  await store.declineRequest(id)
-  loaded.value.history = true
+  processing[id] = 'decline'
+  try {
+    await store.declineRequest(id)
+    loaded.value.history = true
+  } finally {
+    delete processing[id]
+  }
 }
 
 /* ── Manage Book modal ───────────────────────────────────────────────── */
 const modalOpen = ref(false)
+const modalBusy = ref(false)
 const editingBook = ref(null)
 
 function openCreate() {
@@ -71,17 +87,27 @@ function openEdit(book) {
   modalOpen.value = true
 }
 async function onModalSave(payload) {
-  if (editingBook.value) {
-    await store.updateBook(editingBook.value.id, payload)
-  } else {
-    await store.createBook(payload)
+  modalBusy.value = true
+  try {
+    if (editingBook.value) {
+      await store.updateBook(editingBook.value.id, payload)
+    } else {
+      await store.createBook(payload)
+    }
+    if (loaded.value.lending) await store.fetchLending()
+    modalOpen.value = false
+  } finally {
+    modalBusy.value = false
   }
-  if (loaded.value.lending) await store.fetchLending()
-  modalOpen.value = false
 }
 async function onModalDelete(id) {
-  await store.deleteBook(id)
-  modalOpen.value = false
+  modalBusy.value = true
+  try {
+    await store.deleteBook(id)
+    modalOpen.value = false
+  } finally {
+    modalBusy.value = false
+  }
 }
 </script>
 
@@ -92,23 +118,38 @@ async function onModalDelete(id) {
       <!-- ── Profile header ────────────────────────────────────────────── -->
       <section class="profile-header">
         <div class="profile-header__info">
-          <BaseAvatar
-            :src="profile?.avatarUrl"
-            :name="profile?.fullName"
-            size="xl"
-            class="profile-header__avatar"
-          />
-          <div>
-            <h1 class="profile-header__name">{{ profile?.fullName }}</h1>
-            <p v-if="profile?.bio" class="profile-header__bio">{{ profile.bio }}</p>
-            <p v-else class="profile-header__bio profile-header__bio--muted">Add a short bio in settings.</p>
-            <div class="profile-header__stats">
-              <div v-for="stat in statCards" :key="stat.label" class="stat">
-                <span class="stat__value">{{ stat.value }}</span>
-                <span class="stat__label">{{ stat.label }}</span>
+          <!-- Real header -->
+          <template v-if="profile">
+            <BaseAvatar
+              :src="profile.avatarUrl"
+              :name="profile.fullName"
+              size="xl"
+              class="profile-header__avatar"
+            />
+            <div>
+              <h1 class="profile-header__name">{{ profile.fullName }}</h1>
+              <p v-if="profile.bio" class="profile-header__bio">{{ profile.bio }}</p>
+              <p v-else class="profile-header__bio profile-header__bio--muted">Add a short bio in settings.</p>
+              <div class="profile-header__stats">
+                <div v-for="stat in statCards" :key="stat.label" class="stat">
+                  <span class="stat__value">{{ stat.value }}</span>
+                  <span class="stat__label">{{ stat.label }}</span>
+                </div>
               </div>
             </div>
-          </div>
+          </template>
+
+          <!-- Skeleton while the profile loads -->
+          <template v-else>
+            <BaseSkeleton width="96px" height="96px" circle />
+            <div class="profile-header__skeleton">
+              <BaseSkeleton width="180px" height="28px" />
+              <BaseSkeleton width="260px" height="14px" />
+              <div class="profile-header__stats">
+                <BaseSkeleton v-for="n in 3" :key="n" width="64px" height="44px" />
+              </div>
+            </div>
+          </template>
         </div>
 
         <button class="btn-add-book" @click="openCreate">
@@ -137,24 +178,27 @@ async function onModalDelete(id) {
         </div>
 
         <!-- Collection tab -->
-        <div v-if="activeTab === 'collection'" class="book-grid" role="tabpanel">
-          <BookCard
-            v-for="book in collection"
-            :key="book.id"
-            :book="book"
-            @click="openEdit"
-          />
-          <!-- "Add new book" placeholder card -->
-          <div class="add-book-card" @click="openCreate" role="button" tabindex="0">
-            <span class="material-symbols-outlined add-book-card__icon">add_circle</span>
-            <h3 class="add-book-card__title">Catalog a New Book</h3>
-            <p class="add-book-card__hint">Add a title to your collection.</p>
+        <div v-if="activeTab === 'collection'" role="tabpanel">
+          <BookGridSkeleton v-if="loading.collection && !collection.length" :count="8" />
+          <div v-else class="book-grid">
+            <BookCard
+              v-for="book in collection"
+              :key="book.id"
+              :book="book"
+              @click="openEdit"
+            />
+            <!-- "Add new book" placeholder card -->
+            <div class="add-book-card" @click="openCreate" role="button" tabindex="0">
+              <span class="material-symbols-outlined add-book-card__icon">add_circle</span>
+              <h3 class="add-book-card__title">Catalog a New Book</h3>
+              <p class="add-book-card__hint">Add a title to your collection.</p>
+            </div>
           </div>
         </div>
 
         <!-- Lending tab -->
         <div v-else-if="activeTab === 'lending'" role="tabpanel">
-          <p v-if="loading.lending" class="empty-state__text loading-line">Loading…</p>
+          <BookGridSkeleton v-if="loading.lending" :count="4" />
           <div v-else-if="lending.length" class="book-grid">
             <BookCard v-for="book in lending" :key="book.id" :book="book" @click="openEdit" />
           </div>
@@ -165,21 +209,48 @@ async function onModalDelete(id) {
         </div>
 
         <!-- Requests tab -->
-        <div v-else-if="activeTab === 'requests'" class="request-grid" role="tabpanel">
-          <p v-if="loading.requests" class="empty-requests">Loading…</p>
+        <div v-else-if="activeTab === 'requests'" role="tabpanel">
+          <div v-if="loading.requests" class="request-grid">
+            <div v-for="n in 2" :key="n" class="request-skeleton">
+              <div class="request-skeleton__row">
+                <BaseSkeleton width="40px" height="40px" circle />
+                <div class="request-skeleton__lines">
+                  <BaseSkeleton width="50%" height="14px" />
+                  <BaseSkeleton width="30%" height="12px" />
+                </div>
+              </div>
+              <BaseSkeleton width="100%" height="80px" radius="var(--radius-default)" />
+              <div class="request-skeleton__actions">
+                <BaseSkeleton width="100%" height="40px" radius="var(--radius-default)" />
+                <BaseSkeleton width="100%" height="40px" radius="var(--radius-default)" />
+              </div>
+            </div>
+          </div>
           <p v-else-if="requests.length === 0" class="empty-requests">All caught up — no pending requests.</p>
-          <RequestCard
-            v-for="req in requests"
-            :key="req.id"
-            :request="req"
-            @approve="handleApprove"
-            @decline="handleDecline"
-          />
+          <div v-else class="request-grid">
+            <RequestCard
+              v-for="req in requests"
+              :key="req.id"
+              :request="req"
+              :pending="processing[req.id] || null"
+              @approve="handleApprove"
+              @decline="handleDecline"
+            />
+          </div>
         </div>
 
         <!-- History tab -->
         <div v-else role="tabpanel">
-          <p v-if="loading.history" class="empty-state__text loading-line">Loading…</p>
+          <ul v-if="loading.history" class="history-list">
+            <li v-for="n in 5" :key="n" class="history-row">
+              <BaseSkeleton width="40px" height="40px" circle />
+              <div class="request-skeleton__lines" style="flex: 1">
+                <BaseSkeleton width="70%" height="14px" />
+                <BaseSkeleton width="30%" height="12px" />
+              </div>
+              <BaseSkeleton width="72px" height="22px" radius="var(--radius-full)" />
+            </li>
+          </ul>
           <ul v-else-if="history.length" class="history-list">
             <li v-for="item in history" :key="item.id" class="history-row">
               <BaseAvatar :src="item.requester.avatarUrl" :name="item.requester.fullName" size="md" />
@@ -215,6 +286,7 @@ async function onModalDelete(id) {
     <ManageBookModal
       :open="modalOpen"
       :book="editingBook"
+      :busy="modalBusy"
       @save="onModalSave"
       @delete="onModalDelete"
       @close="modalOpen = false"
@@ -491,7 +563,28 @@ async function onModalDelete(id) {
 }
 .empty-state__icon { font-size: 48px; opacity: 0.5; }
 .empty-state__text { font-size: var(--text-body-md); margin: 0; }
-.loading-line { padding: var(--space-xl) 0; text-align: center; color: var(--color-on-surface-variant); }
+
+/* ── Loading skeletons ────────────────────────────────────────────────── */
+.profile-header__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.profile-header__skeleton .profile-header__stats { margin-top: var(--space-xs); }
+
+.request-skeleton {
+  background: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-surface-container-highest);
+  border-radius: var(--radius-default);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+.request-skeleton__row { display: flex; align-items: center; gap: var(--space-sm); }
+.request-skeleton__lines { display: flex; flex-direction: column; gap: var(--space-xs); flex: 1; }
+.request-skeleton__actions { display: flex; gap: var(--space-sm); }
+.request-skeleton__actions > * { flex: 1; }
 
 /* ── History list ─────────────────────────────────────────────────────── */
 .history-list {

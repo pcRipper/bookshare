@@ -1,10 +1,13 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import CategorySelector from '@/components/library/CategorySelector.vue'
+import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 
 const props = defineProps({
   open:  { type: Boolean, default: false },
   book:  { type: Object, default: null },   // null = create mode
+  // Parent-controlled: true while a save/delete request is in flight.
+  busy:  { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['save', 'delete', 'close'])
@@ -16,7 +19,8 @@ const STATUS_OPTIONS = [
 ]
 
 const form = ref(blank())
-const saving = ref(false)
+// Which action the parent is currently processing — drives the right spinner.
+const pendingAction = ref(null) // 'save' | 'delete' | null
 const errorMsg = ref(null)
 
 const isEdit = computed(() => !!props.book)
@@ -32,6 +36,7 @@ watch(
   () => {
     if (!props.open) return
     errorMsg.value = null
+    pendingAction.value = null
     form.value = props.book
       ? {
           title: props.book.title ?? '',
@@ -46,25 +51,28 @@ watch(
   { immediate: true },
 )
 
-async function onSave() {
+function onSave() {
   if (!form.value.title.trim() || !form.value.author.trim()) {
     errorMsg.value = 'Title and author are required.'
     return
   }
-  saving.value = true
   errorMsg.value = null
-  try {
-    await emit('save', {
-      title: form.value.title.trim(),
-      author: form.value.author.trim(),
-      isbn: form.value.isbn.trim() || null,
-      status: form.value.status,
-      coverPath: form.value.coverPath.trim() || null,
-      categoryIds: form.value.categories.map(c => c.id),
-    })
-  } finally {
-    saving.value = false
-  }
+  pendingAction.value = 'save'
+  // The parent performs the request and toggles `busy`; it closes the modal
+  // on success, which resets `pendingAction` via the open watcher.
+  emit('save', {
+    title: form.value.title.trim(),
+    author: form.value.author.trim(),
+    isbn: form.value.isbn.trim() || null,
+    status: form.value.status,
+    coverPath: form.value.coverPath.trim() || null,
+    categoryIds: form.value.categories.map(c => c.id),
+  })
+}
+
+function onDelete() {
+  pendingAction.value = 'delete'
+  emit('delete', props.book.id)
 }
 </script>
 
@@ -130,14 +138,16 @@ async function onSave() {
         </div>
 
         <footer class="modal__footer">
-          <button v-if="isEdit" class="btn-delete" type="button" @click="emit('delete', book.id)">
-            <span class="material-symbols-outlined">delete</span>
-            Delete
+          <button v-if="isEdit" class="btn-delete" type="button" :disabled="busy" @click="onDelete">
+            <BaseSpinner v-if="busy && pendingAction === 'delete'" size="sm" />
+            <span v-else class="material-symbols-outlined">delete</span>
+            {{ busy && pendingAction === 'delete' ? 'Deleting…' : 'Delete' }}
           </button>
           <div class="modal__footer-actions">
-            <button class="btn-secondary" type="button" @click="emit('close')">Cancel</button>
-            <button class="btn-primary" type="button" :disabled="saving" @click="onSave">
-              {{ saving ? 'Saving…' : 'Save' }}
+            <button class="btn-secondary" type="button" :disabled="busy" @click="emit('close')">Cancel</button>
+            <button class="btn-primary" type="button" :disabled="busy" @click="onSave">
+              <BaseSpinner v-if="busy && pendingAction === 'save'" size="sm" />
+              {{ busy && pendingAction === 'save' ? 'Saving…' : 'Save' }}
             </button>
           </div>
         </footer>
@@ -289,13 +299,15 @@ async function onSave() {
   color: var(--color-on-surface-variant);
 }
 .btn-secondary:hover { background: var(--color-surface-container-low); }
+.btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .btn-delete {
   background: transparent;
   color: var(--color-error);
   padding-left: 0;
 }
-.btn-delete:hover { text-decoration: underline; }
+.btn-delete:hover:not(:disabled) { text-decoration: underline; }
+.btn-delete:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn-delete .material-symbols-outlined { font-size: 20px; }
 
 @media (max-width: 520px) {

@@ -1,9 +1,10 @@
 <script setup>
-import { computed, onMounted, onBeforeUnmount } from 'vue'
+import { computed, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDiscoverStore } from '@/stores/discover'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import DiscoverBookCard from '@/components/discover/DiscoverBookCard.vue'
+import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import { resolveCategoryColors } from '@/utils/categoryColors'
 
 const store = useDiscoverStore()
@@ -36,6 +37,18 @@ function pillStyle(cat) {
 const hasFilters = computed(() => !!query.value.trim() || activeCategory.value != null)
 
 const resultsHeading = computed(() => (hasFilters.value ? 'Results' : 'Recommended for You'))
+
+/* ── Borrow requests (per-book in-flight tracking for button loaders) ──── */
+const requesting = reactive(new Set())
+async function onRequest(id) {
+  if (requesting.has(id)) return
+  requesting.add(id)
+  try {
+    await store.requestBorrow(id)
+  } finally {
+    requesting.delete(id)
+  }
+}
 </script>
 
 <template>
@@ -93,10 +106,7 @@ const resultsHeading = computed(() => (hasFilters.value ? 'Results' : 'Recommend
         </div>
 
         <!-- Loading -->
-        <div v-if="loading" class="discover-state">
-          <span class="material-symbols-outlined discover-state__icon spin">progress_activity</span>
-          <p>Searching the commons…</p>
-        </div>
+        <BookGridSkeleton v-if="loading" :count="8" />
 
         <!-- Error -->
         <div v-else-if="error" class="discover-state">
@@ -111,7 +121,8 @@ const resultsHeading = computed(() => (hasFilters.value ? 'Results' : 'Recommend
             v-for="book in books"
             :key="book.id"
             :book="book"
-            @request="store.requestBorrow"
+            :pending="requesting.has(book.id)"
+            @request="onRequest"
           />
         </div>
 
