@@ -28,7 +28,12 @@ onMounted(async () => {
     authStore.setAuth(data.token, data.user)
     router.replace('/library')
   } catch (e) {
-    error.value = e.response?.data?.error ?? 'Authentication failed. Please try again.'
+    // Clear any stale credentials so the login guard doesn't bounce us back
+    // into the app, then return to the login page with the failure reason.
+    authStore.logout()
+    const message = e.response?.data?.error ?? 'Authentication failed. Please try again.'
+    error.value = message
+    router.replace({ name: 'login', query: { error: message } })
   }
 })
 </script>

@@ -28,10 +28,13 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRoute } from 'vue-router'
 import api from '@/api'
 
+const route = useRoute()
 const loading = ref(false)
-const error = ref(null)
+// Surface a failure passed back from the Google callback (?error=…).
+const error = ref(typeof route.query.error === 'string' ? route.query.error : null)
 
 async function loginWithGoogle() {
   loading.value = true
