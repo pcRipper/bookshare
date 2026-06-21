@@ -109,12 +109,16 @@ export const useLibraryStore = defineStore('library', () => {
   async function approveRequest(id) {
     await api.post(`/requests/${id}/approve`)
     requests.value = requests.value.filter(r => r.id !== id)
-    await fetchMe()
+    // The request now lives in History, the book flipped to "lent", and stats
+    // changed — refresh all three so the other tabs reflect it without a reload.
+    await Promise.all([fetchMe(), fetchHistory(), fetchLending()])
   }
 
   async function declineRequest(id) {
     await api.post(`/requests/${id}/decline`)
     requests.value = requests.value.filter(r => r.id !== id)
+    // The declined request moves into History — refresh it so it shows up there.
+    await fetchHistory()
   }
 
   return {

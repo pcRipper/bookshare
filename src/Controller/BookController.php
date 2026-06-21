@@ -8,6 +8,7 @@ use App\Entity\Book;
 use App\Entity\User;
 use App\Enum\BookStatus;
 use App\Repository\BookRepository;
+use App\Repository\CategoryRepository;
 use App\Repository\LibraryRequestRepository;
 use App\Repository\UserRepository;
 use App\Service\BookService;
@@ -45,6 +46,10 @@ class BookController extends AbstractController
             if (!$owner instanceof User) {
                 return $this->json(['error' => 'User not found.'], Response::HTTP_NOT_FOUND);
             }
+            // A private profile's collection is visible only to its owner.
+            if ($owner !== $viewer && $owner->isPrivate()) {
+                return $this->json(['error' => 'This library is private.'], Response::HTTP_FORBIDDEN);
+            }
         }
 
         $status = null;
@@ -65,6 +70,45 @@ class BookController extends AbstractController
                 $payload,
             );
         }
+
+        return $this->json($payload);
+    }
+
+    /**
+     * Discover: shareable books from other public members. Supports a free-text
+     * query (?q= over title/author) and a category filter (?category={id}).
+     * Each book carries its owner and a viewer-relative `requested` flag.
+     */
+    #[Route('/discover', methods: ['GET'])]
+    public function discover(
+        Request $request,
+        BookRepository $repo,
+        CategoryRepository $categories,
+        LibraryRequestRepository $requests,
+    ): JsonResponse {
+        /** @var User $viewer */
+        $viewer = $this->getUser();
+
+        $q = trim((string) $request->query->get('q', ''));
+
+        $category = null;
+        if (($raw = $request->query->get('category')) !== null && $raw !== '') {
+            if (!ctype_digit((string) $raw)) {
+                return $this->json(['error' => 'Invalid category filter.'], Response::HTTP_BAD_REQUEST);
+            }
+            $category = $categories->find((int) $raw);
+            if ($category === null) {
+                return $this->json(['error' => 'Category not found.'], Response::HTTP_NOT_FOUND);
+            }
+        }
+
+        $books = $repo->findForDiscover($viewer, $q !== '' ? $q : null, $category);
+
+        $pending = array_flip($requests->findPendingBookIdsForRequester($viewer));
+        $payload = array_map(
+            fn (Book $b) => $this->mapper->discoverBook($b) + ['requested' => isset($pending[$b->getId()])],
+            $books,
+        );
 
         return $this->json($payload);
     }

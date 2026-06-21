@@ -62,6 +62,9 @@ class MeController extends AbstractController
             $avatar = $input->avatarUrl !== null ? trim($input->avatarUrl) : null;
             $user->setAvatarUrl($avatar === '' ? null : $avatar);
         }
+        if (in_array('isPrivate', $present, true)) {
+            $user->setIsPrivate((bool) $input->isPrivate);
+        }
 
         $em->flush();
 

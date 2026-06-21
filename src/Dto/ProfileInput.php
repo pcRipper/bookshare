@@ -22,4 +22,7 @@ class ProfileInput
 
     #[Assert\Length(max: 500)]
     public ?string $avatarUrl = null;
+
+    /** Profile visibility. true ⇒ hidden from Discover and other readers. */
+    public ?bool $isPrivate = null;
 }

@@ -55,6 +55,17 @@ const MOBILE_TAG_LIMIT = 3
 const mobileTags = computed(() => topCategories.value.slice(0, MOBILE_TAG_LIMIT))
 const extraTagCount = computed(() => Math.max(0, topCategories.value.length - MOBILE_TAG_LIMIT))
 
+/* ── Error states ─────────────────────────────────────────────────────── */
+const stateIcon = computed(() => ({
+  'not-found': 'person_off',
+  private: 'lock',
+}[error.value] ?? 'error'))
+
+const stateMessage = computed(() => ({
+  'not-found': 'This reader could not be found.',
+  private: 'This reader keeps their library private.',
+}[error.value] ?? 'Something went wrong loading this profile.'))
+
 /* ── Loading ──────────────────────────────────────────────────────────── */
 function load() {
   activeTab.value = 'available'
@@ -108,10 +119,10 @@ async function onBookDelete(id) {
         <p>Loading profile…</p>
       </div>
 
-      <!-- Not found / error -->
+      <!-- Not found / private / error -->
       <div v-else-if="error" class="profile-state">
-        <span class="material-symbols-outlined profile-state__icon">{{ error === 'not-found' ? 'person_off' : 'error' }}</span>
-        <p>{{ error === 'not-found' ? 'This reader could not be found.' : 'Something went wrong loading this profile.' }}</p>
+        <span class="material-symbols-outlined profile-state__icon">{{ stateIcon }}</span>
+        <p>{{ stateMessage }}</p>
         <RouterLink to="/discover" class="profile-state__link">Back to Discover</RouterLink>
       </div>
 

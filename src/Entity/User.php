@@ -33,6 +33,14 @@ class User implements UserInterface
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $location = null;
 
+    /**
+     * When true the profile is hidden: its books are excluded from Discover,
+     * other members can't browse its collection, and borrow requests against
+     * its books are rejected. The owner always sees their own profile.
+     */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $isPrivate = false;
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
@@ -60,6 +68,9 @@ class User implements UserInterface
 
     public function getLocation(): ?string { return $this->location; }
     public function setLocation(?string $location): static { $this->location = $location; return $this; }
+
+    public function isPrivate(): bool { return $this->isPrivate; }
+    public function setIsPrivate(bool $isPrivate): static { $this->isPrivate = $isPrivate; return $this; }
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
 

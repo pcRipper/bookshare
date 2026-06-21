@@ -31,6 +31,12 @@ class LibraryRequestService
         if ($book->getOwner() === $requester) {
             throw new \DomainException('You cannot request your own book.');
         }
+        if ($book->getOwner()->isPrivate()) {
+            throw new \DomainException('This reader\'s library is private.');
+        }
+        if ($book->getStatus() !== BookStatus::Own) {
+            throw new \DomainException('This book is not available to borrow right now.');
+        }
         if ($this->requests->findPendingForBookAndRequester((int) $book->getId(), $requester)) {
             throw new \DomainException('You already have a pending request for this book.');
         }

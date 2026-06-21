@@ -35,6 +35,15 @@ class ResponseMapper
         return array_map(fn (Book $b) => $this->book($b), $books);
     }
 
+    /**
+     * Book shape for Discover: the standard book plus its owner, since browsing
+     * the community is fundamentally about *whose* book you could borrow.
+     */
+    public function discoverBook(Book $book): array
+    {
+        return $this->book($book) + ['owner' => $this->userSummary($book->getOwner())];
+    }
+
     /** Compact user shape for nesting in other payloads. */
     public function userSummary(User $user): array
     {
@@ -79,6 +88,7 @@ class ResponseMapper
             'avatarUrl' => $user->getAvatarUrl(),
             'bio'       => $user->getBio(),
             'location'  => $user->getLocation(),
+            'isPrivate' => $user->isPrivate(),
             'stats'     => $stats,
         ];
     }

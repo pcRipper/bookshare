@@ -11,7 +11,7 @@ export const useProfileStore = defineStore('profile', () => {
   const profile = ref(null)
   const books = ref([])
   const loading = ref(false)
-  const error = ref(null) // 'not-found' | 'error' | null
+  const error = ref(null) // 'not-found' | 'private' | 'error' | null
   const currentId = ref(null)
 
   // `quiet` refreshes data in place (after an edit) without blanking the page.
@@ -33,7 +33,9 @@ export const useProfileStore = defineStore('profile', () => {
       profile.value = profileRes.data
       books.value = booksRes.data
     } catch (e) {
-      error.value = e.response?.status === 404 ? 'not-found' : 'error'
+      const status = e.response?.status
+      // A 403 from /books?owner means the profile is private (hidden).
+      error.value = status === 404 ? 'not-found' : status === 403 ? 'private' : 'error'
     } finally {
       if (!quiet) loading.value = false
     }

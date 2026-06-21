@@ -46,8 +46,17 @@ watch(activeTab, tab => {
 onMounted(() => store.fetchRequests().then(() => { loaded.value.requests = true }))
 
 /* ── Request actions ─────────────────────────────────────────────────── */
-function handleApprove(id) { store.approveRequest(id) }
-function handleDecline(id) { store.declineRequest(id) }
+async function handleApprove(id) {
+  await store.approveRequest(id)
+  // The store refreshed History + Lending; mark them loaded so opening those
+  // tabs doesn't trigger a redundant refetch.
+  loaded.value.history = true
+  loaded.value.lending = true
+}
+async function handleDecline(id) {
+  await store.declineRequest(id)
+  loaded.value.history = true
+}
 
 /* ── Manage Book modal ───────────────────────────────────────────────── */
 const modalOpen = ref(false)

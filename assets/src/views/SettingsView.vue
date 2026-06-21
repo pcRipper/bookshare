@@ -27,6 +27,11 @@ const saving = ref(false)
 const error = ref(null)
 const saved = ref(false)
 
+/* Profile visibility is server-backed (drives Discover + profile access). */
+const isPrivate = ref(false)
+const privacySaving = ref(false)
+const privacyError = ref(null)
+
 const bioRemaining = computed(() => BIO_MAX - form.bio.length)
 const dirty = computed(() => JSON.stringify(form) !== JSON.stringify(original))
 
@@ -42,12 +47,28 @@ onMounted(async () => {
   try {
     const { data } = await api.get('/me')
     hydrate(data)
+    isPrivate.value = !!data.isPrivate
   } catch {
     error.value = 'Could not load your profile.'
   } finally {
     loading.value = false
   }
 })
+
+// Persist the visibility flag immediately; revert the toggle if the save fails.
+async function togglePrivate(value) {
+  privacySaving.value = true
+  privacyError.value = null
+  try {
+    const { data } = await api.patch('/me', { isPrivate: value })
+    isPrivate.value = !!data.isPrivate
+  } catch {
+    isPrivate.value = !value
+    privacyError.value = 'Could not update your visibility. Please try again.'
+  } finally {
+    privacySaving.value = false
+  }
+}
 
 async function save() {
   if (!form.fullName.trim()) {
@@ -99,7 +120,6 @@ function persistedPrefs(key, defaults) {
 }
 
 const privacy = persistedPrefs('fs:privacy', {
-  publicCollection: true,
   allowRequests: true,
   showLocation: true,
 })
@@ -111,7 +131,6 @@ const notifications = persistedPrefs('fs:notifications', {
 })
 
 const privacyOptions = [
-  { key: 'publicCollection', label: 'Public collection', hint: 'Let anyone view the books in your library.' },
   { key: 'allowRequests',    label: 'Allow borrow requests', hint: 'Members can ask to borrow your available books.' },
   { key: 'showLocation',     label: 'Show location', hint: 'Display your location on your public profile.' },
 ]
@@ -229,6 +248,31 @@ function signOut() {
           <!-- ── Privacy & Security ───────────────────────────────────── -->
           <template v-else-if="section === 'privacy'">
             <h2 class="settings-panel__heading">Privacy &amp; Security</h2>
+
+            <!-- Profile visibility (server-backed) -->
+            <section class="card toggle-card">
+              <label class="toggle-row">
+                <span class="toggle-row__text">
+                  <span class="toggle-row__label">
+                    Private profile
+                    <span v-if="privacySaving" class="toggle-row__saving">Saving…</span>
+                  </span>
+                  <span class="toggle-row__hint">
+                    Hide your library from Discover and stop other readers from viewing your collection.
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  class="switch"
+                  :checked="isPrivate"
+                  :disabled="privacySaving"
+                  @change="togglePrivate($event.target.checked)"
+                />
+              </label>
+            </section>
+            <p v-if="privacyError" class="form-error">{{ privacyError }}</p>
+
+            <!-- Device preferences -->
             <section class="card toggle-card">
               <label v-for="opt in privacyOptions" :key="opt.key" class="toggle-row">
                 <span class="toggle-row__text">
@@ -238,7 +282,7 @@ function signOut() {
                 <input v-model="privacy[opt.key]" type="checkbox" class="switch" />
               </label>
             </section>
-            <p class="panel-note">These preferences are saved on this device.</p>
+            <p class="panel-note">The preferences above are saved on this device.</p>
           </template>
 
           <!-- ── Notifications ────────────────────────────────────────── -->
@@ -441,6 +485,7 @@ function signOut() {
 .toggle-row + .toggle-row { border-top: 1px solid var(--color-surface-container-highest); }
 .toggle-row__text { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 .toggle-row__label { font-size: var(--text-body-md); color: var(--color-on-background); font-weight: 500; }
+.toggle-row__saving { margin-left: var(--space-xs); font-size: var(--text-label-sm); font-weight: 400; color: var(--color-secondary); }
 .toggle-row__hint { font-size: var(--text-label-sm); color: var(--color-secondary); }
 
 .switch {

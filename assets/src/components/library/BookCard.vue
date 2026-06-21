@@ -1,15 +1,24 @@
 <script setup>
+import { computed } from 'vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
 
-defineProps({
+const props = defineProps({
   book: {
     type: Object,
     required: true,
-    /* shape: { id, title, author, coverPath: string|null, categories: [{id, name, colorHex}] } */
+    /* shape: { id, title, author, status, coverPath: string|null, categories: [{id, name, colorHex}] } */
   },
 })
 
 defineEmits(['click'])
+
+// Mark non-"own" books in the Collection so a borrowed/unavailable title is
+// obvious at a glance — it stays in the grid, just flagged.
+const statusBadge = computed(() => {
+  if (props.book.status === 'lent') return { label: 'On Loan', icon: 'handshake', kind: 'lent' }
+  if (props.book.status === 'unavailable') return { label: 'Unavailable', icon: 'block', kind: 'unavailable' }
+  return null
+})
 </script>
 
 <template>
@@ -25,6 +34,15 @@ defineEmits(['click'])
       <div v-else class="book-card__placeholder" aria-hidden="true">
         <span class="material-symbols-outlined book-card__placeholder-icon">menu_book</span>
       </div>
+
+      <span
+        v-if="statusBadge"
+        class="book-card__badge"
+        :class="`book-card__badge--${statusBadge.kind}`"
+      >
+        <span class="material-symbols-outlined">{{ statusBadge.icon }}</span>
+        {{ statusBadge.label }}
+      </span>
     </div>
 
     <!-- Body -->
@@ -92,6 +110,35 @@ defineEmits(['click'])
   font-size: 48px;
   color: var(--color-outline);
   opacity: 0.5;
+}
+
+/* Status badge — top-right corner pill marking borrowed / unavailable books */
+.book-card__badge {
+  position: absolute;
+  top: var(--space-base);
+  right: var(--space-base);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px 3px 6px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  box-shadow: 0 1px 4px rgba(35, 44, 51, 0.18);
+}
+.book-card__badge .material-symbols-outlined {
+  font-size: 13px;
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+}
+.book-card__badge--lent {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+.book-card__badge--unavailable {
+  background: var(--color-inverse-surface);
+  color: var(--color-inverse-on-surface);
 }
 
 /* Body */
