@@ -69,6 +69,17 @@ class LibraryRequestServiceTest extends TestCase
         $this->service()->create(new User(), $book);
     }
 
+    public function testCannotRequestWhenOwnerHasDisabledRequests(): void
+    {
+        $owner = new User();
+        $owner->setSettings((new \App\Entity\UserSettings())->setAllowRequests(false));
+        $book = $this->book($owner, BookStatus::Own);
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('borrow requests');
+        $this->service()->create(new User(), $book);
+    }
+
     public function testCannotRequestABookThatIsNotAvailable(): void
     {
         $owner = new User();

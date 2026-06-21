@@ -17,8 +17,10 @@ class LibraryRequest
     #[ORM\Column]
     private ?int $id = null;
 
+    // A loan record only has meaning alongside its book; deleting the book
+    // cascades away its request history (and, in turn, each request's events).
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private Book $book;
 
     #[ORM\ManyToOne]

@@ -59,9 +59,12 @@ final class Version20260621105713 extends AbstractMigration
             FROM library_request lr
         SQL);
         // Loans that were approved (still active or since returned).
+        // library_request.due_date is introduced in a later migration
+        // (Version20260621130000), so no historical row can carry one here — the
+        // event due_date is left NULL for backfilled approvals.
         $this->addSql(<<<'SQL'
             INSERT INTO library_request_event (type, actor_id, due_date, created_at, request_id)
-            SELECT 'approved', b.owner_id, lr.due_date, lr.resolved_at, lr.id
+            SELECT 'approved', b.owner_id, NULL, lr.resolved_at, lr.id
             FROM library_request lr
             JOIN book b ON b.id = lr.book_id
             WHERE lr.status IN ('approved', 'return_pending', 'returned')
@@ -78,13 +81,16 @@ final class Version20260621105713 extends AbstractMigration
         SQL);
         // Loans the owner confirmed returned. (The intermediate "return requested"
         // step has no stored timestamp for historical rows, so it is omitted.)
+        // library_request.returned_at is introduced in a later migration
+        // (Version20260621130000); resolved_at is the closest timestamp available
+        // for historical rows at this point.
         $this->addSql(<<<'SQL'
             INSERT INTO library_request_event (type, actor_id, due_date, created_at, request_id)
-            SELECT 'returned', b.owner_id, NULL, lr.returned_at, lr.id
+            SELECT 'returned', b.owner_id, NULL, lr.resolved_at, lr.id
             FROM library_request lr
             JOIN book b ON b.id = lr.book_id
             WHERE lr.status = 'returned'
-              AND lr.returned_at IS NOT NULL
+              AND lr.resolved_at IS NOT NULL
         SQL);
     }
 

@@ -33,10 +33,16 @@ class UserRestController extends AbstractController
             return $this->json(['error' => 'This profile is private.'], Response::HTTP_FORBIDDEN);
         }
 
+        // The owner always sees their own location; others only if the user
+        // hasn't hidden it via their settings.
+        $settings = $user->getSettings();
+        $showLocation = $isSelf || $settings === null || $settings->showsLocation();
+
         return $this->json($this->mapper->profile(
             $user,
             $this->stats->forUser($user),
             $isSelf,
+            $showLocation,
         ));
     }
 }

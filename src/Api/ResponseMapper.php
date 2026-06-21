@@ -132,17 +132,31 @@ class ResponseMapper
      * fetched via `GET /api/books?owner={id}`.
      *
      * @param array{totalBooks:int, shared:int, loaned:int} $stats
+     * @param bool $showLocation Whether the viewer may see the location; the
+     *   owner always sees their own, others honour the user's `showLocation` pref.
      */
-    public function profile(User $user, array $stats, bool $isSelf): array
+    public function profile(User $user, array $stats, bool $isSelf, bool $showLocation = true): array
     {
         return [
             'id'        => $user->getId(),
             'fullName'  => $user->getFullName(),
             'avatarUrl' => $user->getAvatarUrl(),
             'bio'       => $user->getBio(),
-            'location'  => $user->getLocation(),
+            'location'  => $showLocation ? $user->getLocation() : null,
             'isSelf'    => $isSelf,
             'stats'     => $stats,
+        ];
+    }
+
+    public function settings(\App\Entity\UserSettings $settings): array
+    {
+        return [
+            'allowRequests'        => $settings->allowsRequests(),
+            'showLocation'         => $settings->showsLocation(),
+            'notifyBorrowRequests' => $settings->notifiesBorrowRequests(),
+            'notifyRequestUpdates' => $settings->notifiesRequestUpdates(),
+            'notifyActivity'       => $settings->notifiesActivity(),
+            'notifyNewsletter'     => $settings->notifiesNewsletter(),
         ];
     }
 

@@ -6,14 +6,14 @@ services:
   phpfpm:
     build:
       context: .
-      dockerfile: docker/php/Dockerfile
+      dockerfile: docker/local/php/Dockerfile
       args:
         PHP_VERSION: ${PHP_VERSION:-8.4}
     restart: unless-stopped
     volumes:
       - .:/var/www/app
     env_file:
-      - docker/php/app.env          # static literals (APP_ENV, CORS, MAILER_DSN …)
+      - docker/local/php/app.env          # static literals (APP_ENV, CORS, MAILER_DSN …)
     environment:
       # Secrets and compose-time substitutions — sourced from .env / .env.local
       APP_SECRET: ${APP_SECRET:-change_me_in_dot_env_local}
@@ -43,12 +43,12 @@ services:
 
   # ── Nginx ──────────────────────────────────────────────────────────────────
   # A self-signed TLS certificate is generated automatically on first start
-  # via docker/nginx/docker-entrypoint.d/init-certs.sh.
-  # Replace docker/nginx/certs/{cert,key}.pem with mkcert output for a
+  # via docker/local/nginx/docker-entrypoint.d/init-certs.sh.
+  # Replace docker/local/nginx/certs/{cert,key}.pem with mkcert output for a
   # browser-trusted cert.
   nginx:
     build:
-      context: docker/nginx
+      context: docker/local/nginx
       dockerfile: Dockerfile
       args:
         NGINX_VERSION: ${NGINX_VERSION:-1.27}
@@ -58,8 +58,8 @@ services:
       - "${HTTPS_PORT:-8443}:443"
     volumes:
       - .:/var/www/app:ro
-      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./docker/nginx/certs:/etc/nginx/certs   # writable so init-certs.sh can create them
+      - ./docker/local/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./docker/local/nginx/certs:/etc/nginx/certs   # writable so init-certs.sh can create them
     depends_on:
       phpfpm:
         condition: service_healthy              # wait for fpm to be accepting connections
@@ -112,7 +112,7 @@ services:
       - --web.enable-remote-write-receiver
     volumes:
       - prometheus_data:/prometheus
-      - ./docker/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+      - ./docker/local/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
     networks:
       - monitoring
 
@@ -128,7 +128,7 @@ services:
       # Constructed from substitutions — must stay here, not in env_file
       POSTGRES_DSN: "postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-changeme}@postgresql:5432/${POSTGRES_DB:-bookshare}?sslmode=disable"
     volumes:
-      - ./docker/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - ./docker/local/alloy/config.alloy:/etc/alloy/config.alloy:ro
       - alloy_data:/var/lib/alloy/data
     depends_on:
       - prometheus
@@ -143,10 +143,10 @@ services:
     ports:
       - "${GRAFANA_PORT:-3000}:3000"
     env_file:
-      - docker/monitoring/grafana.env  # static Grafana config
+      - docker/local/monitoring/grafana.env  # static Grafana config
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/local/grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on:
       - prometheus
     networks:

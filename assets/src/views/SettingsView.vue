@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/api'
 import { useAuthStore } from '@/stores/auth'
@@ -19,9 +19,14 @@ const sections = [
   { key: 'notifications', label: 'Notifications',       icon: 'notifications' },
 ]
 
-/* ── Account profile form ─────────────────────────────────────────────── */
+/*
+ * The whole page is edited locally and committed by one Save button that spans
+ * all three tabs. Profile fields + visibility go to PATCH /me; the preference
+ * toggles go to PATCH /me/settings — each endpoint is only called if its slice
+ * actually changed.
+ */
 const BIO_MAX = 300
-const form = reactive({ fullName: '', avatarUrl: '', bio: '', location: '' })
+const form = reactive({ fullName: '', avatarUrl: '', bio: '', location: '', isPrivate: false })
 let original = {}
 
 const loading = ref(true)
@@ -29,48 +34,29 @@ const saving = ref(false)
 const error = ref(null)
 const saved = ref(false)
 
-/* Profile visibility is server-backed (drives Discover + profile access). */
-const isPrivate = ref(false)
-const privacySaving = ref(false)
-const privacyError = ref(null)
-
 const bioRemaining = computed(() => BIO_MAX - form.bio.length)
-const dirty = computed(() => JSON.stringify(form) !== JSON.stringify(original))
+const profileDirty = computed(() => JSON.stringify(form) !== JSON.stringify(original))
 
 function hydrate(data) {
   form.fullName = data.fullName ?? ''
   form.avatarUrl = data.avatarUrl ?? ''
   form.bio = data.bio ?? ''
   form.location = data.location ?? ''
+  form.isPrivate = !!data.isPrivate
   original = { ...form }
 }
 
 onMounted(async () => {
   try {
-    const { data } = await api.get('/me')
-    hydrate(data)
-    isPrivate.value = !!data.isPrivate
+    const [me, settings] = await Promise.all([api.get('/me'), api.get('/me/settings')])
+    hydrate(me.data)
+    hydratePrefs(settings.data)
   } catch {
-    error.value = 'Could not load your profile.'
+    error.value = 'Could not load your settings.'
   } finally {
     loading.value = false
   }
 })
-
-// Persist the visibility flag immediately; revert the toggle if the save fails.
-async function togglePrivate(value) {
-  privacySaving.value = true
-  privacyError.value = null
-  try {
-    const { data } = await api.patch('/me', { isPrivate: value })
-    isPrivate.value = !!data.isPrivate
-  } catch {
-    isPrivate.value = !value
-    privacyError.value = 'Could not update your visibility. Please try again.'
-  } finally {
-    privacySaving.value = false
-  }
-}
 
 async function save() {
   if (!form.fullName.trim()) {
@@ -81,19 +67,31 @@ async function save() {
   error.value = null
   saved.value = false
   try {
-    const { data } = await api.patch('/me', {
-      fullName: form.fullName.trim(),
-      avatarUrl: form.avatarUrl.trim() || null,
-      bio: form.bio.trim() || null,
-      location: form.location.trim() || null,
-    })
-    hydrate(data)
-    // Keep the shared auth user (header avatar + name) in sync.
-    auth.setAuth(auth.token, {
-      ...auth.user,
-      fullName: data.fullName,
-      avatarUrl: data.avatarUrl,
-    })
+    const requests = []
+    if (profileDirty.value) {
+      requests.push(
+        api.patch('/me', {
+          fullName: form.fullName.trim(),
+          avatarUrl: form.avatarUrl.trim() || null,
+          bio: form.bio.trim() || null,
+          location: form.location.trim() || null,
+          isPrivate: form.isPrivate,
+        }).then(({ data }) => {
+          hydrate(data)
+          // Keep the shared auth user (header avatar + name) in sync.
+          auth.setAuth(auth.token, {
+            ...auth.user,
+            fullName: data.fullName,
+            avatarUrl: data.avatarUrl,
+          })
+        }),
+      )
+    }
+    if (prefsDirty.value) {
+      requests.push(api.patch('/me/settings', { ...prefs }).then(({ data }) => hydratePrefs(data)))
+    }
+
+    await Promise.all(requests)
     saved.value = true
     setTimeout(() => { saved.value = false }, 2500)
   } catch (e) {
@@ -105,6 +103,7 @@ async function save() {
 
 function cancel() {
   Object.assign(form, original)
+  Object.assign(prefs, originalPrefs)
   error.value = null
 }
 
@@ -112,35 +111,35 @@ function removeAvatar() {
   form.avatarUrl = ''
 }
 
-/* ── Privacy & Notifications (client-side preferences) ────────────────── */
-function persistedPrefs(key, defaults) {
-  let stored = {}
-  try { stored = JSON.parse(localStorage.getItem(key) || '{}') } catch { stored = {} }
-  const state = reactive({ ...defaults, ...stored })
-  watch(state, v => localStorage.setItem(key, JSON.stringify(v)), { deep: true })
-  return state
-}
-
-const privacy = persistedPrefs('fs:privacy', {
+/* ── Privacy & Notification preferences (server-backed: /api/me/settings) ── */
+const prefs = reactive({
   allowRequests: true,
   showLocation: true,
+  notifyBorrowRequests: true,
+  notifyRequestUpdates: true,
+  notifyActivity: false,
+  notifyNewsletter: false,
 })
-const notifications = persistedPrefs('fs:notifications', {
-  borrowRequests: true,
-  requestUpdates: true,
-  activity: false,
-  newsletter: false,
-})
+let originalPrefs = {}
+
+const prefsDirty = computed(() => JSON.stringify(prefs) !== JSON.stringify(originalPrefs))
+// Either slice being edited enables the page-wide Save button.
+const dirty = computed(() => profileDirty.value || prefsDirty.value)
+
+function hydratePrefs(data) {
+  Object.assign(prefs, data)
+  originalPrefs = { ...prefs }
+}
 
 const privacyOptions = [
-  { key: 'allowRequests',    label: 'Allow borrow requests', hint: 'Members can ask to borrow your available books.' },
-  { key: 'showLocation',     label: 'Show location', hint: 'Display your location on your public profile.' },
+  { key: 'allowRequests', label: 'Allow borrow requests', hint: 'Members can ask to borrow your available books.' },
+  { key: 'showLocation',  label: 'Show location', hint: 'Display your location on your public profile.' },
 ]
 const notificationOptions = [
-  { key: 'borrowRequests', label: 'New borrow requests', hint: 'When someone requests one of your books.' },
-  { key: 'requestUpdates', label: 'Request updates', hint: 'When a request you made is approved or declined.' },
-  { key: 'activity',       label: 'Community activity', hint: 'Follows, comments and new books from people you follow.' },
-  { key: 'newsletter',     label: 'FolioShare newsletter', hint: 'Occasional curated reading highlights.' },
+  { key: 'notifyBorrowRequests', label: 'New borrow requests', hint: 'When someone requests one of your books.' },
+  { key: 'notifyRequestUpdates', label: 'Request updates', hint: 'When a request you made is approved or declined.' },
+  { key: 'notifyActivity',       label: 'Community activity', hint: 'Follows, comments and new books from people you follow.' },
+  { key: 'notifyNewsletter',     label: 'FolioShare newsletter', hint: 'Occasional curated reading highlights.' },
 ]
 
 /* ── Sign out ─────────────────────────────────────────────────────────── */
@@ -248,19 +247,6 @@ function signOut() {
                     <input id="set-location" v-model="form.location" type="text" placeholder="e.g. Seattle, WA" />
                   </div>
                 </div>
-
-                <p v-if="error" class="form-error">{{ error }}</p>
-
-                <footer class="card__footer">
-                  <transition name="fade">
-                    <span v-if="saved" class="save-flash"><span class="material-symbols-outlined">check_circle</span> Saved</span>
-                  </transition>
-                  <button class="btn-text" type="button" :disabled="!dirty || saving" @click="cancel">Cancel</button>
-                  <button class="btn-primary" type="button" :disabled="!dirty || saving" @click="save">
-                    <BaseSpinner v-if="saving" size="sm" />
-                    {{ saving ? 'Saving…' : 'Save Changes' }}
-                  </button>
-                </footer>
               </section>
             </template>
           </template>
@@ -269,40 +255,29 @@ function signOut() {
           <template v-else-if="section === 'privacy'">
             <h2 class="settings-panel__heading">Privacy &amp; Security</h2>
 
-            <!-- Profile visibility (server-backed) -->
+            <!-- Profile visibility -->
             <section class="card toggle-card">
               <label class="toggle-row">
                 <span class="toggle-row__text">
-                  <span class="toggle-row__label">
-                    Private profile
-                    <span v-if="privacySaving" class="toggle-row__saving">Saving…</span>
-                  </span>
+                  <span class="toggle-row__label">Private profile</span>
                   <span class="toggle-row__hint">
                     Hide your library from Discover and stop other readers from viewing your collection.
                   </span>
                 </span>
-                <input
-                  type="checkbox"
-                  class="switch"
-                  :checked="isPrivate"
-                  :disabled="privacySaving"
-                  @change="togglePrivate($event.target.checked)"
-                />
+                <input v-model="form.isPrivate" type="checkbox" class="switch" :disabled="loading" />
               </label>
             </section>
-            <p v-if="privacyError" class="form-error">{{ privacyError }}</p>
 
-            <!-- Device preferences -->
+            <!-- Account preferences -->
             <section class="card toggle-card">
               <label v-for="opt in privacyOptions" :key="opt.key" class="toggle-row">
                 <span class="toggle-row__text">
                   <span class="toggle-row__label">{{ opt.label }}</span>
                   <span class="toggle-row__hint">{{ opt.hint }}</span>
                 </span>
-                <input v-model="privacy[opt.key]" type="checkbox" class="switch" />
+                <input v-model="prefs[opt.key]" type="checkbox" class="switch" :disabled="loading" />
               </label>
             </section>
-            <p class="panel-note">The preferences above are saved on this device.</p>
           </template>
 
           <!-- ── Notifications ────────────────────────────────────────── -->
@@ -314,11 +289,23 @@ function signOut() {
                   <span class="toggle-row__label">{{ opt.label }}</span>
                   <span class="toggle-row__hint">{{ opt.hint }}</span>
                 </span>
-                <input v-model="notifications[opt.key]" type="checkbox" class="switch" />
+                <input v-model="prefs[opt.key]" type="checkbox" class="switch" :disabled="loading" />
               </label>
             </section>
-            <p class="panel-note">These preferences are saved on this device.</p>
           </template>
+
+          <!-- Page-wide save bar: one Save commits edits across all three tabs. -->
+          <footer v-if="!loading" class="settings-actions">
+            <p v-if="error" class="form-error settings-actions__error">{{ error }}</p>
+            <transition name="fade">
+              <span v-if="saved" class="save-flash"><span class="material-symbols-outlined">check_circle</span> Saved</span>
+            </transition>
+            <button class="btn-text" type="button" :disabled="!dirty || saving" @click="cancel">Cancel</button>
+            <button class="btn-primary" type="button" :disabled="!dirty || saving" @click="save">
+              <BaseSpinner v-if="saving" size="sm" />
+              {{ saving ? 'Saving…' : 'Save Changes' }}
+            </button>
+          </footer>
         </div>
       </div>
     </div>
@@ -460,14 +447,17 @@ function signOut() {
 
 .form-error { color: var(--color-error); font-size: var(--text-label-md); margin: 0; }
 
-.card__footer {
+.settings-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--space-md);
+  flex-wrap: wrap;
+  gap: var(--space-sm) var(--space-md);
   padding-top: var(--space-md);
+  margin-top: var(--space-xs);
   border-top: 1px solid var(--color-surface-container-highest);
 }
+.settings-actions__error { margin-right: auto; }
 .save-flash { display: inline-flex; align-items: center; gap: 4px; color: var(--color-primary); font-size: var(--text-label-md); font-weight: 500; margin-right: auto; }
 .save-flash .material-symbols-outlined { font-size: 18px; }
 

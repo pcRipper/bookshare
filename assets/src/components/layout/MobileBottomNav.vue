@@ -7,10 +7,12 @@ const route = useRoute()
 const auth = useAuthStore()
 
 const items = computed(() => [
-  { label: 'My Library', to: '/library',  icon: 'book_2' },
-  { label: 'Discover',   to: '/discover', icon: 'explore' },
-  { label: 'Activity',   to: '/activity', icon: 'pulse_alert' },
-  { label: 'Profile',    to: `/profile/${auth.user?.id}`, icon: 'account_circle' },
+  { label: 'Library',  to: '/library',  icon: 'book_2' },
+  { label: 'Discover', to: '/discover', icon: 'explore' },
+  // `/activity` has no route (the Activity feed nav was removed) — link to the
+  // user's own profile and settings instead, both real destinations.
+  { label: 'Profile',  to: auth.user?.id != null ? `/profile/${auth.user.id}` : '/library', icon: 'account_circle' },
+  { label: 'Settings', to: '/settings', icon: 'settings' },
 ])
 
 function isActive(to) {
@@ -40,6 +42,8 @@ function isActive(to) {
   left: 0;
   width: 100%;
   height: 64px;
+  /* Sit above the iOS home indicator without the labels being clipped. */
+  padding-bottom: env(safe-area-inset-bottom);
   background: var(--color-surface-container);
   border-top: 1px solid var(--color-outline-variant);
   display: flex;

@@ -16,13 +16,19 @@
 - [x] add loaders for buttons
 - [x] add placeholders of ui elements(glowing or blinking blocks) instead of simple Loading... signs
 - [x] add error page and not found page
+- [x] Improve mobile layout, now it has horizontal scroll because of shifted elements. Revise positioning for mobile version and overall improve look of it
 
 
 # Functional
 - [x] Time landing: lending side is saying when will be the due date for book return, no approval from requester side needed, its the requirement of the lending side only
+- Add subscription page and functional of subscriptions. It should be instea of activity page/button. It should look like this: rows with recent books, grouppe by subscribed person, 10-15 books max, as a scrollable horizontal list. Subscriptions list is available at library page, there you can cancel subscription and view people you are subscribed on.
 
 
 # Deployment
-- add script to install all needed dependenices on droplet
-- droplet will be running prod-grade docker containers, they should be run from optimized two-stage images, cause memory on VHS is very low
-- frontend will be shipped built
+- [x] add script to install all needed dependenices on droplet(like docker to start up, git to pull a branch etc)
+- [x] droplet will be running prod-grade docker containers, they should be run from optimized two-stage images, cause memory on VHS is very low
+- [x] frontend will be shipped built
+- [x] docker folder should be split on local/production folders
+- [x] separate compose file for production images
+- [x] no debug or profiling for production, everything optimized
+- [x] no need for mailpit or grafana in production

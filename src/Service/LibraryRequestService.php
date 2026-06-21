@@ -35,6 +35,10 @@ class LibraryRequestService
         if ($book->getOwner()->isPrivate()) {
             throw new \DomainException('This reader\'s library is private.');
         }
+        $ownerSettings = $book->getOwner()->getSettings();
+        if ($ownerSettings !== null && !$ownerSettings->allowsRequests()) {
+            throw new \DomainException('This reader isn\'t accepting borrow requests right now.');
+        }
         if ($book->getStatus() !== BookStatus::Own) {
             throw new \DomainException('This book is not available to borrow right now.');
         }

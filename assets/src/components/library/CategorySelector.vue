@@ -390,7 +390,7 @@ function chipStyle(colorHex) {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.cat__swatches { display: flex; gap: var(--space-xs); }
+.cat__swatches { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
 .cat__swatch {
   width: 24px;
   height: 24px;
