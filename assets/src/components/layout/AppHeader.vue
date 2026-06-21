@@ -11,7 +11,6 @@ const auth = useAuthStore()
 const navLinks = [
   { label: 'My Library', to: '/library' },
   { label: 'Discover',   to: '/discover' },
-  { label: 'Activity',   to: '/activity' },
 ]
 
 function isActive(to) {
@@ -61,12 +60,6 @@ function signOut() {
 
       <!-- Actions + avatar -->
       <div class="app-header__actions">
-        <button class="icon-btn" aria-label="Notifications">
-          <span class="material-symbols-outlined">notifications</span>
-        </button>
-        <button class="icon-btn" aria-label="Bookmarks">
-          <span class="material-symbols-outlined">bookmark</span>
-        </button>
         <div ref="menuRef" class="account-menu">
           <button
             class="account-menu__trigger"
@@ -152,7 +145,11 @@ function signOut() {
   font-weight: 500;
   letter-spacing: var(--ls-label-md);
   color: var(--color-secondary);
+  /* Symmetric top/bottom space so the underline (active state) doesn't shove
+     the label off-centre relative to the brand wordmark. */
+  padding-top: 2px;
   padding-bottom: 2px;
+  border-top: 2px solid transparent;
   border-bottom: 2px solid transparent;
   transition: color 0.2s, border-color 0.2s;
 }
@@ -167,17 +164,6 @@ function signOut() {
   align-items: center;
   gap: var(--space-base);
 }
-
-.icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-primary);
-  padding: 4px;
-  border-radius: var(--radius-default);
-  transition: opacity 0.2s;
-}
-.icon-btn:hover { opacity: 0.7; }
 
 /* ── Account dropdown ─────────────────────────────────────────────────── */
 .account-menu { position: relative; }

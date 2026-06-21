@@ -1,3 +1,7 @@
+<script setup>
+const year = new Date().getFullYear()
+</script>
+
 <template>
   <footer class="app-footer">
     <div class="app-footer__inner">
@@ -9,7 +13,7 @@
         <a href="#">Help Center</a>
       </nav>
 
-      <p class="app-footer__copy">© 2024 FolioShare. Curating stories for a thoughtful community.</p>
+      <p class="app-footer__copy">© {{ year }} FolioShare. Curating stories for a thoughtful community.</p>
     </div>
   </footer>
 </template>
