@@ -2,6 +2,8 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useLibraryStore } from '@/stores/library'
+import { useToastStore } from '@/stores/toast'
+import { apiErrorMessage } from '@/utils/apiError'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
@@ -13,6 +15,7 @@ import LoanHistoryCard from '@/components/library/LoanHistoryCard.vue'
 import ManageBookModal from '@/components/library/ManageBookModal.vue'
 
 const store = useLibraryStore()
+const toast = useToastStore()
 const { profile, stats, collection, lending, requests, history, borrowing, borrowingHistory, loading } = storeToRefs(store)
 
 /* ── Tabs ─────────────────────────────────────────────────────────────── */
@@ -140,6 +143,10 @@ async function onModalSave(payload) {
     }
     if (loaded.value.lending) await store.fetchLending()
     modalOpen.value = false
+  } catch (e) {
+    // Surface the failure as a toast instead of letting it bubble to the
+    // app-wide error boundary (which would replace the whole page).
+    toast.error(apiErrorMessage(e, 'Could not save the book.'))
   } finally {
     modalBusy.value = false
   }
@@ -149,6 +156,8 @@ async function onModalDelete(id) {
   try {
     await store.deleteBook(id)
     modalOpen.value = false
+  } catch (e) {
+    toast.error(apiErrorMessage(e, 'Could not delete the book.'))
   } finally {
     modalBusy.value = false
   }
