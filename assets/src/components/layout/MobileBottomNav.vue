@@ -7,12 +7,12 @@ const route = useRoute()
 const auth = useAuthStore()
 
 const items = computed(() => [
-  { label: 'Library',  to: '/library',  icon: 'book_2' },
-  { label: 'Discover', to: '/discover', icon: 'explore' },
-  // `/activity` has no route (the Activity feed nav was removed) — link to the
-  // user's own profile and settings instead, both real destinations.
-  { label: 'Profile',  to: auth.user?.id != null ? `/profile/${auth.user.id}` : '/library', icon: 'account_circle' },
-  { label: 'Settings', to: '/settings', icon: 'settings' },
+  { label: 'Library',   to: '/library',  icon: 'book_2' },
+  { label: 'Discover',  to: '/discover', icon: 'explore' },
+  // The subscription feed replaces the retired Activity feed.
+  { label: 'Following', to: '/subscriptions', icon: 'group' },
+  { label: 'Profile',   to: auth.user?.id != null ? `/profile/${auth.user.id}` : '/library', icon: 'account_circle' },
+  { label: 'Settings',  to: '/settings', icon: 'settings' },
 ])
 
 function isActive(to) {

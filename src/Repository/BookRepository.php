@@ -36,6 +36,25 @@ class BookRepository extends ServiceEntityRepository
         return $this->count(['owner' => $owner]);
     }
 
+    /**
+     * A user's most recently catalogued books, capped. Powers each row of the
+     * subscription feed. Categories stay lazy (fetch-joining a to-many alongside
+     * setMaxResults would force in-memory limiting); the mapper loads them per book.
+     *
+     * @return Book[]
+     */
+    public function findRecentByOwner(User $owner, int $limit = 15): array
+    {
+        return $this->createQueryBuilder('b')
+            ->andWhere('b.owner = :owner')
+            ->setParameter('owner', $owner)
+            ->orderBy('b.createdAt', 'DESC')
+            ->addOrderBy('b.id', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function countByOwnerAndStatus(User $owner, BookStatus $status): int
     {
         return $this->count(['owner' => $owner, 'status' => $status]);

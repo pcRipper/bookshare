@@ -11,6 +11,7 @@ const auth = useAuthStore()
 const navLinks = [
   { label: 'My Library', to: '/library' },
   { label: 'Discover',   to: '/discover' },
+  { label: 'Following',  to: '/subscriptions' },
 ]
 
 function isActive(to) {

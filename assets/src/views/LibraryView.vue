@@ -2,10 +2,12 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useLibraryStore } from '@/stores/library'
+import { useSubscriptionsStore } from '@/stores/subscriptions'
 import { useToastStore } from '@/stores/toast'
 import { apiErrorMessage } from '@/utils/apiError'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
+import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import BookCard from '@/components/library/BookCard.vue'
@@ -15,8 +17,10 @@ import LoanHistoryCard from '@/components/library/LoanHistoryCard.vue'
 import ManageBookModal from '@/components/library/ManageBookModal.vue'
 
 const store = useLibraryStore()
+const subscriptions = useSubscriptionsStore()
 const toast = useToastStore()
 const { profile, stats, collection, lending, requests, history, borrowing, borrowingHistory, loading } = storeToRefs(store)
+const { following, loadingFollowing } = storeToRefs(subscriptions)
 
 /* ── Tabs ─────────────────────────────────────────────────────────────── */
 const activeTab = ref('collection')
@@ -26,6 +30,7 @@ const tabs = computed(() => [
   { key: 'borrowing',  label: 'Borrowing', badge: borrowing.value.length || null },
   { key: 'lending',    label: 'Lending' },
   { key: 'requests',   label: 'Requests', badge: requests.value.length || null },
+  { key: 'following',  label: 'Following', badge: following.value.length || null },
   { key: 'history',    label: 'History' },
 ])
 
@@ -46,7 +51,7 @@ const historyItems = computed(() =>
 )
 
 /* ── Data loading: collection + profile up front, others lazily ───────── */
-const loaded = ref({ borrowing: false, lending: false, requests: false })
+const loaded = ref({ borrowing: false, lending: false, requests: false, following: false })
 
 // History shows in-progress loans too, whose state changes as the owner/borrower
 // acts in other tabs — so refetch the visible side each time it's viewed.
@@ -65,6 +70,7 @@ watch(activeTab, tab => {
   if (tab === 'borrowing' && !loaded.value.borrowing) { loaded.value.borrowing = true; store.fetchBorrowing() }
   if (tab === 'lending'  && !loaded.value.lending)  { loaded.value.lending  = true; store.fetchLending() }
   if (tab === 'requests' && !loaded.value.requests) { loaded.value.requests = true; store.fetchRequests() }
+  if (tab === 'following' && !loaded.value.following) { loaded.value.following = true; subscriptions.fetchFollowing() }
   if (tab === 'history') loadHistorySide(historySide.value)
 })
 
@@ -117,6 +123,20 @@ async function handleReturn(id) {
     await store.returnBook(id)
   } finally {
     returning.delete(id)
+  }
+}
+
+/* ── Following (unfollow from the management list) ────────────────────── */
+const unfollowing = reactive(new Set())
+async function handleUnfollow(userId) {
+  if (unfollowing.has(userId)) return
+  unfollowing.add(userId)
+  try {
+    await subscriptions.unsubscribe(userId)
+  } catch (e) {
+    toast.error(apiErrorMessage(e, 'Could not unfollow this reader.'))
+  } finally {
+    unfollowing.delete(userId)
   }
 }
 
@@ -313,6 +333,37 @@ async function onModalDelete(id) {
               @decline="handleDecline"
               @confirm-return="handleConfirmReturn"
             />
+          </div>
+        </div>
+
+        <!-- Following tab (people you subscribe to) -->
+        <div v-else-if="activeTab === 'following'" role="tabpanel">
+          <ul v-if="loadingFollowing && !following.length" class="following-list">
+            <li v-for="n in 4" :key="n" class="following-row">
+              <BaseSkeleton width="44px" height="44px" circle />
+              <BaseSkeleton width="160px" height="16px" />
+            </li>
+          </ul>
+          <ul v-else-if="following.length" class="following-list">
+            <li v-for="sub in following" :key="sub.id" class="following-row">
+              <RouterLink :to="`/profile/${sub.user.id}`" class="following-row__person">
+                <BaseAvatar :src="sub.user.avatarUrl" :name="sub.user.fullName" size="md" />
+                <span class="following-row__name">{{ sub.user.fullName }}</span>
+              </RouterLink>
+              <button
+                class="following-row__unfollow"
+                :disabled="unfollowing.has(sub.user.id)"
+                @click="handleUnfollow(sub.user.id)"
+              >
+                <BaseSpinner v-if="unfollowing.has(sub.user.id)" size="sm" />
+                <span v-else>Unfollow</span>
+              </button>
+            </li>
+          </ul>
+          <div v-else class="empty-state">
+            <span class="material-symbols-outlined empty-state__icon">group</span>
+            <p class="empty-state__text">You're not following anyone yet.</p>
+            <RouterLink to="/discover" class="empty-state__link">Discover readers to follow</RouterLink>
           </div>
         </div>
 
@@ -747,6 +798,61 @@ async function onModalDelete(id) {
   align-items: center;
   gap: var(--space-sm);
 }
+
+/* ── Following list ───────────────────────────────────────────────────── */
+.following-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-sm) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.following-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-surface-container-highest);
+  border-radius: var(--radius-default);
+}
+.following-row__person {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+  color: var(--color-on-background);
+}
+.following-row__name {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.15s;
+}
+.following-row__person:hover .following-row__name { color: var(--color-primary); }
+.following-row__unfollow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  padding: 6px 14px;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-default);
+  font-size: var(--text-label-md);
+  font-weight: 500;
+  color: var(--color-secondary);
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.following-row__unfollow:hover:not(:disabled) {
+  background: var(--color-error-container);
+  color: var(--color-error);
+  border-color: var(--color-error-container);
+}
+.following-row__unfollow:disabled { opacity: 0.7; cursor: default; }
 
 /* Muted placeholder bio */
 .profile-header__bio--muted { font-style: italic; opacity: 0.7; }

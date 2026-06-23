@@ -44,6 +44,13 @@ export default defineConfig(({ command }) => ({
         changeOrigin: true,
         secure: false, // self-signed cert in dev
       },
+      // Localized avatars live in public/uploads (Vite's publicDir is off), so
+      // route them to the backend that serves the file off disk.
+      '/uploads': {
+        target: 'https://localhost',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 }))

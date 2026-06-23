@@ -14,6 +14,7 @@ dh_auditor:
                 App\Entity\User: ~
                 App\Entity\Category: ~
                 App\Entity\LibraryRequest: ~
+                App\Entity\Subscription: ~
             # The bundle ships a built-in web viewer; this is a JSON API, so keep
             # it off (its routes are not imported either).
             viewer: false
