@@ -4,24 +4,31 @@ import { storeToRefs } from 'pinia'
 import { useDiscoverStore } from '@/stores/discover'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import DiscoverBookCard from '@/components/discover/DiscoverBookCard.vue'
+import DiscoverUserCard from '@/components/discover/DiscoverUserCard.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import { resolveCategoryColors } from '@/utils/categoryColors'
 
 const store = useDiscoverStore()
-const { books, categories, loading, error, query, activeCategory } = storeToRefs(store)
+const { mode, books, accounts, categories, loading, error, query, activeCategory } = storeToRefs(store)
 
 onMounted(store.init)
+
+/* ── Search mode (books ↔ accounts) ───────────────────────────────────── */
+const isAccounts = computed(() => mode.value === 'accounts')
+const searchPlaceholder = computed(() =>
+  isAccounts.value ? 'Search readers by name…' : 'Search titles or authors…',
+)
 
 /* ── Search (debounced) ───────────────────────────────────────────────── */
 let debounce = null
 function onSearchInput(e) {
   query.value = e.target.value
   clearTimeout(debounce)
-  debounce = setTimeout(() => store.fetchBooks(), 300)
+  debounce = setTimeout(() => store.fetchActive(), 300)
 }
 function submitSearch() {
   clearTimeout(debounce)
-  store.fetchBooks()
+  store.fetchActive()
 }
 onBeforeUnmount(() => clearTimeout(debounce))
 
@@ -34,9 +41,13 @@ function pillStyle(cat) {
   return { background: c.bg, color: c.text, borderColor: c.border }
 }
 
-const hasFilters = computed(() => !!query.value.trim() || activeCategory.value != null)
+const hasQuery = computed(() => !!query.value.trim())
+const hasFilters = computed(() => hasQuery.value || (!isAccounts.value && activeCategory.value != null))
 
-const resultsHeading = computed(() => (hasFilters.value ? 'Results' : 'Recommended for You'))
+const resultsHeading = computed(() => {
+  if (isAccounts.value) return 'Readers'
+  return hasFilters.value ? 'Results' : 'Recommended for You'
+})
 
 /* ── Borrow requests (per-book in-flight tracking for button loaders) ──── */
 const requesting = reactive(new Set())
@@ -47,6 +58,18 @@ async function onRequest(id) {
     await store.requestBorrow(id)
   } finally {
     requesting.delete(id)
+  }
+}
+
+/* ── Follow / unfollow (per-account in-flight tracking) ────────────────── */
+const following = reactive(new Set())
+async function onToggleFollow(action, id) {
+  if (following.has(id)) return
+  following.add(id)
+  try {
+    await store[action](id)
+  } finally {
+    following.delete(id)
   }
 }
 </script>
@@ -60,21 +83,51 @@ async function onRequest(id) {
         <p class="discover-hero__subtitle">
           Explore the community's shelves, uncover hidden gems, and borrow your next read.
         </p>
-        <form class="discover-search" role="search" @submit.prevent="submitSearch">
-          <span class="material-symbols-outlined discover-search__icon">search</span>
-          <input
-            :value="query"
-            class="discover-search__input"
-            type="search"
-            placeholder="Search titles or authors…"
-            aria-label="Search the community's books"
-            @input="onSearchInput"
-          />
-        </form>
+        <div class="discover-controls">
+          <div class="discover-toggle" role="tablist" aria-label="Search for">
+            <span
+              class="discover-toggle__thumb"
+              :class="{ 'discover-toggle__thumb--right': isAccounts }"
+              aria-hidden="true"
+            ></span>
+            <button
+              class="discover-toggle__btn"
+              :class="{ 'discover-toggle__btn--active': !isAccounts }"
+              role="tab"
+              :aria-selected="!isAccounts"
+              @click="store.setMode('books')"
+            >
+              <span class="material-symbols-outlined">menu_book</span>
+              Books
+            </button>
+            <button
+              class="discover-toggle__btn"
+              :class="{ 'discover-toggle__btn--active': isAccounts }"
+              role="tab"
+              :aria-selected="isAccounts"
+              @click="store.setMode('accounts')"
+            >
+              <span class="material-symbols-outlined">group</span>
+              Accounts
+            </button>
+          </div>
+
+          <form class="discover-search" role="search" @submit.prevent="submitSearch">
+            <span class="material-symbols-outlined discover-search__icon">search</span>
+            <input
+              :value="query"
+              class="discover-search__input"
+              type="search"
+              :placeholder="searchPlaceholder"
+              :aria-label="isAccounts ? 'Search the community\'s readers' : 'Search the community\'s books'"
+              @input="onSearchInput"
+            />
+          </form>
+        </div>
       </section>
 
-      <!-- ── Category filter pills ──────────────────────────────────────── -->
-      <section v-if="categories.length" class="discover-filters" aria-label="Filter by category">
+      <!-- ── Category filter pills (books mode only) ────────────────────── -->
+      <section v-if="!isAccounts && categories.length" class="discover-filters" aria-label="Filter by category">
         <h2 class="discover-filters__label">Browse by category</h2>
         <div class="discover-filters__pills hide-scrollbar">
           <button
@@ -112,29 +165,59 @@ async function onRequest(id) {
         <div v-else-if="error" class="discover-state">
           <span class="material-symbols-outlined discover-state__icon">error</span>
           <p>Something went wrong loading Discover.</p>
-          <button class="discover-results__clear" @click="store.fetchBooks()">Try again</button>
+          <button class="discover-results__clear" @click="store.fetchActive()">Try again</button>
         </div>
 
-        <!-- Results grid -->
-        <div v-else-if="books.length" class="book-grid">
-          <DiscoverBookCard
-            v-for="book in books"
-            :key="book.id"
-            :book="book"
-            :pending="requesting.has(book.id)"
-            @request="onRequest"
-          />
-        </div>
+        <!-- ── Accounts mode ──────────────────────────────────────────── -->
+        <template v-else-if="isAccounts">
+          <!-- Results grid -->
+          <div v-if="accounts.length" class="book-grid">
+            <DiscoverUserCard
+              v-for="user in accounts"
+              :key="user.id"
+              :user="user"
+              :pending="following.has(user.id)"
+              @follow="onToggleFollow('follow', $event)"
+              @unfollow="onToggleFollow('unfollow', $event)"
+            />
+          </div>
 
-        <!-- Empty / no results -->
-        <div v-else class="discover-state">
-          <span class="material-symbols-outlined discover-state__icon">{{ hasFilters ? 'search_off' : 'travel_explore' }}</span>
-          <p v-if="hasFilters">No books match your search just yet.</p>
-          <p v-else>No books are being shared by the community right now. Check back soon.</p>
-          <button v-if="hasFilters" class="discover-results__clear" @click="store.clearFilters()">
-            Clear filters
-          </button>
-        </div>
+          <!-- Prompt to search (empty box) -->
+          <div v-else-if="!hasQuery" class="discover-state">
+            <span class="material-symbols-outlined discover-state__icon">person_search</span>
+            <p>Search for readers by name to find people to follow.</p>
+          </div>
+
+          <!-- No matches -->
+          <div v-else class="discover-state">
+            <span class="material-symbols-outlined discover-state__icon">search_off</span>
+            <p>No readers match your search just yet.</p>
+          </div>
+        </template>
+
+        <!-- ── Books mode ─────────────────────────────────────────────── -->
+        <template v-else>
+          <!-- Results grid -->
+          <div v-if="books.length" class="book-grid">
+            <DiscoverBookCard
+              v-for="book in books"
+              :key="book.id"
+              :book="book"
+              :pending="requesting.has(book.id)"
+              @request="onRequest"
+            />
+          </div>
+
+          <!-- Empty / no results -->
+          <div v-else class="discover-state">
+            <span class="material-symbols-outlined discover-state__icon">{{ hasFilters ? 'search_off' : 'travel_explore' }}</span>
+            <p v-if="hasFilters">No books match your search just yet.</p>
+            <p v-else>No books are being shared by the community right now. Check back soon.</p>
+            <button v-if="hasFilters" class="discover-results__clear" @click="store.clearFilters()">
+              Clear filters
+            </button>
+          </div>
+        </template>
       </section>
     </div>
   </AppLayout>
@@ -180,7 +263,6 @@ async function onRequest(id) {
   width: 100%;
   margin-top: var(--space-xs);
 }
-@media (min-width: 768px) { .discover-search { max-width: 640px; } }
 .discover-search__icon {
   position: absolute;
   left: 14px;
@@ -205,6 +287,81 @@ async function onRequest(id) {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 2px var(--color-primary-fixed);
+}
+
+/* ── Controls row (toggle + search) ───────────────────────────────────── */
+.discover-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  width: 100%;
+}
+/* Wide screens: lay the toggle and search box out on a single line. */
+@media (min-width: 960px) {
+  .discover-controls {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .discover-controls .discover-toggle { flex: none; align-self: auto; }
+  .discover-controls .discover-search { flex: 1; max-width: none; margin-top: 0; }
+}
+
+/* ── Books ↔ Accounts toggle ──────────────────────────────────────────── */
+.discover-toggle {
+  position: relative;
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 4px;
+  background: var(--color-surface-container-low);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-full);
+}
+@media (min-width: 768px) { .discover-toggle { align-self: center; } }
+
+/* Sliding pill that tracks the active segment. */
+.discover-toggle__thumb {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  box-shadow: 0 1px 3px rgba(35, 44, 51, 0.18);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.discover-toggle__thumb--right { transform: translateX(100%); }
+
+.discover-toggle__btn {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: 8px 22px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-label-md);
+  font-weight: 500;
+  color: var(--color-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.28s;
+}
+.discover-toggle__btn .material-symbols-outlined { font-size: 19px; }
+.discover-toggle__btn:hover:not(.discover-toggle__btn--active) { color: var(--color-on-background); }
+.discover-toggle__btn--active {
+  color: var(--color-on-primary);
+  font-weight: 600;
+}
+@media (min-width: 768px) {
+  .discover-toggle__btn { padding: 9px 30px; font-size: var(--text-body-md); }
+  .discover-toggle__btn .material-symbols-outlined { font-size: 20px; }
 }
 
 /* ── Filters ──────────────────────────────────────────────────────────── */

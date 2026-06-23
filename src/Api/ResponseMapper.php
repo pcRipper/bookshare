@@ -151,6 +151,25 @@ class ResponseMapper
         ];
     }
 
+    /**
+     * Compact user card for the Discover "Accounts" search results: identity,
+     * a bio snippet, stats and the viewer's follow state. No location — it isn't
+     * shown on the card and respects the user's location-privacy preference.
+     *
+     * @param array{totalBooks:int, shared:int, loaned:int} $stats
+     */
+    public function userCard(User $user, array $stats, bool $isSubscribed): array
+    {
+        return [
+            'id'           => $user->getId(),
+            'fullName'     => $user->getFullName(),
+            'avatarUrl'    => $user->getAvatarUrl(),
+            'bio'          => $user->getBio(),
+            'stats'        => $stats,
+            'isSubscribed' => $isSubscribed,
+        ];
+    }
+
     public function settings(\App\Entity\UserSettings $settings): array
     {
         return [

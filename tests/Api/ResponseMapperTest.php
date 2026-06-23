@@ -139,6 +139,22 @@ class ResponseMapperTest extends TestCase
         self::assertTrue($this->mapper()->profile($user, $stats, false, isSubscribed: true)['isSubscribed']);
     }
 
+    public function testUserCardShape(): void
+    {
+        $user = (new User())->setFullName('Jane')->setBio('Reads sci-fi')->setAvatarUrl('/a.png');
+        $stats = ['totalBooks' => 5, 'shared' => 3, 'loaned' => 1];
+
+        $data = $this->mapper()->userCard($user, $stats, true);
+
+        self::assertSame('Jane', $data['fullName']);
+        self::assertSame('Reads sci-fi', $data['bio']);
+        self::assertSame('/a.png', $data['avatarUrl']);
+        self::assertSame($stats, $data['stats']);
+        self::assertTrue($data['isSubscribed']);
+        // The card is privacy-conscious: no location.
+        self::assertArrayNotHasKey('location', $data);
+    }
+
     public function testSubscriptionShape(): void
     {
         $followed = (new User())->setFullName('Followed');
