@@ -17,7 +17,6 @@ class UserRepository extends ServiceEntityRepository
         string $googleId,
         string $email,
         string $fullName,
-        ?string $avatarUrl,
     ): User {
         $user = $this->findOneBy(['googleId' => $googleId]);
         if ($user) {
@@ -27,15 +26,14 @@ class UserRepository extends ServiceEntityRepository
         // User exists with this email but registered via a different method
         $user = $this->findOneBy(['email' => $email]);
         if ($user) {
-            $user->setGoogleId($googleId)->setAvatarUrl($avatarUrl);
+            $user->setGoogleId($googleId);
             return $user;
         }
 
         $user = (new User())
             ->setGoogleId($googleId)
             ->setEmail($email)
-            ->setFullName($fullName)
-            ->setAvatarUrl($avatarUrl);
+            ->setFullName($fullName);
 
         $this->getEntityManager()->persist($user);
 

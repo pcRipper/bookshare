@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Repository\UserRepository;
+use App\Service\AvatarLocalizer;
 use App\Service\GoogleAuthService;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
@@ -29,6 +30,7 @@ class AuthRestController extends AbstractController
         Request $request,
         GoogleAuthService $google,
         UserRepository $users,
+        AvatarLocalizer $avatars,
         JWTTokenManagerInterface $jwt,
     ): JsonResponse {
         $code = $request->toArray()['code'] ?? null;
@@ -46,8 +48,19 @@ class AuthRestController extends AbstractController
             googleId: $info['sub'],
             email: $info['email'],
             fullName: $info['name'],
-            avatarUrl: $info['picture'] ?? null,
         );
+
+        // Re-sync the avatar from Google, downloading it to our own origin so the
+        // browser never hotlinks (and gets 429'd by) Google's CDN. We only touch
+        // avatars we own — a fresh user (null), one we previously localized, or a
+        // legacy Google URL — never an external URL the user pasted in Settings.
+        $current = $user->getAvatarUrl();
+        $isOurs = $current === null || $current === ''
+            || str_starts_with($current, AvatarLocalizer::PUBLIC_PREFIX)
+            || str_contains($current, 'googleusercontent.com');
+        if ($isOurs && ($picture = $info['picture'] ?? null)) {
+            $user->setAvatarUrl($avatars->localize($picture));
+        }
 
         $this->entityManager->flush();
 
