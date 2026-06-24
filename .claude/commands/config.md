@@ -160,15 +160,12 @@ Move a value if it is any of:
 | `PHP_VERSION` | `Dockerfile` ARG + `compose.yaml` build arg | `8.4` |
 | `NGINX_VERSION` | `docker/nginx/Dockerfile` ARG + `compose.yaml` build arg | `1.27` |
 | `POSTGRES_IMAGE` | `compose.yaml` postgresql service | `postgres:16-alpine` |
-| `MAILPIT_IMAGE` | `compose.yaml` mailpit service | `axllent/mailpit:latest` |
 | `PROMETHEUS_IMAGE` | `compose.yaml` prometheus service | `prom/prometheus:v2.55.1` |
 | `ALLOY_IMAGE` | `compose.yaml` alloy service | `grafana/alloy:v1.5.0` |
 | `GRAFANA_IMAGE` | `compose.yaml` grafana service | `grafana/grafana:11.4.0` |
 | `HTTP_PORT` | `compose.yaml` nginx host port | `8000` |
 | `HTTPS_PORT` | `compose.yaml` nginx TLS host port | `8443` |
 | `POSTGRES_PORT` | `compose.yaml` postgresql host port | `5432` |
-| `MAILPIT_SMTP_PORT` | `compose.yaml` mailpit SMTP host port | `1025` |
-| `MAILPIT_UI_PORT` | `compose.yaml` mailpit web UI host port | `8025` |
 | `GRAFANA_PORT` | `compose.yaml` grafana host port | `3000` |
 | `PHP_MEMORY_LIMIT` | `compose.yaml` environment → `docker/php/php.ini` | `256M` |
 | `PHP_UPLOAD_MAX` | `compose.yaml` environment → `docker/php/php.ini` | `50M` |
@@ -189,7 +186,7 @@ Move a value if it is any of:
 | `JWT_SECRET_KEY` | `/var/www/app/config/jwt/private.pem` | Path only; key content is gitignored |
 | `JWT_PUBLIC_KEY` | `/var/www/app/config/jwt/public.pem` | Path only |
 | `CORS_ALLOW_ORIGIN` | `'^https?://(localhost\|127\.0\.0\.1)(:[0-9]+)?$'` | Covers all localhost ports (Vite dev server) |
-| `MAILER_DSN` | `smtp://mailpit:1025` | Internal Docker network address |
+| `MAILER_DSN` | `null://null` | Mail disabled (no SMTP catcher in the stack) |
 | `XDEBUG_MODE` | `off` | Override to `develop,debug` in `compose.override.yaml` |
 
 ### `docker/monitoring/grafana.env` — static Grafana runtime

@@ -86,16 +86,6 @@ services:
     networks:
       - app
 
-  # ── Mailpit (SMTP catcher + web UI) ───────────────────────────────────────
-  mailpit:
-    image: ${MAILPIT_IMAGE:-axllent/mailpit:latest}
-    restart: unless-stopped
-    ports:
-      - "${MAILPIT_SMTP_PORT:-1025}:1025"
-      - "${MAILPIT_UI_PORT:-8025}:8025"
-    networks:
-      - app
-
   # ── Monitoring (optional) ──────────────────────────────────────────────────
   # Start with: docker compose --profile logs up -d
   #
