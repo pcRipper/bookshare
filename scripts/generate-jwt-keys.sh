@@ -4,15 +4,16 @@
 #
 # Why a dedicated script: in prod the keys are NOT generated inside the
 # container — compose.prod.yaml mounts ./config/jwt read-only (:ro), so the
-# phpfpm container can't write them. They must be created on the host with the
-# passphrase that compose injects from .env.prod.local, and owned by the UID the
-# container's php-fpm runs as (www-data = 82 on the php:*-fpm-alpine image).
+# phpfpm container can't write them. They must be created on the host and owned
+# by the UID the container's php-fpm runs as (www-data = 82 on php:*-fpm-alpine).
 #
 # This script:
-#   1. reads JWT_PASSPHRASE from .env.prod.local (generates + writes one if blank)
+#   1. generates a fresh random passphrase
 #   2. generates config/jwt/{private,public}.pem encrypted with that passphrase
 #   3. sets ownership/permissions so the in-container www-data (UID 82) can read
-#   4. verifies the key actually opens with the passphrase
+#   4. verifies the key opens with the passphrase
+#   5. prints the passphrase so YOU can paste it into JWT_PASSPHRASE in
+#      .env.prod.local (this script does not touch any .env file)
 #
 # Run on the DROPLET, from anywhere:
 #   bash scripts/generate-jwt-keys.sh            # create (refuses to clobber)
@@ -23,7 +24,6 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-ENV_FILE="${ENV_FILE:-.env.prod.local}"
 JWT_DIR="config/jwt"
 PRIVATE="$JWT_DIR/private.pem"
 PUBLIC="$JWT_DIR/public.pem"
@@ -38,7 +38,6 @@ warn() { printf '\033[1;33m    %s\033[0m\n' "$*"; }
 die()  { printf '\033[1;31mERROR: %s\033[0m\n' "$*" >&2; exit 1; }
 
 command -v openssl >/dev/null 2>&1 || die "openssl not found on PATH."
-[ -f "$ENV_FILE" ] || die "$ENV_FILE not found. Copy .env.prod.local.example first."
 
 # ── Refuse to silently clobber existing keys ────────────────────────────────
 if { [ -f "$PRIVATE" ] || [ -f "$PUBLIC" ]; } && [ "$FORCE" -ne 1 ]; then
@@ -47,29 +46,8 @@ fi
 
 mkdir -p "$JWT_DIR"
 
-# ── Resolve the passphrase from .env.prod.local (the source of truth) ────────
-# compose.prod.yaml passes this exact value into the container as JWT_PASSPHRASE,
-# so the key MUST be encrypted with it.
-read_passphrase() {
-    grep -E '^JWT_PASSPHRASE=' "$ENV_FILE" | tail -1 | cut -d= -f2- \
-        | sed -e 's/^["'\'']//' -e 's/["'\'']$//' -e 's/[[:space:]]*$//'
-}
-
-PASSPHRASE="$(read_passphrase)"
-
-if [ -z "$PASSPHRASE" ]; then
-    log "JWT_PASSPHRASE is blank in $ENV_FILE — generating one and writing it back."
-    PASSPHRASE="$(openssl rand -hex 32)"
-    if grep -qE '^JWT_PASSPHRASE=' "$ENV_FILE"; then
-        # replace the empty line in place (| as sed delimiter; hex has no |)
-        sed -i "s|^JWT_PASSPHRASE=.*|JWT_PASSPHRASE=${PASSPHRASE}|" "$ENV_FILE"
-    else
-        printf '\nJWT_PASSPHRASE=%s\n' "$PASSPHRASE" >> "$ENV_FILE"
-    fi
-    warn "Wrote a fresh JWT_PASSPHRASE to $ENV_FILE."
-else
-    log "Using existing JWT_PASSPHRASE from $ENV_FILE."
-fi
+# ── Generate a fresh passphrase ──────────────────────────────────────────────
+PASSPHRASE="$(openssl rand -hex 32)"
 
 # ── Generate the keypair, encrypted with that passphrase ─────────────────────
 log "Generating ${KEY_BITS}-bit RSA private key ($PRIVATE)…"
@@ -91,19 +69,25 @@ else
     chmod 644 "$PRIVATE" "$PUBLIC"
 fi
 
-# ── Prove the key opens with the passphrase compose will inject ──────────────
+# ── Prove the key opens with the passphrase ──────────────────────────────────
 log "Verifying the key matches the passphrase…"
 openssl rsa -in "$PRIVATE" -passin "pass:${PASSPHRASE}" -noout \
     || die "Key did not open with the passphrase — generation is inconsistent."
 
-log "Done. Keys written to $JWT_DIR and verified against $ENV_FILE."
+log "Done. Keys written to $JWT_DIR and verified."
 cat <<EOF
 
-Next — apply them to the running stack (recreates phpfpm so the passphrase env
-is injected, then mints a test token):
+┌──────────────────────────────────────────────────────────────────────────┐
+│ JWT_PASSPHRASE (set this in .env.prod.local — the keys won't work without  │
+│ the matching value):                                                       │
+└──────────────────────────────────────────────────────────────────────────┘
 
-  docker compose --env-file $ENV_FILE -f compose.prod.yaml up -d phpfpm
-  docker compose --env-file $ENV_FILE -f compose.prod.yaml exec phpfpm \\
+    JWT_PASSPHRASE=${PASSPHRASE}
+
+Then recreate phpfpm so the passphrase env is injected, and mint a test token:
+
+  docker compose --env-file .env.prod.local -f compose.prod.yaml up -d phpfpm
+  docker compose --env-file .env.prod.local -f compose.prod.yaml exec phpfpm \\
       php bin/console lexik:jwt:generate-token someuser@example.com --no-ansi
 
 If the second command prints a token, signing works.
