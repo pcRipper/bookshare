@@ -3,8 +3,12 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useProfileStore } from '@/stores/profile'
+import { useSubscriptionsStore } from '@/stores/subscriptions'
+import { useToastStore } from '@/stores/toast'
+import { apiErrorMessage } from '@/utils/apiError'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
+import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
@@ -14,7 +18,38 @@ import ManageBookModal from '@/components/library/ManageBookModal.vue'
 
 const route = useRoute()
 const store = useProfileStore()
+const subscriptions = useSubscriptionsStore()
+const toast = useToastStore()
 const { profile, books, loading, error } = storeToRefs(store)
+
+/* ── Follow / unfollow (other readers' profiles only) ─────────────────── */
+const subscribed = ref(false)
+const subscribeBusy = ref(false)
+
+// Sync the local toggle to the server-authoritative flag whenever the profile
+// (re)loads — the button reflects reality across reloads and profile switches.
+watch(profile, p => { subscribed.value = !!p?.isSubscribed })
+
+async function toggleSubscription() {
+  if (subscribeBusy.value || !profile.value) return
+  subscribeBusy.value = true
+  const id = profile.value.id
+  const wasSubscribed = subscribed.value
+  try {
+    if (wasSubscribed) {
+      await subscriptions.unsubscribe(id)
+      subscribed.value = false
+    } else {
+      await subscriptions.subscribe(id)
+      subscribed.value = true
+      toast.success(`Following ${profile.value.fullName}`)
+    }
+  } catch (e) {
+    toast.error(apiErrorMessage(e, wasSubscribed ? 'Could not unfollow.' : 'Could not follow this reader.'))
+  } finally {
+    subscribeBusy.value = false
+  }
+}
 
 /* ── Tabs ─────────────────────────────────────────────────────────────── */
 const activeTab = ref('available')
@@ -176,6 +211,17 @@ async function onBookDelete(id) {
               <h1 class="profile-header__name">{{ profile.fullName }}</h1>
               <button v-if="profile.isSelf" class="profile-header__edit" @click="editProfileOpen = true">
                 <span class="material-symbols-outlined">edit</span> Edit Profile
+              </button>
+              <button
+                v-else
+                class="profile-header__follow"
+                :class="{ 'profile-header__follow--active': subscribed }"
+                :disabled="subscribeBusy"
+                @click="toggleSubscription"
+              >
+                <BaseSpinner v-if="subscribeBusy" size="sm" />
+                <span v-else class="material-symbols-outlined">{{ subscribed ? 'how_to_reg' : 'person_add' }}</span>
+                {{ subscribed ? 'Following' : 'Follow' }}
               </button>
             </div>
 
@@ -411,6 +457,34 @@ async function onBookDelete(id) {
 }
 .profile-header__edit:hover { background: var(--color-surface-container-low); }
 .profile-header__edit .material-symbols-outlined { font-size: 18px; }
+
+/* Follow toggle: solid primary while "Follow", outlined "Following" once active. */
+.profile-header__follow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-label-md);
+  font-weight: 500;
+  color: var(--color-on-primary);
+  background: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-default);
+  padding: 6px 14px;
+  transition: background 0.2s, color 0.2s, opacity 0.2s;
+}
+.profile-header__follow:hover:not(:disabled) { background: var(--color-primary-container); }
+.profile-header__follow:disabled { opacity: 0.7; cursor: default; }
+.profile-header__follow .material-symbols-outlined { font-size: 18px; }
+.profile-header__follow--active {
+  color: var(--color-primary);
+  background: transparent;
+  border-color: var(--color-outline-variant);
+}
+.profile-header__follow--active:hover:not(:disabled) {
+  background: var(--color-error-container);
+  color: var(--color-error);
+  border-color: var(--color-error-container);
+}
 
 .profile-header__location {
   display: inline-flex;

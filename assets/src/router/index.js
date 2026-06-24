@@ -28,6 +28,11 @@ const router = createRouter({
       component: () => import('@/views/DiscoverView.vue'),
     },
     {
+      path: '/subscriptions',
+      name: 'subscriptions',
+      component: () => import('@/views/SubscriptionsView.vue'),
+    },
+    {
       path: '/profile/:id',
       name: 'profile',
       component: () => import('@/views/ProfileView.vue'),

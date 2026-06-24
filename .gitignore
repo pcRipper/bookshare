@@ -3,6 +3,14 @@
 /public/build/
 ###< frontend ###
 
+###> uploads ###
+# Server-side cached/localized files (e.g. Google avatars). Keep the dir, not its contents.
+/public/uploads/*
+!/public/uploads/avatars/
+/public/uploads/avatars/*
+!/public/uploads/avatars/.gitkeep
+###< uploads ###
+
 ###> symfony/framework-bundle ###
 /.env.local
 /.env.local.php

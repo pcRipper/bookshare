@@ -6,6 +6,7 @@ use App\Entity\Book;
 use App\Entity\ActivityItem;
 use App\Entity\LibraryRequest;
 use App\Entity\LibraryRequestEvent;
+use App\Entity\Subscription;
 use App\Entity\User;
 use App\Security\Voter\BookVoter;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
@@ -135,16 +136,37 @@ class ResponseMapper
      * @param bool $showLocation Whether the viewer may see the location; the
      *   owner always sees their own, others honour the user's `showLocation` pref.
      */
-    public function profile(User $user, array $stats, bool $isSelf, bool $showLocation = true): array
+    public function profile(User $user, array $stats, bool $isSelf, bool $showLocation = true, bool $isSubscribed = false): array
     {
         return [
-            'id'        => $user->getId(),
-            'fullName'  => $user->getFullName(),
-            'avatarUrl' => $user->getAvatarUrl(),
-            'bio'       => $user->getBio(),
-            'location'  => $showLocation ? $user->getLocation() : null,
-            'isSelf'    => $isSelf,
-            'stats'     => $stats,
+            'id'           => $user->getId(),
+            'fullName'     => $user->getFullName(),
+            'avatarUrl'    => $user->getAvatarUrl(),
+            'bio'          => $user->getBio(),
+            'location'     => $showLocation ? $user->getLocation() : null,
+            'isSelf'       => $isSelf,
+            // Whether the viewer currently follows this reader (false on own profile).
+            'isSubscribed' => $isSubscribed,
+            'stats'        => $stats,
+        ];
+    }
+
+    /**
+     * Compact user card for the Discover "Accounts" search results: identity,
+     * a bio snippet, stats and the viewer's follow state. No location — it isn't
+     * shown on the card and respects the user's location-privacy preference.
+     *
+     * @param array{totalBooks:int, shared:int, loaned:int} $stats
+     */
+    public function userCard(User $user, array $stats, bool $isSubscribed): array
+    {
+        return [
+            'id'           => $user->getId(),
+            'fullName'     => $user->getFullName(),
+            'avatarUrl'    => $user->getAvatarUrl(),
+            'bio'          => $user->getBio(),
+            'stats'        => $stats,
+            'isSubscribed' => $isSubscribed,
         ];
     }
 
@@ -166,6 +188,36 @@ class ResponseMapper
             'id'       => $category->getId(),
             'name'     => $category->getName(),
             'colorHex' => $category->getColorHex(),
+        ];
+    }
+
+    /** A single "following" row: the edge id plus the followed reader. */
+    public function subscription(Subscription $subscription): array
+    {
+        return [
+            'id'        => $subscription->getId(),
+            'createdAt' => $subscription->getCreatedAt()->format(\DateTimeInterface::ATOM),
+            'user'      => $this->userSummary($subscription->getSubscribedTo()),
+        ];
+    }
+
+    /**
+     * One feed group: a followed reader and their recent books.
+     *
+     * @param Book[]            $books
+     * @param array<int, mixed> $pendingBookIds Lookup (book id => any) of books the
+     *   viewer already has a pending request for, so the CTA shows "Requested".
+     */
+    public function subscriptionFeed(User $user, array $books, array $pendingBookIds = []): array
+    {
+        return [
+            'user'  => $this->userSummary($user),
+            // Discover shape (book + owner) so the feed reuses DiscoverBookCard,
+            // whose "Request to Borrow" CTA and owner link work unchanged.
+            'books' => array_map(
+                fn (Book $b) => $this->discoverBook($b) + ['requested' => isset($pendingBookIds[$b->getId()])],
+                $books,
+            ),
         ];
     }
 

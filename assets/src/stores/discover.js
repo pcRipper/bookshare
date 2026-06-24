@@ -3,19 +3,24 @@ import { ref } from 'vue'
 import api from '@/api'
 
 /**
- * Backs the Discover page (`/discover`): browsing shareable books from other
- * public members, filtering by free-text query / category, and requesting to
- * borrow. The category list (filter pills) is the shared global vocabulary.
+ * Backs the Discover page (`/discover`). The search surface has two modes:
+ *  - 'books'    — shareable books from other public members (filter by query/category),
+ *                 with a "request to borrow" action.
+ *  - 'accounts' — other public members by name, with an inline follow/unfollow action.
+ * The category pills are books-only. The free-text query is shared across modes.
  */
 export const useDiscoverStore = defineStore('discover', () => {
+  const mode = ref('books') // 'books' | 'accounts'
+
   const books = ref([])
+  const accounts = ref([])
   const categories = ref([])
   const loading = ref(false)
   const error = ref(null)
 
-  // Active filters — the view binds these and calls fetchBooks() to apply.
+  // Active filters — the view binds these and calls the active fetch to apply.
   const query = ref('')
-  const activeCategory = ref(null) // category id | null (= all)
+  const activeCategory = ref(null) // category id | null (= all) — books mode only
 
   let reqToken = 0
 
@@ -46,13 +51,47 @@ export const useDiscoverStore = defineStore('discover', () => {
     }
   }
 
+  async function fetchAccounts() {
+    const token = ++reqToken
+    // Prompt-to-search: with an empty box we don't list every public reader.
+    if (!query.value.trim()) {
+      accounts.value = []
+      loading.value = false
+      error.value = null
+      return
+    }
+    loading.value = true
+    error.value = null
+    try {
+      const { data } = await api.get('/users/discover', { params: { q: query.value.trim() } })
+      if (token === reqToken) accounts.value = data
+    } catch {
+      if (token === reqToken) error.value = 'error'
+    } finally {
+      if (token === reqToken) loading.value = false
+    }
+  }
+
+  // Run whichever fetch matches the current mode.
+  function fetchActive() {
+    return mode.value === 'accounts' ? fetchAccounts() : fetchBooks()
+  }
+
   async function init() {
     await Promise.all([fetchCategories(), fetchBooks()])
   }
 
+  function setMode(next) {
+    if (next === mode.value) return
+    mode.value = next
+    // The category filter is books-only; drop it when leaving books mode.
+    if (next === 'accounts') activeCategory.value = null
+    return fetchActive()
+  }
+
   function setQuery(q) {
     query.value = q
-    return fetchBooks()
+    return fetchActive()
   }
 
   function setCategory(id) {
@@ -64,7 +103,7 @@ export const useDiscoverStore = defineStore('discover', () => {
   function clearFilters() {
     query.value = ''
     activeCategory.value = null
-    return fetchBooks()
+    return fetchActive()
   }
 
   // Request to borrow. Optimistically flag the book; a 409 (already pending) is
@@ -80,8 +119,28 @@ export const useDiscoverStore = defineStore('discover', () => {
     }
   }
 
+  // Follow / unfollow a reader from an account card. Optimistic; the same 409
+  // tolerance as requestBorrow (a duplicate follow is effectively a no-op).
+  async function follow(userId) {
+    const account = accounts.value.find(a => a.id === userId)
+    try {
+      await api.post(`/subscriptions/${userId}`)
+      if (account) account.isSubscribed = true
+    } catch (e) {
+      if (e.response?.status === 409 && account) account.isSubscribed = true
+      else throw e
+    }
+  }
+
+  async function unfollow(userId) {
+    const account = accounts.value.find(a => a.id === userId)
+    await api.delete(`/subscriptions/${userId}`)
+    if (account) account.isSubscribed = false
+  }
+
   return {
-    books, categories, loading, error, query, activeCategory,
-    init, fetchBooks, setQuery, setCategory, clearFilters, requestBorrow,
+    mode, books, accounts, categories, loading, error, query, activeCategory,
+    init, fetchBooks, fetchAccounts, fetchActive, setMode, setQuery, setCategory,
+    clearFilters, requestBorrow, follow, unfollow,
   }
 })
