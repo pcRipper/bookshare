@@ -4,9 +4,11 @@ name: bookshare-prod
 #   • Images are built ON THE SERVER from the git checkout (make prod-build /
 #     prod-deploy) and tagged locally — there is no registry, nothing is pushed
 #     or pulled. The multi-stage Dockerfiles keep the runtime images slim.
-#   • Config comes from the default .env (Symfony reads it inside the container;
-#     Docker Compose reads it for ${...} substitution). Set APP_ENV=prod and the
-#     production values there — there is no separate prod env file.
+#   • Config comes from the default .env. It is MOUNTED into the phpfpm
+#     container (read-only), not baked into the image, so secrets never enter the
+#     image layers; Docker Compose also reads it for ${...} substitution. Set
+#     APP_ENV=prod and the production values there — there is no separate prod
+#     env file.
 #   • No Mailpit, no Prometheus/Alloy/Grafana, no Xdebug.
 
 services:
@@ -23,9 +25,9 @@ services:
     restart: always
     environment:
       # The app reads its config (APP_ENV, APP_SECRET, JWT_PASSPHRASE, CORS,
-      # GOOGLE_*, DEFAULT_URI …) from the committed .env baked into the image —
-      # set APP_ENV=prod and the production values there. Only the two settings
-      # below are container-specific and therefore overridden here:
+      # GOOGLE_*, DEFAULT_URI …) from the .env mounted below — set APP_ENV=prod
+      # and the production values there. Only the two settings below are
+      # container-specific and therefore overridden here:
       #
       #   • DATABASE_URL — must target the `postgresql` compose service, not the
       #     host-oriented value in .env. Credentials still come from .env.
@@ -34,6 +36,9 @@ services:
       #     run `make prod-migrate` manually).
       RUN_MIGRATIONS: ${RUN_MIGRATIONS:-1}
     volumes:
+      # App config — mounted (NOT baked into the image), so secrets stay out of
+      # the image layers and a config change needs only a restart, not a rebuild.
+      - ./.env:/var/www/app/.env:ro
       # JWT keys live on the droplet (gitignored), mounted read-only.
       - ./config/jwt:/var/www/app/config/jwt:ro
       # Persist uploaded files (avatars, covers) across deployments.

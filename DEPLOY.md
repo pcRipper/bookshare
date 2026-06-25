@@ -38,8 +38,8 @@ Log out/in afterward so the docker group applies.
 ### 2. Clone the repo + configure `.env`
 
 There is **no separate prod env file**. The committed `.env` is the single source of config —
-Symfony reads it inside the container (it is baked into the image at build time), and Docker Compose
-reads it for `${...}` substitution. Edit it in place:
+`compose.prod.yaml` mounts it read-only into the container for Symfony to read, and Docker Compose
+also reads it for `${...}` substitution. Edit it in place:
 
 ```bash
 git clone <repo-url> bookshare && cd bookshare
@@ -49,15 +49,20 @@ $EDITOR .env            # set APP_ENV=prod; fill APP_SECRET, POSTGRES_PASSWORD, 
 
 Generate `APP_SECRET`: `php -r 'echo bin2hex(random_bytes(16)), "\n";'` (or `openssl rand -hex 16`).
 
-> **Config is baked into the image.** Because `.env` is copied into the image at build time, changing
-> any value means rebuilding — which the server-side flow does anyway (`make prod-deploy`, or
-> `make prod-build && make prod-up`). The DB host (`postgresql` service) and `RUN_MIGRATIONS` are the
-> only settings overridden at the compose layer; everything else comes from `.env`.
+> **Config is mounted, not baked in.** `.env` is `.dockerignore`d (kept out of the image) and
+> mounted read-only into the phpfpm container by `compose.prod.yaml`, so secrets never enter the
+> image layers. Changing a value takes effect on a restart — no rebuild needed
+> (`docker compose -f compose.prod.yaml restart phpfpm`). The DB host (`postgresql` service) and
+> `RUN_MIGRATIONS` are the only settings overridden at the compose layer; everything else comes
+> from `.env`.
 
-> **Secrets live in a committed file.** `.env` is tracked, so prod secrets placed there are committed.
-> For a single-tenant hobby deploy that's the tradeoff of "one `.env`". If you'd rather not commit
-> them, keep placeholders in `.env` and inject the real values as real environment variables (they win
-> over `.env`) — but note `.env.local` is `.dockerignore`d and will **not** be baked in.
+> **Secrets live in a committed file.** `.env` is tracked, so prod secrets placed there are committed
+> to git (the image is now clean, but git history is not). For a single-tenant hobby deploy that's the
+> tradeoff of "one `.env`". Since `.env` is only mounted (never baked), an alternative is to keep
+> placeholders in the tracked `.env` and maintain the real values in an untracked `.env.local` on the
+> server (Symfony reads it with higher precedence than `.env`) — mount that too, or point the mount at
+> it. Note `git pull --ff-only` in `deploy.sh` will balk if you edit the tracked `.env` in place on
+> the server, so the placeholders-plus-`.env.local` split also avoids that snag.
 
 ### 3. Generate the JWT keypair (once, on the droplet)
 

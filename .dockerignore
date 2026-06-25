@@ -6,6 +6,10 @@ var/log
 var/sessions
 var/tmp
 public/build
+# .env is NOT baked into the image — compose.prod.yaml mounts it at runtime so
+# secrets stay out of the image layers. (Local dev bind-mounts the whole project,
+# so it still gets .env that way.)
+.env
 .env.local
 .env.local.php
 .env.*.local

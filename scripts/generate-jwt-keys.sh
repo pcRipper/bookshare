@@ -84,9 +84,9 @@ cat <<EOF
 
     JWT_PASSPHRASE=${PASSPHRASE}
 
-Then rebuild + recreate phpfpm so the new .env is baked in, and mint a test token:
+Then restart phpfpm so it re-reads the mounted .env, and mint a test token:
 
-  docker compose -f compose.prod.yaml up -d --build phpfpm
+  docker compose -f compose.prod.yaml restart phpfpm
   docker compose -f compose.prod.yaml exec phpfpm \\
       php bin/console lexik:jwt:generate-token someuser@example.com --no-ansi
 
