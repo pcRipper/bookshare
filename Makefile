@@ -1,5 +1,5 @@
 .PHONY: docker-start docker-stop \
-        prod-build-push prod-pull prod-up prod-down prod-deploy prod-logs prod-migrate
+        prod-build prod-up prod-down prod-deploy prod-logs prod-migrate
 
 # ── Local development ────────────────────────────────────────────────────────
 docker-start:
@@ -8,17 +8,12 @@ docker-start:
 docker-stop:
 	docker compose down
 
-# ── Production (compose.prod.yaml + .env.prod.local) ─────────────────────────
-ENV_FILE ?= .env.prod.local
-PROD := docker compose --env-file $(ENV_FILE) -f compose.prod.yaml
+# ── Production (compose.prod.yaml — config from the default .env) ─────────────
+PROD := docker compose -f compose.prod.yaml
 
-# Build + push images to the registry (run locally / in CI, not on the droplet).
-prod-build-push:
-	bash scripts/build-push.sh
-
-# Pull prebuilt images on the droplet.
-prod-pull:
-	$(PROD) pull
+# Build the optimized images locally on the server (no registry, no push).
+prod-build:
+	bash scripts/build.sh
 
 prod-up:
 	$(PROD) up -d --remove-orphans
@@ -26,7 +21,7 @@ prod-up:
 prod-down:
 	$(PROD) down
 
-# Full redeploy on the droplet: git pull + pull images + up (migrations auto-run).
+# Full redeploy on the server: git pull + build images + up (migrations auto-run).
 prod-deploy:
 	bash scripts/deploy.sh
 

@@ -13,7 +13,7 @@
 #   3. sets ownership/permissions so the in-container www-data (UID 82) can read
 #   4. verifies the key opens with the passphrase
 #   5. prints the passphrase so YOU can paste it into JWT_PASSPHRASE in
-#      .env.prod.local (this script does not touch any .env file)
+#      .env (this script does not touch any .env file)
 #
 # Run on the DROPLET, from anywhere:
 #   bash scripts/generate-jwt-keys.sh            # create (refuses to clobber)
@@ -78,16 +78,16 @@ log "Done. Keys written to $JWT_DIR and verified."
 cat <<EOF
 
 ┌──────────────────────────────────────────────────────────────────────────┐
-│ JWT_PASSPHRASE (set this in .env.prod.local — the keys won't work without  │
-│ the matching value):                                                       │
+│ JWT_PASSPHRASE (set this in .env — the keys won't work without the          │
+│ matching value):                                                           │
 └──────────────────────────────────────────────────────────────────────────┘
 
     JWT_PASSPHRASE=${PASSPHRASE}
 
-Then recreate phpfpm so the passphrase env is injected, and mint a test token:
+Then rebuild + recreate phpfpm so the new .env is baked in, and mint a test token:
 
-  docker compose --env-file .env.prod.local -f compose.prod.yaml up -d phpfpm
-  docker compose --env-file .env.prod.local -f compose.prod.yaml exec phpfpm \\
+  docker compose -f compose.prod.yaml up -d --build phpfpm
+  docker compose -f compose.prod.yaml exec phpfpm \\
       php bin/console lexik:jwt:generate-token someuser@example.com --no-ansi
 
 If the second command prints a token, signing works.

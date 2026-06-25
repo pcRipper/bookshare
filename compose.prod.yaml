@@ -1,36 +1,37 @@
 name: bookshare-prod
 
 # Production stack — optimized two-stage images, no dev tooling.
-#   • Images are built and pushed to a registry (make prod-build-push); the
-#     droplet pulls them (make prod-pull / prod-deploy).
-#   • Secrets come from a host .env.prod.local file passed via --env-file
-#     (see the Makefile targets and DEPLOY.md).
+#   • Images are built ON THE SERVER from the git checkout (make prod-build /
+#     prod-deploy) and tagged locally — there is no registry, nothing is pushed
+#     or pulled. The multi-stage Dockerfiles keep the runtime images slim.
+#   • Config comes from the default .env (Symfony reads it inside the container;
+#     Docker Compose reads it for ${...} substitution). Set APP_ENV=prod and the
+#     production values there — there is no separate prod env file.
 #   • No Mailpit, no Prometheus/Alloy/Grafana, no Xdebug.
 
 services:
 
   # ── PHP-FPM ────────────────────────────────────────────────────────────────
   phpfpm:
-    image: ${REGISTRY}/bookshare-php:${IMAGE_TAG:-latest}
+    # Built locally on the server; tagged for stable reference + pruning.
+    image: bookshare-php:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: docker/production/php/Dockerfile
       args:
         PHP_VERSION: ${PHP_VERSION:-8.4}
     restart: always
-    env_file:
-      - docker/production/php/app.env        # static prod literals (APP_ENV=prod …)
     environment:
-      # Secrets / per-deployment values — sourced from .env.prod.local.
-      APP_SECRET: ${APP_SECRET:?set APP_SECRET in .env.prod.local}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgresql:5432/${POSTGRES_DB:-bookshare}?serverVersion=16&charset=utf8
-      JWT_PASSPHRASE: ${JWT_PASSPHRASE:?set JWT_PASSPHRASE in .env.prod.local}
-      CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN:?set CORS_ALLOW_ORIGIN in .env.prod.local}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?set GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?set GOOGLE_CLIENT_SECRET}
-      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:?set GOOGLE_REDIRECT_URI}
-      DEFAULT_URI: ${DEFAULT_URI:-https://localhost}
-      # Set RUN_MIGRATIONS=0 in .env.prod.local to skip auto-migrate on boot.
+      # The app reads its config (APP_ENV, APP_SECRET, JWT_PASSPHRASE, CORS,
+      # GOOGLE_*, DEFAULT_URI …) from the committed .env baked into the image —
+      # set APP_ENV=prod and the production values there. Only the two settings
+      # below are container-specific and therefore overridden here:
+      #
+      #   • DATABASE_URL — must target the `postgresql` compose service, not the
+      #     host-oriented value in .env. Credentials still come from .env.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-changeme}@postgresql:5432/${POSTGRES_DB:-bookshare}?serverVersion=16&charset=utf8
+      #   • RUN_MIGRATIONS — apply pending migrations on boot (set 0 to skip and
+      #     run `make prod-migrate` manually).
       RUN_MIGRATIONS: ${RUN_MIGRATIONS:-1}
     volumes:
       # JWT keys live on the droplet (gitignored), mounted read-only.
@@ -51,7 +52,8 @@ services:
 
   # ── Nginx (TLS terminator + static/SPA server) ──────────────────────────────
   nginx:
-    image: ${REGISTRY}/bookshare-nginx:${IMAGE_TAG:-latest}
+    # Built locally on the server; tagged for stable reference + pruning.
+    image: bookshare-nginx:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: docker/production/nginx/Dockerfile
@@ -80,7 +82,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-bookshare}
       POSTGRES_USER: ${POSTGRES_USER:-app}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.prod.local}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     healthcheck:
       test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB:-bookshare}", "-U", "${POSTGRES_USER:-app}"]
       timeout: 5s

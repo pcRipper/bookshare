@@ -79,5 +79,5 @@ log "Enabling unattended security upgrades…"
 dpkg-reconfigure -f noninteractive unattended-upgrades || true
 
 log "Provisioning complete."
-echo "Next: clone the repo, create .env.prod.local + config/jwt keys, then run 'make prod-deploy'."
+echo "Next: clone the repo, set APP_ENV=prod + production values in .env, generate config/jwt keys, then run 'make prod-deploy'."
 echo "If you were added to the docker group, log out and back in for it to take effect."
