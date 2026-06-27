@@ -33,3 +33,6 @@
 /phpunit.xml
 /.phpunit.cache/
 ###< phpunit/phpunit ###
+
+/tmp
+/certs_test
