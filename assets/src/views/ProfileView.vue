@@ -581,7 +581,7 @@ async function onBookDelete(id) {
   margin-top: var(--space-sm);
 }
 @media (max-width: 767px) {
-  .tab-nav { position: sticky; top: 64px; background: var(--color-background); z-index: 30; }
+  .tab-nav { position: sticky; top: 64px; background: var(--color-background); z-index: 30; overflow-x: auto; scrollbar-width: none; }
 }
 
 .tab-btn {
