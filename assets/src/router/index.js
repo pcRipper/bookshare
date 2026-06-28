@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { loadLanguages } from '@/utils/languages'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -62,6 +63,13 @@ router.beforeEach(to => {
   }
   if (to.name === 'login' && auth.isAuthenticated) {
     return { name: 'library' }
+  }
+  // Warm the language vocabulary the moment the viewer is known to be
+  // authenticated — on first load if already logged in, or right after the
+  // OAuth callback redirects in. Fire-and-forget; memoized, so repeat
+  // navigations are no-ops and the picker/filter never wait on the fetch.
+  if (auth.isAuthenticated) {
+    loadLanguages().catch(() => {})
   }
 })
 
