@@ -80,7 +80,7 @@ async function onRequest(bookId) {
             <span class="material-symbols-outlined feed-row__chevron">chevron_right</span>
           </RouterLink>
 
-          <div class="feed-row__scroller hide-scrollbar">
+          <div v-hscroll class="feed-row__scroller hide-scrollbar">
             <div v-for="book in group.books" :key="book.id" class="feed-row__item">
               <DiscoverBookCard
                 :book="book"

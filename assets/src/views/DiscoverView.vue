@@ -133,7 +133,7 @@ async function onToggleFollow(action, id) {
       <section v-if="!isAccounts" class="discover-filters" aria-label="Filter books">
         <div v-if="categories.length" class="discover-filters__group">
           <h2 class="discover-filters__label">Browse by category</h2>
-          <div class="discover-filters__pills hide-scrollbar">
+          <div v-hscroll class="discover-filters__pills hide-scrollbar">
             <button
               class="pill"
               :class="{ 'pill--active': activeCategory == null }"

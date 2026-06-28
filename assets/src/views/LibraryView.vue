@@ -262,7 +262,7 @@ function onImported() {
       <section class="library-content">
 
         <!-- Tabs -->
-        <div class="tab-nav" role="tablist">
+        <div v-hscroll class="tab-nav" role="tablist">
           <button
             v-for="tab in tabs"
             :key="tab.key"

@@ -3,11 +3,13 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
+import hscroll from './directives/hscroll'
 
 const app = createApp(App)
 
 app.use(createPinia())
 app.use(router)
+app.directive('hscroll', hscroll)
 
 app.mount('#app')
 
