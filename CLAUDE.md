@@ -16,7 +16,7 @@ bookshare/
 │   ├── stores/          # Pinia stores (auth, library, discover, profile, toast)
 │   ├── views/           # Route-level pages
 │   ├── components/      # layout/, library/, discover/, profile/, ui/
-│   └── utils/           # categoryColors, apiError, time
+│   └── utils/           # categoryColors, languages, apiError, time
 ├── src/                 # Symfony PHP source (autowired, autoconfigured)
 │   ├── Controller/      # API controllers — *RestController, #[Route] attributes
 │   ├── Entity/          # Doctrine entities — mapped via PHP attributes
@@ -26,6 +26,7 @@ bookshare/
 │   ├── Dto/             # Request payload objects (#[MapRequestPayload]) + Assert
 │   ├── Api/             # ResponseMapper — entity → JSON shaping
 │   ├── Category/        # CategoryPalette (colour allow-list, single source of truth)
+│   ├── Language/        # LanguageCatalog (book-language vocabulary, single source of truth)
 │   ├── Security/Voter/  # BookVoter — edit/delete authorization
 │   ├── EventSubscriber/ # RateLimitSubscriber (kernel.request)
 │   └── DataFixtures/    # Dev seed data (AppFixtures)
@@ -85,8 +86,8 @@ Sign-in is **Google OAuth only** (the original email/password + register screens
 |---|---|---|
 | `/login` | `LoginView` | "Continue with Google" button; surfaces `?error=` from the callback |
 | `/auth/google/callback` | `GoogleCallbackView` | Exchanges the OAuth code, stores JWT, redirects to `/library` |
-| `/library` | `LibraryView` | The signed-in user's library. Profile header (avatar, name, bio, stats) + tabs: **Collection** (book grid), **Lending/Borrowing**, **Requests** (incoming — Approve/Decline), **History** (loan timeline) |
-| `/discover` | `DiscoverView` | Browse the community. Search, category filter pills, trending/recommended grids |
+| `/library` | `LibraryView` | The signed-in user's library. Profile header (avatar, name, bio, stats) + tabs: **Collection** (book grid, with CSV **import/export** toolbar), **Lending/Borrowing**, **Requests** (incoming — Approve/Decline), **History** (loan timeline) |
+| `/discover` | `DiscoverView` | Browse the community. Search, category filter pills, **language filter**, trending/recommended grids |
 | `/profile/:id` | `ProfileView` | Public profile. Avatar, bio, stats; book collection with "Request to Borrow" |
 | `/settings` | `SettingsView` | Account profile (avatar, name, bio 300-char, location), **privacy toggle**, sign out |
 | `/` | — | Redirects to `/library` |
@@ -94,13 +95,13 @@ Sign-in is **Google OAuth only** (the original email/password + register screens
 
 > **Activity feed**: the backend (`ActivityItem`, `ActivityRestController` at `/api/activity`, `ActivityRecorder`) exists and records events, but there is **no SPA route or header link** for it — the nav entry was deliberately removed. Don't re-add it without a product decision.
 
-**Manage Book modal** — overlays `/library` (not a route), `ManageBookModal.vue`. Triggered by "Add New Book" or clicking a book card. Fields: cover, title*, author*, ISBN, status, and a **search-or-create category picker** (`CategorySelector.vue`). Saves `categoryIds` (not names). When a book is out on loan the modal is **read-only** (see _Authorization_): inputs disabled, a lock notice shows, only Close is offered (driven by the server's `canEdit` flag).
+**Manage Book modal** — overlays `/library` (not a route), `ManageBookModal.vue`. Triggered by "Add New Book" or clicking a book card. Fields: cover, title*, author*, ISBN, status, a **searchable language picker** (`ui/LanguageSelect.vue`), and a **search-or-create category picker** (`CategorySelector.vue`). Saves `categoryIds` (not names). When a book is out on loan the modal is **read-only** (see _Authorization_): inputs disabled, a lock notice shows, only Close is offered (driven by the server's `canEdit` flag).
 
 ### Domain Model (`src/Entity/`, implemented)
 
 **User** — `email`, `password_hash` (unused for Google users), `full_name`, `bio` (≤300), `location`, `avatar_url`, `is_private` (hides profile + collection from others), `roles`. Derived stats (total books / shared / loaned) come from `UserStatsProvider`, not stored.
 
-**Book** — `title`*, `author`*, `isbn`, `cover_path`, `status` (`own | lent | unavailable`); `owner → User` **and `current_holder → User`**; `categories → Category[]` (many-to-many). `isHome()` ⇔ `currentHolder === owner` (the book is physically with its owner); this gates editability.
+**Book** — `title`*, `author`*, `isbn`, `cover_path`, `status` (`own | lent | unavailable`), `language` (nullable ISO 639-1 code, see _Languages_); `owner → User` **and `current_holder → User`**; `categories → Category[]` (many-to-many). `isHome()` ⇔ `currentHolder === owner` (the book is physically with its owner); this gates editability.
 
 **Category** — `name` (unique, global), `color_hex` (one of `CategoryPalette::COLORS`).
 
@@ -197,6 +198,12 @@ A **shared, global vocabulary** (unique names), not per-user. Flow is _search-or
 - **Books reference categories by id**, never by name: `BookInput.categoryIds` (int[]); `BookService` resolves via `CategoryRepository::findByIds()`.
 - **Colour palette is one source of truth, duplicated front+back — keep in sync:** backend `App\Category\CategoryPalette::COLORS` (enforced by `CategoryInput`'s `Assert\Choice`) mirrors frontend `assets/src/utils/categoryColors.js` `CATEGORY_PALETTE` (each entry adds chip text/border styling). There are **10 muted tones**. `ResponseMapper` emits `colorHex` on every category; `resolveCategoryColors()` falls back gracefully for legacy/unknown hexes.
 
+### Languages
+A book's language is an optional **ISO 639-1 code** validated against one source of truth: `App\Language\LanguageCatalog::LANGUAGES` (`code => English name`, enforced by `BookInput.language`'s `Assert\Choice`). The frontend never duplicates the list — `GET /api/languages` serves it (`[{ code, name }]`, sorted), memoized client-side by `utils/languages.js` and consumed by the searchable `ui/LanguageSelect.vue`. `ResponseMapper` emits both `language` (code) and `languageName` (resolved label) on every book, so cards display the name without a lookup. Discover filters via `?language={code}` (`BookRepository::findForDiscover`).
+
+### Import / export (CSV)
+`App\Service\BookCsvService` round-trips a user's collection. `GET /api/books/export` streams a CSV download; `POST /api/books/import` (multipart `file` + `mode` + `onError` fields) bulk-creates books. Columns: `title, author, isbn, language, status, categories` (categories semicolon-joined names). Import is parameterised on two axes — **`mode`**: `append` | `replace` (replace removes only **home** books, never active loans), **`onError`**: `skip` (import valid rows, report skips) | `abort` (any invalid row ⇒ import nothing, returns `422`). Each row is validated through `BookInput`; categories are **matched to existing names only** (`CategoryRepository::findByNames`, unknowns ignored); `status=lent` is rejected (a loan needs a live borrower). Returns `{ imported, skipped, aborted, errors[] }`. Driven by `ImportBooksModal.vue`; export reuses the single-flush controller boundary.
+
 ### Authorization (voters)
 `App\Security\Voter\BookVoter` decides `BOOK_EDIT` / `BOOK_DELETE`: the actor must be the **owner** *and* the book must be **home** (`isHome()`) — a book that's out on loan is frozen. Controllers call `denyAccessUnlessGranted(...)`; `ResponseMapper` emits a **`canEdit`** boolean on every book so the SPA disables the Manage Book modal without re-deriving the rule client-side. Private profiles: `UserRestController::show` returns 403 to non-owners (mirrors the private-library book listing).
 
@@ -216,7 +223,7 @@ A **shared, global vocabulary** (unique names), not per-user. Flow is _search-or
 `nelmio/cors-bundle`. `CORS_ALLOW_ORIGIN` in `.env` defaults to a regex matching any `localhost` port (covers the Vite dev server). Adjust for production in `.env.local` / deployment config.
 
 ### Testing
-PHPUnit suite under `tests/`, run with `php bin/phpunit`. It is **unit-level** (mirrors `src/`: `Entity/`, `Service/`, `Dto/`, `Api/`, `Security/Voter/`, `EventSubscriber/`, `Category/`) — no kernel boot or DB, so it runs fast and doesn't need the audit tables. `phpunit.dist.xml` sets `failOnDeprecation` / `failOnNotice` / `failOnWarning` = **true**, so under PHPUnit 13: use `createStub()` (not `createMock()`) when you only need a return value, and pair `->with(...)` with an explicit `->expects(...)`. There is no HTTP/`WebTestCase` layer (the test env disables the firewall: `when@test: security: ~`).
+PHPUnit suite under `tests/`, run with `php bin/phpunit`. It is **unit-level** (mirrors `src/`: `Entity/`, `Service/`, `Dto/`, `Api/`, `Security/Voter/`, `EventSubscriber/`, `Category/`, `Language/`) — no kernel boot or DB, so it runs fast and doesn't need the audit tables. `phpunit.dist.xml` sets `failOnDeprecation` / `failOnNotice` / `failOnWarning` = **true**, so under PHPUnit 13: use `createStub()` (not `createMock()`) when you only need a return value, and pair `->with(...)` with an explicit `->expects(...)`. There is no HTTP/`WebTestCase` layer (the test env disables the firewall: `when@test: security: ~`).
 
 ## Environment Setup Notes (Windows-specific)
 
