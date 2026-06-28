@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import CategorySelector from '@/components/library/CategorySelector.vue'
+import LanguageSelect from '@/components/ui/LanguageSelect.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 
 const props = defineProps({
@@ -31,7 +32,7 @@ const readOnly = computed(() => isEdit.value && props.book?.canEdit === false)
 
 function blank() {
   // categories: array of { id, name, colorHex }
-  return { title: '', author: '', isbn: '', status: 'own', coverPath: '', categories: [] }
+  return { title: '', author: '', isbn: '', status: 'own', language: null, coverPath: '', categories: [] }
 }
 
 // Repopulate whenever the modal opens or the target book changes.
@@ -47,6 +48,7 @@ watch(
           author: props.book.author ?? '',
           isbn: props.book.isbn ?? '',
           status: props.book.status ?? 'own',
+          language: props.book.language ?? null,
           coverPath: props.book.coverPath ?? '',
           categories: [...(props.book.categories ?? [])],
         }
@@ -70,6 +72,7 @@ function onSave() {
     author: form.value.author.trim(),
     isbn: form.value.isbn.trim() || null,
     status: form.value.status,
+    language: form.value.language || null,
     coverPath: form.value.coverPath.trim() || null,
     categoryIds: form.value.categories.map(c => c.id),
   })
@@ -139,6 +142,11 @@ function onDelete() {
                 <option v-for="opt in STATUS_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
               </select>
             </div>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="mb-language">Language</label>
+            <LanguageSelect id="mb-language" v-model="form.language" :disabled="readOnly" placeholder="No language set" />
           </div>
 
           <div class="field">

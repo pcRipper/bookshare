@@ -44,6 +44,27 @@ class ResponseMapperTest extends TestCase
         self::assertSame('#E8F0EA', $data['categories'][0]['colorHex']);
     }
 
+    public function testBookLanguageIsEmittedAsCodeAndName(): void
+    {
+        $book = (new Book())->setOwner((new User())->setFullName('Jane'))
+            ->setTitle('T')->setAuthor('A')->setLanguage('en');
+
+        $data = $this->mapper()->book($book);
+
+        self::assertSame('en', $data['language']);
+        self::assertSame('English', $data['languageName']);
+    }
+
+    public function testBookLanguageIsNullWhenUnset(): void
+    {
+        $book = (new Book())->setOwner((new User())->setFullName('Jane'))->setTitle('T')->setAuthor('A');
+
+        $data = $this->mapper()->book($book);
+
+        self::assertNull($data['language']);
+        self::assertNull($data['languageName']);
+    }
+
     public function testBookCanEditReflectsTheAuthorizationChecker(): void
     {
         $book = (new Book())->setOwner((new User())->setFullName('Owner'))->setTitle('T')->setAuthor('A');

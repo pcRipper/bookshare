@@ -6,10 +6,11 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 import DiscoverBookCard from '@/components/discover/DiscoverBookCard.vue'
 import DiscoverUserCard from '@/components/discover/DiscoverUserCard.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
+import LanguageSelect from '@/components/ui/LanguageSelect.vue'
 import { resolveCategoryColors } from '@/utils/categoryColors'
 
 const store = useDiscoverStore()
-const { mode, books, accounts, categories, loading, error, query, activeCategory } = storeToRefs(store)
+const { mode, books, accounts, categories, loading, error, query, activeCategory, activeLanguage } = storeToRefs(store)
 
 onMounted(store.init)
 
@@ -42,7 +43,9 @@ function pillStyle(cat) {
 }
 
 const hasQuery = computed(() => !!query.value.trim())
-const hasFilters = computed(() => hasQuery.value || (!isAccounts.value && activeCategory.value != null))
+const hasFilters = computed(() =>
+  hasQuery.value || (!isAccounts.value && (activeCategory.value != null || activeLanguage.value != null)),
+)
 
 const resultsHeading = computed(() => {
   if (isAccounts.value) return 'Readers'
@@ -126,26 +129,37 @@ async function onToggleFollow(action, id) {
         </div>
       </section>
 
-      <!-- ── Category filter pills (books mode only) ────────────────────── -->
-      <section v-if="!isAccounts && categories.length" class="discover-filters" aria-label="Filter by category">
-        <h2 class="discover-filters__label">Browse by category</h2>
-        <div class="discover-filters__pills hide-scrollbar">
-          <button
-            class="pill"
-            :class="{ 'pill--active': activeCategory == null }"
-            @click="store.setCategory(null)"
-          >
-            All
-          </button>
-          <button
-            v-for="cat in categories"
-            :key="cat.id"
-            class="pill"
-            :style="pillStyle(cat)"
-            @click="store.setCategory(cat.id)"
-          >
-            {{ cat.name }}
-          </button>
+      <!-- ── Filters (books mode only): category pills + language ───────── -->
+      <section v-if="!isAccounts" class="discover-filters" aria-label="Filter books">
+        <div v-if="categories.length" class="discover-filters__group">
+          <h2 class="discover-filters__label">Browse by category</h2>
+          <div class="discover-filters__pills hide-scrollbar">
+            <button
+              class="pill"
+              :class="{ 'pill--active': activeCategory == null }"
+              @click="store.setCategory(null)"
+            >
+              All
+            </button>
+            <button
+              v-for="cat in categories"
+              :key="cat.id"
+              class="pill"
+              :style="pillStyle(cat)"
+              @click="store.setCategory(cat.id)"
+            >
+              {{ cat.name }}
+            </button>
+          </div>
+        </div>
+
+        <div class="discover-filters__group discover-filters__group--language">
+          <h2 class="discover-filters__label">Language</h2>
+          <LanguageSelect
+            :model-value="activeLanguage"
+            class="discover-filters__lang"
+            @update:model-value="store.setLanguage($event)"
+          />
         </div>
       </section>
 
@@ -365,7 +379,10 @@ async function onToggleFollow(action, id) {
 }
 
 /* ── Filters ──────────────────────────────────────────────────────────── */
-.discover-filters { display: flex; flex-direction: column; gap: var(--space-sm); }
+.discover-filters { display: flex; flex-direction: column; gap: var(--space-md); }
+.discover-filters__group { display: flex; flex-direction: column; gap: var(--space-sm); }
+.discover-filters__group--language { max-width: 280px; }
+.discover-filters__lang { width: 100%; }
 .discover-filters__label {
   font-size: var(--text-label-sm);
   letter-spacing: 0.05em;

@@ -75,6 +75,7 @@ class BookRepository extends ServiceEntityRepository
         User $viewer,
         ?string $query = null,
         ?Category $category = null,
+        ?string $language = null,
         int $limit = 60,
     ): array {
         $qb = $this->createQueryBuilder('b')
@@ -86,6 +87,10 @@ class BookRepository extends ServiceEntityRepository
             ->setParameter('unavailable', BookStatus::Unavailable)
             ->orderBy('b.createdAt', 'DESC')
             ->setMaxResults($limit);
+
+        if ($language !== null && $language !== '') {
+            $qb->andWhere('b.language = :language')->setParameter('language', $language);
+        }
 
         if ($query !== null && $query !== '') {
             // A book matches when the query is a substring of its title or author.

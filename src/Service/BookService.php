@@ -49,7 +49,8 @@ class BookService
             ->setAuthor(trim($input->author))
             ->setIsbn($input->isbn !== null && trim($input->isbn) !== '' ? trim($input->isbn) : null)
             ->setCoverPath($input->coverPath !== null && trim($input->coverPath) !== '' ? trim($input->coverPath) : null)
-            ->setStatus($input->status);
+            ->setStatus($input->status)
+            ->setLanguage($input->language !== null && trim($input->language) !== '' ? trim($input->language) : null);
 
         $book->clearCategories();
         foreach ($this->categories->findByIds($input->categoryIds) as $category) {

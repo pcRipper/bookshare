@@ -7,6 +7,7 @@ use App\Dto\BookInput;
 use App\Entity\Book;
 use App\Entity\User;
 use App\Enum\BookStatus;
+use App\Language\LanguageCatalog;
 use App\Repository\BookRepository;
 use App\Repository\CategoryRepository;
 use App\Repository\LibraryRequestRepository;
@@ -103,7 +104,15 @@ class BookRestController extends AbstractController
             }
         }
 
-        $books = $repo->findForDiscover($viewer, $q !== '' ? $q : null, $category);
+        $language = null;
+        if (($raw = $request->query->get('language')) !== null && $raw !== '') {
+            if (!LanguageCatalog::isValid((string) $raw)) {
+                return $this->json(['error' => 'Invalid language filter.'], Response::HTTP_BAD_REQUEST);
+            }
+            $language = (string) $raw;
+        }
+
+        $books = $repo->findForDiscover($viewer, $q !== '' ? $q : null, $category, $language);
 
         $pending = array_flip($requests->findPendingBookIdsForRequester($viewer));
         $payload = array_map(

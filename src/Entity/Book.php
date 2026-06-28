@@ -31,6 +31,10 @@ class Book
     #[ORM\Column(enumType: BookStatus::class)]
     private BookStatus $status = BookStatus::Own;
 
+    /** ISO 639-1 language code (e.g. 'en'); null when unspecified. */
+    #[ORM\Column(length: 8, nullable: true)]
+    private ?string $language = null;
+
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     private User $owner;
@@ -75,6 +79,9 @@ class Book
 
     public function getStatus(): BookStatus { return $this->status; }
     public function setStatus(BookStatus $status): static { $this->status = $status; return $this; }
+
+    public function getLanguage(): ?string { return $this->language; }
+    public function setLanguage(?string $language): static { $this->language = $language; return $this; }
 
     public function getOwner(): User { return $this->owner; }
     public function setOwner(User $owner): static

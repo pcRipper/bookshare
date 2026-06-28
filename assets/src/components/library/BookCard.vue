@@ -50,6 +50,11 @@ const statusBadge = computed(() => {
       <h3 class="book-card__title">{{ book.title }}</h3>
       <p class="book-card__author">{{ book.author }}</p>
 
+      <p v-if="book.languageName" class="book-card__lang">
+        <span class="material-symbols-outlined">language</span>
+        {{ book.languageName }}
+      </p>
+
       <div class="book-card__tags">
         <CategoryTag
           v-for="cat in book.categories"
@@ -175,6 +180,16 @@ const statusBadge = computed(() => {
 @media (min-width: 768px) {
   .book-card__author { font-size: var(--text-label-md); }
 }
+
+.book-card__lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-secondary);
+  margin: 0 0 var(--space-base);
+}
+.book-card__lang .material-symbols-outlined { font-size: 14px; }
 
 .book-card__tags {
   display: flex;

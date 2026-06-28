@@ -21,6 +21,7 @@ export const useDiscoverStore = defineStore('discover', () => {
   // Active filters — the view binds these and calls the active fetch to apply.
   const query = ref('')
   const activeCategory = ref(null) // category id | null (= all) — books mode only
+  const activeLanguage = ref(null) // ISO code | null (= any) — books mode only
 
   let reqToken = 0
 
@@ -42,6 +43,7 @@ export const useDiscoverStore = defineStore('discover', () => {
       const params = {}
       if (query.value.trim()) params.q = query.value.trim()
       if (activeCategory.value != null) params.category = activeCategory.value
+      if (activeLanguage.value != null) params.language = activeLanguage.value
       const { data } = await api.get('/books/discover', { params })
       if (token === reqToken) books.value = data
     } catch {
@@ -84,8 +86,11 @@ export const useDiscoverStore = defineStore('discover', () => {
   function setMode(next) {
     if (next === mode.value) return
     mode.value = next
-    // The category filter is books-only; drop it when leaving books mode.
-    if (next === 'accounts') activeCategory.value = null
+    // The category/language filters are books-only; drop them leaving books mode.
+    if (next === 'accounts') {
+      activeCategory.value = null
+      activeLanguage.value = null
+    }
     return fetchActive()
   }
 
@@ -100,9 +105,15 @@ export const useDiscoverStore = defineStore('discover', () => {
     return fetchBooks()
   }
 
+  function setLanguage(code) {
+    activeLanguage.value = code
+    return fetchBooks()
+  }
+
   function clearFilters() {
     query.value = ''
     activeCategory.value = null
+    activeLanguage.value = null
     return fetchActive()
   }
 
@@ -139,8 +150,8 @@ export const useDiscoverStore = defineStore('discover', () => {
   }
 
   return {
-    mode, books, accounts, categories, loading, error, query, activeCategory,
-    init, fetchBooks, fetchAccounts, fetchActive, setMode, setQuery, setCategory,
+    mode, books, accounts, categories, loading, error, query, activeCategory, activeLanguage,
+    init, fetchBooks, fetchAccounts, fetchActive, setMode, setQuery, setCategory, setLanguage,
     clearFilters, requestBorrow, follow, unfollow,
   }
 })

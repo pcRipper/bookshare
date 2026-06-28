@@ -30,6 +30,9 @@ class ResponseMapper
             'isbn'       => $book->getIsbn(),
             'coverPath'  => $book->getCoverPath(),
             'status'     => $book->getStatus()->value,
+            // Language as both the stored ISO code and its display name (null when unset).
+            'language'     => $book->getLanguage(),
+            'languageName' => \App\Language\LanguageCatalog::name($book->getLanguage()),
             // Who currently holds the book — owner while home, borrower while lent.
             'currentHolder' => $this->userSummary($book->getCurrentHolder()),
             'isHome'        => $book->isHome(),

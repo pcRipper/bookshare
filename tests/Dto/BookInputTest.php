@@ -83,4 +83,34 @@ class BookInputTest extends TestCase
 
         self::assertNotEmpty($this->validator->validate($input));
     }
+
+    public function testNullLanguageIsAccepted(): void
+    {
+        $input = new BookInput();
+        $input->title = 'T';
+        $input->author = 'A';
+        $input->language = null;
+
+        self::assertNotContains('language', $this->violations($input));
+    }
+
+    public function testKnownLanguageCodeIsAccepted(): void
+    {
+        $input = new BookInput();
+        $input->title = 'T';
+        $input->author = 'A';
+        $input->language = 'en';
+
+        self::assertNotContains('language', $this->violations($input));
+    }
+
+    public function testUnknownLanguageCodeIsRejected(): void
+    {
+        $input = new BookInput();
+        $input->title = 'T';
+        $input->author = 'A';
+        $input->language = 'xx';
+
+        self::assertContains('language', $this->violations($input));
+    }
 }

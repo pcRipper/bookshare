@@ -55,6 +55,11 @@ function onAction() {
       <h3 class="discover-card__title">{{ book.title }}</h3>
       <p class="discover-card__author">{{ book.author }}</p>
 
+      <p v-if="book.languageName" class="discover-card__lang">
+        <span class="material-symbols-outlined">language</span>
+        {{ book.languageName }}
+      </p>
+
       <RouterLink
         v-if="book.owner"
         :to="`/profile/${book.owner.id}`"
@@ -159,6 +164,16 @@ function onAction() {
   color: var(--color-on-surface-variant);
   margin: 0 0 var(--space-sm);
 }
+
+.discover-card__lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-secondary);
+  margin: 0 0 var(--space-sm);
+}
+.discover-card__lang .material-symbols-outlined { font-size: 14px; }
 
 .discover-card__owner {
   display: inline-flex;

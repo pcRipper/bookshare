@@ -4,7 +4,9 @@
 - [x] Enrich categories color palate
 - [x] add path prefixes for all rest controller routes, rename dedicated controllers to have suffix REST, add for all of them this prefix in .yaml level
 - [x] add audit tables to the system, currentyle for each table(except for migrations, and all these system tables), skip tables, which by themselfs represnt one time stan and wont change at all or change very rarely(like one field at most)
-- [ ] implement server sent events
+- [skip for now] implement server sent events
+- add caching for all images at nginx(if possible)
+- improve overall caching and optimizations
 
 ## Security & Tests
 - [x] add all possible unit tests
@@ -22,6 +24,8 @@
 # Functional
 - [x] Time landing: lending side is saying when will be the due date for book return, no approval from requester side needed, its the requirement of the lending side only
 - [x] Add subscription page and functional of subscriptions. It should be instea of activity page/button. It should look like this: rows with recent books, grouppe by subscribed person, 10-15 books max, as a scrollable horizontal list. Subscriptions list is available at library page, there you can cancel subscription and view people you are subscribed on.
+- [x] add language select for the book
+- add export / import for the book list
 
 
 # Deployment

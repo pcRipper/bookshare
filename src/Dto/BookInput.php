@@ -3,6 +3,7 @@
 namespace App\Dto;
 
 use App\Enum\BookStatus;
+use App\Language\LanguageCatalog;
 use Symfony\Component\Validator\Constraints as Assert;
 
 class BookInput
@@ -23,6 +24,13 @@ class BookInput
 
     /** Denormalised from its string value; an invalid value yields a 422. */
     public BookStatus $status = BookStatus::Own;
+
+    /**
+     * ISO 639-1 language code, or null when unspecified. Must be one of the
+     * catalogued codes — a null skips the check, an unknown code yields a 422.
+     */
+    #[Assert\Choice(callback: [LanguageCatalog::class, 'codes'], message: 'Unknown language.')]
+    public ?string $language = null;
 
     /**
      * IDs of categories to attach. They must already exist — new categories are
