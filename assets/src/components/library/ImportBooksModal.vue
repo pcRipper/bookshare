@@ -73,8 +73,9 @@ async function run() {
 
         <div class="modal__body">
           <p class="modal__hint">
-            Upload a CSV with columns <code>title, author, isbn, language, status, categories</code>.
-            Category names must already exist; unknown ones are ignored.
+            Upload a CSV with columns <code>title, author, isbn, cover, language, status, categories</code>.
+            Category names must already exist; unknown ones are ignored. Books that match one you
+            already have (same title &amp; author) are skipped, never duplicated.
           </p>
 
           <!-- Mode -->

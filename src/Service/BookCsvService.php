@@ -23,6 +23,13 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  *  - abortOnError: reject the whole file if any row is invalid, vs. skip the
  *    bad rows and import the rest.
  *
+ * Either way the import is idempotent on title+author: a row that matches a book
+ * the owner already keeps (or an earlier row in the same file) is skipped rather
+ * than creating a duplicate. In replace mode the "already kept" set is just the
+ * books that survive the wipe (the loaned-out ones), since the home shelf is
+ * cleared first. Duplicates are reported in `errors` but, unlike invalid rows,
+ * never trigger an abort — they are redundant, not malformed.
+ *
  * Like every service here it persists/removes but never flushes — the
  * controller owns the single transaction, so an aborted import (which returns
  * before staging anything) leaves the database untouched.
@@ -30,7 +37,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class BookCsvService
 {
     /** Columns, in export order. Import matches them case-insensitively by header. */
-    private const COLUMNS = ['title', 'author', 'isbn', 'language', 'status', 'categories'];
+    private const COLUMNS = ['title', 'author', 'isbn', 'cover', 'language', 'status', 'categories'];
 
     /** Statuses a book may be imported as — never 'lent', which needs a live loan. */
     private const IMPORTABLE_STATUSES = ['own', 'unavailable'];
@@ -61,6 +68,7 @@ class BookCsvService
                 $book->getTitle(),
                 $book->getAuthor(),
                 $book->getIsbn() ?? '',
+                $book->getCoverPath() ?? '',
                 $book->getLanguage() ?? '',
                 $book->getStatus()->value,
                 implode('; ', array_map(static fn ($c) => $c->getName(), $book->getCategories()->toArray())),
@@ -99,7 +107,7 @@ class BookCsvService
             }
         }
 
-        /** @var BookInput[] $valid */
+        /** @var array<array{line:int, input:BookInput}> $valid */
         $valid = [];
         $errors = [];
         $line = 1; // header was line 1
@@ -120,7 +128,7 @@ class BookCsvService
                 $errors[] = ['line' => $line, 'errors' => $rowErrors];
                 continue;
             }
-            $valid[] = $input;
+            $valid[] = ['line' => $line, 'input' => $input];
         }
         fclose($handle);
 
@@ -129,25 +137,49 @@ class BookCsvService
             return ['imported' => 0, 'skipped' => 0, 'aborted' => true, 'errors' => $errors];
         }
 
-        if ($replace) {
-            foreach ($this->bookRepo->findByOwner($owner) as $existing) {
-                // Books out on loan are frozen — leave them (and their loan history) intact.
-                if ($existing->isHome()) {
-                    $this->em->remove($existing);
-                }
+        // Build the set of title+author keys the owner will still hold after this
+        // run, so we can skip rows that would duplicate them. In replace mode the
+        // home shelf is cleared, so only the loaned-out books seed the set.
+        $seen = [];
+        foreach ($this->bookRepo->findByOwner($owner) as $existing) {
+            if ($replace && $existing->isHome()) {
+                // Frozen books out on loan are left intact; home books are wiped.
+                $this->em->remove($existing);
+                continue;
             }
+            $seen[$this->dedupeKey($existing->getTitle(), $existing->getAuthor())] = true;
         }
 
-        foreach ($valid as $input) {
+        $imported = 0;
+        $duplicates = [];
+        foreach ($valid as ['line' => $rowLine, 'input' => $input]) {
+            $key = $this->dedupeKey($input->title, $input->author);
+            if (isset($seen[$key])) {
+                $duplicates[] = ['line' => $rowLine, 'errors' => ['Duplicate of an existing book — skipped.']];
+                continue;
+            }
+            $seen[$key] = true;
             $this->books->create($owner, $input);
+            ++$imported;
         }
+
+        // Invalid and duplicate rows both count as skipped; merge them for the
+        // report, ordered by line so the UI lists them in file order.
+        $report = array_merge($errors, $duplicates);
+        usort($report, static fn ($a, $b) => $a['line'] <=> $b['line']);
 
         return [
-            'imported' => count($valid),
-            'skipped'  => count($errors),
+            'imported' => $imported,
+            'skipped'  => count($errors) + count($duplicates),
             'aborted'  => false,
-            'errors'   => $errors,
+            'errors'   => $report,
         ];
+    }
+
+    /** Case-insensitive title+author identity used to detect duplicate books. */
+    private function dedupeKey(string $title, string $author): string
+    {
+        return mb_strtolower(trim($title)) . "\0" . mb_strtolower(trim($author));
     }
 
     /**
@@ -187,6 +219,8 @@ class BookCsvService
         $input->author = $get('author');
         $isbn = $get('isbn');
         $input->isbn = $isbn !== '' ? $isbn : null;
+        $cover = $get('cover');
+        $input->coverPath = $cover !== '' ? $cover : null;
         $language = strtolower($get('language'));
         $input->language = $language !== '' ? $language : null;
 

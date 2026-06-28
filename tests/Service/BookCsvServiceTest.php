@@ -51,17 +51,89 @@ class BookCsvServiceTest extends TestCase
     {
         $owner = new User();
         $book = (new Book())->setOwner($owner)->setTitle('Dune')->setAuthor('Herbert')
-            ->setIsbn('978-0441013593')->setLanguage('en');
+            ->setIsbn('978-0441013593')->setCoverPath('/covers/dune.jpg')->setLanguage('en');
         $book->addCategory((new Category())->setName('Sci-Fi')->setColorHex('#E8F0EA'));
 
         $csv = $this->service()->export([$book]);
 
         $lines = preg_split('/\r\n|\n/', trim($csv));
-        self::assertSame('title,author,isbn,language,status,categories', $lines[0]);
+        self::assertSame('title,author,isbn,cover,language,status,categories', $lines[0]);
         self::assertStringContainsString('Dune', $lines[1]);
         self::assertStringContainsString('Herbert', $lines[1]);
+        self::assertStringContainsString('/covers/dune.jpg', $lines[1]);
         self::assertStringContainsString('en', $lines[1]);
         self::assertStringContainsString('Sci-Fi', $lines[1]);
+    }
+
+    public function testImportSetsCoverFromCoverColumn(): void
+    {
+        $created = [];
+        $em = $this->createStub(EntityManagerInterface::class);
+        $em->method('persist')->willReturnCallback(function (Book $b) use (&$created) { $created[] = $b; });
+
+        $csv = "title,author,cover\nDune,Herbert,/covers/dune.jpg\n";
+
+        $summary = $this->service($em)->import(new User(), $csv, replace: false, abortOnError: false);
+
+        self::assertSame(1, $summary['imported']);
+        self::assertCount(1, $created);
+        self::assertSame('/covers/dune.jpg', $created[0]->getCoverPath());
+    }
+
+    public function testAppendSkipsDuplicateOfExistingBook(): void
+    {
+        $owner = new User();
+        $existing = (new Book())->setOwner($owner)->setTitle('Dune')->setAuthor('Herbert');
+
+        $bookRepo = $this->createStub(BookRepository::class);
+        $bookRepo->method('findByOwner')->willReturn([$existing]);
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        // Only the genuinely-new row reaches persist; the duplicate is skipped.
+        $em->expects($this->once())->method('persist');
+        $em->expects($this->never())->method('remove');
+
+        // Case/whitespace-insensitive: "  dune ,  herbert" still matches "Dune,Herbert".
+        $csv = "title,author\n  dune ,  herbert\n1984,Orwell\n";
+
+        $summary = $this->service($em, $bookRepo)->import($owner, $csv, replace: false, abortOnError: false);
+
+        self::assertSame(1, $summary['imported']);
+        self::assertSame(1, $summary['skipped']);
+        self::assertSame(2, $summary['errors'][0]['line']); // the duplicate row
+        self::assertStringContainsString('Duplicate', $summary['errors'][0]['errors'][0]);
+    }
+
+    public function testAppendSkipsDuplicateRowsWithinTheSameFile(): void
+    {
+        $em = $this->createMock(EntityManagerInterface::class);
+        // Three identical rows → one persist; the two repeats are skipped.
+        $em->expects($this->once())->method('persist');
+
+        $csv = "title,author\nDune,Herbert\nDune,Herbert\nDune,Herbert\n";
+
+        $summary = $this->service($em)->import(new User(), $csv, replace: false, abortOnError: false);
+
+        self::assertSame(1, $summary['imported']);
+        self::assertSame(2, $summary['skipped']);
+    }
+
+    public function testDuplicatesDoNotTriggerAbort(): void
+    {
+        $owner = new User();
+        $existing = (new Book())->setOwner($owner)->setTitle('Dune')->setAuthor('Herbert');
+
+        $bookRepo = $this->createStub(BookRepository::class);
+        $bookRepo->method('findByOwner')->willReturn([$existing]);
+
+        // A duplicate is redundant, not malformed, so abortOnError must not abort.
+        $csv = "title,author\nDune,Herbert\n1984,Orwell\n";
+
+        $summary = $this->service(null, $bookRepo)->import($owner, $csv, replace: false, abortOnError: true);
+
+        self::assertFalse($summary['aborted']);
+        self::assertSame(1, $summary['imported']);
+        self::assertSame(1, $summary['skipped']);
     }
 
     public function testImportAppendsValidRowsAndSkipsInvalid(): void
