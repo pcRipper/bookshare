@@ -15,6 +15,7 @@ import BorrowingCard from '@/components/library/BorrowingCard.vue'
 import RequestCard from '@/components/library/RequestCard.vue'
 import LoanHistoryCard from '@/components/library/LoanHistoryCard.vue'
 import ManageBookModal from '@/components/library/ManageBookModal.vue'
+import ImportBooksModal from '@/components/library/ImportBooksModal.vue'
 
 const store = useLibraryStore()
 const subscriptions = useSubscriptionsStore()
@@ -182,6 +183,28 @@ async function onModalDelete(id) {
     modalBusy.value = false
   }
 }
+
+/* ── Import / export ─────────────────────────────────────────────────── */
+const importOpen = ref(false)
+const exporting = ref(false)
+
+async function onExport() {
+  if (exporting.value) return
+  exporting.value = true
+  try {
+    await store.exportBooks()
+  } catch (e) {
+    toast.error(apiErrorMessage(e, 'Could not export your books.'))
+  } finally {
+    exporting.value = false
+  }
+}
+
+function onImported() {
+  // A replace import may empty Lending; refresh it next time it's viewed.
+  loaded.value.lending = false
+  toast.success('Your collection has been updated.')
+}
 </script>
 
 <template>
@@ -256,6 +279,19 @@ async function onModalDelete(id) {
 
         <!-- Collection tab -->
         <div v-if="activeTab === 'collection'" role="tabpanel">
+          <!-- Import / export toolbar -->
+          <div class="collection-toolbar">
+            <button class="toolbar-btn" type="button" @click="importOpen = true">
+              <span class="material-symbols-outlined">upload</span>
+              Import
+            </button>
+            <button class="toolbar-btn" type="button" :disabled="exporting || !collection.length" @click="onExport">
+              <BaseSpinner v-if="exporting" size="sm" />
+              <span v-else class="material-symbols-outlined">download</span>
+              Export
+            </button>
+          </div>
+
           <BookGridSkeleton v-if="loading.collection && !collection.length" :count="8" />
           <div v-else class="book-grid">
             <BookCard
@@ -435,6 +471,13 @@ async function onModalDelete(id) {
       @save="onModalSave"
       @delete="onModalDelete"
       @close="modalOpen = false"
+    />
+
+    <!-- Import books modal -->
+    <ImportBooksModal
+      :open="importOpen"
+      @imported="onImported"
+      @close="importOpen = false"
     />
   </AppLayout>
 </template>
@@ -636,6 +679,34 @@ async function onModalDelete(id) {
 }
 .tab-btn--active .tab-badge { background: var(--color-primary); }
 .tab-btn:not(.tab-btn--active) .tab-badge { background: var(--color-outline); }
+
+/* ── Collection toolbar (import / export) ─────────────────────────────── */
+.collection-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  padding-top: var(--space-sm);
+}
+.toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 8px 16px;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-default);
+  background: var(--color-surface-container-lowest);
+  font-size: var(--text-label-md);
+  font-weight: 500;
+  color: var(--color-on-surface-variant);
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.toolbar-btn:hover:not(:disabled) {
+  background: var(--color-surface-container-low);
+  color: var(--color-on-background);
+  border-color: var(--color-outline);
+}
+.toolbar-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.toolbar-btn .material-symbols-outlined { font-size: 18px; }
 
 /* ── Book grid ────────────────────────────────────────────────────────── */
 .book-grid {

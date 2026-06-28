@@ -132,6 +132,31 @@ export const useLibraryStore = defineStore('library', () => {
     await Promise.all([fetchCollection(), fetchMe()])
   }
 
+  // Download the collection as a CSV file (triggers a browser download).
+  async function exportBooks() {
+    const { data } = await api.get('/books/export', { responseType: 'blob' })
+    const url = URL.createObjectURL(data)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'folioshare-books.csv'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
+
+  // Upload a CSV to bulk-import books. `mode` = append|replace, `onError` =
+  // skip|abort. Returns the server summary { imported, skipped, aborted, errors }.
+  async function importBooks(file, { mode = 'append', onError = 'skip' } = {}) {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('mode', mode)
+    form.append('onError', onError)
+    const { data } = await api.post('/books/import', form)
+    await Promise.all([fetchCollection(), fetchMe()])
+    return data
+  }
+
   async function approveRequest(id, dueDate = null) {
     await api.post(`/requests/${id}/approve`, { dueDate })
     requests.value = requests.value.filter(r => r.id !== id)
@@ -165,7 +190,7 @@ export const useLibraryStore = defineStore('library', () => {
     profile, stats, collection, lending, requests, history, borrowing, borrowingHistory, categories, loading, error,
     fetchMe, fetchCollection, fetchLending, fetchRequests, fetchHistory, fetchBorrowing, fetchBorrowingHistory, fetchCategories,
     searchCategories, createCategory,
-    createBook, updateBook, deleteBook,
+    createBook, updateBook, deleteBook, exportBooks, importBooks,
     approveRequest, declineRequest, confirmReturn, returnBook,
   }
 })

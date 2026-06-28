@@ -48,6 +48,29 @@ class CategoryRepository extends ServiceEntityRepository
     }
 
     /**
+     * Exact (case-insensitive) lookup of multiple categories by name. Used by
+     * CSV import to resolve category columns against the existing vocabulary —
+     * unknown names simply yield no match.
+     *
+     * @param string[] $names
+     * @return Category[]
+     */
+    public function findByNames(array $names): array
+    {
+        if ($names === []) {
+            return [];
+        }
+
+        $lowered = array_map(static fn (string $n) => mb_strtolower($n), $names);
+
+        return $this->createQueryBuilder('c')
+            ->where('LOWER(c.name) IN (:names)')
+            ->setParameter('names', $lowered)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * @param int[] $ids
      * @return Category[]
      */

@@ -13,9 +13,11 @@ use App\Repository\CategoryRepository;
 use App\Repository\LibraryRequestRepository;
 use App\Repository\UserRepository;
 use App\Security\Voter\BookVoter;
+use App\Service\BookCsvService;
 use App\Service\BookService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,6 +30,7 @@ class BookRestController extends AbstractController
     public function __construct(
         private readonly ResponseMapper $mapper,
         private readonly BookService $books,
+        private readonly BookCsvService $csv,
         private readonly EntityManagerInterface $em,
     ) {}
 
@@ -121,6 +124,52 @@ class BookRestController extends AbstractController
         );
 
         return $this->json($payload);
+    }
+
+    /** Download the signed-in user's collection as a CSV file. */
+    #[Route('/export', methods: ['GET'])]
+    public function export(BookRepository $repo): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        $csv = $this->csv->export($repo->findByOwner($user));
+
+        return new Response($csv, Response::HTTP_OK, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="folioshare-books.csv"',
+        ]);
+    }
+
+    /**
+     * Bulk-import books from an uploaded CSV. The `mode` (append|replace) and
+     * `onError` (skip|abort) form fields pick one of the four import strategies.
+     * Returns a summary; an aborted run that imported nothing is a 422.
+     */
+    #[Route('/import', methods: ['POST'])]
+    public function import(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        $file = $request->files->get('file');
+        if (!$file instanceof UploadedFile) {
+            return $this->json(['error' => 'No file was uploaded.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $replace = $request->request->get('mode') === 'replace';
+        $abort   = $request->request->get('onError') === 'abort';
+
+        $summary = $this->csv->import($user, (string) file_get_contents($file->getPathname()), $replace, $abort);
+
+        if ($summary['aborted']) {
+            // Nothing was staged — surface the validation errors without committing.
+            return $this->json($summary, Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $this->em->flush();
+
+        return $this->json($summary);
     }
 
     #[Route('', methods: ['POST'])]

@@ -25,7 +25,7 @@
 - [x] Time landing: lending side is saying when will be the due date for book return, no approval from requester side needed, its the requirement of the lending side only
 - [x] Add subscription page and functional of subscriptions. It should be instea of activity page/button. It should look like this: rows with recent books, grouppe by subscribed person, 10-15 books max, as a scrollable horizontal list. Subscriptions list is available at library page, there you can cancel subscription and view people you are subscribed on.
 - [x] add language select for the book
-- add export / import for the book list
+- [x] add export / import for the book list
 
 
 # Deployment
