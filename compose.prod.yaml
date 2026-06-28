@@ -41,8 +41,11 @@ services:
       - ./.env:/var/www/app/.env:ro
       # JWT keys live on the droplet (gitignored), mounted read-only.
       - ./config/jwt:/var/www/app/config/jwt:ro
-      # Persist uploaded files (avatars, covers) across deployments.
-      - app_uploads:/var/www/app/var/share
+      # Persist localized avatars across deployments AND share them with nginx.
+      # AvatarLocalizer writes to public/uploads/avatars and nginx serves
+      # /uploads/ from public/ — so the volume must live there and be visible to
+      # the nginx container too (mounted read-only below).
+      - app_uploads:/var/www/app/public/uploads
     healthcheck:
       test: ["CMD-SHELL", "SCRIPT_NAME=/fpm-ping SCRIPT_FILENAME=/fpm-ping REQUEST_METHOD=GET cgi-fcgi -bind -connect 127.0.0.1:9000 | grep -q pong"]
       interval: 10s
@@ -74,6 +77,9 @@ services:
       - ${TLS_CERT_DIR:-./docker/production/nginx/certs}:/etc/nginx/certs
       # Shared ACME http-01 webroot — host certbot writes challenges here.
       - ${ACME_WEBROOT:-./var/certbot}:/var/www/certbot:ro
+      # Localized avatars written by phpfpm — served read-only from here at
+      # /uploads/ (same named volume the phpfpm service writes to).
+      - app_uploads:/var/www/app/public/uploads:ro
     depends_on:
       phpfpm:
         condition: service_healthy
