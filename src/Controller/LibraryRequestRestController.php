@@ -10,6 +10,7 @@ use App\Enum\RequestStatus;
 use App\Repository\BookRepository;
 use App\Repository\LibraryRequestRepository;
 use App\Service\LibraryRequestService;
+use App\Service\LoanEventPublisher;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,6 +25,7 @@ class LibraryRequestRestController extends AbstractController
         private readonly ResponseMapper $mapper,
         private readonly LibraryRequestService $service,
         private readonly EntityManagerInterface $em,
+        private readonly LoanEventPublisher $publisher,
     ) {}
 
     /**
@@ -112,6 +114,9 @@ class LibraryRequestRestController extends AbstractController
         }
         $this->em->flush();
 
+        // After commit: signal the book owner that a request landed.
+        $this->publisher->publishLoanSignal($libraryRequest, LoanEventPublisher::REQUEST_RECEIVED);
+
         return $this->json($this->mapper->request($libraryRequest), Response::HTTP_CREATED);
     }
 
@@ -132,7 +137,7 @@ class LibraryRequestRestController extends AbstractController
             }
         }
 
-        return $this->runLoanAction(fn () => $this->service->approve($libraryRequest, $user, $dueDate), $libraryRequest);
+        return $this->runLoanAction(fn () => $this->service->approve($libraryRequest, $user, $dueDate), $libraryRequest, LoanEventPublisher::REQUEST_APPROVED);
     }
 
     /** Owner declines a borrow request. */
@@ -142,7 +147,7 @@ class LibraryRequestRestController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        return $this->runLoanAction(fn () => $this->service->decline($libraryRequest, $user), $libraryRequest);
+        return $this->runLoanAction(fn () => $this->service->decline($libraryRequest, $user), $libraryRequest, LoanEventPublisher::REQUEST_DECLINED);
     }
 
     /** Borrower marks the book as returned, awaiting the owner's confirmation. */
@@ -152,7 +157,7 @@ class LibraryRequestRestController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        return $this->runLoanAction(fn () => $this->service->requestReturn($libraryRequest, $user), $libraryRequest);
+        return $this->runLoanAction(fn () => $this->service->requestReturn($libraryRequest, $user), $libraryRequest, LoanEventPublisher::RETURN_REQUESTED);
     }
 
     /** Owner confirms the book was received back, closing the loan. */
@@ -162,7 +167,7 @@ class LibraryRequestRestController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        return $this->runLoanAction(fn () => $this->service->confirmReturn($libraryRequest, $user), $libraryRequest);
+        return $this->runLoanAction(fn () => $this->service->confirmReturn($libraryRequest, $user), $libraryRequest, LoanEventPublisher::RETURN_CONFIRMED);
     }
 
     /**
@@ -170,7 +175,7 @@ class LibraryRequestRestController extends AbstractController
      * flushing once on success. Ownership violations (AccessDeniedException) bubble
      * up to the kernel as 403.
      */
-    private function runLoanAction(callable $action, LibraryRequest $libraryRequest): JsonResponse
+    private function runLoanAction(callable $action, LibraryRequest $libraryRequest, string $signalReason): JsonResponse
     {
         try {
             $action();
@@ -178,6 +183,9 @@ class LibraryRequestRestController extends AbstractController
             return $this->json(['error' => $e->getMessage()], Response::HTTP_CONFLICT);
         }
         $this->em->flush();
+
+        // After commit: signal the affected party so their SPA refetches.
+        $this->publisher->publishLoanSignal($libraryRequest, $signalReason);
 
         return $this->json($this->mapper->request($libraryRequest));
     }

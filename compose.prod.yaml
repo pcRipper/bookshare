@@ -86,6 +86,27 @@ services:
     networks:
       - app
 
+  # ── Mercure hub (real-time SSE) ──────────────────────────────────────────────
+  # Holds the long-lived browser SSE connections so the 5-worker PHP-FPM pool is
+  # never tied up by a client. PHP publishes over the internal `app` network;
+  # nginx proxies the public /.well-known/mercure endpoint to it (TLS terminates
+  # at nginx, so the hub stays on plain HTTP via SERVER_NAME=:80).
+  mercure:
+    image: ${MERCURE_IMAGE:-dunglas/mercure:v0.24}
+    restart: always
+    environment:
+      SERVER_NAME: ':80'
+      MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_JWT_SECRET:-!ChangeThisMercureSecret!}
+      MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_JWT_SECRET:-!ChangeThisMercureSecret!}
+      # Set MERCURE_CORS_ORIGINS in .env to the public origin(s), e.g. https://folioshare.example.
+      MERCURE_EXTRA_DIRECTIVES: |
+        cors_origins ${MERCURE_CORS_ORIGINS:-https://localhost}
+    volumes:
+      - mercure_data:/data
+      - mercure_config:/config
+    networks:
+      - app
+
   # ── PostgreSQL ─────────────────────────────────────────────────────────────
   postgresql:
     image: ${POSTGRES_IMAGE:-postgres:16-alpine}
@@ -113,3 +134,5 @@ networks:
 volumes:
   postgresql_data:
   app_uploads:
+  mercure_data:
+  mercure_config:
