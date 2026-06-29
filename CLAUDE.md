@@ -16,6 +16,7 @@ bookshare/
 │   ├── stores/          # Pinia stores (auth, library, discover, profile, toast)
 │   ├── views/           # Route-level pages
 │   ├── components/      # layout/, library/, discover/, profile/, ui/
+│   ├── composables/     # useMercure (real-time SSE subscription)
 │   └── utils/           # categoryColors, languages, apiError, time
 ├── src/                 # Symfony PHP source (autowired, autoconfigured)
 │   ├── Controller/      # API controllers — *RestController, #[Route] attributes
@@ -32,7 +33,7 @@ bookshare/
 │   └── DataFixtures/    # Dev seed data (AppFixtures)
 ├── config/
 │   ├── packages/        # Bundle config (doctrine, security, nelmio_cors, lexik_jwt,
-│   │                    #   rate_limiter, dh_auditor…)
+│   │                    #   rate_limiter, dh_auditor, mercure…)
 │   ├── routes.yaml      # Imports src/Controller/ under the shared `/api` prefix
 │   └── jwt/             # RSA keypair — gitignored, generated once
 ├── migrations/          # Doctrine migrations (incl. *_audit tables)
@@ -47,6 +48,7 @@ bookshare/
 **Request flow in dev:**
 - Browser → Vite (`:5173`) for all Vue assets
 - `fetch('/api/…')` → Vite proxy → Symfony (`:8000`)
+- SSE: `EventSource('/.well-known/mercure')` → Nginx/Vite proxy → **Mercure hub** (standalone container), never PHP-FPM
 - In prod, Nginx serves both `public/build/` (Vue) and proxies to PHP-FPM (Symfony)
 
 ## Tech Stack
@@ -62,6 +64,7 @@ bookshare/
 | CORS | `nelmio/cors-bundle` ^2.6 |
 | Rate limiting | `symfony/rate-limiter` |
 | Audit | `damienharper/auditor-bundle` `6.3.*` (see _Audit trail_) |
+| Real-time | `symfony/mercure-bundle` — SSE via a standalone Mercure hub container (see _Real-time_) |
 | Dev/test | `phpunit/phpunit` ^13.2, `doctrine-fixtures-bundle`, `maker-bundle`, `browser-kit`, `css-selector`, `debug-bundle` |
 
 **Frontend** — Vue 3 SPA, plain JS (no TypeScript), Composition API throughout.
@@ -112,7 +115,7 @@ Sign-in is **Google OAuth only** (the original email/password + register screens
 **ActivityItem** — `actor`, `action_type` (`borrowed | returned | commented | followed | added_book`), nullable `target_book` / `target_user`, `comment_text?`, `created_at`.
 
 ### Lending lifecycle (the request state machine)
-Owned by `LibraryRequestService`; each transition appends a `LibraryRequestEvent` and the controller flushes once.
+Owned by `LibraryRequestService`; each transition appends a `LibraryRequestEvent` and the controller flushes once, then publishes a real-time Mercure signal to the affected party (see _Real-time_).
 
 ```
 requester creates ──▶ pending
@@ -212,6 +215,15 @@ A book's language is an optional **ISO 639-1 code** validated against one source
 
 ### Audit trail
 `damienharper/auditor-bundle` (`config/packages/dh_auditor.yaml`) writes an `<table>_audit` companion (insert/update/delete diffs + acting user) for a **whitelist**: `Book`, `User`, `Category`, `LibraryRequest`. Append-only logs (`ActivityItem`, `LibraryRequestEvent`) are intentionally excluded. The bundle's web **viewer is disabled** (this is a JSON API); its Twig/asset/translation deps come along only to satisfy the bundle and are unused. Pinned to `6.3.*` because 7.x requires Symfony 8.
+
+### Real-time (Mercure / SSE)
+Loan-lifecycle changes are pushed to clients over **Server-Sent Events** through a **standalone Mercure hub** (the `mercure` Docker service, `dunglas/mercure`) — long-lived connections live on the Go hub, never on the 5-worker PHP-FPM pool. Config: `config/packages/mercure.yaml` + `MERCURE_URL` / `MERCURE_PUBLIC_URL` (kept **relative** so the subscribe-cookie follows the serving host) / `MERCURE_JWT_SECRET` in `.env`; Nginx proxies `/.well-known/mercure` to the hub with **buffering and gzip off** and request-time DNS resolution.
+
+Design is **signal-and-refetch, not state-push**: after a transition commits, `App\Service\LoanEventPublisher` publishes a **private** `{ reason, requestId }` signal to the affected user's `user/{id}` topic. Publishing happens **after `flush()`** (the controller boundary) so any client refetch reads committed truth, and it is **best-effort** — a hub outage is logged, never fails the transition. The SPA (`assets/src/composables/useMercure.js`) shows a toast and refetches the affected lists via the **existing authenticated store actions**, so authorization stays in the REST layer and the channel is reconnect/race-safe.
+
+- **Recipients:** `request.received` / `return.requested` → book **owner**; `request.approved` / `request.declined` / `return.confirmed` → **requester**.
+- **Subscriber auth:** EventSource can't send the JWT header, so `GET /api/mercure/token` (`MercureRestController`) mints a signed, HttpOnly subscribe-cookie scoped to the caller's **own** `user/{id}` topic; the `private` flag enforces per-user isolation at the hub.
+- **Reconnect:** the composable refreshes the cookie and reconnects with backoff, and on reconnect refetches every loan list to catch signals missed during the gap (the cookie's JWT expires ~hourly).
 
 ### Frontend imports & UX patterns
 - The `@` alias resolves to `assets/src/` — `import Foo from '@/components/Foo.vue'`.
