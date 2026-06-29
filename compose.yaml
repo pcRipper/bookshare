@@ -86,6 +86,30 @@ services:
     networks:
       - app
 
+  # ── Mercure hub (real-time SSE) ──────────────────────────────────────────────
+  # Standalone Go/Caddy hub that holds the long-lived browser SSE connections, so
+  # PHP-FPM never ties up a worker per client. PHP publishes to it over the
+  # internal network; the browser subscribes through nginx at /.well-known/mercure.
+  # SERVER_NAME=:80 keeps Caddy on plain HTTP — nginx terminates TLS.
+  mercure:
+    image: ${MERCURE_IMAGE:-dunglas/mercure:v0.24}
+    restart: unless-stopped
+    environment:
+      SERVER_NAME: ':80'
+      # HMAC secrets the hub uses to verify publisher / subscriber JWTs. Both come
+      # from the single MERCURE_JWT_SECRET shared with Symfony's mercure.yaml.
+      MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_JWT_SECRET:-!ChangeThisMercureSecret!}
+      MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_JWT_SECRET:-!ChangeThisMercureSecret!}
+      # anonymous off ⇒ a valid subscriber JWT (our per-user cookie) is required.
+      # cors_origins lets the credentialed EventSource handshake through in dev.
+      MERCURE_EXTRA_DIRECTIVES: |
+        cors_origins ${MERCURE_CORS_ORIGINS:-https://localhost http://localhost}
+    volumes:
+      - mercure_data:/data
+      - mercure_config:/config
+    networks:
+      - app
+
   # ── Monitoring (optional) ──────────────────────────────────────────────────
   # Start with: docker compose --profile logs up -d
   #
@@ -153,3 +177,5 @@ volumes:
   grafana_data:
   prometheus_data:
   alloy_data:
+  mercure_data:
+  mercure_config:

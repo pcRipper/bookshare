@@ -51,6 +51,14 @@ export default defineConfig(({ command }) => ({
         changeOrigin: true,
         secure: false,
       },
+      // Mercure SSE hub — proxied through nginx so the browser reaches it
+      // same-origin (:5173). Keeps the subscribe-cookie first-party and avoids
+      // SameSite=None cross-port issues in dev. Must not buffer the stream.
+      '/.well-known/mercure': {
+        target: 'https://localhost',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 }))
