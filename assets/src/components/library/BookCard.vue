@@ -16,6 +16,7 @@ defineEmits(['click'])
 // obvious at a glance — it stays in the grid, just flagged.
 const statusBadge = computed(() => {
   if (props.book.status === 'lent') return { label: 'On Loan', icon: 'handshake', kind: 'lent' }
+  if (props.book.status === 'currently_reading') return { label: 'Reading', icon: 'auto_stories', kind: 'reading' }
   if (props.book.status === 'unavailable') return { label: 'Unavailable', icon: 'block', kind: 'unavailable' }
   return null
 })
@@ -144,6 +145,10 @@ const statusBadge = computed(() => {
 .book-card__badge--unavailable {
   background: var(--color-inverse-surface);
   color: var(--color-inverse-on-surface);
+}
+.book-card__badge--reading {
+  background: var(--color-tertiary);
+  color: #ffffff;
 }
 
 /* Body */

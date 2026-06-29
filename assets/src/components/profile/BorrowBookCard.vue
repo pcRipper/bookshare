@@ -21,6 +21,7 @@ const available = computed(() => props.book.status === 'own')
 // Corner badge for non-available books in the full collection view.
 const statusBadge = computed(() => {
   if (props.book.status === 'lent') return 'On Loan'
+  if (props.book.status === 'currently_reading') return 'Reading'
   if (props.book.status === 'unavailable') return 'Unavailable'
   return null
 })
@@ -29,7 +30,10 @@ const action = computed(() => {
   if (props.isSelf) return { label: 'Manage', state: 'manage' }
   if (props.book.requested) return { label: 'Requested', state: 'requested' }
   if (available.value) return { label: 'Request to Borrow', state: 'available' }
-  return { label: props.book.status === 'lent' ? 'Currently Lent' : 'Unavailable', state: 'disabled' }
+  const label = props.book.status === 'lent' ? 'Currently Lent'
+    : props.book.status === 'currently_reading' ? 'Reading'
+    : 'Unavailable'
+  return { label, state: 'disabled' }
 })
 
 function onAction() {

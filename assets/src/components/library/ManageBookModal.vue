@@ -13,10 +13,14 @@ const props = defineProps({
 
 const emit = defineEmits(['save', 'delete', 'close'])
 
-const STATUS_OPTIONS = [
-  { value: 'own',         label: 'Available' },
-  { value: 'lent',        label: 'Lent out' },
-  { value: 'unavailable', label: 'Unavailable' },
+// Statuses an owner may pick by hand. 'lent' is intentionally absent: it's set
+// only by the lending lifecycle (approve), never chosen manually — doing so would
+// flag a book as on-loan while it still sits home. It's still shown (read-only)
+// when viewing a lent book, via `statusOptions` below.
+const SELECTABLE_STATUSES = [
+  { value: 'own',               label: 'Available' },
+  { value: 'currently_reading', label: 'Currently reading' },
+  { value: 'unavailable',       label: 'Unavailable' },
 ]
 
 const form = ref(blank())
@@ -29,6 +33,14 @@ const isEdit = computed(() => !!props.book)
 // A book that's out on loan is locked server-side (BookVoter): show its details
 // but block any mutation until it's returned. `canEdit` comes from the API.
 const readOnly = computed(() => isEdit.value && props.book?.canEdit === false)
+
+// A lent book opens read-only; surface its 'Lent out' value so the (disabled)
+// dropdown renders correctly without offering it as a manual choice elsewhere.
+const statusOptions = computed(() =>
+  form.value.status === 'lent'
+    ? [{ value: 'lent', label: 'Lent out' }, ...SELECTABLE_STATUSES]
+    : SELECTABLE_STATUSES,
+)
 
 function blank() {
   // categories: array of { id, name, colorHex }
@@ -139,7 +151,7 @@ function onDelete() {
             <div class="field">
               <label class="field__label" for="mb-status">Status</label>
               <select id="mb-status" v-model="form.status" class="input" :disabled="readOnly">
-                <option v-for="opt in STATUS_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
               </select>
             </div>
           </div>
