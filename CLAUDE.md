@@ -93,6 +93,7 @@ Sign-in is **Google OAuth only** (the original email/password + register screens
 | `/discover` | `DiscoverView` | Browse the community. Search, category filter pills, **language filter**, trending/recommended grids |
 | `/profile/:id` | `ProfileView` | Public profile. Avatar, bio, stats; book collection with "Request to Borrow" |
 | `/settings` | `SettingsView` | Account profile (avatar, name, bio 300-char, location), **privacy toggle**, sign out |
+| `/changelog` | `ChangelogView` | Static **Release Notes** — a flat list of versions (label + date + change notes). Data lives in `assets/src/data/changelog.js` (no API); reached via the footer's "Release Notes" link (the old dead-end footer links were removed) |
 | `/` | — | Redirects to `/library` |
 | `/:pathMatch(.*)*` | `NotFoundView` | Catch-all 404 |
 

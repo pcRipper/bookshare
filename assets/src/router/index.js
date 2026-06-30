@@ -44,6 +44,11 @@ const router = createRouter({
       component: () => import('@/views/SettingsView.vue'),
     },
     {
+      path: '/changelog',
+      name: 'changelog',
+      component: () => import('@/views/ChangelogView.vue'),
+    },
+    {
       path: '/',
       redirect: '/library',
     },
