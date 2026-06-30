@@ -29,9 +29,9 @@ const activeTab = ref('collection')
 
 const tabs = computed(() => [
   { key: 'collection', label: 'Collection' },
-  { key: 'borrowing',  label: 'Borrowing', badge: (borrowing.value.length + pendingBorrowing.value.length) || null },
+  { key: 'borrowing',  label: 'Borrowing', badge: borrowing.value.length || null },
   { key: 'lending',    label: 'Lending' },
-  { key: 'requests',   label: 'Requests', badge: requests.value.length || null },
+  { key: 'requests',   label: 'Requests', badge: (requests.value.length + pendingBorrowing.value.length) || null },
   { key: 'following',  label: 'Following', badge: following.value.length || null },
   { key: 'history',    label: 'History' },
 ])
@@ -69,9 +69,9 @@ onMounted(() => {
 })
 
 watch(activeTab, tab => {
-  if (tab === 'borrowing' && !loaded.value.borrowing) { loaded.value.borrowing = true; store.fetchBorrowing(); store.fetchPendingBorrowing() }
+  if (tab === 'borrowing' && !loaded.value.borrowing) { loaded.value.borrowing = true; store.fetchBorrowing() }
   if (tab === 'lending'  && !loaded.value.lending)  { loaded.value.lending  = true; store.fetchLending() }
-  if (tab === 'requests' && !loaded.value.requests) { loaded.value.requests = true; store.fetchRequests() }
+  if (tab === 'requests' && !loaded.value.requests) { loaded.value.requests = true; store.fetchRequests(); store.fetchPendingBorrowing() }
   if (tab === 'following' && !loaded.value.following) { loaded.value.following = true; subscriptions.fetchFollowing() }
   if (tab === 'history') loadHistorySide(historySide.value)
 })
@@ -327,35 +327,16 @@ function onImported() {
 
         <!-- Borrowing tab (books I'm borrowing from others) -->
         <div v-else-if="activeTab === 'borrowing'" role="tabpanel">
-          <BookGridSkeleton v-if="loading.borrowing && !borrowing.length && !pendingBorrowing.length" :count="4" />
-          <template v-else-if="borrowing.length || pendingBorrowing.length">
-            <!-- Requests still awaiting the owner's decision — the borrower can withdraw these. -->
-            <section v-if="pendingBorrowing.length" class="borrowing-section">
-              <h3 class="borrowing-section__title">Awaiting approval</h3>
-              <div class="book-grid">
-                <PendingRequestCard
-                  v-for="req in pendingBorrowing"
-                  :key="req.id"
-                  :request="req"
-                  :pending="cancelling.has(req.id)"
-                  @cancel="handleCancel"
-                />
-              </div>
-            </section>
-
-            <section v-if="borrowing.length" class="borrowing-section">
-              <h3 v-if="pendingBorrowing.length" class="borrowing-section__title">Currently borrowing</h3>
-              <div class="book-grid">
-                <BorrowingCard
-                  v-for="loan in borrowing"
-                  :key="loan.id"
-                  :loan="loan"
-                  :pending="returning.has(loan.id)"
-                  @return="handleReturn"
-                />
-              </div>
-            </section>
-          </template>
+          <BookGridSkeleton v-if="loading.borrowing && !borrowing.length" :count="4" />
+          <div v-else-if="borrowing.length" class="book-grid">
+            <BorrowingCard
+              v-for="loan in borrowing"
+              :key="loan.id"
+              :loan="loan"
+              :pending="returning.has(loan.id)"
+              @return="handleReturn"
+            />
+          </div>
           <div v-else class="empty-state">
             <span class="material-symbols-outlined empty-state__icon">auto_stories</span>
             <p class="empty-state__text">You're not borrowing any books right now.</p>
@@ -375,7 +356,7 @@ function onImported() {
           </div>
         </div>
 
-        <!-- Requests tab -->
+        <!-- Requests tab — both directions: incoming (owner inbox) + outgoing (borrower) -->
         <div v-else-if="activeTab === 'requests'" role="tabpanel">
           <div v-if="loading.requests" class="request-grid">
             <div v-for="n in 2" :key="n" class="request-skeleton">
@@ -393,18 +374,38 @@ function onImported() {
               </div>
             </div>
           </div>
-          <p v-else-if="requests.length === 0" class="empty-requests">All caught up — no pending requests.</p>
-          <div v-else class="request-grid">
-            <RequestCard
-              v-for="req in requests"
-              :key="req.id"
-              :request="req"
-              :pending="processing[req.id] || null"
-              @approve="handleApprove"
-              @decline="handleDecline"
-              @confirm-return="handleConfirmReturn"
-            />
-          </div>
+          <template v-else-if="requests.length || pendingBorrowing.length">
+            <!-- Incoming: other readers asking to borrow your books. -->
+            <section v-if="requests.length" class="tab-section">
+              <h3 class="tab-section__title">Requests for your books</h3>
+              <div class="request-grid">
+                <RequestCard
+                  v-for="req in requests"
+                  :key="req.id"
+                  :request="req"
+                  :pending="processing[req.id] || null"
+                  @approve="handleApprove"
+                  @decline="handleDecline"
+                  @confirm-return="handleConfirmReturn"
+                />
+              </div>
+            </section>
+
+            <!-- Outgoing: your own requests still awaiting the owner's decision. -->
+            <section v-if="pendingBorrowing.length" class="tab-section">
+              <h3 class="tab-section__title">Your borrow requests</h3>
+              <div class="book-grid">
+                <PendingRequestCard
+                  v-for="req in pendingBorrowing"
+                  :key="req.id"
+                  :request="req"
+                  :pending="cancelling.has(req.id)"
+                  @cancel="handleCancel"
+                />
+              </div>
+            </section>
+          </template>
+          <p v-else class="empty-requests">All caught up — no open requests.</p>
         </div>
 
         <!-- Following tab (people you subscribe to) -->
@@ -757,12 +758,12 @@ function onImported() {
   .book-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
-.borrowing-section + .borrowing-section { margin-top: var(--space-md); }
-.borrowing-section__title {
+.tab-section + .tab-section { margin-top: var(--space-md); }
+.tab-section__title {
   font-family: var(--font-display);
   font-size: var(--text-headline-md);
   color: var(--color-on-background);
-  margin: 0;
+  margin: 0 0 var(--space-sm);
 }
 
 /* Add-book placeholder card */

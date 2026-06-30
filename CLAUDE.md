@@ -89,7 +89,7 @@ Sign-in is **Google OAuth only** (the original email/password + register screens
 |---|---|---|
 | `/login` | `LoginView` | "Continue with Google" button; surfaces `?error=` from the callback |
 | `/auth/google/callback` | `GoogleCallbackView` | Exchanges the OAuth code, stores JWT, redirects to `/library` |
-| `/library` | `LibraryView` | The signed-in user's library. Profile header (avatar, name, bio, stats) + tabs: **Collection** (book grid, with CSV **import/export** toolbar), **Lending/Borrowing**, **Requests** (incoming — Approve/Decline), **History** (loan timeline) |
+| `/library` | `LibraryView` | The signed-in user's library. Profile header (avatar, name, bio, stats) + tabs: **Collection** (book grid, with CSV **import/export** toolbar), **Lending**, **Borrowing** (active loans — books in hand), **Requests** (unified in-flight inbox: *incoming* — Approve/Decline/Confirm — **and** the viewer's own *outgoing* pending requests — Cancel), **History** (loan timeline) |
 | `/discover` | `DiscoverView` | Browse the community. Search, category filter pills, **language filter**, trending/recommended grids |
 | `/profile/:id` | `ProfileView` | Public profile. Avatar, bio, stats; book collection with "Request to Borrow" |
 | `/settings` | `SettingsView` | Account profile (avatar, name, bio 300-char, location), **privacy toggle**, sign out |
