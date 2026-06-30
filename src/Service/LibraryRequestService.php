@@ -89,6 +89,24 @@ class LibraryRequestService
         $request->addEvent(LibraryRequestEventType::Declined, $actor);
     }
 
+    /**
+     * The borrower withdraws their own request. Only a still-pending request can be
+     * withdrawn — once the owner has approved (or otherwise resolved) it, the action
+     * is rejected. The request is deleted outright (its events cascade away via the
+     * FK), leaving no trace, rather than parked in a tombstone status.
+     */
+    public function cancel(LibraryRequest $request, User $actor): void
+    {
+        $this->assertRequester($request, $actor);
+        $this->assertStatusIn(
+            $request,
+            [RequestStatus::Pending],
+            'This request can no longer be withdrawn — it has already been answered.',
+        );
+
+        $this->em->remove($request);
+    }
+
     /** The borrower signals they've returned the book; awaits the owner's confirmation. */
     public function requestReturn(LibraryRequest $request, User $actor): void
     {

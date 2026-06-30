@@ -150,6 +150,32 @@ class LibraryRequestRestController extends AbstractController
         return $this->runLoanAction(fn () => $this->service->decline($libraryRequest, $user), $libraryRequest, LoanEventPublisher::REQUEST_DECLINED);
     }
 
+    /** Borrower withdraws their own pending request, deleting it. */
+    #[Route('/{id}', methods: ['DELETE'], requirements: ['id' => '\d+'])]
+    public function cancel(LibraryRequest $libraryRequest): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        // Capture before deletion: after flush the request id is null and the row gone.
+        $ownerId = $libraryRequest->getBook()->getOwner()->getId();
+        $requestId = $libraryRequest->getId();
+
+        try {
+            $this->service->cancel($libraryRequest, $user);
+        } catch (\DomainException $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_CONFLICT);
+        }
+        $this->em->flush();
+
+        // After commit: signal the book owner so their incoming inbox refetches.
+        if ($ownerId !== null) {
+            $this->publisher->publishToUser($ownerId, LoanEventPublisher::REQUEST_CANCELLED, $requestId);
+        }
+
+        return new Response(null, Response::HTTP_NO_CONTENT);
+    }
+
     /** Borrower marks the book as returned, awaiting the owner's confirmation. */
     #[Route('/{id}/return', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function return(LibraryRequest $libraryRequest): JsonResponse

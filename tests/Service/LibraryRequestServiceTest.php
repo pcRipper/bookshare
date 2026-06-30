@@ -202,6 +202,56 @@ class LibraryRequestServiceTest extends TestCase
         $this->service()->decline($request, $owner);
     }
 
+    /* ───────────────────────── cancel ───────────────────────── */
+
+    public function testCancelByRequesterRemovesRequest(): void
+    {
+        $owner = new User();
+        $requester = new User();
+        $book = $this->book($owner, BookStatus::Own);
+        $request = $this->request($book, $requester, RequestStatus::Pending);
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->expects($this->once())->method('remove')->with($request);
+
+        $this->service($em)->cancel($request, $requester);
+    }
+
+    public function testCancelByNonRequesterIsDenied(): void
+    {
+        $owner = new User();
+        $requester = new User();
+        $book = $this->book($owner, BookStatus::Own);
+        $request = $this->request($book, $requester, RequestStatus::Pending);
+
+        // Even the book owner cannot withdraw the borrower's request.
+        $this->expectException(AccessDeniedException::class);
+        $this->service()->cancel($request, $owner);
+    }
+
+    public function testCancelOnApprovedRequestIsRejected(): void
+    {
+        $owner = new User();
+        $requester = new User();
+        $book = $this->book($owner, BookStatus::Lent);
+        $request = $this->request($book, $requester, RequestStatus::Approved);
+
+        // Once approved the borrow is committed — it can no longer be withdrawn.
+        $this->expectException(\DomainException::class);
+        $this->service()->cancel($request, $requester);
+    }
+
+    public function testCancelOnDeclinedRequestIsRejected(): void
+    {
+        $owner = new User();
+        $requester = new User();
+        $book = $this->book($owner, BookStatus::Own);
+        $request = $this->request($book, $requester, RequestStatus::Declined);
+
+        $this->expectException(\DomainException::class);
+        $this->service()->cancel($request, $requester);
+    }
+
     /* ─────────────────────── requestReturn ─────────────────────── */
 
     public function testRequestReturnByBorrowerMovesToReturnPending(): void

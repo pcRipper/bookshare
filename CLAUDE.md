@@ -128,7 +128,7 @@ owner confirmReturn ──▶ returned   (book.status=own, current_holder=owner,
 
 **Time-landing rule** (a product requirement): the **due date is set unilaterally by the lending (owner) side at approval** — the borrower neither proposes nor approves it.
 
-Authorization within the machine: only the **owner** may approve / decline / confirm-return; only the **requester** may request a return. You can't borrow your own book, a book that isn't available, from a private library, or file a duplicate pending request. Ownership violations → `AccessDeniedException` (403); business-rule violations → `\DomainException` (409).
+Authorization within the machine: only the **owner** may approve / decline / confirm-return; only the **requester** may request a return. The **requester** may also **withdraw** their own request while it's still `pending` — `DELETE /api/requests/{id}` (`LibraryRequestService::cancel`) **deletes the request row outright** (its events cascade away via the FK), no tombstone status. Once the request is approved (or otherwise resolved) the withdrawal is rejected (409). You can't borrow your own book, a book that isn't available, from a private library, or file a duplicate pending request. Ownership violations → `AccessDeniedException` (403); business-rule violations → `\DomainException` (409).
 
 ### Design System
 Full token spec: `references/design/literary_commons/DESIGN.md`
@@ -222,7 +222,7 @@ Loan-lifecycle changes are pushed to clients over **Server-Sent Events** through
 
 Design is **signal-and-refetch, not state-push**: after a transition commits, `App\Service\LoanEventPublisher` publishes a **private** `{ reason, requestId }` signal to the affected user's `user/{id}` topic. Publishing happens **after `flush()`** (the controller boundary) so any client refetch reads committed truth, and it is **best-effort** — a hub outage is logged, never fails the transition. The SPA (`assets/src/composables/useMercure.js`) shows a toast and refetches the affected lists via the **existing authenticated store actions**, so authorization stays in the REST layer and the channel is reconnect/race-safe.
 
-- **Recipients:** `request.received` / `return.requested` → book **owner**; `request.approved` / `request.declined` / `return.confirmed` → **requester**.
+- **Recipients:** `request.received` / `return.requested` / `request.cancelled` → book **owner**; `request.approved` / `request.declined` / `return.confirmed` → **requester**. (`request.cancelled` fires when a borrower withdraws a pending request; since the row is deleted, the controller captures the owner id + request id before flush and calls `LoanEventPublisher::publishToUser(...)` after.)
 - **Subscriber auth:** EventSource can't send the JWT header, so `GET /api/mercure/token` (`MercureRestController`) mints a signed, HttpOnly subscribe-cookie scoped to the caller's **own** `user/{id}` topic; the `private` flag enforces per-user isolation at the hub.
 - **Reconnect:** the composable refreshes the cookie and reconnects with backoff, and on reconnect refetches every loan list to catch signals missed during the gap (the cookie's JWT expires ~hourly).
 

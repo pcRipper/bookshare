@@ -28,7 +28,7 @@
 - [x] add language select for the book
 - [x] add export / import for the book list
 - [x] introduce functional of versions and change logs notes page(let it be just static list), it should be both in technical list and functional
-- [] add decline borrow request from borrower side(take validations in account: if borrow request was already approved - reject current action)
+- [x] add decline borrow request from borrower side(take validations in account: if borrow request was already approved - reject current action)
 - [] output on requests tab(my library page) both lending and borrowing requests
 - [] add optional message while declining borrowing request, right on card with borrowing
 - [] add API support to fill book from template

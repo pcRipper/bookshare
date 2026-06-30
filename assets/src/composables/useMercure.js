@@ -55,13 +55,17 @@ export function useMercure() {
         toast.info('New borrow request for one of your books.')
         scheduleRefetch([lib.fetchRequests])
         break
+      case 'request.cancelled':
+        toast.info('A borrow request was withdrawn.')
+        scheduleRefetch([lib.fetchRequests])
+        break
       case 'request.approved':
         toast.success('Your borrow request was approved.')
-        scheduleRefetch([lib.fetchBorrowing, lib.fetchBorrowingHistory])
+        scheduleRefetch([lib.fetchPendingBorrowing, lib.fetchBorrowing, lib.fetchBorrowingHistory])
         break
       case 'request.declined':
         toast.info('Your borrow request was declined.')
-        scheduleRefetch([lib.fetchBorrowingHistory])
+        scheduleRefetch([lib.fetchPendingBorrowing, lib.fetchBorrowingHistory])
         break
       case 'return.requested':
         toast.info('A borrower marked a book as returned.')
@@ -108,6 +112,7 @@ export function useMercure() {
           lib.fetchRequests,
           lib.fetchLending,
           lib.fetchBorrowing,
+          lib.fetchPendingBorrowing,
           lib.fetchBorrowingHistory,
           lib.fetchMe,
         ])

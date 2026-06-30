@@ -12,6 +12,7 @@ import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import BookCard from '@/components/library/BookCard.vue'
 import BorrowingCard from '@/components/library/BorrowingCard.vue'
+import PendingRequestCard from '@/components/library/PendingRequestCard.vue'
 import RequestCard from '@/components/library/RequestCard.vue'
 import LoanHistoryCard from '@/components/library/LoanHistoryCard.vue'
 import ManageBookModal from '@/components/library/ManageBookModal.vue'
@@ -20,7 +21,7 @@ import ImportBooksModal from '@/components/library/ImportBooksModal.vue'
 const store = useLibraryStore()
 const subscriptions = useSubscriptionsStore()
 const toast = useToastStore()
-const { profile, stats, collection, lending, requests, history, borrowing, borrowingHistory, loading } = storeToRefs(store)
+const { profile, stats, collection, lending, requests, history, borrowing, pendingBorrowing, borrowingHistory, loading } = storeToRefs(store)
 const { following, loadingFollowing } = storeToRefs(subscriptions)
 
 /* ── Tabs ─────────────────────────────────────────────────────────────── */
@@ -28,7 +29,7 @@ const activeTab = ref('collection')
 
 const tabs = computed(() => [
   { key: 'collection', label: 'Collection' },
-  { key: 'borrowing',  label: 'Borrowing', badge: borrowing.value.length || null },
+  { key: 'borrowing',  label: 'Borrowing', badge: (borrowing.value.length + pendingBorrowing.value.length) || null },
   { key: 'lending',    label: 'Lending' },
   { key: 'requests',   label: 'Requests', badge: requests.value.length || null },
   { key: 'following',  label: 'Following', badge: following.value.length || null },
@@ -68,7 +69,7 @@ onMounted(() => {
 })
 
 watch(activeTab, tab => {
-  if (tab === 'borrowing' && !loaded.value.borrowing) { loaded.value.borrowing = true; store.fetchBorrowing() }
+  if (tab === 'borrowing' && !loaded.value.borrowing) { loaded.value.borrowing = true; store.fetchBorrowing(); store.fetchPendingBorrowing() }
   if (tab === 'lending'  && !loaded.value.lending)  { loaded.value.lending  = true; store.fetchLending() }
   if (tab === 'requests' && !loaded.value.requests) { loaded.value.requests = true; store.fetchRequests() }
   if (tab === 'following' && !loaded.value.following) { loaded.value.following = true; subscriptions.fetchFollowing() }
@@ -81,6 +82,7 @@ watch(historySide, side => { if (activeTab.value === 'history') loadHistorySide(
 // Badges should reflect reality even before their tabs are opened.
 onMounted(() => store.fetchRequests().then(() => { loaded.value.requests = true }))
 onMounted(() => store.fetchBorrowing().then(() => { loaded.value.borrowing = true }))
+onMounted(() => store.fetchPendingBorrowing())
 
 /* ── Request actions (owner inbox) ────────────────────────────────────── */
 // Per-request in-flight action ('approve' | 'decline' | 'confirm-return').
@@ -124,6 +126,20 @@ async function handleReturn(id) {
     await store.returnBook(id)
   } finally {
     returning.delete(id)
+  }
+}
+
+// Withdraw a still-pending borrow request.
+const cancelling = reactive(new Set())
+async function handleCancel(id) {
+  if (cancelling.has(id)) return
+  cancelling.add(id)
+  try {
+    await store.cancelRequest(id)
+  } catch (e) {
+    toast.error(apiErrorMessage(e, 'Could not cancel this request.'))
+  } finally {
+    cancelling.delete(id)
   }
 }
 
@@ -311,16 +327,35 @@ function onImported() {
 
         <!-- Borrowing tab (books I'm borrowing from others) -->
         <div v-else-if="activeTab === 'borrowing'" role="tabpanel">
-          <BookGridSkeleton v-if="loading.borrowing && !borrowing.length" :count="4" />
-          <div v-else-if="borrowing.length" class="book-grid">
-            <BorrowingCard
-              v-for="loan in borrowing"
-              :key="loan.id"
-              :loan="loan"
-              :pending="returning.has(loan.id)"
-              @return="handleReturn"
-            />
-          </div>
+          <BookGridSkeleton v-if="loading.borrowing && !borrowing.length && !pendingBorrowing.length" :count="4" />
+          <template v-else-if="borrowing.length || pendingBorrowing.length">
+            <!-- Requests still awaiting the owner's decision — the borrower can withdraw these. -->
+            <section v-if="pendingBorrowing.length" class="borrowing-section">
+              <h3 class="borrowing-section__title">Awaiting approval</h3>
+              <div class="book-grid">
+                <PendingRequestCard
+                  v-for="req in pendingBorrowing"
+                  :key="req.id"
+                  :request="req"
+                  :pending="cancelling.has(req.id)"
+                  @cancel="handleCancel"
+                />
+              </div>
+            </section>
+
+            <section v-if="borrowing.length" class="borrowing-section">
+              <h3 v-if="pendingBorrowing.length" class="borrowing-section__title">Currently borrowing</h3>
+              <div class="book-grid">
+                <BorrowingCard
+                  v-for="loan in borrowing"
+                  :key="loan.id"
+                  :loan="loan"
+                  :pending="returning.has(loan.id)"
+                  @return="handleReturn"
+                />
+              </div>
+            </section>
+          </template>
           <div v-else class="empty-state">
             <span class="material-symbols-outlined empty-state__icon">auto_stories</span>
             <p class="empty-state__text">You're not borrowing any books right now.</p>
@@ -720,6 +755,14 @@ function onImported() {
 }
 @media (min-width: 960px) {
   .book-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.borrowing-section + .borrowing-section { margin-top: var(--space-md); }
+.borrowing-section__title {
+  font-family: var(--font-display);
+  font-size: var(--text-headline-md);
+  color: var(--color-on-background);
+  margin: 0;
 }
 
 /* Add-book placeholder card */
