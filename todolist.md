@@ -26,6 +26,11 @@
 - [x] Add subscription page and functional of subscriptions. It should be instea of activity page/button. It should look like this: rows with recent books, grouppe by subscribed person, 10-15 books max, as a scrollable horizontal list. Subscriptions list is available at library page, there you can cancel subscription and view people you are subscribed on.
 - [x] add language select for the book
 - [x] add export / import for the book list
+- [] introduce functional of versions and change logs notes page(let it be just static list), it should be both in technical list and functional
+- [] add decline borrow request from borrower side(take validations in account: if borrow request was already approved - reject current action)
+- [] output on requests tab(my library page) both lending and borrowing requests
+- [] add optional message while declining borrowing request, right on card with borrowing
+- [] add API support to fill book from template
 
 
 # Deployment
