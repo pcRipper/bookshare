@@ -140,14 +140,54 @@ class LibraryRequestRestController extends AbstractController
         return $this->runLoanAction(fn () => $this->service->approve($libraryRequest, $user, $dueDate), $libraryRequest, LoanEventPublisher::REQUEST_APPROVED);
     }
 
-    /** Owner declines a borrow request. */
+    /** Owner declines a borrow request, optionally with a short note for the borrower. */
     #[Route('/{id}/decline', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function decline(LibraryRequest $libraryRequest): JsonResponse
+    public function decline(Request $request, LibraryRequest $libraryRequest): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
 
-        return $this->runLoanAction(fn () => $this->service->decline($libraryRequest, $user), $libraryRequest, LoanEventPublisher::REQUEST_DECLINED);
+        // Optional decline note (blank/absent ⇒ none).
+        $payload = json_decode($request->getContent() ?: 'null', true);
+        $message = is_array($payload) ? ($payload['message'] ?? null) : null;
+        if (is_string($message)) {
+            $message = trim($message);
+            if ($message === '') {
+                $message = null;
+            } elseif (mb_strlen($message) > 255) {
+                return $this->json(['error' => 'Message is too long (max 255 characters).'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+        } else {
+            $message = null;
+        }
+
+        return $this->runLoanAction(fn () => $this->service->decline($libraryRequest, $user, $message), $libraryRequest, LoanEventPublisher::REQUEST_DECLINED);
+    }
+
+    /** Borrower withdraws their own pending request, deleting it. */
+    #[Route('/{id}', methods: ['DELETE'], requirements: ['id' => '\d+'])]
+    public function cancel(LibraryRequest $libraryRequest): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        // Capture before deletion: after flush the request id is null and the row gone.
+        $ownerId = $libraryRequest->getBook()->getOwner()->getId();
+        $requestId = $libraryRequest->getId();
+
+        try {
+            $this->service->cancel($libraryRequest, $user);
+        } catch (\DomainException $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_CONFLICT);
+        }
+        $this->em->flush();
+
+        // After commit: signal the book owner so their incoming inbox refetches.
+        if ($ownerId !== null) {
+            $this->publisher->publishToUser($ownerId, LoanEventPublisher::REQUEST_CANCELLED, $requestId);
+        }
+
+        return new Response(null, Response::HTTP_NO_CONTENT);
     }
 
     /** Borrower marks the book as returned, awaiting the owner's confirmation. */

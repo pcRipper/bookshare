@@ -36,6 +36,10 @@ class LibraryRequestEvent
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $dueDate = null;
 
+    /** Optional short note attached to the step (owner's reason when declining). */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $message = null;
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
@@ -57,6 +61,9 @@ class LibraryRequestEvent
 
     public function getDueDate(): ?\DateTimeImmutable { return $this->dueDate; }
     public function setDueDate(?\DateTimeImmutable $dueDate): static { $this->dueDate = $dueDate; return $this; }
+
+    public function getMessage(): ?string { return $this->message; }
+    public function setMessage(?string $message): static { $this->message = $message; return $this; }
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
 }

@@ -12,6 +12,7 @@ import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import BookCard from '@/components/library/BookCard.vue'
 import BorrowingCard from '@/components/library/BorrowingCard.vue'
+import PendingRequestCard from '@/components/library/PendingRequestCard.vue'
 import RequestCard from '@/components/library/RequestCard.vue'
 import LoanHistoryCard from '@/components/library/LoanHistoryCard.vue'
 import ManageBookModal from '@/components/library/ManageBookModal.vue'
@@ -20,7 +21,7 @@ import ImportBooksModal from '@/components/library/ImportBooksModal.vue'
 const store = useLibraryStore()
 const subscriptions = useSubscriptionsStore()
 const toast = useToastStore()
-const { profile, stats, collection, lending, requests, history, borrowing, borrowingHistory, loading } = storeToRefs(store)
+const { profile, stats, collection, lending, requests, history, borrowing, pendingBorrowing, borrowingHistory, loading } = storeToRefs(store)
 const { following, loadingFollowing } = storeToRefs(subscriptions)
 
 /* ── Tabs ─────────────────────────────────────────────────────────────── */
@@ -30,7 +31,7 @@ const tabs = computed(() => [
   { key: 'collection', label: 'Collection' },
   { key: 'borrowing',  label: 'Borrowing', badge: borrowing.value.length || null },
   { key: 'lending',    label: 'Lending' },
-  { key: 'requests',   label: 'Requests', badge: requests.value.length || null },
+  { key: 'requests',   label: 'Requests', badge: (requests.value.length + pendingBorrowing.value.length) || null },
   { key: 'following',  label: 'Following', badge: following.value.length || null },
   { key: 'history',    label: 'History' },
 ])
@@ -70,7 +71,7 @@ onMounted(() => {
 watch(activeTab, tab => {
   if (tab === 'borrowing' && !loaded.value.borrowing) { loaded.value.borrowing = true; store.fetchBorrowing() }
   if (tab === 'lending'  && !loaded.value.lending)  { loaded.value.lending  = true; store.fetchLending() }
-  if (tab === 'requests' && !loaded.value.requests) { loaded.value.requests = true; store.fetchRequests() }
+  if (tab === 'requests' && !loaded.value.requests) { loaded.value.requests = true; store.fetchRequests(); store.fetchPendingBorrowing() }
   if (tab === 'following' && !loaded.value.following) { loaded.value.following = true; subscriptions.fetchFollowing() }
   if (tab === 'history') loadHistorySide(historySide.value)
 })
@@ -81,6 +82,7 @@ watch(historySide, side => { if (activeTab.value === 'history') loadHistorySide(
 // Badges should reflect reality even before their tabs are opened.
 onMounted(() => store.fetchRequests().then(() => { loaded.value.requests = true }))
 onMounted(() => store.fetchBorrowing().then(() => { loaded.value.borrowing = true }))
+onMounted(() => store.fetchPendingBorrowing())
 
 /* ── Request actions (owner inbox) ────────────────────────────────────── */
 // Per-request in-flight action ('approve' | 'decline' | 'confirm-return').
@@ -96,10 +98,10 @@ async function handleApprove(id, dueDate) {
     delete processing[id]
   }
 }
-async function handleDecline(id) {
+async function handleDecline(id, message = null) {
   processing[id] = 'decline'
   try {
-    await store.declineRequest(id)
+    await store.declineRequest(id, message)
   } finally {
     delete processing[id]
   }
@@ -124,6 +126,20 @@ async function handleReturn(id) {
     await store.returnBook(id)
   } finally {
     returning.delete(id)
+  }
+}
+
+// Withdraw a still-pending borrow request.
+const cancelling = reactive(new Set())
+async function handleCancel(id) {
+  if (cancelling.has(id)) return
+  cancelling.add(id)
+  try {
+    await store.cancelRequest(id)
+  } catch (e) {
+    toast.error(apiErrorMessage(e, 'Could not cancel this request.'))
+  } finally {
+    cancelling.delete(id)
   }
 }
 
@@ -340,7 +356,7 @@ function onImported() {
           </div>
         </div>
 
-        <!-- Requests tab -->
+        <!-- Requests tab — both directions: incoming (owner inbox) + outgoing (borrower) -->
         <div v-else-if="activeTab === 'requests'" role="tabpanel">
           <div v-if="loading.requests" class="request-grid">
             <div v-for="n in 2" :key="n" class="request-skeleton">
@@ -358,18 +374,38 @@ function onImported() {
               </div>
             </div>
           </div>
-          <p v-else-if="requests.length === 0" class="empty-requests">All caught up — no pending requests.</p>
-          <div v-else class="request-grid">
-            <RequestCard
-              v-for="req in requests"
-              :key="req.id"
-              :request="req"
-              :pending="processing[req.id] || null"
-              @approve="handleApprove"
-              @decline="handleDecline"
-              @confirm-return="handleConfirmReturn"
-            />
-          </div>
+          <template v-else-if="requests.length || pendingBorrowing.length">
+            <!-- Incoming: other readers asking to borrow your books. -->
+            <section v-if="requests.length" class="tab-section">
+              <h3 class="tab-section__title">Requests for your books</h3>
+              <div class="request-grid">
+                <RequestCard
+                  v-for="req in requests"
+                  :key="req.id"
+                  :request="req"
+                  :pending="processing[req.id] || null"
+                  @approve="handleApprove"
+                  @decline="handleDecline"
+                  @confirm-return="handleConfirmReturn"
+                />
+              </div>
+            </section>
+
+            <!-- Outgoing: your own requests still awaiting the owner's decision. -->
+            <section v-if="pendingBorrowing.length" class="tab-section">
+              <h3 class="tab-section__title">Your borrow requests</h3>
+              <div class="book-grid">
+                <PendingRequestCard
+                  v-for="req in pendingBorrowing"
+                  :key="req.id"
+                  :request="req"
+                  :pending="cancelling.has(req.id)"
+                  @cancel="handleCancel"
+                />
+              </div>
+            </section>
+          </template>
+          <p v-else class="empty-requests">All caught up — no open requests.</p>
         </div>
 
         <!-- Following tab (people you subscribe to) -->
@@ -720,6 +756,14 @@ function onImported() {
 }
 @media (min-width: 960px) {
   .book-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.tab-section + .tab-section { margin-top: var(--space-md); }
+.tab-section__title {
+  font-family: var(--font-display);
+  font-size: var(--text-headline-md);
+  color: var(--color-on-background);
+  margin: 0 0 var(--space-sm);
 }
 
 /* Add-book placeholder card */

@@ -41,6 +41,8 @@ const steps = computed(() =>
       at: fmtDateTime(e.createdAt),
       // Surfaced only on the approval step.
       due: e.type === 'approved' && e.dueDate ? fmtDate(e.dueDate) : null,
+      // Optional note (owner's reason on a decline).
+      note: e.message || null,
     }
   }),
 )
@@ -62,6 +64,7 @@ const steps = computed(() =>
           <span class="timeline__rel">· {{ step.when }}</span>
           <span v-if="step.due" class="timeline__due">· due {{ step.due }}</span>
         </p>
+        <p v-if="step.note" class="timeline__note">“{{ step.note }}”</p>
       </div>
     </li>
   </ol>
@@ -127,4 +130,10 @@ const steps = computed(() =>
 .timeline__at { font-weight: 600; color: var(--color-secondary); }
 .timeline__rel { opacity: 0.85; }
 .timeline__due { color: var(--color-secondary); }
+.timeline__note {
+  margin: var(--space-xs) 0 0;
+  font-size: var(--text-label-md);
+  font-style: italic;
+  color: var(--color-on-surface-variant);
+}
 </style>

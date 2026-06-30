@@ -23,6 +23,7 @@ final class LoanEventPublisher
     // Recipient = book owner.
     public const REQUEST_RECEIVED = 'request.received';
     public const RETURN_REQUESTED = 'return.requested';
+    public const REQUEST_CANCELLED = 'request.cancelled';
     // Recipient = requester.
     public const REQUEST_APPROVED = 'request.approved';
     public const REQUEST_DECLINED = 'request.declined';
@@ -36,7 +37,7 @@ final class LoanEventPublisher
     public function publishLoanSignal(LibraryRequest $request, string $reason): void
     {
         $recipient = match ($reason) {
-            self::REQUEST_RECEIVED, self::RETURN_REQUESTED => $request->getBook()->getOwner(),
+            self::REQUEST_RECEIVED, self::RETURN_REQUESTED, self::REQUEST_CANCELLED => $request->getBook()->getOwner(),
             self::REQUEST_APPROVED, self::REQUEST_DECLINED, self::RETURN_CONFIRMED => $request->getRequester(),
             default => throw new \InvalidArgumentException(sprintf('Unknown loan signal reason "%s".', $reason)),
         };
@@ -46,11 +47,21 @@ final class LoanEventPublisher
             return; // unpersisted user — nothing to notify
         }
 
+        $this->publishToUser($recipientId, $reason, $request->getId());
+    }
+
+    /**
+     * Publishes the signal to an explicit user id. Use this when the request entity
+     * is no longer readable after the action (e.g. a withdrawal that deletes the row):
+     * capture the recipient id + request id BEFORE flush, then call this AFTER flush.
+     */
+    public function publishToUser(int $userId, string $reason, ?int $requestId): void
+    {
         $update = new Update(
-            topics: sprintf('user/%d', $recipientId),
+            topics: sprintf('user/%d', $userId),
             data: json_encode([
                 'reason' => $reason,
-                'requestId' => $request->getId(),
+                'requestId' => $requestId,
             ], \JSON_THROW_ON_ERROR),
             // Private: only delivered to a subscriber whose JWT grants this exact
             // topic — i.e. the recipient themselves. Closes the cross-user leak.
@@ -63,7 +74,7 @@ final class LoanEventPublisher
             // Best-effort: the loan transition already committed. Don't fail the request.
             $this->logger->warning('Mercure publish failed for loan signal "{reason}": {error}', [
                 'reason' => $reason,
-                'requestId' => $request->getId(),
+                'requestId' => $requestId,
                 'error' => $e->getMessage(),
             ]);
         }

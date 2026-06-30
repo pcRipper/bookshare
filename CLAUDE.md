@@ -89,10 +89,11 @@ Sign-in is **Google OAuth only** (the original email/password + register screens
 |---|---|---|
 | `/login` | `LoginView` | "Continue with Google" button; surfaces `?error=` from the callback |
 | `/auth/google/callback` | `GoogleCallbackView` | Exchanges the OAuth code, stores JWT, redirects to `/library` |
-| `/library` | `LibraryView` | The signed-in user's library. Profile header (avatar, name, bio, stats) + tabs: **Collection** (book grid, with CSV **import/export** toolbar), **Lending/Borrowing**, **Requests** (incoming — Approve/Decline), **History** (loan timeline) |
+| `/library` | `LibraryView` | The signed-in user's library. Profile header (avatar, name, bio, stats) + tabs: **Collection** (book grid, with CSV **import/export** toolbar), **Lending**, **Borrowing** (active loans — books in hand), **Requests** (unified in-flight inbox: *incoming* — Approve/Decline/Confirm — **and** the viewer's own *outgoing* pending requests — Cancel), **History** (loan timeline) |
 | `/discover` | `DiscoverView` | Browse the community. Search, category filter pills, **language filter**, trending/recommended grids |
 | `/profile/:id` | `ProfileView` | Public profile. Avatar, bio, stats; book collection with "Request to Borrow" |
 | `/settings` | `SettingsView` | Account profile (avatar, name, bio 300-char, location), **privacy toggle**, sign out |
+| `/changelog` | `ChangelogView` | Static **Release Notes** — a flat list of versions (label + date + change notes). Data lives in `assets/src/data/changelog.js` (no API); reached via the footer's "Release Notes" link (the old dead-end footer links were removed) |
 | `/` | — | Redirects to `/library` |
 | `/:pathMatch(.*)*` | `NotFoundView` | Catch-all 404 |
 
@@ -110,7 +111,7 @@ Sign-in is **Google OAuth only** (the original email/password + register screens
 
 **LibraryRequest** — `book`, `requester`, `status` (`RequestStatus`: `pending | approved | declined | return_pending | returned`), `requested_at`, `resolved_at`, **`due_date`**, **`returned_at`**, and an ordered **`events → LibraryRequestEvent[]`** timeline.
 
-**LibraryRequestEvent** — append-only audit of a request: `type` (`requested | approved | declined | return_requested | returned`), `actor`, `due_date?`, `created_at`. Rendered as a timeline (`RequestTimeline.vue`).
+**LibraryRequestEvent** — append-only audit of a request: `type` (`requested | approved | declined | return_requested | returned`), `actor`, `due_date?`, **`message?`** (optional ≤255-char note — the owner's reason on a decline), `created_at`. Rendered as a timeline (`RequestTimeline.vue`), which shows the note on its step. `POST /api/requests/{id}/decline` accepts an optional `{ message? }`; `ResponseMapper` emits `message` on every event.
 
 **ActivityItem** — `actor`, `action_type` (`borrowed | returned | commented | followed | added_book`), nullable `target_book` / `target_user`, `comment_text?`, `created_at`.
 
@@ -127,7 +128,7 @@ owner confirmReturn ──▶ returned   (book.status=own, current_holder=owner,
 
 **Time-landing rule** (a product requirement): the **due date is set unilaterally by the lending (owner) side at approval** — the borrower neither proposes nor approves it.
 
-Authorization within the machine: only the **owner** may approve / decline / confirm-return; only the **requester** may request a return. You can't borrow your own book, a book that isn't available, from a private library, or file a duplicate pending request. Ownership violations → `AccessDeniedException` (403); business-rule violations → `\DomainException` (409).
+Authorization within the machine: only the **owner** may approve / decline / confirm-return; only the **requester** may request a return. The **requester** may also **withdraw** their own request while it's still `pending` — `DELETE /api/requests/{id}` (`LibraryRequestService::cancel`) **deletes the request row outright** (its events cascade away via the FK), no tombstone status. Once the request is approved (or otherwise resolved) the withdrawal is rejected (409). You can't borrow your own book, a book that isn't available, from a private library, or file a duplicate pending request. Ownership violations → `AccessDeniedException` (403); business-rule violations → `\DomainException` (409).
 
 **`lent` is lifecycle-only.** It is set solely by `approve()` (which moves status *and* `current_holder` together) and cleared by `confirmReturn()`. It is **not** a manually-settable status: `BookInput.status`'s `Assert\Choice` accepts only `own | unavailable | currently_reading` (sending `lent` → 422), the Manage Book modal omits it from its picker (only surfacing it read-only when viewing an already-lent book), and CSV import rejects it. This prevents the inconsistent "flagged on-loan while still home" state. `currently_reading` is a manual, owner-set status that behaves like `unavailable` for borrowing (the borrow gate allows only `own`) but stays visible in Discover and counts as shared.
 
@@ -223,7 +224,7 @@ Loan-lifecycle changes are pushed to clients over **Server-Sent Events** through
 
 Design is **signal-and-refetch, not state-push**: after a transition commits, `App\Service\LoanEventPublisher` publishes a **private** `{ reason, requestId }` signal to the affected user's `user/{id}` topic. Publishing happens **after `flush()`** (the controller boundary) so any client refetch reads committed truth, and it is **best-effort** — a hub outage is logged, never fails the transition. The SPA (`assets/src/composables/useMercure.js`) shows a toast and refetches the affected lists via the **existing authenticated store actions**, so authorization stays in the REST layer and the channel is reconnect/race-safe.
 
-- **Recipients:** `request.received` / `return.requested` → book **owner**; `request.approved` / `request.declined` / `return.confirmed` → **requester**.
+- **Recipients:** `request.received` / `return.requested` / `request.cancelled` → book **owner**; `request.approved` / `request.declined` / `return.confirmed` → **requester**. (`request.cancelled` fires when a borrower withdraws a pending request; since the row is deleted, the controller captures the owner id + request id before flush and calls `LoanEventPublisher::publishToUser(...)` after.)
 - **Subscriber auth:** EventSource can't send the JWT header, so `GET /api/mercure/token` (`MercureRestController`) mints a signed, HttpOnly subscribe-cookie scoped to the caller's **own** `user/{id}` topic; the `private` flag enforces per-user isolation at the hub.
 - **Reconnect:** the composable refreshes the cookie and reconnects with backoff, and on reconnect refetches every loan list to catch signals missed during the gap (the cookie's JWT expires ~hourly).
 

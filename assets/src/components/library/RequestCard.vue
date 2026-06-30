@@ -24,6 +24,12 @@ const emit = defineEmits(['approve', 'decline', 'confirm-return'])
 // A return-pending request is the borrower asking the owner to confirm receipt.
 const isReturn = computed(() => props.request.status === 'return_pending')
 
+// Optional short note the owner can attach when declining.
+const declineMessage = ref('')
+function decline() {
+  emit('decline', props.request.id, declineMessage.value.trim() || null)
+}
+
 /* ── Lender-set due date (pending requests only) ──────────────────────── */
 function plusDaysISO(days) {
   const d = new Date()
@@ -100,8 +106,21 @@ function approve() {
         />
       </div>
 
+      <div class="request-card__note">
+        <label class="request-card__note-label" :for="`note-${request.id}`">Reason (optional)</label>
+        <input
+          :id="`note-${request.id}`"
+          v-model="declineMessage"
+          class="request-card__note-input"
+          type="text"
+          maxlength="255"
+          placeholder="Shared with the borrower if you decline"
+          :disabled="!!pending"
+        />
+      </div>
+
       <div class="request-card__actions">
-        <button class="btn-outline" :disabled="!!pending" @click="$emit('decline', request.id)">
+        <button class="btn-outline" :disabled="!!pending" @click="decline">
           <BaseSpinner v-if="pending === 'decline'" size="sm" />
           {{ pending === 'decline' ? 'Declining…' : 'Decline' }}
         </button>
@@ -214,6 +233,32 @@ function approve() {
 }
 .request-card__due-input:focus { outline: none; border-color: var(--color-primary); }
 .request-card__due-input:disabled { opacity: 0.6; }
+
+/* Optional decline note */
+.request-card__note {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.request-card__note-label {
+  font-size: var(--text-label-sm);
+  letter-spacing: var(--ls-label-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-on-surface-variant);
+}
+.request-card__note-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-default);
+  background: var(--color-surface-container-lowest);
+  font-family: var(--font-body);
+  font-size: var(--text-label-md);
+  color: var(--color-on-background);
+}
+.request-card__note-input:focus { outline: none; border-color: var(--color-primary); }
+.request-card__note-input:disabled { opacity: 0.6; }
 
 /* Actions */
 .request-card__actions {

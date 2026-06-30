@@ -8,9 +8,7 @@ const year = new Date().getFullYear()
       <span class="app-footer__brand">FolioShare</span>
 
       <nav class="app-footer__links">
-        <a href="#">Community Guidelines</a>
-        <a href="#">About Us</a>
-        <a href="#">Help Center</a>
+        <RouterLink to="/changelog">Release Notes</RouterLink>
       </nav>
 
       <p class="app-footer__copy">© {{ year }} FolioShare. Curating stories for a thoughtful community.</p>

@@ -191,6 +191,19 @@ class LibraryRequestServiceTest extends TestCase
         self::assertTrue($book->isHome());
     }
 
+    public function testDeclineWithMessageStoresItOnTheEvent(): void
+    {
+        $owner = new User();
+        $book = $this->book($owner, BookStatus::Own);
+        $request = $this->request($book, new User(), RequestStatus::Pending);
+
+        $this->service()->decline($request, $owner, 'Sorry, I just lent it to someone else.');
+
+        $event = $request->getEvents()->last();
+        self::assertSame(LibraryRequestEventType::Declined, $event->getType());
+        self::assertSame('Sorry, I just lent it to someone else.', $event->getMessage());
+    }
+
     public function testDeclineByNonOwnerIsDenied(): void
     {
         $owner = new User();
@@ -209,6 +222,56 @@ class LibraryRequestServiceTest extends TestCase
 
         $this->expectException(\DomainException::class);
         $this->service()->decline($request, $owner);
+    }
+
+    /* ───────────────────────── cancel ───────────────────────── */
+
+    public function testCancelByRequesterRemovesRequest(): void
+    {
+        $owner = new User();
+        $requester = new User();
+        $book = $this->book($owner, BookStatus::Own);
+        $request = $this->request($book, $requester, RequestStatus::Pending);
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->expects($this->once())->method('remove')->with($request);
+
+        $this->service($em)->cancel($request, $requester);
+    }
+
+    public function testCancelByNonRequesterIsDenied(): void
+    {
+        $owner = new User();
+        $requester = new User();
+        $book = $this->book($owner, BookStatus::Own);
+        $request = $this->request($book, $requester, RequestStatus::Pending);
+
+        // Even the book owner cannot withdraw the borrower's request.
+        $this->expectException(AccessDeniedException::class);
+        $this->service()->cancel($request, $owner);
+    }
+
+    public function testCancelOnApprovedRequestIsRejected(): void
+    {
+        $owner = new User();
+        $requester = new User();
+        $book = $this->book($owner, BookStatus::Lent);
+        $request = $this->request($book, $requester, RequestStatus::Approved);
+
+        // Once approved the borrow is committed — it can no longer be withdrawn.
+        $this->expectException(\DomainException::class);
+        $this->service()->cancel($request, $requester);
+    }
+
+    public function testCancelOnDeclinedRequestIsRejected(): void
+    {
+        $owner = new User();
+        $requester = new User();
+        $book = $this->book($owner, BookStatus::Own);
+        $request = $this->request($book, $requester, RequestStatus::Declined);
+
+        $this->expectException(\DomainException::class);
+        $this->service()->cancel($request, $requester);
     }
 
     /* ─────────────────────── requestReturn ─────────────────────── */

@@ -59,6 +59,27 @@ class LoanEventPublisherTest extends TestCase
         self::assertSame('request.approved', json_decode($captured->getData(), true)['reason']);
     }
 
+    public function testPublishToUserAddressesTheGivenTopicWithExplicitIds(): void
+    {
+        // Used when the request row is gone (a withdrawal): the recipient id and
+        // request id are captured before deletion and passed in explicitly.
+        $captured = null;
+        $hub = $this->createMock(HubInterface::class);
+        $hub->expects($this->once())->method('publish')->willReturnCallback(
+            function (Update $u) use (&$captured) { $captured = $u; return 'id-1'; },
+        );
+
+        (new LoanEventPublisher($hub, $this->createStub(LoggerInterface::class)))
+            ->publishToUser(7, LoanEventPublisher::REQUEST_CANCELLED, 42);
+
+        self::assertSame(['user/7'], $captured->getTopics());
+        self::assertTrue($captured->isPrivate());
+        self::assertSame(
+            ['reason' => 'request.cancelled', 'requestId' => 42],
+            json_decode($captured->getData(), true),
+        );
+    }
+
     public function testSwallowsAndLogsAHubFailure(): void
     {
         $request = $this->request($this->user(7), $this->user(9), 42);

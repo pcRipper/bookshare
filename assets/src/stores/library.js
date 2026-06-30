@@ -15,10 +15,11 @@ export const useLibraryStore = defineStore('library', () => {
   const requests = ref([])   // open incoming requests (pending + return-pending)
   const history = ref([])    // all incoming requests, any state — lending history (full timeline)
   const borrowing = ref([])  // active outgoing loans (books I'm borrowing)
+  const pendingBorrowing = ref([]) // my outgoing requests still awaiting the owner's decision
   const borrowingHistory = ref([]) // all outgoing requests, any state — borrowing history (full timeline)
   const categories = ref([])
 
-  const loading = ref({ collection: false, lending: false, requests: false, history: false, borrowing: false, borrowingHistory: false })
+  const loading = ref({ collection: false, lending: false, requests: false, history: false, borrowing: false, pendingBorrowing: false, borrowingHistory: false })
   const error = ref(null)
 
   // Map an API request payload to RequestCard's expected shape (relative date).
@@ -82,6 +83,17 @@ export const useLibraryStore = defineStore('library', () => {
       borrowing.value = data.map(toCardRequest)
     } finally {
       loading.value.borrowing = false
+    }
+  }
+
+  // The current user's outgoing requests still awaiting the owner's decision.
+  async function fetchPendingBorrowing() {
+    loading.value.pendingBorrowing = true
+    try {
+      const { data } = await api.get('/requests/outgoing', { params: { status: 'pending' } })
+      pendingBorrowing.value = data.map(toCardRequest)
+    } finally {
+      loading.value.pendingBorrowing = false
     }
   }
 
@@ -165,8 +177,8 @@ export const useLibraryStore = defineStore('library', () => {
     await Promise.all([fetchMe(), fetchLending()])
   }
 
-  async function declineRequest(id) {
-    await api.post(`/requests/${id}/decline`)
+  async function declineRequest(id, message = null) {
+    await api.post(`/requests/${id}/decline`, { message })
     requests.value = requests.value.filter(r => r.id !== id)
     // The declined request moves into History — refresh it so it shows up there.
     await fetchHistory()
@@ -186,11 +198,17 @@ export const useLibraryStore = defineStore('library', () => {
     await fetchBorrowing()
   }
 
+  // Borrower withdraws their own still-pending request (deletes it server-side).
+  async function cancelRequest(id) {
+    await api.delete(`/requests/${id}`)
+    pendingBorrowing.value = pendingBorrowing.value.filter(r => r.id !== id)
+  }
+
   return {
-    profile, stats, collection, lending, requests, history, borrowing, borrowingHistory, categories, loading, error,
-    fetchMe, fetchCollection, fetchLending, fetchRequests, fetchHistory, fetchBorrowing, fetchBorrowingHistory, fetchCategories,
+    profile, stats, collection, lending, requests, history, borrowing, pendingBorrowing, borrowingHistory, categories, loading, error,
+    fetchMe, fetchCollection, fetchLending, fetchRequests, fetchHistory, fetchBorrowing, fetchPendingBorrowing, fetchBorrowingHistory, fetchCategories,
     searchCategories, createCategory,
     createBook, updateBook, deleteBook, exportBooks, importBooks,
-    approveRequest, declineRequest, confirmReturn, returnBook,
+    approveRequest, declineRequest, confirmReturn, returnBook, cancelRequest,
   }
 })
