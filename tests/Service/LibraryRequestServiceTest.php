@@ -89,6 +89,15 @@ class LibraryRequestServiceTest extends TestCase
         $this->service()->create(new User(), $book);
     }
 
+    public function testCannotRequestABookTheOwnerIsCurrentlyReading(): void
+    {
+        $owner = new User();
+        $book = $this->book($owner, BookStatus::CurrentlyReading);
+
+        $this->expectException(\DomainException::class);
+        $this->service()->create(new User(), $book);
+    }
+
     public function testCannotRequestWhenAPendingRequestAlreadyExists(): void
     {
         $owner = new User();

@@ -6,6 +6,7 @@ use App\Entity\ActivityItem;
 use App\Entity\Book;
 use App\Entity\Category;
 use App\Entity\User;
+use App\Enum\BookStatus;
 use App\Repository\BookRepository;
 use App\Repository\CategoryRepository;
 use App\Service\ActivityRecorder;
@@ -201,6 +202,21 @@ class BookCsvServiceTest extends TestCase
 
         self::assertSame(0, $summary['imported']);
         self::assertSame(1, $summary['skipped']);
+    }
+
+    public function testCurrentlyReadingStatusIsImportable(): void
+    {
+        $created = [];
+        $em = $this->createStub(EntityManagerInterface::class);
+        $em->method('persist')->willReturnCallback(function (Book $b) use (&$created) { $created[] = $b; });
+
+        $csv = "title,author,status\nDune,Herbert,currently_reading\n";
+
+        $summary = $this->service($em)->import(new User(), $csv, replace: false, abortOnError: false);
+
+        self::assertSame(1, $summary['imported']);
+        self::assertSame(0, $summary['skipped']);
+        self::assertSame(BookStatus::CurrentlyReading, $created[0]->getStatus());
     }
 
     public function testMissingRequiredColumnIsFatal(): void

@@ -22,7 +22,18 @@ class BookInput
     #[Assert\Length(max: 500)]
     public ?string $coverPath = null;
 
-    /** Denormalised from its string value; an invalid value yields a 422. */
+    /**
+     * Denormalised from its string value; an invalid value yields a 422.
+     *
+     * `lent` is intentionally not selectable here: a loan is established only
+     * through the request lifecycle (approve), which sets the status *and* the
+     * current holder together. Accepting `lent` directly would let a book be
+     * flagged on-loan while it still sits in its owner's hands.
+     */
+    #[Assert\Choice(
+        choices: [BookStatus::Own, BookStatus::Unavailable, BookStatus::CurrentlyReading],
+        message: 'A loan can only be set through the borrow-request flow.',
+    )]
     public BookStatus $status = BookStatus::Own;
 
     /**

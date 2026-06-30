@@ -40,7 +40,7 @@ class BookCsvService
     private const COLUMNS = ['title', 'author', 'isbn', 'cover', 'language', 'status', 'categories'];
 
     /** Statuses a book may be imported as — never 'lent', which needs a live loan. */
-    private const IMPORTABLE_STATUSES = ['own', 'unavailable'];
+    private const IMPORTABLE_STATUSES = ['own', 'unavailable', 'currently_reading'];
 
     /** Guards against pathologically large uploads. */
     private const MAX_ROWS = 1000;
