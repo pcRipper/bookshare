@@ -140,14 +140,28 @@ class LibraryRequestRestController extends AbstractController
         return $this->runLoanAction(fn () => $this->service->approve($libraryRequest, $user, $dueDate), $libraryRequest, LoanEventPublisher::REQUEST_APPROVED);
     }
 
-    /** Owner declines a borrow request. */
+    /** Owner declines a borrow request, optionally with a short note for the borrower. */
     #[Route('/{id}/decline', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function decline(LibraryRequest $libraryRequest): JsonResponse
+    public function decline(Request $request, LibraryRequest $libraryRequest): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
 
-        return $this->runLoanAction(fn () => $this->service->decline($libraryRequest, $user), $libraryRequest, LoanEventPublisher::REQUEST_DECLINED);
+        // Optional decline note (blank/absent ⇒ none).
+        $payload = json_decode($request->getContent() ?: 'null', true);
+        $message = is_array($payload) ? ($payload['message'] ?? null) : null;
+        if (is_string($message)) {
+            $message = trim($message);
+            if ($message === '') {
+                $message = null;
+            } elseif (mb_strlen($message) > 255) {
+                return $this->json(['error' => 'Message is too long (max 255 characters).'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+        } else {
+            $message = null;
+        }
+
+        return $this->runLoanAction(fn () => $this->service->decline($libraryRequest, $user, $message), $libraryRequest, LoanEventPublisher::REQUEST_DECLINED);
     }
 
     /** Borrower withdraws their own pending request, deleting it. */

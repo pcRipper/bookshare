@@ -80,13 +80,13 @@ class LibraryRequestService
         );
     }
 
-    public function decline(LibraryRequest $request, User $actor): void
+    public function decline(LibraryRequest $request, User $actor, ?string $message = null): void
     {
         $this->assertOwner($request, $actor);
         $this->assertStatusIn($request, [RequestStatus::Pending], 'This request has already been resolved.');
 
         $request->setStatus(RequestStatus::Declined)->setResolvedAt(new \DateTimeImmutable());
-        $request->addEvent(LibraryRequestEventType::Declined, $actor);
+        $request->addEvent(LibraryRequestEventType::Declined, $actor, message: $message);
     }
 
     /**

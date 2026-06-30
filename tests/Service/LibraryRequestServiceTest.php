@@ -182,6 +182,19 @@ class LibraryRequestServiceTest extends TestCase
         self::assertTrue($book->isHome());
     }
 
+    public function testDeclineWithMessageStoresItOnTheEvent(): void
+    {
+        $owner = new User();
+        $book = $this->book($owner, BookStatus::Own);
+        $request = $this->request($book, new User(), RequestStatus::Pending);
+
+        $this->service()->decline($request, $owner, 'Sorry, I just lent it to someone else.');
+
+        $event = $request->getEvents()->last();
+        self::assertSame(LibraryRequestEventType::Declined, $event->getType());
+        self::assertSame('Sorry, I just lent it to someone else.', $event->getMessage());
+    }
+
     public function testDeclineByNonOwnerIsDenied(): void
     {
         $owner = new User();

@@ -98,10 +98,10 @@ async function handleApprove(id, dueDate) {
     delete processing[id]
   }
 }
-async function handleDecline(id) {
+async function handleDecline(id, message = null) {
   processing[id] = 'decline'
   try {
-    await store.declineRequest(id)
+    await store.declineRequest(id, message)
   } finally {
     delete processing[id]
   }

@@ -111,7 +111,7 @@ Sign-in is **Google OAuth only** (the original email/password + register screens
 
 **LibraryRequest** — `book`, `requester`, `status` (`RequestStatus`: `pending | approved | declined | return_pending | returned`), `requested_at`, `resolved_at`, **`due_date`**, **`returned_at`**, and an ordered **`events → LibraryRequestEvent[]`** timeline.
 
-**LibraryRequestEvent** — append-only audit of a request: `type` (`requested | approved | declined | return_requested | returned`), `actor`, `due_date?`, `created_at`. Rendered as a timeline (`RequestTimeline.vue`).
+**LibraryRequestEvent** — append-only audit of a request: `type` (`requested | approved | declined | return_requested | returned`), `actor`, `due_date?`, **`message?`** (optional ≤255-char note — the owner's reason on a decline), `created_at`. Rendered as a timeline (`RequestTimeline.vue`), which shows the note on its step. `POST /api/requests/{id}/decline` accepts an optional `{ message? }`; `ResponseMapper` emits `message` on every event.
 
 **ActivityItem** — `actor`, `action_type` (`borrowed | returned | commented | followed | added_book`), nullable `target_book` / `target_user`, `comment_text?`, `created_at`.
 

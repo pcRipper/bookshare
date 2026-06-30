@@ -177,8 +177,8 @@ export const useLibraryStore = defineStore('library', () => {
     await Promise.all([fetchMe(), fetchLending()])
   }
 
-  async function declineRequest(id) {
-    await api.post(`/requests/${id}/decline`)
+  async function declineRequest(id, message = null) {
+    await api.post(`/requests/${id}/decline`, { message })
     requests.value = requests.value.filter(r => r.id !== id)
     // The declined request moves into History — refresh it so it shows up there.
     await fetchHistory()

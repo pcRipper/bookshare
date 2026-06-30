@@ -30,7 +30,7 @@
 - [x] introduce functional of versions and change logs notes page(let it be just static list), it should be both in technical list and functional
 - [x] add decline borrow request from borrower side(take validations in account: if borrow request was already approved - reject current action)
 - [x] output on requests tab(my library page) both lending and borrowing requests
-- [] add optional message while declining borrowing request, right on card with borrowing
+- [x] add optional message while declining borrowing request, right on card with borrowing
 - [skip for now] add API support to fill book from template
 
 

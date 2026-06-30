@@ -112,6 +112,7 @@ class ResponseMapper
             'type'      => $event->getType()->value,
             'createdAt' => $event->getCreatedAt()->format(\DateTimeInterface::ATOM),
             'dueDate'   => $event->getDueDate()?->format(\DateTimeInterface::ATOM),
+            'message'   => $event->getMessage(),
             'actor'     => $this->userSummary($event->getActor()),
         ];
     }
