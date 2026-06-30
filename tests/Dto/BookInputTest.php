@@ -3,6 +3,7 @@
 namespace App\Tests\Dto;
 
 use App\Dto\BookInput;
+use App\Enum\BookStatus;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -112,5 +113,25 @@ class BookInputTest extends TestCase
         $input->language = 'xx';
 
         self::assertContains('language', $this->violations($input));
+    }
+
+    public function testCurrentlyReadingStatusIsAccepted(): void
+    {
+        $input = new BookInput();
+        $input->title = 'T';
+        $input->author = 'A';
+        $input->status = BookStatus::CurrentlyReading;
+
+        self::assertNotContains('status', $this->violations($input));
+    }
+
+    public function testLentStatusCannotBeSetDirectly(): void
+    {
+        $input = new BookInput();
+        $input->title = 'T';
+        $input->author = 'A';
+        $input->status = BookStatus::Lent;
+
+        self::assertContains('status', $this->violations($input));
     }
 }
