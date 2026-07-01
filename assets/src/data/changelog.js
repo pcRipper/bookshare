@@ -12,6 +12,7 @@ export const CHANGELOG = [
     notes: [
       'The “Find a template” tab can now search Open Library: switch to “External sources” to look up books by title or ISBN from the world’s open catalogue and fill your new book in one click.',
       'Covers, authors and languages come through automatically when a match is found.',
+      'External searches are now cached, so repeating a popular title or ISBN returns instantly.',
     ],
   },
   {
