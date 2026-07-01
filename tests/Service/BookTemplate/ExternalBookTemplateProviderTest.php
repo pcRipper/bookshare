@@ -39,6 +39,7 @@ class ExternalBookTemplateProviderTest extends TestCase
                 'isbn'        => ['9780441013593', '0441013597'],
                 'cover_i'     => 12345,
                 'language'    => ['eng'],
+                'first_sentence' => ['A beginning is a delicate time.', 'Second sentence.'],
             ],
         ]]));
 
@@ -50,6 +51,7 @@ class ExternalBookTemplateProviderTest extends TestCase
         self::assertSame('9780441013593', $result[0]->isbn);            // first isbn
         self::assertSame('https://covers.openlibrary.org/b/id/12345-M.jpg', $result[0]->coverPath);
         self::assertSame('en', $result[0]->language);                    // MARC eng -> ISO en
+        self::assertSame('A beginning is a delicate time.', $result[0]->description); // first_sentence[0]
     }
 
     public function testUnmappedLanguageAndMissingCoverBecomeNull(): void

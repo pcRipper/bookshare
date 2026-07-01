@@ -58,7 +58,7 @@ class BookCsvServiceTest extends TestCase
         $csv = $this->service()->export([$book]);
 
         $lines = preg_split('/\r\n|\n/', trim($csv));
-        self::assertSame('title,author,isbn,cover,language,status,categories', $lines[0]);
+        self::assertSame('title,author,description,isbn,cover,language,status,categories', $lines[0]);
         self::assertStringContainsString('Dune', $lines[1]);
         self::assertStringContainsString('Herbert', $lines[1]);
         self::assertStringContainsString('/covers/dune.jpg', $lines[1]);
@@ -79,6 +79,23 @@ class BookCsvServiceTest extends TestCase
         self::assertSame(1, $summary['imported']);
         self::assertCount(1, $created);
         self::assertSame('/covers/dune.jpg', $created[0]->getCoverPath());
+    }
+
+    public function testExportAndImportRoundTripDescription(): void
+    {
+        $book = (new Book())->setOwner(new User())->setTitle('Dune')->setAuthor('Herbert')
+            ->setDescription('A desert epic.');
+        $csv = $this->service()->export([$book]);
+        self::assertStringContainsString('A desert epic.', $csv);
+
+        $created = [];
+        $em = $this->createStub(EntityManagerInterface::class);
+        $em->method('persist')->willReturnCallback(function (Book $b) use (&$created) { $created[] = $b; });
+
+        $summary = $this->service($em)->import(new User(), $csv, replace: false, abortOnError: false);
+
+        self::assertSame(1, $summary['imported']);
+        self::assertSame('A desert epic.', $created[0]->getDescription());
     }
 
     public function testAppendSkipsDuplicateOfExistingBook(): void

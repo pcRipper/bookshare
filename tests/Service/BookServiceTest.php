@@ -45,6 +45,7 @@ class BookServiceTest extends TestCase
         $input->author = '  Frank Herbert ';
         $input->isbn = ' 978-0441013593 ';
         $input->coverPath = '   ';
+        $input->description = '  A desert epic.  ';
         $input->status = BookStatus::Lent;
         $input->categoryIds = [7];
 
@@ -55,6 +56,7 @@ class BookServiceTest extends TestCase
         self::assertSame('Dune', $book->getTitle());
         self::assertSame('Frank Herbert', $book->getAuthor());
         self::assertSame('978-0441013593', $book->getIsbn());
+        self::assertSame('A desert epic.', $book->getDescription());
         self::assertNull($book->getCoverPath());
         self::assertSame(BookStatus::Lent, $book->getStatus());
         self::assertTrue($book->getCategories()->contains($category));
@@ -80,11 +82,13 @@ class BookServiceTest extends TestCase
         $input->author = 'Author';
         $input->isbn = '';
         $input->coverPath = null;
+        $input->description = '   ';
 
         $book = $service->create(new User(), $input);
 
         self::assertNull($book->getIsbn());
         self::assertNull($book->getCoverPath());
+        self::assertNull($book->getDescription());
     }
 
     public function testUpdateAppliesInputWithoutPersistingOrRecording(): void

@@ -29,13 +29,15 @@ class ResponseMapperTest extends TestCase
     public function testBookShapeIncludesHolderAndCanEdit(): void
     {
         $owner = (new User())->setFullName('Jane');
-        $book = (new Book())->setOwner($owner)->setTitle('Dune')->setAuthor('Herbert')->setStatus(BookStatus::Own);
+        $book = (new Book())->setOwner($owner)->setTitle('Dune')->setAuthor('Herbert')->setStatus(BookStatus::Own)
+            ->setDescription('A desert epic.');
         $book->addCategory((new Category())->setName('Sci-Fi')->setColorHex('#E8F0EA'));
 
         $data = $this->mapper(true)->book($book);
 
         self::assertSame('Dune', $data['title']);
         self::assertSame('Herbert', $data['author']);
+        self::assertSame('A desert epic.', $data['description']);
         self::assertSame('own', $data['status']);
         self::assertTrue($data['isHome']);
         self::assertTrue($data['canEdit']);
@@ -58,12 +60,14 @@ class ResponseMapperTest extends TestCase
 
     public function testBookTemplateShapeCarriesMetadataWithResolvedLanguage(): void
     {
-        $template = new \App\Dto\BookTemplate('Dune', 'Frank Herbert', '978-1', 'http://c/1.jpg', 'en');
+        $template = new \App\Dto\BookTemplate('Dune', 'Frank Herbert', '978-1', 'http://c/1.jpg', 'en', 'A desert epic.');
 
         $data = $this->mapper()->bookTemplate($template);
 
+        self::assertSame('A desert epic.', $data['description']);
+
         self::assertSame(
-            ['title', 'author', 'isbn', 'coverPath', 'language', 'languageName'],
+            ['title', 'author', 'description', 'isbn', 'coverPath', 'language', 'languageName'],
             array_keys($data),
         );
         self::assertSame('Dune', $data['title']);
