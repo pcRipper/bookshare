@@ -7,6 +7,14 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.1.0',
+    date: '2026-07-01',
+    notes: [
+      'Large collections now load page by page: your library, Discover, loan history, and the people you follow all page through results with a numbered pager instead of one endless list.',
+      'The book status picker now matches the language picker for a consistent look in the add/edit dialog.',
+    ],
+  },
+  {
     version: '1.0.0',
     date: '2026-06-30',
     notes: [
