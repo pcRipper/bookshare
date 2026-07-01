@@ -12,7 +12,7 @@
 - [x] integrate Open Library API as the "external" book-template source (search by ISBN/title, best-effort, identified User-Agent)
 - [x] improve external api rates usage for book creation search (per-source debounce + abort in-flight request on new input)
 - [x] cache Open Library template-search responses (dedicated pool, 7-day TTL, map-on-read, errors never cached, normalized keys)
-- [x] add book description field (creation + template + Open Library first_sentence; revealed on cards via hover/tap; CSV round-trip)
+- [x] add book description field (creation + template + Open Library first_sentence; shown in the book detail modal; CSV round-trip)
 
 ## Security & Tests
 - [x] add all possible unit tests
@@ -26,6 +26,7 @@
 - [x] add placeholders of ui elements(glowing or blinking blocks) instead of simple Loading... signs
 - [x] add error page and not found page
 - [x] Improve mobile layout, now it has horizontal scroll because of shifted elements. Revise positioning for mobile version and overall improve look of it
+- [x] detailed read-only book overview modal (opens on click from Discover, Following feed and other readers' profiles — not from your own editable library); replaces the hover blurb that clipped long descriptions
 
 
 # Functional
