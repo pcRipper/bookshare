@@ -8,15 +8,21 @@ import { relativeTime } from '@/utils/time'
  * category list, plus all mutating actions (book CRUD, approve/decline).
  */
 export const useLibraryStore = defineStore('library', () => {
+  // Default pagination metadata before the first response lands.
+  const emptyMeta = () => ({ page: 1, perPage: 24, total: 0, totalPages: 1 })
+
   const profile = ref(null)
   const stats = ref({ totalBooks: 0, shared: 0, loaned: 0 })
   const collection = ref([])
+  const collectionMeta = ref(emptyMeta())  // pagination for the collection grid
   const lending = ref([])
   const requests = ref([])   // open incoming requests (pending + return-pending)
   const history = ref([])    // all incoming requests, any state — lending history (full timeline)
+  const historyMeta = ref(emptyMeta())     // pagination for the lending-history list
   const borrowing = ref([])  // active outgoing loans (books I'm borrowing)
   const pendingBorrowing = ref([]) // my outgoing requests still awaiting the owner's decision
   const borrowingHistory = ref([]) // all outgoing requests, any state — borrowing history (full timeline)
+  const borrowingHistoryMeta = ref(emptyMeta()) // pagination for the borrowing-history list
   const categories = ref([])
 
   const loading = ref({ collection: false, lending: false, requests: false, history: false, borrowing: false, pendingBorrowing: false, borrowingHistory: false })
@@ -33,21 +39,27 @@ export const useLibraryStore = defineStore('library', () => {
     profile.value = data
   }
 
-  async function fetchCollection() {
+  // Collection is a numbered-page grid; defaults to the currently-viewed page so
+  // refetches after a mutation keep the user where they were.
+  async function fetchCollection(page = collectionMeta.value.page) {
     loading.value.collection = true
     try {
-      const { data } = await api.get('/books')
-      collection.value = data
+      const { data } = await api.get('/books', { params: { page } })
+      collection.value = data.items
+      collectionMeta.value = data.pagination
     } finally {
       loading.value.collection = false
     }
   }
 
+  // Lending is a naturally-small in-flight list (books currently out on loan);
+  // it shares the paginated /books endpoint but isn't page-controlled in the UI,
+  // so fetch a single generous page and read the envelope's items.
   async function fetchLending() {
     loading.value.lending = true
     try {
-      const { data } = await api.get('/books', { params: { status: 'lent' } })
-      lending.value = data
+      const { data } = await api.get('/books', { params: { status: 'lent', perPage: 100 } })
+      lending.value = data.items
     } finally {
       loading.value.lending = false
     }
@@ -64,12 +76,13 @@ export const useLibraryStore = defineStore('library', () => {
     }
   }
 
-  async function fetchHistory() {
+  async function fetchHistory(page = historyMeta.value.page) {
     loading.value.history = true
     try {
       // Every incoming request, in-progress or finished, so History shows each step.
-      const { data } = await api.get('/requests/incoming', { params: { status: 'all' } })
-      history.value = data.map(toCardRequest)
+      const { data } = await api.get('/requests/incoming', { params: { status: 'all', page } })
+      history.value = data.items.map(toCardRequest)
+      historyMeta.value = data.pagination
     } finally {
       loading.value.history = false
     }
@@ -98,11 +111,12 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   // The current user's borrows — every outgoing request, in-progress or finished.
-  async function fetchBorrowingHistory() {
+  async function fetchBorrowingHistory(page = borrowingHistoryMeta.value.page) {
     loading.value.borrowingHistory = true
     try {
-      const { data } = await api.get('/requests/outgoing', { params: { status: 'all' } })
-      borrowingHistory.value = data.map(toCardRequest)
+      const { data } = await api.get('/requests/outgoing', { params: { status: 'all', page } })
+      borrowingHistory.value = data.items.map(toCardRequest)
+      borrowingHistoryMeta.value = data.pagination
     } finally {
       loading.value.borrowingHistory = false
     }
@@ -129,7 +143,8 @@ export const useLibraryStore = defineStore('library', () => {
 
   async function createBook(payload) {
     await api.post('/books', payload)
-    await Promise.all([fetchCollection(), fetchMe()])
+    // A new book is newest-first → jump to page 1 so it's visible.
+    await Promise.all([fetchCollection(1), fetchMe()])
   }
 
   async function updateBook(id, payload) {
@@ -165,7 +180,7 @@ export const useLibraryStore = defineStore('library', () => {
     form.append('mode', mode)
     form.append('onError', onError)
     const { data } = await api.post('/books/import', form)
-    await Promise.all([fetchCollection(), fetchMe()])
+    await Promise.all([fetchCollection(1), fetchMe()])
     return data
   }
 
@@ -205,7 +220,7 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   return {
-    profile, stats, collection, lending, requests, history, borrowing, pendingBorrowing, borrowingHistory, categories, loading, error,
+    profile, stats, collection, collectionMeta, lending, requests, history, historyMeta, borrowing, pendingBorrowing, borrowingHistory, borrowingHistoryMeta, categories, loading, error,
     fetchMe, fetchCollection, fetchLending, fetchRequests, fetchHistory, fetchBorrowing, fetchPendingBorrowing, fetchBorrowingHistory, fetchCategories,
     searchCategories, createCategory,
     createBook, updateBook, deleteBook, exportBooks, importBooks,

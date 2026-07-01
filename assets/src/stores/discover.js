@@ -12,8 +12,12 @@ import api from '@/api'
 export const useDiscoverStore = defineStore('discover', () => {
   const mode = ref('books') // 'books' | 'accounts'
 
+  const emptyMeta = () => ({ page: 1, perPage: 24, total: 0, totalPages: 1 })
+
   const books = ref([])
+  const booksMeta = ref(emptyMeta())
   const accounts = ref([])
+  const accountsMeta = ref(emptyMeta())
   const categories = ref([])
   const loading = ref(false)
   const error = ref(null)
@@ -34,18 +38,21 @@ export const useDiscoverStore = defineStore('discover', () => {
     }
   }
 
-  async function fetchBooks() {
+  async function fetchBooks(page = 1) {
     // Guard against out-of-order responses when the user types/clicks quickly.
     const token = ++reqToken
     loading.value = true
     error.value = null
     try {
-      const params = {}
+      const params = { page }
       if (query.value.trim()) params.q = query.value.trim()
       if (activeCategory.value != null) params.category = activeCategory.value
       if (activeLanguage.value != null) params.language = activeLanguage.value
       const { data } = await api.get('/books/discover', { params })
-      if (token === reqToken) books.value = data
+      if (token === reqToken) {
+        books.value = data.items
+        booksMeta.value = data.pagination
+      }
     } catch {
       if (token === reqToken) error.value = 'error'
     } finally {
@@ -53,11 +60,12 @@ export const useDiscoverStore = defineStore('discover', () => {
     }
   }
 
-  async function fetchAccounts() {
+  async function fetchAccounts(page = 1) {
     const token = ++reqToken
     // Prompt-to-search: with an empty box we don't list every public reader.
     if (!query.value.trim()) {
       accounts.value = []
+      accountsMeta.value = emptyMeta()
       loading.value = false
       error.value = null
       return
@@ -65,8 +73,11 @@ export const useDiscoverStore = defineStore('discover', () => {
     loading.value = true
     error.value = null
     try {
-      const { data } = await api.get('/users/discover', { params: { q: query.value.trim() } })
-      if (token === reqToken) accounts.value = data
+      const { data } = await api.get('/users/discover', { params: { q: query.value.trim(), page } })
+      if (token === reqToken) {
+        accounts.value = data.items
+        accountsMeta.value = data.pagination
+      }
     } catch {
       if (token === reqToken) error.value = 'error'
     } finally {
@@ -150,7 +161,7 @@ export const useDiscoverStore = defineStore('discover', () => {
   }
 
   return {
-    mode, books, accounts, categories, loading, error, query, activeCategory, activeLanguage,
+    mode, books, booksMeta, accounts, accountsMeta, categories, loading, error, query, activeCategory, activeLanguage,
     init, fetchBooks, fetchAccounts, fetchActive, setMode, setQuery, setCategory, setLanguage,
     clearFilters, requestBorrow, follow, unfollow,
   }

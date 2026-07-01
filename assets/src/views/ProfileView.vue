@@ -15,12 +15,13 @@ import CategoryTag from '@/components/ui/CategoryTag.vue'
 import BorrowBookCard from '@/components/profile/BorrowBookCard.vue'
 import EditProfileModal from '@/components/profile/EditProfileModal.vue'
 import ManageBookModal from '@/components/library/ManageBookModal.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 
 const route = useRoute()
 const store = useProfileStore()
 const subscriptions = useSubscriptionsStore()
 const toast = useToastStore()
-const { profile, books, loading, error } = storeToRefs(store)
+const { profile, books, booksMeta, booksLoading, availableCount, shelf, loading, error } = storeToRefs(store)
 
 /* ── Follow / unfollow (other readers' profiles only) ─────────────────── */
 const subscribed = ref(false)
@@ -51,19 +52,14 @@ async function toggleSubscription() {
   }
 }
 
-/* ── Tabs ─────────────────────────────────────────────────────────────── */
-const activeTab = ref('available')
-
-const availableBooks = computed(() => books.value.filter(b => b.status === 'own'))
-
+/* ── Tabs (shelves) ───────────────────────────────────────────────────── */
+// "Available to Borrow" and "Full Collection" are two server-paginated shelves
+// (the former filters to status=own). Counts come from each shelf's total: the
+// available shelf reports its own total; the full shelf uses the profile stat.
 const tabs = computed(() => [
-  { key: 'available', label: 'Available to Borrow', count: availableBooks.value.length },
-  { key: 'full',      label: 'Full Collection',     count: books.value.length },
+  { key: 'available', label: 'Available to Borrow', count: availableCount.value },
+  { key: 'full',      label: 'Full Collection',     count: profile.value?.stats?.totalBooks ?? 0 },
 ])
-
-const shownBooks = computed(() =>
-  activeTab.value === 'available' ? availableBooks.value : books.value,
-)
 
 /* ── Stats ────────────────────────────────────────────────────────────── */
 const statCards = computed(() => {
@@ -105,7 +101,7 @@ const stateMessage = computed(() => ({
 
 /* ── Loading ──────────────────────────────────────────────────────────── */
 function load() {
-  activeTab.value = 'available'
+  // fetchProfile resets to page 1 of the "available" shelf.
   store.fetchProfile(route.params.id)
 }
 onMounted(load)
@@ -270,10 +266,10 @@ async function onBookDelete(id) {
             v-for="tab in tabs"
             :key="tab.key"
             class="tab-btn"
-            :class="{ 'tab-btn--active': activeTab === tab.key }"
+            :class="{ 'tab-btn--active': shelf === tab.key }"
             role="tab"
-            :aria-selected="activeTab === tab.key"
-            @click="activeTab = tab.key"
+            :aria-selected="shelf === tab.key"
+            @click="store.setShelf(tab.key)"
           >
             {{ tab.label }}
             <span class="tab-count">{{ tab.count }}</span>
@@ -281,9 +277,10 @@ async function onBookDelete(id) {
         </div>
 
         <!-- ── Book grid ──────────────────────────────────────────────── -->
-        <div v-if="shownBooks.length || profile.isSelf" class="book-grid" role="tabpanel">
+        <BookGridSkeleton v-if="booksLoading" :count="8" />
+        <div v-else-if="books.length || profile.isSelf" class="book-grid" role="tabpanel">
           <BorrowBookCard
-            v-for="book in shownBooks"
+            v-for="book in books"
             :key="book.id"
             :book="book"
             :is-self="profile.isSelf"
@@ -291,9 +288,9 @@ async function onBookDelete(id) {
             @request="onRequest"
             @edit="openEditBook"
           />
-          <!-- Add-book placeholder, own profile only -->
+          <!-- Add-book placeholder, own profile only (first page) -->
           <div
-            v-if="profile.isSelf"
+            v-if="profile.isSelf && booksMeta.page === 1"
             class="add-book-card"
             role="button"
             tabindex="0"
@@ -307,8 +304,16 @@ async function onBookDelete(id) {
         </div>
         <div v-else class="empty-state">
           <span class="material-symbols-outlined empty-state__icon">auto_stories</span>
-          <p>{{ activeTab === 'available' ? 'No books available to borrow right now.' : 'This collection is empty.' }}</p>
+          <p>{{ shelf === 'available' ? 'No books available to borrow right now.' : 'This collection is empty.' }}</p>
         </div>
+
+        <Pagination
+          v-if="!booksLoading"
+          :page="booksMeta.page"
+          :total-pages="booksMeta.totalPages"
+          :disabled="booksLoading"
+          @change="store.fetchBooksPage"
+        />
       </template>
     </div>
 

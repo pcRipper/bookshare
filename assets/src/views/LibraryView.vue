@@ -17,12 +17,13 @@ import RequestCard from '@/components/library/RequestCard.vue'
 import LoanHistoryCard from '@/components/library/LoanHistoryCard.vue'
 import ManageBookModal from '@/components/library/ManageBookModal.vue'
 import ImportBooksModal from '@/components/library/ImportBooksModal.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 
 const store = useLibraryStore()
 const subscriptions = useSubscriptionsStore()
 const toast = useToastStore()
-const { profile, stats, collection, lending, requests, history, borrowing, pendingBorrowing, borrowingHistory, loading } = storeToRefs(store)
-const { following, loadingFollowing } = storeToRefs(subscriptions)
+const { profile, stats, collection, collectionMeta, lending, requests, history, historyMeta, borrowing, pendingBorrowing, borrowingHistory, borrowingHistoryMeta, loading } = storeToRefs(store)
+const { following, followingMeta, loadingFollowing } = storeToRefs(subscriptions)
 
 /* ── Tabs ─────────────────────────────────────────────────────────────── */
 const activeTab = ref('collection')
@@ -32,7 +33,7 @@ const tabs = computed(() => [
   { key: 'borrowing',  label: 'Borrowing', badge: borrowing.value.length || null },
   { key: 'lending',    label: 'Lending' },
   { key: 'requests',   label: 'Requests', badge: (requests.value.length + pendingBorrowing.value.length) || null },
-  { key: 'following',  label: 'Following', badge: following.value.length || null },
+  { key: 'following',  label: 'Following', badge: followingMeta.value.total || null },
   { key: 'history',    label: 'History' },
 ])
 
@@ -51,6 +52,14 @@ const historyLoading = computed(() =>
 const historyItems = computed(() =>
   historySide.value === 'lending' ? history.value : borrowingHistory.value,
 )
+// Pagination metadata for whichever history side is showing.
+const historyPageMeta = computed(() =>
+  historySide.value === 'lending' ? historyMeta.value : borrowingHistoryMeta.value,
+)
+function onHistoryPage(page) {
+  if (historySide.value === 'lending') store.fetchHistory(page)
+  else store.fetchBorrowingHistory(page)
+}
 
 /* ── Data loading: collection + profile up front, others lazily ───────── */
 const loaded = ref({ borrowing: false, lending: false, requests: false, following: false })
@@ -316,13 +325,19 @@ function onImported() {
               :book="book"
               @click="openEdit"
             />
-            <!-- "Add new book" placeholder card -->
-            <div class="add-book-card" @click="openCreate" role="button" tabindex="0">
+            <!-- "Add new book" placeholder card (only on the first page) -->
+            <div v-if="collectionMeta.page === 1" class="add-book-card" @click="openCreate" role="button" tabindex="0">
               <span class="material-symbols-outlined add-book-card__icon">add_circle</span>
               <h3 class="add-book-card__title">Catalog a New Book</h3>
               <p class="add-book-card__hint">Add a title to your collection.</p>
             </div>
           </div>
+          <Pagination
+            :page="collectionMeta.page"
+            :total-pages="collectionMeta.totalPages"
+            :disabled="loading.collection"
+            @change="store.fetchCollection"
+          />
         </div>
 
         <!-- Borrowing tab (books I'm borrowing from others) -->
@@ -432,6 +447,13 @@ function onImported() {
               </button>
             </li>
           </ul>
+          <Pagination
+            v-if="following.length"
+            :page="followingMeta.page"
+            :total-pages="followingMeta.totalPages"
+            :disabled="loadingFollowing"
+            @change="subscriptions.fetchFollowing"
+          />
           <div v-else class="empty-state">
             <span class="material-symbols-outlined empty-state__icon">group</span>
             <p class="empty-state__text">You're not following anyone yet.</p>
@@ -472,14 +494,22 @@ function onImported() {
               <BaseSkeleton width="100%" height="72px" radius="var(--radius-default)" />
             </li>
           </ul>
-          <ul v-else-if="historyItems.length" class="history-list">
-            <LoanHistoryCard
-              v-for="item in historyItems"
-              :key="item.id"
-              :request="item"
-              :perspective="historySide"
+          <template v-else-if="historyItems.length">
+            <ul class="history-list">
+              <LoanHistoryCard
+                v-for="item in historyItems"
+                :key="item.id"
+                :request="item"
+                :perspective="historySide"
+              />
+            </ul>
+            <Pagination
+              :page="historyPageMeta.page"
+              :total-pages="historyPageMeta.totalPages"
+              :disabled="historyLoading"
+              @change="onHistoryPage"
             />
-          </ul>
+          </template>
           <div v-else class="empty-state">
             <span class="material-symbols-outlined empty-state__icon">history</span>
             <p v-if="historySide === 'lending'" class="empty-state__text">Your lending history will appear here.</p>

@@ -10,7 +10,8 @@ import api from '@/api'
  */
 export const useSubscriptionsStore = defineStore('subscriptions', () => {
   const feed = ref([])        // [{ user, books: [...] }]
-  const following = ref([])   // [{ id, createdAt, user }]
+  const following = ref([])   // [{ id, createdAt, user }] — current page
+  const followingMeta = ref({ page: 1, perPage: 20, total: 0, totalPages: 1 })
   const loadingFeed = ref(false)
   const loadingFollowing = ref(false)
   const error = ref(null)
@@ -28,11 +29,12 @@ export const useSubscriptionsStore = defineStore('subscriptions', () => {
     }
   }
 
-  async function fetchFollowing() {
+  async function fetchFollowing(page = followingMeta.value.page) {
     loadingFollowing.value = true
     try {
-      const { data } = await api.get('/subscriptions')
-      following.value = data
+      const { data } = await api.get('/subscriptions', { params: { page } })
+      following.value = data.items
+      followingMeta.value = data.pagination
     } finally {
       loadingFollowing.value = false
     }
@@ -48,7 +50,10 @@ export const useSubscriptionsStore = defineStore('subscriptions', () => {
   // the UI reflects it without a refetch.
   async function unsubscribe(userId) {
     await api.delete(`/subscriptions/${userId}`)
+    const before = following.value.length
     following.value = following.value.filter(s => s.user.id !== userId)
+    // Keep the total (drives the Following badge) in step with the local removal.
+    if (following.value.length < before) followingMeta.value.total -= 1
     feed.value = feed.value.filter(g => g.user.id !== userId)
   }
 
@@ -66,7 +71,7 @@ export const useSubscriptionsStore = defineStore('subscriptions', () => {
   }
 
   return {
-    feed, following, loadingFeed, loadingFollowing, error,
+    feed, following, followingMeta, loadingFeed, loadingFollowing, error,
     fetchFeed, fetchFollowing, subscribe, unsubscribe, requestBorrow,
   }
 })

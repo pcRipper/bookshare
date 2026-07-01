@@ -7,10 +7,11 @@ import DiscoverBookCard from '@/components/discover/DiscoverBookCard.vue'
 import DiscoverUserCard from '@/components/discover/DiscoverUserCard.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import LanguageSelect from '@/components/ui/LanguageSelect.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 import { resolveCategoryColors } from '@/utils/categoryColors'
 
 const store = useDiscoverStore()
-const { mode, books, accounts, categories, loading, error, query, activeCategory, activeLanguage } = storeToRefs(store)
+const { mode, books, booksMeta, accounts, accountsMeta, categories, loading, error, query, activeCategory, activeLanguage } = storeToRefs(store)
 
 onMounted(store.init)
 
@@ -185,16 +186,24 @@ async function onToggleFollow(action, id) {
         <!-- ── Accounts mode ──────────────────────────────────────────── -->
         <template v-else-if="isAccounts">
           <!-- Results grid -->
-          <div v-if="accounts.length" class="book-grid">
-            <DiscoverUserCard
-              v-for="user in accounts"
-              :key="user.id"
-              :user="user"
-              :pending="following.has(user.id)"
-              @follow="onToggleFollow('follow', $event)"
-              @unfollow="onToggleFollow('unfollow', $event)"
+          <template v-if="accounts.length">
+            <div class="book-grid">
+              <DiscoverUserCard
+                v-for="user in accounts"
+                :key="user.id"
+                :user="user"
+                :pending="following.has(user.id)"
+                @follow="onToggleFollow('follow', $event)"
+                @unfollow="onToggleFollow('unfollow', $event)"
+              />
+            </div>
+            <Pagination
+              :page="accountsMeta.page"
+              :total-pages="accountsMeta.totalPages"
+              :disabled="loading"
+              @change="store.fetchAccounts"
             />
-          </div>
+          </template>
 
           <!-- Prompt to search (empty box) -->
           <div v-else-if="!hasQuery" class="discover-state">
@@ -212,15 +221,23 @@ async function onToggleFollow(action, id) {
         <!-- ── Books mode ─────────────────────────────────────────────── -->
         <template v-else>
           <!-- Results grid -->
-          <div v-if="books.length" class="book-grid">
-            <DiscoverBookCard
-              v-for="book in books"
-              :key="book.id"
-              :book="book"
-              :pending="requesting.has(book.id)"
-              @request="onRequest"
+          <template v-if="books.length">
+            <div class="book-grid">
+              <DiscoverBookCard
+                v-for="book in books"
+                :key="book.id"
+                :book="book"
+                :pending="requesting.has(book.id)"
+                @request="onRequest"
+              />
+            </div>
+            <Pagination
+              :page="booksMeta.page"
+              :total-pages="booksMeta.totalPages"
+              :disabled="loading"
+              @change="store.fetchBooks"
             />
-          </div>
+          </template>
 
           <!-- Empty / no results -->
           <div v-else class="discover-state">
