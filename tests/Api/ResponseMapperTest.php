@@ -56,6 +56,24 @@ class ResponseMapperTest extends TestCase
         self::assertSame('English', $data['languageName']);
     }
 
+    public function testBookTemplateShapeCarriesMetadataWithResolvedLanguage(): void
+    {
+        $template = new \App\Dto\BookTemplate('Dune', 'Frank Herbert', '978-1', 'http://c/1.jpg', 'en');
+
+        $data = $this->mapper()->bookTemplate($template);
+
+        self::assertSame(
+            ['title', 'author', 'isbn', 'coverPath', 'language', 'languageName'],
+            array_keys($data),
+        );
+        self::assertSame('Dune', $data['title']);
+        self::assertSame('en', $data['language']);
+        self::assertSame('English', $data['languageName']);
+        // A template is metadata only — no owner or id leaks through.
+        self::assertArrayNotHasKey('owner', $data);
+        self::assertArrayNotHasKey('id', $data);
+    }
+
     public function testBookLanguageIsNullWhenUnset(): void
     {
         $book = (new Book())->setOwner((new User())->setFullName('Jane'))->setTitle('T')->setAuthor('A');
