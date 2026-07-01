@@ -7,6 +7,15 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.5.0',
+    date: '2026-07-01',
+    notes: [
+      'Click any book in Discover, your Following feed, or another reader’s profile to open a detailed overview — a large cover, its categories, language and the full description, laid out to read top to bottom (long blurbs are no longer cut off).',
+      'Borrow straight from the overview: the “Request to Borrow” button lives right in the modal.',
+      'The old hover-to-peek description overlay has been retired in favour of this clearer view.',
+    ],
+  },
+  {
     version: '1.4.0',
     date: '2026-07-01',
     notes: [
