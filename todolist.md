@@ -8,6 +8,7 @@
 - [x] introduce versions / changelog (release notes) page — static list, surfaced via footer link (see Functional)
 - add caching for all images at nginx(if possible)
 - improve overall caching and optimizations
+- [x] paginate browse/growing list endpoints (collection, discover books/accounts, loan history, following) behind a shared { items, pagination } envelope; in-flight lists stay bare arrays
 
 ## Security & Tests
 - [x] add all possible unit tests
@@ -16,6 +17,7 @@
 
 
 # UI
+- [x] numbered pagination control (shared ui/Pagination.vue) across the paginated grids/lists
 - [x] add loaders for buttons
 - [x] add placeholders of ui elements(glowing or blinking blocks) instead of simple Loading... signs
 - [x] add error page and not found page
