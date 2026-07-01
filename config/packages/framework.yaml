@@ -5,6 +5,18 @@ framework:
     # Note that the session will be started ONLY if you read or write from it.
     session: true
 
+    # Scoped HTTP client for the Open Library API (the "external" book-template
+    # source). The User-Agent identifies us for the higher (3 req/s) rate limit;
+    # short timeouts keep a slow upstream from stalling the template search.
+    http_client:
+        scoped_clients:
+            openlibrary.client:
+                base_uri: 'https://openlibrary.org'
+                headers:
+                    User-Agent: '%env(OPENLIBRARY_USER_AGENT)%'
+                timeout: 5
+                max_duration: 8
+
     #esi: true
     #fragments: true
 
