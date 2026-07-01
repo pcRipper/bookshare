@@ -13,12 +13,14 @@ const emit = defineEmits(['select'])
 
 const store = useLibraryStore()
 
-const DEBOUNCE_MS = 250
+// Per-source debounce. External (Open Library) is rate-limited upstream, so it
+// waits longer after the last keystroke than the local catalogue search.
+const DEBOUNCE_MS = { site: 250, external: 500 }
 
 // The two search strategies the backend exposes, with the copy the brief asks for.
 const SOURCES = [
   { key: 'site',     label: 'On this site',    hint: 'Search existing templates on the site' },
-  { key: 'external', label: 'External sources', hint: 'Search in external catalogues' },
+  { key: 'external', label: 'External sources', hint: 'Search Open Library' },
 ]
 
 const query = ref('')
@@ -29,25 +31,30 @@ const error = ref(null)
 
 let debounceTimer = null
 let searchSeq = 0 // guards against out-of-order responses
+let inFlight = null // AbortController of the current request, if any
 
 const trimmedQuery = computed(() => query.value.trim())
 const activeSource = computed(() => SOURCES.find(s => s.key === source.value))
 
-// Re-run whenever the query or the chosen source changes.
+// Re-run whenever the query or the chosen source changes. Each change cancels
+// the pending timer *and* aborts any request already in flight, so a fast typer
+// never leaves a stale external call racing against the newest input.
 watch([query, source], () => {
   error.value = null
   clearTimeout(debounceTimer)
   debounceTimer = null
+  inFlight?.abort()
+  inFlight = null
   if (trimmedQuery.value === '') {
     results.value = []
     searching.value = false
     return
   }
   searching.value = true
-  debounceTimer = setTimeout(() => { debounceTimer = null; runSearch() }, DEBOUNCE_MS)
+  debounceTimer = setTimeout(() => { debounceTimer = null; runSearch() }, DEBOUNCE_MS[source.value] ?? 250)
 })
 
-onBeforeUnmount(() => clearTimeout(debounceTimer))
+onBeforeUnmount(() => { clearTimeout(debounceTimer); inFlight?.abort() })
 onMounted(() => searchInput.value?.focus())
 
 const searchInput = ref(null)
@@ -56,16 +63,20 @@ async function runSearch() {
   const q = trimmedQuery.value
   if (q === '') return
   const seq = ++searchSeq
+  const controller = new AbortController()
+  inFlight = controller
   try {
-    const data = await store.searchBookTemplates(q, source.value)
+    const data = await store.searchBookTemplates(q, source.value, controller.signal)
     if (seq !== searchSeq) return // a newer search superseded this one
     results.value = data
-  } catch {
+  } catch (e) {
+    if (e.code === 'ERR_CANCELED') return // aborted by a newer search — ignore
     if (seq === searchSeq) {
       results.value = []
       error.value = 'Could not search for templates. Try again.'
     }
   } finally {
+    if (inFlight === controller) inFlight = null
     if (seq === searchSeq) searching.value = false
   }
 }
@@ -74,7 +85,7 @@ async function runSearch() {
 // expected (no integration yet), not a dead end.
 const emptyMessage = computed(() =>
   source.value === 'external'
-    ? 'No external sources are connected yet.'
+    ? 'No matching books found in Open Library. Try a different title or ISBN.'
     : 'No matching books found. Try a different title or ISBN.',
 )
 

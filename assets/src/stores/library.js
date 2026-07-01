@@ -142,10 +142,11 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   // Search book templates to pre-fill the create form. `source` picks the
-  // strategy ('site' searches the catalogue, 'external' is a placeholder).
-  // Returns the matches (a bare array) — not stored.
-  async function searchBookTemplates(q, source = 'site') {
-    const { data } = await api.get('/books/templates', { params: { q, source } })
+  // strategy ('site' searches the catalogue, 'external' hits Open Library).
+  // Pass an AbortSignal so a superseded search can cancel its in-flight request
+  // (external calls are rate-limited upstream). Returns the matches — not stored.
+  async function searchBookTemplates(q, source = 'site', signal = undefined) {
+    const { data } = await api.get('/books/templates', { params: { q, source }, signal })
     return data
   }
 
