@@ -317,7 +317,7 @@ function onImported() {
             </button>
           </div>
 
-          <BookGridSkeleton v-if="loading.collection && !collection.length" :count="8" />
+          <BookGridSkeleton v-if="loading.collection && !collection.length" :count="8" class="collection-skeleton" />
           <div v-else class="book-grid">
             <BookCard
               v-for="book in collection"
@@ -787,6 +787,10 @@ function onImported() {
 @media (min-width: 960px) {
   .book-grid { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* Match the loaded grid's top offset so the loading skeleton doesn't sit flush
+   against the import/export toolbar. */
+.collection-skeleton { padding-top: var(--space-sm); }
 
 .tab-section + .tab-section { margin-top: var(--space-md); }
 .tab-section__title {
