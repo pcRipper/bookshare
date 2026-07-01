@@ -2,6 +2,19 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Working Agreement (follow on EVERY update request)
+
+This is the mandatory workflow for any change. It overrides default behavior.
+
+1. **Plan with impact analysis.** Always produce a plan — even for a small change. The value is the impact analysis: what elsewhere in the project this touches (entities, API shape, stores, migrations, tests, docs) and how to avoid regressions. Skip the plan only for truly trivial edits (typo/comment/doc wording).
+2. **Get agreement.** Present the plan and wait for approval before writing code. Use plan mode for anything non-trivial.
+3. **Implement.** Write the code and add/adjust tests when behavior changes (backend → PHPUnit under `tests/`; frontend has no test runner — verify by build + browser).
+4. **Validate.** Run the relevant checks — `php bin/phpunit`, `npm run build`, `php bin/console lint:container`, scripts — before considering the work done.
+5. **Fix and re-validate.** If anything fails, return to step 3. Never commit red.
+6. **Commit in small, meaningful units.** Prefer several focused commits over one large one — one logical change each. Short imperative messages matching the repo style (lowercase, no trailing period), with the `Co-Authored-By` trailer.
+7. **Update docs.** When the change affects them, update `CLAUDE.md` and `todolist.md` (tick checkboxes) — as their **own** commit, separate from code.
+8. **Update the changelog.** Reflect user-facing changes in `assets/src/data/changelog.js` (bump the version, add dated notes) — as its own commit.
+
 ## Architecture
 
 Bookshare is a **monorepo** where the Symfony project is the repo root. The frontend and backend are coupled by directory structure but decoupled at runtime — they communicate exclusively through a JSON REST API.
