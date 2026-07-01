@@ -30,7 +30,10 @@ services:
             $clientSecret: '%env(GOOGLE_CLIENT_SECRET)%'
             $redirectUri: '%env(GOOGLE_REDIRECT_URI)%'
 
-    # Inject the scoped Open Library client (see framework.yaml http_client).
+    # Inject the scoped Open Library client (see framework.yaml http_client) and
+    # its dedicated cache pool + hit TTL (see cache.yaml, .env).
     App\Service\BookTemplate\ExternalBookTemplateProvider:
         arguments:
             $client: '@openlibrary.client'
+            $cache: '@cache.openlibrary'
+            $cacheTtl: '%env(int:OPENLIBRARY_CACHE_TTL)%'

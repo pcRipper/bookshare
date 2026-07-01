@@ -15,5 +15,9 @@ framework:
         #app: cache.adapter.apcu
 
         # Namespaced pools use the above "app" backend by default
-        #pools:
-            #my.dedicated.cache: null
+        pools:
+            # Open Library search responses (the "external" book-template source).
+            # Backed by cache.app (filesystem today; swap the app adapter to Redis
+            # in prod without touching this). Per-item TTL is set in code.
+            cache.openlibrary:
+                adapter: cache.app

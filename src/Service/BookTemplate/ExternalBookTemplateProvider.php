@@ -5,6 +5,8 @@ namespace App\Service\BookTemplate;
 use App\Dto\BookTemplate;
 use App\Language\LanguageCatalog;
 use Psr\Log\LoggerInterface;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface as HttpExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -22,6 +24,8 @@ final class ExternalBookTemplateProvider implements BookTemplateProvider
     private const COVER_URL = 'https://covers.openlibrary.org/b/id/%d-M.jpg';
     /** Only the fields we map — keeps the response small. */
     private const FIELDS = 'title,author_name,isbn,cover_i,language';
+    /** Empty results self-heal quickly (a near-miss during indexing), unlike hits. */
+    private const EMPTY_TTL = 600;
 
     /**
      * Open Library returns MARC 21 language codes (3-letter); our catalogue uses
@@ -48,6 +52,8 @@ final class ExternalBookTemplateProvider implements BookTemplateProvider
     public function __construct(
         private readonly HttpClientInterface $client,
         private readonly LoggerInterface $logger,
+        private readonly CacheInterface $cache,
+        private readonly int $cacheTtl,
     ) {}
 
     public function key(): string
@@ -57,30 +63,23 @@ final class ExternalBookTemplateProvider implements BookTemplateProvider
 
     public function search(string $query, int $limit): array
     {
-        $query = trim($query);
-        if ($query === '' || $limit < 1) {
+        if (trim($query) === '' || $limit < 1) {
             return [];
         }
 
-        try {
-            // An ISBN-looking query searches the isbn index; anything else the title.
-            $param = $this->looksLikeIsbn($query) ? 'isbn' : 'title';
-            $response = $this->client->request('GET', self::SEARCH_PATH, [
-                'query' => [
-                    $param   => $query,
-                    'fields' => self::FIELDS,
-                    'limit'  => $limit,
-                ],
-            ]);
-
-            $docs = $response->toArray()['docs'] ?? [];
-        } catch (HttpExceptionInterface $e) {
-            // Transport/HTTP/decoding failure — degrade to no results, don't break the search.
-            $this->logger->warning('Open Library template search failed: {error}', ['error' => $e->getMessage()]);
-
+        // An ISBN-looking query searches the isbn index; anything else the title.
+        // The query is normalised so equivalent inputs (case, spacing, ISBN
+        // hyphenation) share both the upstream request and the cache entry.
+        $param = $this->looksLikeIsbn($query) ? 'isbn' : 'title';
+        $normalized = $this->normalize($param, $query);
+        if ($normalized === '') {
             return [];
         }
 
+        $docs = $this->fetchDocsCached($param, $normalized, $limit);
+
+        // Map on read (not cached) so transformation fixes apply without waiting
+        // out the TTL; cap at the requested limit.
         $templates = [];
         foreach ($docs as $doc) {
             $template = $this->toTemplate($doc);
@@ -93,6 +92,63 @@ final class ExternalBookTemplateProvider implements BookTemplateProvider
         }
 
         return $templates;
+    }
+
+    /**
+     * Cached raw docs for a normalised query. Only successful fetches are stored
+     * (the callback throws on failure, so nothing is cached and we degrade to []);
+     * empty results get a short TTL, hits the configured long one.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function fetchDocsCached(string $param, string $normalized, int $limit): array
+    {
+        // sha1 keeps arbitrary query characters out of the (PSR-6 reserved-char) key.
+        $key = sprintf('ol.%s.%d.%s', $param, $limit, sha1($normalized));
+
+        try {
+            return $this->cache->get($key, function (ItemInterface $item) use ($param, $normalized, $limit): array {
+                $docs = $this->fetchDocs($param, $normalized, $limit);
+                $item->expiresAfter($docs === [] ? min(self::EMPTY_TTL, $this->cacheTtl) : $this->cacheTtl);
+
+                return $docs;
+            });
+        } catch (HttpExceptionInterface $e) {
+            // Transport/HTTP/decoding failure — degrade to no results, don't cache, don't break.
+            $this->logger->warning('Open Library template search failed: {error}', ['error' => $e->getMessage()]);
+
+            return [];
+        }
+    }
+
+    /**
+     * One live call to the Open Library search index.
+     *
+     * @return array<int, array<string, mixed>>
+     *
+     * @throws HttpExceptionInterface on transport, non-2xx or decode failure
+     */
+    private function fetchDocs(string $param, string $query, int $limit): array
+    {
+        $response = $this->client->request('GET', self::SEARCH_PATH, [
+            'query' => [
+                $param   => $query,
+                'fields' => self::FIELDS,
+                'limit'  => $limit,
+            ],
+        ]);
+
+        return $response->toArray()['docs'] ?? [];
+    }
+
+    /** Canonical form of a query for a given index — drives cache hits and the request. */
+    private function normalize(string $param, string $query): string
+    {
+        if ($param === 'isbn') {
+            return preg_replace('/[\s-]/', '', $query) ?? '';
+        }
+
+        return mb_strtolower(trim(preg_replace('/\s+/', ' ', $query) ?? ''));
     }
 
     /** Map one Open Library search doc to a template, or null if it has no title. */
