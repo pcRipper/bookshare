@@ -7,6 +7,15 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.4.0',
+    date: '2026-07-01',
+    notes: [
+      'Books now have a description. Add one in the Add/Edit dialog, and it comes along automatically when you fill a book from a template or an Open Library match.',
+      'See a book’s description right on its cover — hover on desktop, or tap the info button on mobile — across your library, Discover and profiles.',
+      'CSV export and import now include the description column.',
+    ],
+  },
+  {
     version: '1.3.0',
     date: '2026-07-01',
     notes: [
