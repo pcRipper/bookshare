@@ -2,9 +2,12 @@
 
 namespace App\Repository;
 
+use App\Dto\PaginatedResult;
+use App\Dto\Pagination;
 use App\Entity\Subscription;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
 class SubscriptionRepository extends ServiceEntityRepository
@@ -46,6 +49,28 @@ class SubscriptionRepository extends ServiceEntityRepository
             ->orderBy('s.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * One page of the people a subscriber follows, most recently followed first,
+     * with the total follow count. The followed user is eager-loaded (to-one).
+     *
+     * @return PaginatedResult<Subscription>
+     */
+    public function findFollowingPaginated(User $subscriber, Pagination $pagination): PaginatedResult
+    {
+        $query = $this->createQueryBuilder('s')
+            ->innerJoin('s.subscribedTo', 'u')->addSelect('u')
+            ->andWhere('s.subscriber = :subscriber')
+            ->setParameter('subscriber', $subscriber)
+            ->orderBy('s.createdAt', 'DESC')
+            ->setFirstResult($pagination->offset())
+            ->setMaxResults($pagination->perPage)
+            ->getQuery();
+
+        $paginator = new Paginator($query, fetchJoinCollection: false);
+
+        return new PaginatedResult(iterator_to_array($paginator), \count($paginator));
     }
 
     /**

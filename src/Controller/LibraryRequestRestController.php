@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Api\ResponseMapper;
+use App\Dto\Pagination;
 use App\Entity\Book;
 use App\Entity\LibraryRequest;
 use App\Entity\User;
@@ -21,6 +22,13 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/requests')]
 class LibraryRequestRestController extends AbstractController
 {
+    /**
+     * Loans per page in the History views. Only the `all` (history) slice is
+     * paginated — the in-flight slices (open/active) are naturally small and are
+     * refetched wholesale on Mercure signals, so they stay bare arrays.
+     */
+    private const HISTORY_PER_PAGE = 20;
+
     public function __construct(
         private readonly ResponseMapper $mapper,
         private readonly LibraryRequestService $service,
@@ -38,9 +46,23 @@ class LibraryRequestRestController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        $statuses = $this->statusFilter($request->query->get('status', 'open'));
+        $keyword = $request->query->get('status', 'open');
+        $statuses = $this->statusFilter($keyword);
         if ($statuses === null) {
             return $this->json(['error' => 'Invalid status filter.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // The full history can grow unbounded → paginate it; in-flight slices stay bare.
+        if ($keyword === 'all') {
+            $pagination = Pagination::fromRequest($request, self::HISTORY_PER_PAGE);
+            $result = $repo->findIncomingPaginated($user, $statuses, $pagination);
+
+            return $this->json($this->mapper->paginated(
+                $result->items,
+                $result->total,
+                $pagination,
+                fn (LibraryRequest $r) => $this->mapper->request($r),
+            ));
         }
 
         return $this->json($this->mapper->requests($repo->findIncoming($user, $statuses)));
@@ -56,9 +78,23 @@ class LibraryRequestRestController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        $statuses = $this->statusFilter($request->query->get('status', 'active'));
+        $keyword = $request->query->get('status', 'active');
+        $statuses = $this->statusFilter($keyword);
         if ($statuses === null) {
             return $this->json(['error' => 'Invalid status filter.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // The full history can grow unbounded → paginate it; in-flight slices stay bare.
+        if ($keyword === 'all') {
+            $pagination = Pagination::fromRequest($request, self::HISTORY_PER_PAGE);
+            $result = $repo->findOutgoingPaginated($user, $statuses, $pagination);
+
+            return $this->json($this->mapper->paginated(
+                $result->items,
+                $result->total,
+                $pagination,
+                fn (LibraryRequest $r) => $this->mapper->request($r),
+            ));
         }
 
         return $this->json($this->mapper->requests($repo->findOutgoing($user, $statuses)));

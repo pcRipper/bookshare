@@ -2,8 +2,11 @@
 
 namespace App\Repository;
 
+use App\Dto\PaginatedResult;
+use App\Dto\Pagination;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
 class UserRepository extends ServiceEntityRepository
@@ -49,16 +52,38 @@ class UserRepository extends ServiceEntityRepository
      */
     public function findPublicForDiscover(User $viewer, string $query, int $limit = 20): array
     {
+        return $this->discoverQuery($viewer, $query)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * One page of Discover "Accounts" matches, with the total matching count.
+     *
+     * @return PaginatedResult<User>
+     */
+    public function findPublicForDiscoverPaginated(User $viewer, string $query, Pagination $pagination): PaginatedResult
+    {
+        $query = $this->discoverQuery($viewer, $query)
+            ->setFirstResult($pagination->offset())
+            ->setMaxResults($pagination->perPage)
+            ->getQuery();
+
+        $paginator = new Paginator($query, fetchJoinCollection: false);
+
+        return new PaginatedResult(iterator_to_array($paginator), \count($paginator));
+    }
+
+    private function discoverQuery(User $viewer, string $query): \Doctrine\ORM\QueryBuilder
+    {
         return $this->createQueryBuilder('u')
             ->where('u.id != :viewer')
             ->andWhere('u.isPrivate = false')
             ->andWhere('LOWER(u.fullName) LIKE :q')
             ->setParameter('viewer', $viewer->getId())
             ->setParameter('q', '%' . $this->escapeLike(mb_strtolower($query)) . '%')
-            ->orderBy('u.fullName', 'ASC')
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
+            ->orderBy('u.fullName', 'ASC');
     }
 
     /** Escapes LIKE wildcards so user input is matched literally. */

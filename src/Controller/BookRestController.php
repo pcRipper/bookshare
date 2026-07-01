@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Api\ResponseMapper;
 use App\Dto\BookInput;
+use App\Dto\Pagination;
 use App\Entity\Book;
 use App\Entity\User;
 use App\Enum\BookStatus;
@@ -27,6 +28,11 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/books')]
 class BookRestController extends AbstractController
 {
+    /** Books per page in a library collection grid. */
+    private const COLLECTION_PER_PAGE = 24;
+    /** Books per page in the Discover grid. */
+    private const DISCOVER_PER_PAGE = 24;
+
     public function __construct(
         private readonly ResponseMapper $mapper,
         private readonly BookService $books,
@@ -65,18 +71,21 @@ class BookRestController extends AbstractController
             }
         }
 
-        $payload = $this->mapper->books($repo->findByOwner($owner, $status));
+        $pagination = Pagination::fromRequest($request, self::COLLECTION_PER_PAGE);
+        $result = $repo->findByOwnerPaginated($owner, $status, $pagination);
 
         // Annotate viewer-relative borrow state when browsing someone else's shelf.
-        if ($owner !== $viewer) {
-            $pending = array_flip($requests->findPendingBookIdsForRequester($viewer));
-            $payload = array_map(
-                static fn (array $b) => $b + ['requested' => isset($pending[$b['id']])],
-                $payload,
-            );
-        }
+        $browsing = $owner !== $viewer;
+        $pending = $browsing ? array_flip($requests->findPendingBookIdsForRequester($viewer)) : [];
 
-        return $this->json($payload);
+        return $this->json($this->mapper->paginated(
+            $result->items,
+            $result->total,
+            $pagination,
+            fn (Book $b) => $browsing
+                ? $this->mapper->book($b) + ['requested' => isset($pending[$b->getId()])]
+                : $this->mapper->book($b),
+        ));
     }
 
     /**
@@ -115,15 +124,17 @@ class BookRestController extends AbstractController
             $language = (string) $raw;
         }
 
-        $books = $repo->findForDiscover($viewer, $q !== '' ? $q : null, $category, $language);
+        $pagination = Pagination::fromRequest($request, self::DISCOVER_PER_PAGE);
+        $result = $repo->findForDiscoverPaginated($viewer, $q !== '' ? $q : null, $category, $language, $pagination);
 
         $pending = array_flip($requests->findPendingBookIdsForRequester($viewer));
-        $payload = array_map(
-            fn (Book $b) => $this->mapper->discoverBook($b) + ['requested' => isset($pending[$b->getId()])],
-            $books,
-        );
 
-        return $this->json($payload);
+        return $this->json($this->mapper->paginated(
+            $result->items,
+            $result->total,
+            $pagination,
+            fn (Book $b) => $this->mapper->discoverBook($b) + ['requested' => isset($pending[$b->getId()])],
+        ));
     }
 
     /** Download the signed-in user's collection as a CSV file. */

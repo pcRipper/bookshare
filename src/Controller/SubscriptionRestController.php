@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use App\Api\ResponseMapper;
+use App\Dto\Pagination;
+use App\Entity\Subscription;
 use App\Entity\User;
 use App\Repository\BookRepository;
 use App\Repository\LibraryRequestRepository;
@@ -11,12 +13,16 @@ use App\Service\SubscriptionService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/subscriptions')]
 class SubscriptionRestController extends AbstractController
 {
+    /** Followed readers per page in the Library "Following" tab. */
+    private const FOLLOWING_PER_PAGE = 20;
+
     public function __construct(
         private readonly ResponseMapper $mapper,
         private readonly SubscriptionService $service,
@@ -28,14 +34,19 @@ class SubscriptionRestController extends AbstractController
 
     /** The people the current user follows — powers the Library "Following" tab. */
     #[Route('', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(Request $request): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
 
-        return $this->json(array_map(
-            fn ($s) => $this->mapper->subscription($s),
-            $this->subscriptions->findFollowing($user),
+        $pagination = Pagination::fromRequest($request, self::FOLLOWING_PER_PAGE);
+        $result = $this->subscriptions->findFollowingPaginated($user, $pagination);
+
+        return $this->json($this->mapper->paginated(
+            $result->items,
+            $result->total,
+            $pagination,
+            fn (Subscription $s) => $this->mapper->subscription($s),
         ));
     }
 

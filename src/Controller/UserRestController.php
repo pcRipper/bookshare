@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Api\ResponseMapper;
+use App\Dto\Pagination;
 use App\Entity\Subscription;
 use App\Entity\User;
 use App\Repository\SubscriptionRepository;
@@ -17,6 +18,9 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/users')]
 class UserRestController extends AbstractController
 {
+    /** Reader cards per page in the Discover "Accounts" results. */
+    private const DISCOVER_PER_PAGE = 18;
+
     public function __construct(
         private readonly ResponseMapper $mapper,
         private readonly UserStatsProvider $stats,
@@ -34,12 +38,16 @@ class UserRestController extends AbstractController
         /** @var User $viewer */
         $viewer = $this->getUser();
 
+        $pagination = Pagination::fromRequest($request, self::DISCOVER_PER_PAGE);
+
         $q = trim((string) $request->query->get('q', ''));
         if ($q === '') {
-            return $this->json([]);
+            // The SPA prompts to search rather than listing everyone — return an
+            // empty page so the response shape stays consistent with a real search.
+            return $this->json($this->mapper->paginated([], 0, $pagination, static fn ($u) => $u));
         }
 
-        $matches = $users->findPublicForDiscover($viewer, $q);
+        $result = $users->findPublicForDiscoverPaginated($viewer, $q, $pagination);
 
         // Resolve the viewer's follow state for the whole result set in one query
         // instead of an isSubscribed() probe per row.
@@ -49,16 +57,16 @@ class UserRestController extends AbstractController
             $followedIds[$subscription->getSubscribedTo()->getId()] = true;
         }
 
-        $payload = array_map(
+        return $this->json($this->mapper->paginated(
+            $result->items,
+            $result->total,
+            $pagination,
             fn (User $u) => $this->mapper->userCard(
                 $u,
                 $this->stats->forUser($u),
                 isset($followedIds[$u->getId()]),
             ),
-            $matches,
-        );
-
-        return $this->json($payload);
+        ));
     }
 
     /** Public profile of any user: identity and stats. Books are fetched separately via /api/books?owner={id}. */

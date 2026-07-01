@@ -2,11 +2,14 @@
 
 namespace App\Repository;
 
+use App\Dto\PaginatedResult;
+use App\Dto\Pagination;
 use App\Entity\Book;
 use App\Entity\Category;
 use App\Entity\User;
 use App\Enum\BookStatus;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
 class BookRepository extends ServiceEntityRepository
@@ -29,6 +32,25 @@ class BookRepository extends ServiceEntityRepository
         }
 
         return $this->findBy($criteria, ['createdAt' => 'DESC']);
+    }
+
+    /**
+     * One page of a user's books, optionally filtered by status, newest first.
+     * Categories stay lazy (loaded per book by the mapper), matching findByOwner.
+     *
+     * @return PaginatedResult<Book>
+     */
+    public function findByOwnerPaginated(User $owner, ?BookStatus $status, Pagination $pagination): PaginatedResult
+    {
+        $criteria = ['owner' => $owner];
+        if ($status !== null) {
+            $criteria['status'] = $status;
+        }
+
+        return new PaginatedResult(
+            $this->findBy($criteria, ['createdAt' => 'DESC'], $pagination->perPage, $pagination->offset()),
+            $this->count($criteria),
+        );
     }
 
     public function countByOwner(User $owner): int
@@ -78,6 +100,47 @@ class BookRepository extends ServiceEntityRepository
         ?string $language = null,
         int $limit = 60,
     ): array {
+        return $this->discoverQuery($viewer, $query, $category, $language)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * One page of Discover results, with the total matching count. A book
+     * references a given category at most once, so the optional category join
+     * never multiplies rows — Paginator's DISTINCT count stays exact.
+     *
+     * @return PaginatedResult<Book>
+     */
+    public function findForDiscoverPaginated(
+        User $viewer,
+        ?string $query,
+        ?Category $category,
+        ?string $language,
+        Pagination $pagination,
+    ): PaginatedResult {
+        $query = $this->discoverQuery($viewer, $query, $category, $language)
+            ->setFirstResult($pagination->offset())
+            ->setMaxResults($pagination->perPage)
+            ->getQuery();
+
+        // owner is a to-one fetch join; categories stay lazy → no collection to page.
+        $paginator = new Paginator($query, fetchJoinCollection: false);
+
+        return new PaginatedResult(iterator_to_array($paginator), \count($paginator));
+    }
+
+    /**
+     * Builds the shared Discover filter query (community books from public
+     * members, excluding the viewer and unavailable books), newest first.
+     */
+    private function discoverQuery(
+        User $viewer,
+        ?string $query,
+        ?Category $category,
+        ?string $language,
+    ): \Doctrine\ORM\QueryBuilder {
         $qb = $this->createQueryBuilder('b')
             ->innerJoin('b.owner', 'o')->addSelect('o')
             ->where('o.id != :viewer')
@@ -85,8 +148,7 @@ class BookRepository extends ServiceEntityRepository
             ->andWhere('b.status != :unavailable')
             ->setParameter('viewer', $viewer->getId())
             ->setParameter('unavailable', BookStatus::Unavailable)
-            ->orderBy('b.createdAt', 'DESC')
-            ->setMaxResults($limit);
+            ->orderBy('b.createdAt', 'DESC');
 
         if ($language !== null && $language !== '') {
             $qb->andWhere('b.language = :language')->setParameter('language', $language);
@@ -99,13 +161,12 @@ class BookRepository extends ServiceEntityRepository
         }
 
         if ($category !== null) {
-            // No duplicate rows: a book references a given category at most once.
             $qb->innerJoin('b.categories', 'c')
                 ->andWhere('c = :category')
                 ->setParameter('category', $category);
         }
 
-        return $qb->getQuery()->getResult();
+        return $qb;
     }
 
     /** Books owned by the user that are shareable (status != unavailable). */
