@@ -233,6 +233,7 @@ Design is **signal-and-refetch, not state-push**: after a transition commits, `A
 - **Errors → toasts, not error pages.** `AppErrorBoundary` only catches truly unexpected render errors (→ `ErrorView`); expected API failures must be caught locally and surfaced via the `toast` store (`toast.error(apiErrorMessage(e, fallback))`). `utils/apiError.js` reads RFC7807 `detail`, then `error`, then `message`. `<ToastHost>` lives at the App root.
 - **Loading states** use shimmer skeletons (`ui/BaseSkeleton`, `BookCardSkeleton`, `BookGridSkeleton`) and `BaseSpinner` (also for in-button loading), never bare "Loading…" text. `ui/StatusScreen` renders empty/error states.
 - **State** lives in Pinia stores (`auth`, `library`, `discover`, `profile`, `toast`); use `storeToRefs` to keep reactivity when destructuring.
+- **Consistency by default.** Styles and interaction patterns must stay consistent across the app — reuse the existing shared component/token rather than hand-rolling a one-off. Diverge only for a real reason (a genuinely different affordance or requirement), not convenience. Dropdowns are the shared combobox look: `ui/LanguageSelect.vue` (searchable) and `ui/BaseSelect.vue` (plain option list) — never a bare native `<select>`.
 
 ### CORS
 `nelmio/cors-bundle`. `CORS_ALLOW_ORIGIN` in `.env` defaults to a regex matching any `localhost` port (covers the Vite dev server). Adjust for production in `.env.local` / deployment config.

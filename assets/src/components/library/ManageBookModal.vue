@@ -2,6 +2,7 @@
 import { ref, watch, computed } from 'vue'
 import CategorySelector from '@/components/library/CategorySelector.vue'
 import LanguageSelect from '@/components/ui/LanguageSelect.vue'
+import BaseSelect from '@/components/ui/BaseSelect.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 
 const props = defineProps({
@@ -150,9 +151,7 @@ function onDelete() {
             </div>
             <div class="field">
               <label class="field__label" for="mb-status">Status</label>
-              <select id="mb-status" v-model="form.status" class="input" :disabled="readOnly">
-                <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-              </select>
+              <BaseSelect id="mb-status" v-model="form.status" :options="statusOptions" :disabled="readOnly" />
             </div>
           </div>
 
