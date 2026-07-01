@@ -25,6 +25,9 @@ const SELECTABLE_STATUSES = [
   { value: 'unavailable',       label: 'Unavailable' },
 ]
 
+// Matches BookInput's Assert\Length(max: 2000) on description.
+const DESC_MAX = 2000
+
 const form = ref(blank())
 // Which action the parent is currently processing — drives the right spinner.
 const pendingAction = ref(null) // 'save' | 'delete' | null
@@ -46,9 +49,11 @@ const statusOptions = computed(() =>
     : SELECTABLE_STATUSES,
 )
 
+const descRemaining = computed(() => DESC_MAX - form.value.description.length)
+
 function blank() {
   // categories: array of { id, name, colorHex }
-  return { title: '', author: '', isbn: '', status: 'own', language: null, coverPath: '', categories: [] }
+  return { title: '', author: '', description: '', isbn: '', status: 'own', language: null, coverPath: '', categories: [] }
 }
 
 // Repopulate whenever the modal opens or the target book changes.
@@ -63,6 +68,7 @@ watch(
       ? {
           title: props.book.title ?? '',
           author: props.book.author ?? '',
+          description: props.book.description ?? '',
           isbn: props.book.isbn ?? '',
           status: props.book.status ?? 'own',
           language: props.book.language ?? null,
@@ -87,6 +93,7 @@ function onSave() {
   emit('save', {
     title: form.value.title.trim(),
     author: form.value.author.trim(),
+    description: form.value.description.trim() || null,
     isbn: form.value.isbn.trim() || null,
     status: form.value.status,
     language: form.value.language || null,
@@ -107,6 +114,7 @@ function applyTemplate(t) {
   form.value = {
     title: t.title ?? '',
     author: t.author ?? '',
+    description: t.description ?? '',
     isbn: t.isbn ?? '',
     status: 'own',
     language: t.language ?? null,
@@ -192,6 +200,20 @@ function applyTemplate(t) {
           <div class="field">
             <label class="field__label" for="mb-author">Author <span class="req">*</span></label>
             <input id="mb-author" v-model="form.author" class="input" type="text" placeholder="Enter author name" :disabled="readOnly" />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="mb-description">Description</label>
+            <textarea
+              id="mb-description"
+              v-model="form.description"
+              class="input textarea"
+              rows="4"
+              :maxlength="DESC_MAX"
+              placeholder="A short blurb or summary"
+              :disabled="readOnly"
+            ></textarea>
+            <span v-if="!readOnly" class="field__counter">{{ descRemaining }}</span>
           </div>
 
           <div class="field-row">
@@ -331,6 +353,13 @@ function applyTemplate(t) {
   text-transform: uppercase;
 }
 .req { color: var(--color-error); }
+
+.textarea { resize: vertical; min-height: 88px; font-family: var(--font-body); line-height: 1.5; }
+.field__counter {
+  align-self: flex-end;
+  font-size: var(--text-label-sm);
+  color: var(--color-secondary);
+}
 
 .input {
   width: 100%;

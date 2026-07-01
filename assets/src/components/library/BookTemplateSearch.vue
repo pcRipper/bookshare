@@ -147,6 +147,7 @@ const showEmpty = computed(() =>
             <span class="tpl__meta">
               <span class="tpl__title">{{ t.title }}</span>
               <span class="tpl__author">{{ t.author }}</span>
+              <span v-if="t.description" class="tpl__desc">{{ t.description }}</span>
               <span class="tpl__tags">
                 <span v-if="t.languageName" class="tpl__tag">{{ t.languageName }}</span>
                 <span v-if="t.isbn" class="tpl__isbn">ISBN {{ t.isbn }}</span>
@@ -274,6 +275,16 @@ const showEmpty = computed(() =>
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.tpl__desc {
+  font-size: var(--text-label-sm);
+  color: var(--color-secondary);
+  line-height: 1.4;
+  margin-top: 2px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .tpl__tags { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs); margin-top: 2px; }
 .tpl__tag {
