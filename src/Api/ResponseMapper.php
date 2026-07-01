@@ -88,6 +88,23 @@ class ResponseMapper
         return $this->book($book) + ['owner' => $this->userSummary($book->getOwner())];
     }
 
+    /**
+     * A book template for the "Add New Book" search: only the copyable
+     * bibliographic fields, plus the resolved language label. No owner, id or
+     * lending state — a template is metadata to seed a new book, not a resource.
+     */
+    public function bookTemplate(\App\Dto\BookTemplate $template): array
+    {
+        return [
+            'title'        => $template->title,
+            'author'       => $template->author,
+            'isbn'         => $template->isbn,
+            'coverPath'    => $template->coverPath,
+            'language'     => $template->language,
+            'languageName' => \App\Language\LanguageCatalog::name($template->language),
+        ];
+    }
+
     /** Compact user shape for nesting in other payloads. */
     public function userSummary(User $user): array
     {

@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Api\ResponseMapper;
 use App\Dto\BookInput;
+use App\Dto\BookTemplate;
 use App\Dto\Pagination;
 use App\Entity\Book;
 use App\Entity\User;
@@ -16,6 +17,7 @@ use App\Repository\UserRepository;
 use App\Security\Voter\BookVoter;
 use App\Service\BookCsvService;
 use App\Service\BookService;
+use App\Service\BookTemplate\BookTemplateSearch;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -32,6 +34,8 @@ class BookRestController extends AbstractController
     private const COLLECTION_PER_PAGE = 24;
     /** Books per page in the Discover grid. */
     private const DISCOVER_PER_PAGE = 24;
+    /** Max templates returned by the "Add New Book" search (bounded, bare array). */
+    private const TEMPLATE_RESULTS = 12;
 
     public function __construct(
         private readonly ResponseMapper $mapper,
@@ -134,6 +138,33 @@ class BookRestController extends AbstractController
             $result->total,
             $pagination,
             fn (Book $b) => $this->mapper->discoverBook($b) + ['requested' => isset($pending[$b->getId()])],
+        ));
+    }
+
+    /**
+     * Search for book templates to pre-fill the "Add New Book" form. `?source=`
+     * picks the strategy (`site` searches the catalogue, `external` is a
+     * placeholder returning nothing); `?q=` matches title or ISBN. A blank query
+     * yields an empty list. Bounded and consumed whole → a bare array, no envelope.
+     */
+    #[Route('/templates', methods: ['GET'])]
+    public function templates(Request $request, BookTemplateSearch $search): JsonResponse
+    {
+        $source = trim((string) $request->query->get('source', 'site')) ?: 'site';
+        if (!$search->supports($source)) {
+            return $this->json(['error' => 'Unknown template source.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $q = trim((string) $request->query->get('q', ''));
+        if ($q === '') {
+            return $this->json([]);
+        }
+
+        $templates = $search->search($source, $q, self::TEMPLATE_RESULTS);
+
+        return $this->json(array_map(
+            fn (BookTemplate $t) => $this->mapper->bookTemplate($t),
+            $templates,
         ));
     }
 
