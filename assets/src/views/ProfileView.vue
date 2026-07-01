@@ -15,6 +15,7 @@ import CategoryTag from '@/components/ui/CategoryTag.vue'
 import BorrowBookCard from '@/components/profile/BorrowBookCard.vue'
 import EditProfileModal from '@/components/profile/EditProfileModal.vue'
 import ManageBookModal from '@/components/library/ManageBookModal.vue'
+import BookDetailModal from '@/components/ui/BookDetailModal.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 
 const route = useRoute()
@@ -118,6 +119,10 @@ async function onRequest(bookId) {
     requesting.delete(bookId)
   }
 }
+
+/* ── Book detail modal (other readers' books; own books open the editor) ─ */
+const detailBook = ref(null)
+function openDetail(book) { detailBook.value = book }
 
 /* ── Own-profile editing (only when profile.isSelf) ───────────────────── */
 const editProfileOpen = ref(false)
@@ -287,6 +292,7 @@ async function onBookDelete(id) {
             :pending="requesting.has(book.id)"
             @request="onRequest"
             @edit="openEditBook"
+            @open="openDetail"
           />
           <!-- Add-book placeholder, own profile only (first page) -->
           <div
@@ -332,6 +338,15 @@ async function onBookDelete(id) {
       @save="onBookSave"
       @delete="onBookDelete"
       @close="bookModalOpen = false"
+    />
+
+    <!-- Read-only detail (other readers' books) -->
+    <BookDetailModal
+      :open="!!detailBook"
+      :book="detailBook"
+      :pending="!!detailBook && requesting.has(detailBook.id)"
+      @request="onRequest"
+      @close="detailBook = null"
     />
   </AppLayout>
 </template>

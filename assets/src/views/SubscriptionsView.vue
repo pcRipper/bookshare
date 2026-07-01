@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSubscriptionsStore } from '@/stores/subscriptions'
 import { useToastStore } from '@/stores/toast'
@@ -8,6 +8,7 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import DiscoverBookCard from '@/components/discover/DiscoverBookCard.vue'
+import BookDetailModal from '@/components/ui/BookDetailModal.vue'
 
 const store = useSubscriptionsStore()
 const toast = useToastStore()
@@ -28,6 +29,10 @@ async function onRequest(bookId) {
     requesting.delete(bookId)
   }
 }
+
+/* ── Book detail modal (opens on card click) ───────────────────────────── */
+const detailBook = ref(null)
+function openDetail(book) { detailBook.value = book }
 </script>
 
 <template>
@@ -86,12 +91,21 @@ async function onRequest(bookId) {
                 :book="book"
                 :pending="requesting.has(book.id)"
                 @request="onRequest"
+                @open="openDetail"
               />
             </div>
           </div>
         </section>
       </div>
     </div>
+
+    <BookDetailModal
+      :open="!!detailBook"
+      :book="detailBook"
+      :pending="!!detailBook && requesting.has(detailBook.id)"
+      @request="onRequest"
+      @close="detailBook = null"
+    />
   </AppLayout>
 </template>
 

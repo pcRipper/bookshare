@@ -1,7 +1,6 @@
 <script setup>
 import { computed } from 'vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
-import BookBlurb from '@/components/ui/BookBlurb.vue'
 
 const props = defineProps({
   book: {
@@ -15,7 +14,13 @@ const props = defineProps({
   pending: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['request', 'edit'])
+const emit = defineEmits(['request', 'edit', 'open'])
+
+// Clicking the card body edits your own book, but opens the read-only detail
+// modal on someone else's (where you can only borrow, not edit).
+function onCardClick() {
+  emit(props.isSelf ? 'edit' : 'open', props.book)
+}
 
 const available = computed(() => props.book.status === 'own')
 
@@ -44,7 +49,7 @@ function onAction() {
 </script>
 
 <template>
-  <article class="borrow-card" :class="{ 'borrow-card--clickable': isSelf }" @click="isSelf && emit('edit', book)">
+  <article class="borrow-card borrow-card--clickable" @click="onCardClick">
     <div class="borrow-card__cover">
       <img
         v-if="book.coverPath"
@@ -56,7 +61,6 @@ function onAction() {
         <span class="material-symbols-outlined">menu_book</span>
       </div>
       <span v-if="statusBadge" class="borrow-card__badge">{{ statusBadge }}</span>
-      <BookBlurb :description="book.description" />
     </div>
 
     <div class="borrow-card__body">
@@ -104,11 +108,6 @@ function onAction() {
   transition: transform 0.5s ease;
 }
 .borrow-card:hover .borrow-card__img { transform: scale(1.05); }
-
-/* Reveal the description on hover (pointer devices); touch devices get the info toggle. */
-@media (hover: hover) {
-  .borrow-card:hover :deep(.book-blurb__panel) { opacity: 1; }
-}
 
 .borrow-card__placeholder {
   width: 100%;

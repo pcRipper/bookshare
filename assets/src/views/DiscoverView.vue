@@ -1,9 +1,10 @@
 <script setup>
-import { computed, reactive, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDiscoverStore } from '@/stores/discover'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import DiscoverBookCard from '@/components/discover/DiscoverBookCard.vue'
+import BookDetailModal from '@/components/ui/BookDetailModal.vue'
 import DiscoverUserCard from '@/components/discover/DiscoverUserCard.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import LanguageSelect from '@/components/ui/LanguageSelect.vue'
@@ -64,6 +65,10 @@ async function onRequest(id) {
     requesting.delete(id)
   }
 }
+
+/* ── Book detail modal (opens on card click; borrow from within) ───────── */
+const detailBook = ref(null)
+function openDetail(book) { detailBook.value = book }
 
 /* ── Follow / unfollow (per-account in-flight tracking) ────────────────── */
 const following = reactive(new Set())
@@ -229,6 +234,7 @@ async function onToggleFollow(action, id) {
                 :book="book"
                 :pending="requesting.has(book.id)"
                 @request="onRequest"
+                @open="openDetail"
               />
             </div>
             <Pagination
@@ -251,6 +257,14 @@ async function onToggleFollow(action, id) {
         </template>
       </section>
     </div>
+
+    <BookDetailModal
+      :open="!!detailBook"
+      :book="detailBook"
+      :pending="!!detailBook && requesting.has(detailBook.id)"
+      @request="onRequest"
+      @close="detailBook = null"
+    />
   </AppLayout>
 </template>
 

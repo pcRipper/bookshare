@@ -3,7 +3,6 @@ import { computed } from 'vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
-import BookBlurb from '@/components/ui/BookBlurb.vue'
 
 const props = defineProps({
   book: {
@@ -15,7 +14,7 @@ const props = defineProps({
   pending: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['request'])
+const emit = defineEmits(['request', 'open'])
 
 const primaryCategory = computed(() => props.book.categories?.[0] ?? null)
 const available = computed(() => props.book.status === 'own')
@@ -35,7 +34,7 @@ function onAction() {
 </script>
 
 <template>
-  <article class="discover-card">
+  <article class="discover-card discover-card--clickable" @click="emit('open', book)">
     <div class="discover-card__cover">
       <img
         v-if="book.coverPath"
@@ -53,7 +52,6 @@ function onAction() {
         :color="primaryCategory.colorHex"
         class="discover-card__chip"
       />
-      <BookBlurb :description="book.description" />
     </div>
 
     <div class="discover-card__body">
@@ -79,7 +77,7 @@ function onAction() {
         class="discover-card__action"
         :class="`discover-card__action--${action.state}`"
         :disabled="action.state !== 'available' || pending"
-        @click="onAction"
+        @click.stop="onAction"
       >
         <BaseSpinner v-if="pending" size="sm" />
         <span v-else-if="action.state === 'available'" class="material-symbols-outlined">handshake</span>
@@ -104,6 +102,7 @@ function onAction() {
   border-color: var(--color-outline-variant);
   box-shadow: 0 6px 20px rgba(35, 44, 51, 0.08);
 }
+.discover-card--clickable { cursor: pointer; }
 
 .discover-card__cover {
   aspect-ratio: 2 / 3;
@@ -118,11 +117,6 @@ function onAction() {
   transition: transform 0.5s ease;
 }
 .discover-card:hover .discover-card__img { transform: scale(1.05); }
-
-/* Reveal the description on hover (pointer devices); touch devices get the info toggle. */
-@media (hover: hover) {
-  .discover-card:hover :deep(.book-blurb__panel) { opacity: 1; }
-}
 
 .discover-card__placeholder {
   width: 100%;
