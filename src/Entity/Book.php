@@ -22,7 +22,7 @@ class Book
     #[ORM\Column(length: 255)]
     private string $author;
 
-    /** Free-text blurb/summary; null when unset. Length is capped at the DTO (2000). */
+    /** Free-text blurb/summary; null when unset. Length is capped at the DTO (500). */
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
 

@@ -19,7 +19,7 @@ class BookInput
     #[Assert\Length(max: 32)]
     public ?string $isbn = null;
 
-    #[Assert\Length(max: 2000)]
+    #[Assert\Length(max: 500)]
     public ?string $description = null;
 
     #[Assert\Length(max: 500)]

@@ -25,8 +25,8 @@ const SELECTABLE_STATUSES = [
   { value: 'unavailable',       label: 'Unavailable' },
 ]
 
-// Matches BookInput's Assert\Length(max: 2000) on description.
-const DESC_MAX = 2000
+// Matches BookInput's Assert\Length(max: 500) on description.
+const DESC_MAX = 500
 
 const form = ref(blank())
 // Which action the parent is currently processing — drives the right spinner.
