@@ -11,6 +11,7 @@
 - [x] paginate browse/growing list endpoints (collection, discover books/accounts, loan history, following) behind a shared { items, pagination } envelope; in-flight lists stay bare arrays
 - [x] integrate Open Library API as the "external" book-template source (search by ISBN/title, best-effort, identified User-Agent)
 - [x] improve external api rates usage for book creation search (per-source debounce + abort in-flight request on new input)
+- [x] cache Open Library template-search responses (dedicated pool, 7-day TTL, map-on-read, errors never cached, normalized keys)
 
 ## Security & Tests
 - [x] add all possible unit tests
