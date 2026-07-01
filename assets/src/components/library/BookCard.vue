@@ -1,7 +1,6 @@
 <script setup>
 import { computed } from 'vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
-import BookBlurb from '@/components/ui/BookBlurb.vue'
 
 const props = defineProps({
   book: {
@@ -45,8 +44,6 @@ const statusBadge = computed(() => {
         <span class="material-symbols-outlined">{{ statusBadge.icon }}</span>
         {{ statusBadge.label }}
       </span>
-
-      <BookBlurb :description="book.description" />
     </div>
 
     <!-- Body -->
@@ -106,12 +103,6 @@ const statusBadge = computed(() => {
   transition: transform 0.5s ease;
 }
 .book-card:hover .book-card__img { transform: scale(1.05); }
-
-/* Reveal the description on hover (pointer devices). Display-only — the panel
-   stays click-through so the cover click still opens the Manage Book modal. */
-@media (hover: hover) {
-  .book-card:hover :deep(.book-blurb__panel) { opacity: 1; }
-}
 
 .book-card__placeholder {
   width: 100%;
