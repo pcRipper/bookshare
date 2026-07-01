@@ -7,6 +7,14 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.3.0',
+    date: '2026-07-01',
+    notes: [
+      'The “Find a template” tab can now search Open Library: switch to “External sources” to look up books by title or ISBN from the world’s open catalogue and fill your new book in one click.',
+      'Covers, authors and languages come through automatically when a match is found.',
+    ],
+  },
+  {
     version: '1.2.0',
     date: '2026-07-01',
     notes: [
