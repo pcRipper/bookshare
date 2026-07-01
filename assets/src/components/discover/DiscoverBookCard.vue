@@ -3,12 +3,13 @@ import { computed } from 'vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
+import BookBlurb from '@/components/ui/BookBlurb.vue'
 
 const props = defineProps({
   book: {
     type: Object,
     required: true,
-    /* shape: { id, title, author, coverPath, status, requested, categories, owner } */
+    /* shape: { id, title, author, description, coverPath, status, requested, categories, owner } */
   },
   // Parent-controlled: true while this book's borrow request is in flight.
   pending: { type: Boolean, default: false },
@@ -52,6 +53,7 @@ function onAction() {
         :color="primaryCategory.colorHex"
         class="discover-card__chip"
       />
+      <BookBlurb :description="book.description" />
     </div>
 
     <div class="discover-card__body">
@@ -116,6 +118,11 @@ function onAction() {
   transition: transform 0.5s ease;
 }
 .discover-card:hover .discover-card__img { transform: scale(1.05); }
+
+/* Reveal the description on hover (pointer devices); touch devices get the info toggle. */
+@media (hover: hover) {
+  .discover-card:hover :deep(.book-blurb__panel) { opacity: 1; }
+}
 
 .discover-card__placeholder {
   width: 100%;
