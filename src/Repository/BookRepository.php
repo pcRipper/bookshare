@@ -83,6 +83,29 @@ class BookRepository extends ServiceEntityRepository
     }
 
     /**
+     * Books whose title or ISBN matches the query, newest first, capped. Powers
+     * the "Add New Book" template search: it spans *every* library (private
+     * included) because only bibliographic metadata is copied out — never the
+     * owner — so it can't reveal who holds a book. De-duplication of identical
+     * copies happens in the provider (needs the full row to compare).
+     *
+     * @return Book[]
+     */
+    public function searchTemplates(string $query, int $limit): array
+    {
+        $like = '%' . $this->escapeLike(mb_strtolower($query)) . '%';
+
+        return $this->createQueryBuilder('b')
+            ->where('LOWER(b.title) LIKE :q OR LOWER(b.isbn) LIKE :q')
+            ->setParameter('q', $like)
+            ->orderBy('b.createdAt', 'DESC')
+            ->addOrderBy('b.id', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Community books for Discover: shareable books (status != unavailable) owned
      * by *other* members whose profile is public. Optionally narrowed by a
      * free-text query (title or author) and/or a category. Newest first, capped.
