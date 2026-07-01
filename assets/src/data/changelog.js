@@ -7,6 +7,14 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.2.0',
+    date: '2026-07-01',
+    notes: [
+      'Add a book faster: the “Add New Book” dialog now has a “Find a template” tab that searches existing books by title or ISBN and fills the form for you — just tweak and save.',
+      'Switch the template search between books already on the site and external sources (external lookup is coming soon).',
+    ],
+  },
+  {
     version: '1.1.0',
     date: '2026-07-01',
     notes: [
