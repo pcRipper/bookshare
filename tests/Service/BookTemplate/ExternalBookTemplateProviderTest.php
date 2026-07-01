@@ -5,6 +5,7 @@ namespace App\Tests\Service\BookTemplate;
 use App\Service\BookTemplate\ExternalBookTemplateProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 
@@ -20,7 +21,8 @@ class ExternalBookTemplateProviderTest extends TestCase
 
     private function provider(MockHttpClient $client): ExternalBookTemplateProvider
     {
-        return new ExternalBookTemplateProvider($client, new NullLogger());
+        // Fresh in-memory cache per provider so tests are isolated.
+        return new ExternalBookTemplateProvider($client, new NullLogger(), new ArrayAdapter(), 604800);
     }
 
     public function testKeyIsExternal(): void
@@ -129,5 +131,71 @@ class ExternalBookTemplateProviderTest extends TestCase
         });
 
         self::assertSame([], $this->provider($client)->search('   ', 12));
+    }
+
+    public function testRepeatSearchIsServedFromCache(): void
+    {
+        $calls = 0;
+        $client = new MockHttpClient(function () use (&$calls) {
+            $calls++;
+
+            return $this->json(['docs' => [['title' => 'Dune', 'author_name' => ['Frank Herbert']]]]);
+        });
+        $provider = $this->provider($client);
+
+        $first = $provider->search('dune', 12);
+        $second = $provider->search('dune', 12);
+
+        self::assertSame(1, $calls, 'The second identical search should hit the cache, not the API.');
+        self::assertEquals($first, $second);
+    }
+
+    public function testEquivalentQueriesShareOneCacheEntry(): void
+    {
+        $calls = 0;
+        $client = new MockHttpClient(function () use (&$calls) {
+            $calls++;
+
+            return $this->json(['docs' => [['title' => 'Dune']]]);
+        });
+        $provider = $this->provider($client);
+
+        // Case + surrounding/inner whitespace differences normalise to the same key.
+        $provider->search('Dune', 12);
+        $provider->search('  dune ', 12);
+
+        self::assertSame(1, $calls);
+    }
+
+    public function testIsbnHyphenationDoesNotSplitTheCache(): void
+    {
+        $calls = 0;
+        $client = new MockHttpClient(function () use (&$calls) {
+            $calls++;
+
+            return $this->json(['docs' => [['title' => 'Dune']]]);
+        });
+        $provider = $this->provider($client);
+
+        $provider->search('978-0-441-01359-3', 12);
+        $provider->search('9780441013593', 12);
+
+        self::assertSame(1, $calls);
+    }
+
+    public function testUpstreamFailureIsNotCached(): void
+    {
+        // First request fails, second succeeds — same query. A cached error would
+        // make the second call return [] too; it must instead refetch.
+        $client = new MockHttpClient([
+            new MockResponse('down', ['http_code' => 503]),
+            $this->json(['docs' => [['title' => 'Dune']]]),
+        ]);
+        $provider = $this->provider($client);
+
+        self::assertSame([], $provider->search('dune', 12));
+        $second = $provider->search('dune', 12);
+        self::assertCount(1, $second);
+        self::assertSame('Dune', $second[0]->title);
     }
 }
