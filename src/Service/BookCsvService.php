@@ -15,8 +15,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 /**
  * CSV export / import for a user's book collection.
  *
- * The CSV carries one book per row with the columns: title, author, isbn,
- * language (ISO 639-1 code), status, categories (semicolon-joined names).
+ * The CSV carries one book per row with the columns: title, author, description,
+ * isbn, cover, language (ISO 639-1 code), status, categories (semicolon-joined names).
  *
  * Import is parameterised by two independent choices:
  *  - replace:  wipe the user's existing (home) books first, vs. append.
@@ -37,7 +37,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class BookCsvService
 {
     /** Columns, in export order. Import matches them case-insensitively by header. */
-    private const COLUMNS = ['title', 'author', 'isbn', 'cover', 'language', 'status', 'categories'];
+    private const COLUMNS = ['title', 'author', 'description', 'isbn', 'cover', 'language', 'status', 'categories'];
 
     /** Statuses a book may be imported as — never 'lent', which needs a live loan. */
     private const IMPORTABLE_STATUSES = ['own', 'unavailable', 'currently_reading'];
@@ -67,6 +67,7 @@ class BookCsvService
             fputcsv($handle, [
                 $book->getTitle(),
                 $book->getAuthor(),
+                $book->getDescription() ?? '',
                 $book->getIsbn() ?? '',
                 $book->getCoverPath() ?? '',
                 $book->getLanguage() ?? '',
@@ -217,6 +218,8 @@ class BookCsvService
         $input = new BookInput();
         $input->title = $get('title');
         $input->author = $get('author');
+        $description = $get('description');
+        $input->description = $description !== '' ? $description : null;
         $isbn = $get('isbn');
         $input->isbn = $isbn !== '' ? $isbn : null;
         $cover = $get('cover');

@@ -16,6 +16,7 @@ final readonly class BookTemplate
         public ?string $isbn = null,
         public ?string $coverPath = null,
         public ?string $language = null,
+        public ?string $description = null,
     ) {}
 
     /**

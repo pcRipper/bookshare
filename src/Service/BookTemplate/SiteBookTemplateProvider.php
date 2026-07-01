@@ -42,6 +42,7 @@ final class SiteBookTemplateProvider implements BookTemplateProvider
                     $b->getIsbn(),
                     $b->getCoverPath(),
                     $b->getLanguage(),
+                    $b->getDescription(),
                 ),
                 $candidates,
             ),

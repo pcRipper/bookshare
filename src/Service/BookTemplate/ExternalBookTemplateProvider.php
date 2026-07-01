@@ -23,7 +23,7 @@ final class ExternalBookTemplateProvider implements BookTemplateProvider
     private const SEARCH_PATH = '/search.json';
     private const COVER_URL = 'https://covers.openlibrary.org/b/id/%d-M.jpg';
     /** Only the fields we map — keeps the response small. */
-    private const FIELDS = 'title,author_name,isbn,cover_i,language';
+    private const FIELDS = 'title,author_name,isbn,cover_i,language,first_sentence';
     /** Empty results self-heal quickly (a near-miss during indexing), unlike hits. */
     private const EMPTY_TTL = 600;
 
@@ -165,6 +165,9 @@ final class ExternalBookTemplateProvider implements BookTemplateProvider
             isbn: $this->first($doc['isbn'] ?? null),
             coverPath: isset($doc['cover_i']) ? sprintf(self::COVER_URL, (int) $doc['cover_i']) : null,
             language: $this->mapLanguage($doc['language'] ?? null),
+            // The Search API has no full description; its first sentence is the
+            // best blurb we can supply without a second (per-result) Works call.
+            description: $this->first($doc['first_sentence'] ?? null),
         );
     }
 
