@@ -3,6 +3,7 @@
 namespace App\Tests\Api;
 
 use App\Api\ResponseMapper;
+use App\Dto\Pagination;
 use App\Entity\ActivityItem;
 use App\Entity\Book;
 use App\Entity\Category;
@@ -279,6 +280,52 @@ class ResponseMapperTest extends TestCase
         self::assertSame('Actor', $data['actor']['fullName']);
         self::assertSame('B', $data['targetBook']['title']);
         self::assertSame('Target', $data['targetUser']['fullName']);
+    }
+
+    public function testPaginatedWrapsItemsAndComputesMetadata(): void
+    {
+        // 25 total rows, showing page 2 of a 10-per-page slice.
+        $page = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'];
+
+        $data = $this->mapper()->paginated(
+            $page,
+            25,
+            new Pagination(page: 2, perPage: 10),
+            static fn (string $s) => ['value' => $s],
+        );
+
+        self::assertCount(10, $data['items']);
+        self::assertSame(['value' => 'a'], $data['items'][0]);
+        self::assertSame(2, $data['pagination']['page']);
+        self::assertSame(10, $data['pagination']['perPage']);
+        self::assertSame(25, $data['pagination']['total']);
+        self::assertSame(3, $data['pagination']['totalPages']);
+        // offset 10 + 10 shown = 20 < 25 → more remain.
+        self::assertTrue($data['pagination']['hasMore']);
+    }
+
+    public function testPaginatedLastPageHasNoMore(): void
+    {
+        // Page 3 of 25 rows @ 10/page holds the final 5.
+        $data = $this->mapper()->paginated(
+            ['x', 'y', 'z', 'p', 'q'],
+            25,
+            new Pagination(page: 3, perPage: 10),
+            static fn (string $s) => $s,
+        );
+
+        self::assertFalse($data['pagination']['hasMore']);
+        self::assertSame(3, $data['pagination']['totalPages']);
+    }
+
+    public function testPaginatedEmptyResult(): void
+    {
+        $data = $this->mapper()->paginated([], 0, new Pagination(page: 1, perPage: 20), static fn ($x) => $x);
+
+        self::assertSame([], $data['items']);
+        self::assertSame(0, $data['pagination']['total']);
+        self::assertSame(0, $data['pagination']['totalPages']);
+        self::assertFalse($data['pagination']['hasMore']);
     }
 
     public function testActivityShapeWithNullTargets(): void

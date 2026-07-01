@@ -8,6 +8,7 @@ use App\Entity\LibraryRequest;
 use App\Entity\LibraryRequestEvent;
 use App\Entity\Subscription;
 use App\Entity\User;
+use App\Dto\Pagination;
 use App\Security\Voter\BookVoter;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
@@ -20,6 +21,32 @@ class ResponseMapper
     public function __construct(
         private readonly AuthorizationCheckerInterface $authChecker,
     ) {}
+
+    /**
+     * Wraps one page of raw items in the standard list envelope, mapping each
+     * item through $mapItem. Every paginated endpoint returns this shape:
+     *
+     *   { items: [...], pagination: { page, perPage, total, totalPages, hasMore } }
+     *
+     * @param array<int, mixed> $items    the current page's un-mapped items
+     * @param int               $total    total matching rows across all pages
+     * @param callable          $mapItem  fn(mixed): array — shapes one item
+     */
+    public function paginated(array $items, int $total, Pagination $pagination, callable $mapItem): array
+    {
+        $perPage = $pagination->perPage;
+
+        return [
+            'items'      => array_values(array_map($mapItem, $items)),
+            'pagination' => [
+                'page'       => $pagination->page,
+                'perPage'    => $perPage,
+                'total'      => $total,
+                'totalPages' => $total > 0 ? (int) ceil($total / $perPage) : 0,
+                'hasMore'    => ($pagination->offset() + count($items)) < $total,
+            ],
+        ];
+    }
 
     public function book(Book $book): array
     {
