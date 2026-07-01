@@ -12,6 +12,7 @@
 - [x] integrate Open Library API as the "external" book-template source (search by ISBN/title, best-effort, identified User-Agent)
 - [x] improve external api rates usage for book creation search (per-source debounce + abort in-flight request on new input)
 - [x] cache Open Library template-search responses (dedicated pool, 7-day TTL, map-on-read, errors never cached, normalized keys)
+- [x] add book description field (creation + template + Open Library first_sentence; revealed on cards via hover/tap; CSV round-trip)
 
 ## Security & Tests
 - [x] add all possible unit tests
