@@ -141,6 +141,14 @@ export const useLibraryStore = defineStore('library', () => {
     return data
   }
 
+  // Search book templates to pre-fill the create form. `source` picks the
+  // strategy ('site' searches the catalogue, 'external' is a placeholder).
+  // Returns the matches (a bare array) — not stored.
+  async function searchBookTemplates(q, source = 'site') {
+    const { data } = await api.get('/books/templates', { params: { q, source } })
+    return data
+  }
+
   async function createBook(payload) {
     await api.post('/books', payload)
     // A new book is newest-first → jump to page 1 so it's visible.
@@ -222,7 +230,7 @@ export const useLibraryStore = defineStore('library', () => {
   return {
     profile, stats, collection, collectionMeta, lending, requests, history, historyMeta, borrowing, pendingBorrowing, borrowingHistory, borrowingHistoryMeta, categories, loading, error,
     fetchMe, fetchCollection, fetchLending, fetchRequests, fetchHistory, fetchBorrowing, fetchPendingBorrowing, fetchBorrowingHistory, fetchCategories,
-    searchCategories, createCategory,
+    searchCategories, createCategory, searchBookTemplates,
     createBook, updateBook, deleteBook, exportBooks, importBooks,
     approveRequest, declineRequest, confirmReturn, returnBook, cancelRequest,
   }

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import CategorySelector from '@/components/library/CategorySelector.vue'
+import BookTemplateSearch from '@/components/library/BookTemplateSearch.vue'
 import LanguageSelect from '@/components/ui/LanguageSelect.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
@@ -28,6 +29,8 @@ const form = ref(blank())
 // Which action the parent is currently processing — drives the right spinner.
 const pendingAction = ref(null) // 'save' | 'delete' | null
 const errorMsg = ref(null)
+// Create mode only: 'manual' form vs. 'template' search. Reset on every open.
+const activeTab = ref('manual')
 
 const isEdit = computed(() => !!props.book)
 
@@ -55,6 +58,7 @@ watch(
     if (!props.open) return
     errorMsg.value = null
     pendingAction.value = null
+    activeTab.value = 'manual'
     form.value = props.book
       ? {
           title: props.book.title ?? '',
@@ -95,6 +99,23 @@ function onDelete() {
   pendingAction.value = 'delete'
   emit('delete', props.book.id)
 }
+
+// Picking a search result seeds the manual form with its metadata and switches
+// to the manual tab so the user can tweak and save. Status/categories aren't
+// part of a template — keep the create defaults.
+function applyTemplate(t) {
+  form.value = {
+    title: t.title ?? '',
+    author: t.author ?? '',
+    isbn: t.isbn ?? '',
+    status: 'own',
+    language: t.language ?? null,
+    coverPath: t.coverPath ?? '',
+    categories: [],
+  }
+  errorMsg.value = null
+  activeTab.value = 'manual'
+}
 </script>
 
 <template>
@@ -115,6 +136,35 @@ function onDelete() {
             This book is out on loan and can't be edited until it's returned.
           </p>
 
+          <!-- Create mode: enter details by hand or fill from an existing book -->
+          <div v-if="!isEdit && !readOnly" class="modal__tabs" role="tablist">
+            <button
+              type="button"
+              class="modal__tab"
+              :class="{ 'modal__tab--active': activeTab === 'manual' }"
+              role="tab"
+              :aria-selected="activeTab === 'manual'"
+              @click="activeTab = 'manual'"
+            >
+              Create manually
+            </button>
+            <button
+              type="button"
+              class="modal__tab"
+              :class="{ 'modal__tab--active': activeTab === 'template' }"
+              role="tab"
+              :aria-selected="activeTab === 'template'"
+              @click="activeTab = 'template'"
+            >
+              Find a template
+            </button>
+          </div>
+
+          <!-- Template search (create mode only) -->
+          <BookTemplateSearch v-if="!isEdit && activeTab === 'template'" @select="applyTemplate" />
+
+          <!-- Manual entry form -->
+          <div v-show="activeTab === 'manual'" class="modal__form">
           <!-- Cover preview + URL -->
           <div class="field">
             <label class="field__label" for="mb-cover">Cover image URL</label>
@@ -166,6 +216,7 @@ function onDelete() {
           </div>
 
           <p v-if="errorMsg" class="modal__error">{{ errorMsg }}</p>
+          </div>
         </div>
 
         <footer class="modal__footer">
@@ -182,7 +233,7 @@ function onDelete() {
             </button>
             <div class="modal__footer-actions">
               <button class="btn-secondary" type="button" :disabled="busy" @click="emit('close')">Cancel</button>
-              <button class="btn-primary" type="button" :disabled="busy" @click="onSave">
+              <button v-if="activeTab === 'manual'" class="btn-primary" type="button" :disabled="busy" @click="onSave">
                 <BaseSpinner v-if="busy && pendingAction === 'save'" size="sm" />
                 {{ busy && pendingAction === 'save' ? 'Saving…' : 'Save' }}
               </button>
@@ -244,6 +295,27 @@ function onDelete() {
   flex-direction: column;
   gap: var(--space-md);
 }
+
+/* Manual-entry form: preserve the body's field spacing now that fields are wrapped */
+.modal__form { display: flex; flex-direction: column; gap: var(--space-md); }
+
+/* Create-mode tabs */
+.modal__tabs {
+  display: flex;
+  gap: var(--space-xs);
+  border-bottom: 1px solid var(--color-surface-container-highest);
+}
+.modal__tab {
+  padding: var(--space-sm) var(--space-base);
+  font-size: var(--text-label-md);
+  font-weight: 500;
+  color: var(--color-secondary);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.2s, border-color 0.2s;
+}
+.modal__tab:hover { color: var(--color-on-background); }
+.modal__tab--active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
 
 .field { display: flex; flex-direction: column; gap: var(--space-xs); }
 .field-row {
