@@ -48,6 +48,7 @@ class BookService
             ->setTitle(trim($input->title))
             ->setAuthor(trim($input->author))
             ->setIsbn($input->isbn !== null && trim($input->isbn) !== '' ? trim($input->isbn) : null)
+            ->setDescription($input->description !== null && trim($input->description) !== '' ? trim($input->description) : null)
             ->setCoverPath($input->coverPath !== null && trim($input->coverPath) !== '' ? trim($input->coverPath) : null)
             ->setStatus($input->status)
             ->setLanguage($input->language !== null && trim($input->language) !== '' ? trim($input->language) : null);

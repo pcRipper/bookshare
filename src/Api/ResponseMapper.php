@@ -54,6 +54,7 @@ class ResponseMapper
             'id'         => $book->getId(),
             'title'      => $book->getTitle(),
             'author'     => $book->getAuthor(),
+            'description'=> $book->getDescription(),
             'isbn'       => $book->getIsbn(),
             'coverPath'  => $book->getCoverPath(),
             'status'     => $book->getStatus()->value,
@@ -98,6 +99,7 @@ class ResponseMapper
         return [
             'title'        => $template->title,
             'author'       => $template->author,
+            'description'  => $template->description,
             'isbn'         => $template->isbn,
             'coverPath'    => $template->coverPath,
             'language'     => $template->language,

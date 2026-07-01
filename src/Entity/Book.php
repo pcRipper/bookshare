@@ -22,6 +22,10 @@ class Book
     #[ORM\Column(length: 255)]
     private string $author;
 
+    /** Free-text blurb/summary; null when unset. Length is capped at the DTO (2000). */
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $description = null;
+
     #[ORM\Column(length: 32, nullable: true)]
     private ?string $isbn = null;
 
@@ -70,6 +74,9 @@ class Book
 
     public function getAuthor(): string { return $this->author; }
     public function setAuthor(string $author): static { $this->author = $author; return $this; }
+
+    public function getDescription(): ?string { return $this->description; }
+    public function setDescription(?string $description): static { $this->description = $description; return $this; }
 
     public function getIsbn(): ?string { return $this->isbn; }
     public function setIsbn(?string $isbn): static { $this->isbn = $isbn; return $this; }
