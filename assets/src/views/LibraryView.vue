@@ -240,41 +240,40 @@ function onImported() {
 
       <!-- ── Profile header ────────────────────────────────────────────── -->
       <section class="profile-header">
-        <div class="profile-header__lead">
-          <div class="profile-header__info">
-            <!-- Real header -->
-            <template v-if="profile">
-              <BaseAvatar
-                :src="profile.avatarUrl"
-                :name="profile.fullName"
-                size="xl"
-                class="profile-header__avatar"
-              />
-              <div class="profile-header__text">
-                <h1 class="profile-header__name">{{ profile.fullName }}</h1>
-                <p v-if="profile.bio" class="profile-header__bio">{{ profile.bio }}</p>
-                <p v-else class="profile-header__bio profile-header__bio--muted">Add a short bio in settings.</p>
-              </div>
-            </template>
+        <div class="profile-header__info">
+          <!-- Real header -->
+          <template v-if="profile">
+            <BaseAvatar
+              :src="profile.avatarUrl"
+              :name="profile.fullName"
+              size="xl"
+              class="profile-header__avatar"
+            />
+            <div class="profile-header__text">
+              <h1 class="profile-header__name">{{ profile.fullName }}</h1>
+              <p v-if="profile.bio" class="profile-header__bio">{{ profile.bio }}</p>
+              <p v-else class="profile-header__bio profile-header__bio--muted">Add a short bio in settings.</p>
+            </div>
+          </template>
 
-            <!-- Skeleton while the profile loads -->
-            <template v-else>
-              <BaseSkeleton width="96px" height="96px" circle />
-              <div class="profile-header__skeleton">
-                <BaseSkeleton width="180px" height="28px" />
-                <BaseSkeleton width="260px" height="14px" />
-              </div>
-            </template>
-          </div>
-
-          <!-- Stat bar (shared component; mirrors the public Profile header) -->
-          <StatBar :stats="statCards" :loading="!profile" />
+          <!-- Skeleton while the profile loads -->
+          <template v-else>
+            <BaseSkeleton width="96px" height="96px" circle />
+            <div class="profile-header__skeleton">
+              <BaseSkeleton width="180px" height="28px" />
+              <BaseSkeleton width="260px" height="14px" />
+            </div>
+          </template>
         </div>
 
-        <button class="btn-add-book" @click="openCreate">
-          <span class="material-symbols-outlined">add</span>
-          Add New Book
-        </button>
+        <!-- Right rail: primary action + the dedicated stat block -->
+        <div class="profile-header__aside">
+          <button class="btn-add-book" @click="openCreate">
+            <span class="material-symbols-outlined">add</span>
+            Add New Book
+          </button>
+          <StatBar :stats="statCards" :loading="!profile" />
+        </div>
       </section>
 
       <!-- ── Library content ───────────────────────────────────────────── -->
@@ -583,12 +582,11 @@ function onImported() {
 @media (min-width: 768px) {
   .profile-header {
     flex-direction: row;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--space-md);
   }
-  /* Name/bio takes the slack so the stat card + Add button cluster on the
-     right instead of the stats floating loose in the middle of the band. */
-  .profile-header__info { margin-right: auto; }
+  /* Identity takes the slack; the aside (action + stat block) sits right. */
+  .profile-header__info { flex: 1; }
 }
 
 .profile-header__info {
@@ -634,19 +632,17 @@ function onImported() {
   .profile-header__bio { margin-bottom: var(--space-md); }
 }
 
-/* Lead column groups the avatar/name/bio row with the stat bar so the bar can
-   span full width on mobile and sit beneath the header on desktop. */
-.profile-header__lead {
+/* Right rail: the primary action stacked over the dedicated stat block.
+   Full-width column on mobile (Add is hidden there → just the stat bar);
+   a compact right-aligned rail on desktop. */
+.profile-header__aside {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: var(--space-sm);
   min-width: 0;
 }
-/* On desktop the wrapper dissolves so avatar/name, the stat row and the
-   Add button become siblings of the header and spread across its width
-   (space-between), instead of the stats hiding under the name on the left. */
 @media (min-width: 768px) {
-  .profile-header__lead { display: contents; }
+  .profile-header__aside { align-items: flex-end; flex-shrink: 0; }
 }
 
 .btn-add-book {
@@ -661,9 +657,7 @@ function onImported() {
   font-weight: 500;
   white-space: nowrap;
   transition: background 0.2s;
-  align-self: flex-start;
 }
-@media (min-width: 768px) { .btn-add-book { align-self: auto; } }
 /* Mobile uses the floating action button instead, so hide the header one
    to avoid two competing "add book" affordances on the same screen. */
 @media (max-width: 767px) { .btn-add-book { display: none; } }

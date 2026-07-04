@@ -2,9 +2,10 @@
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 
 /**
- * Shared profile stat block used by both the Library and public Profile
- * headers so the two never drift. Renders a flat framed bar on mobile and a
- * compact, self-contained card on desktop; the parent decides where it sits.
+ * The library header's dedicated stat block. Renders a flat, full-width framed
+ * bar on mobile and a small, self-contained vertical card (stacked rows) on
+ * desktop. Only the Library uses it — the public Profile drops stats entirely
+ * since its tabs already surface the same counts.
  */
 defineProps({
   stats: { type: Array, default: () => [] }, // [{ label, value }]
@@ -27,7 +28,7 @@ defineProps({
 </template>
 
 <style scoped>
-/* Mobile: a flat, full-width framed bar. */
+/* Mobile: a flat, full-width framed bar with divided cells. */
 .stat-bar {
   display: flex;
   align-items: stretch;
@@ -36,12 +37,12 @@ defineProps({
   border-top: 1px solid var(--color-outline-variant);
   border-bottom: 1px solid var(--color-outline-variant);
 }
-/* Desktop: a compact, self-contained card that sits inline in the header. */
+/* Desktop: a small, dedicated vertical block — stacked rows in a soft card. */
 @media (min-width: 768px) {
-  /* fit-content (not auto) so the card shrinks to its cells whether it sits
-     in a flex header row (Library) or a block column (Profile). */
   .stat-bar {
+    flex-direction: column;
     width: fit-content;
+    padding: 0;
     border: 1px solid var(--color-outline-variant);
     border-radius: var(--radius-lg);
     background: var(--color-surface-container-low);
@@ -57,7 +58,17 @@ defineProps({
   padding: 0 var(--space-md);
 }
 .stat + .stat { border-left: 1px solid var(--color-outline-variant); }
-@media (min-width: 768px) { .stat { flex: none; } }
+@media (min-width: 768px) {
+  /* Each stat becomes a compact row: value, then label. */
+  .stat {
+    flex: none;
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--space-sm);
+    padding: 10px var(--space-md);
+  }
+  .stat + .stat { border-left: none; border-top: 1px solid var(--color-outline-variant); }
+}
 
 .stat__value {
   font-family: var(--font-display);
@@ -65,6 +76,11 @@ defineProps({
   line-height: var(--lh-headline-md);
   font-weight: 700;
   color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
+}
+/* Right-align the number in a fixed column so labels line up row to row. */
+@media (min-width: 768px) {
+  .stat__value { min-width: 2.5ch; text-align: right; }
 }
 
 .stat__label {
@@ -76,4 +92,5 @@ defineProps({
   text-transform: uppercase;
   text-align: center;
 }
+@media (min-width: 768px) { .stat__label { text-align: left; } }
 </style>
