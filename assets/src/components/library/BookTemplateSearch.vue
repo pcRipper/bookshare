@@ -2,26 +2,30 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useLibraryStore } from '@/stores/library'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import BaseSelect from '@/components/ui/BaseSelect.vue'
 
 /**
  * "Find a template" panel for the Add New Book modal. A full-width search over
- * title/ISBN, a source toggle (this site vs. external catalogues), and a list of
- * large, easy-to-scan result cards. Picking one emits `select` with the template
- * so the parent can pre-fill the manual form.
+ * title/ISBN, a source dropdown (this site vs. external catalogues), and a list
+ * of large, easy-to-scan result cards. Picking one emits `select` with the
+ * template so the parent can pre-fill the manual form.
  */
 const emit = defineEmits(['select'])
 
 const store = useLibraryStore()
 
-// Per-source debounce. External (Open Library) is rate-limited upstream, so it
-// waits longer after the last keystroke than the local catalogue search.
-const DEBOUNCE_MS = { site: 250, external: 500 }
+// Per-source debounce. External catalogues are network round-trips, so they wait
+// longer after the last keystroke than the local catalogue search.
+const DEBOUNCE_MS = { site: 250, external: 500, bookfinder: 400 }
 
-// The two search strategies the backend exposes, with the copy the brief asks for.
+// The search strategies the backend exposes (source keys mirror the API), with
+// the copy the brief asks for. The local catalogue is the default.
 const SOURCES = [
-  { key: 'site',     label: 'On this site',    hint: 'Search existing templates on the site' },
-  { key: 'external', label: 'External sources', hint: 'Search Open Library' },
+  { key: 'site',       label: 'On this site',     hint: 'Search existing templates on the site' },
+  { key: 'external',   label: 'Open Library',     hint: 'Search Open Library' },
+  { key: 'bookfinder', label: 'Ukrainian stores', hint: 'Search bookfinder.com.ua' },
 ]
+const sourceOptions = SOURCES.map(s => ({ value: s.key, label: s.label }))
 
 const query = ref('')
 const source = ref('site')
@@ -81,12 +85,10 @@ async function runSearch() {
   }
 }
 
-// The "nothing found" copy depends on the source — an empty external result is
-// expected (no integration yet), not a dead end.
+// The "nothing found" copy names the active source so an empty result reads as
+// "nothing here" rather than a dead end.
 const emptyMessage = computed(() =>
-  source.value === 'external'
-    ? 'No matching books found in Open Library. Try a different title or ISBN.'
-    : 'No matching books found. Try a different title or ISBN.',
+  `No matching books found in ${activeSource.value.label}. Try a different title or ISBN.`,
 )
 
 const showEmpty = computed(() =>
@@ -110,21 +112,11 @@ const showEmpty = computed(() =>
       <BaseSpinner v-if="searching" size="sm" class="tpl__search-spinner" />
     </div>
 
-    <!-- Source toggle -->
-    <div class="tpl__sources" role="radiogroup" aria-label="Search source">
-      <button
-        v-for="s in SOURCES"
-        :key="s.key"
-        type="button"
-        class="tpl__source"
-        :class="{ 'tpl__source--active': source === s.key }"
-        role="radio"
-        :aria-checked="source === s.key"
-        @click="source = s.key"
-      >
-        <span class="tpl__source-label">{{ s.label }}</span>
-        <span class="tpl__source-hint">{{ s.hint }}</span>
-      </button>
+    <!-- Source picker -->
+    <div class="tpl__sources">
+      <label class="tpl__source-label" for="tpl-source">Search source</label>
+      <BaseSelect id="tpl-source" v-model="source" :options="sourceOptions" />
+      <p class="tpl__source-hint">{{ activeSource.hint }}</p>
     </div>
 
     <!-- Results -->
@@ -187,26 +179,10 @@ const showEmpty = computed(() =>
 .tpl__search-input:focus { outline: none; border-color: var(--color-primary); }
 .tpl__search-spinner { position: absolute; right: 12px; }
 
-/* Source toggle */
-.tpl__sources { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); }
-.tpl__source {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: var(--space-sm) var(--space-base);
-  border: 1px solid var(--color-outline-variant);
-  border-radius: var(--radius-default);
-  background: var(--color-surface-container-lowest);
-  text-align: left;
-  transition: border-color 0.2s, background 0.2s;
-}
-.tpl__source--active {
-  border-color: var(--color-primary);
-  background: var(--color-surface-container-low);
-}
-.tpl__source-label { font-size: var(--text-body-md); font-weight: 600; color: var(--color-on-background); }
-.tpl__source--active .tpl__source-label { color: var(--color-primary); }
-.tpl__source-hint { font-size: var(--text-label-sm); color: var(--color-secondary); }
+/* Source picker */
+.tpl__sources { display: flex; flex-direction: column; gap: var(--space-xs); }
+.tpl__source-label { font-size: var(--text-label-sm); font-weight: 600; color: var(--color-secondary); }
+.tpl__source-hint { margin: 0; font-size: var(--text-label-sm); color: var(--color-secondary); }
 
 /* Results */
 .tpl__body { min-height: 120px; }
