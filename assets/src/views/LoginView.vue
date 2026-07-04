@@ -99,8 +99,8 @@ async function loginWithGoogle() {
   gap: 12px;
   width: 100%;
   padding: 12px 24px;
-  background: #274738;
-  color: #ffffff;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
   font-family: 'Work Sans', system-ui, sans-serif;
   font-size: 15px;
   font-weight: 500;
@@ -111,7 +111,7 @@ async function loginWithGoogle() {
 }
 
 .btn-google:hover:not(:disabled) {
-  background: #3e5f4f;
+  background: var(--color-primary-container);
 }
 
 .btn-google:disabled {
@@ -139,7 +139,7 @@ async function loginWithGoogle() {
 }
 
 .footer-note a {
-  color: #274738;
+  color: var(--color-primary);
   text-decoration: underline;
 }
 </style>

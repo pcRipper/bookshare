@@ -61,6 +61,6 @@ onMounted(async () => {
 }
 
 .error a {
-  color: #274738;
+  color: var(--color-primary);
 }
 </style>
