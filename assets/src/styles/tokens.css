@@ -1,13 +1,18 @@
 /* ── FolioShare Design Tokens ─────────────────────────────────────────── */
 :root {
-  /* Primary — Bookstore Green */
-  --color-primary:                  #274738;
-  --color-primary-container:        #3e5f4f;
-  --color-primary-fixed:            #c6ebd6;
-  --color-primary-fixed-dim:        #aacfbb;
+  /* Primary — Maritime Navy */
+  --color-primary:                  #223b54;
+  --color-primary-container:        #35506b;
+  --color-primary-fixed:            #d3e2f2;
+  --color-primary-fixed-dim:        #aec7e3;
   --color-on-primary:               #ffffff;
-  --color-on-primary-fixed-variant: #2d4d3e;
-  --color-surface-tint:             #446555;
+  --color-on-primary-fixed-variant: #2b4767;
+  --color-surface-tint:             #3f5f80;
+
+  /* Accent — Antique Brass (used sparingly: active / selected states) */
+  --color-accent:                   #a9781f;
+  --color-accent-container:         #f0d9a8;
+  --color-on-accent:                #ffffff;
 
   /* Secondary — Scholarly Navy */
   --color-secondary:                #565f67;
@@ -46,7 +51,7 @@
   /* Inverse */
   --color-inverse-surface:          #30312e;
   --color-inverse-on-surface:       #f2f0ed;
-  --color-inverse-primary:          #aacfbb;
+  --color-inverse-primary:          #aec7e3;
 
   /* ── Typography ───────────────────────────────────────────────────────── */
   --font-display: 'Playfair Display', Georgia, serif;
