@@ -40,7 +40,7 @@ const listEl = ref(null)       // scroll container (IntersectionObserver root)
 const sentinel = ref(null)     // bottom marker; visible ⇒ load the next page
 
 let debounceTimer = null
-let searchSeq = 0 // guards against out-of-order responses / superseded searches
+let searchSeq = 0 // current search generation; advanced on every query/source change
 let inFlight = null // AbortController of the current request, if any
 let page = 1
 const seen = new Set() // keys of rendered templates, to drop cross-page repeats
@@ -73,29 +73,37 @@ function appendItems(items) {
   }
 }
 
-// Re-run whenever the query or the chosen source changes. Each change cancels the
-// pending timer *and* aborts any request already in flight (initial or load-more),
-// so a fast typer never leaves a stale external call racing against the newest input.
+// Re-run whenever the query or the chosen source changes. Each change opens a new
+// search generation: it cancels the pending timer, aborts any request already in
+// flight (initial or load-more), *and advances `searchSeq`*. Advancing the guard
+// here — not only inside runSearch — is what makes a superseded request inert:
+// whether it later rejects (aborted) or resolves (it lost the abort race), its
+// captured `seq` no longer matches, so it can't touch results, hasMore, or — the
+// bug this fixes — the loading flags of the newer search that replaced it.
 watch([query, source], () => {
   error.value = null
   clearTimeout(debounceTimer)
   debounceTimer = null
   inFlight?.abort()
   inFlight = null
+  loadingMore.value = false // a superseded load-more must not leave the spinner on
+  const seq = ++searchSeq
   if (trimmedQuery.value === '') {
     reset()
     searching.value = false
     return
   }
   searching.value = true
-  debounceTimer = setTimeout(() => { debounceTimer = null; runSearch() }, DEBOUNCE_MS[source.value] ?? 250)
+  debounceTimer = setTimeout(() => { debounceTimer = null; runSearch(seq) }, DEBOUNCE_MS[source.value] ?? 250)
 })
 
-async function runSearch() {
+// Fetches the first page for the generation `seq` captured when the watch fired.
+// Every shared-state write is gated on `seq === searchSeq`, so a run the user has
+// already moved past cannot mutate anything (results *or* the searching flag).
+async function runSearch(seq) {
   const q = trimmedQuery.value
-  if (q === '') return
+  if (q === '' || seq !== searchSeq) return
   reset()
-  const seq = ++searchSeq
   const controller = new AbortController()
   inFlight = controller
   try {
@@ -104,11 +112,9 @@ async function runSearch() {
     appendItems(items)
     hasMore.value = !!more
   } catch (e) {
-    if (e.code === 'ERR_CANCELED') return // aborted by a newer search — ignore
-    if (seq === searchSeq) {
-      reset()
-      error.value = 'Could not search for templates. Try again.'
-    }
+    if (seq !== searchSeq || e.code === 'ERR_CANCELED') return // superseded/aborted — ignore
+    reset()
+    error.value = 'Could not search for templates. Try again.'
   } finally {
     if (inFlight === controller) inFlight = null
     if (seq === searchSeq) searching.value = false
@@ -119,7 +125,7 @@ async function loadMore() {
   if (!hasMore.value || loadingMore.value || searching.value) return
   const q = trimmedQuery.value
   if (q === '') return
-  const seq = searchSeq // don't bump — a new search bumps and supersedes this
+  const seq = searchSeq // same generation as the active search — a new query/source bumps and supersedes it
   const controller = new AbortController()
   inFlight = controller
   loadingMore.value = true
@@ -130,8 +136,8 @@ async function loadMore() {
     appendItems(items)
     hasMore.value = !!more
   } catch (e) {
-    if (e.code === 'ERR_CANCELED') return
-    if (seq === searchSeq) hasMore.value = false // stop scrolling on error
+    if (seq !== searchSeq || e.code === 'ERR_CANCELED') return
+    hasMore.value = false // stop scrolling on error
   } finally {
     if (inFlight === controller) inFlight = null
     if (seq === searchSeq) loadingMore.value = false
