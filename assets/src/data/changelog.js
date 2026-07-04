@@ -7,6 +7,28 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.9.1',
+    date: '2026-07-04',
+    notes: [
+      'The “Catalog a New Book” card now leads your Library collection instead of trailing it, so adding a book is always the first thing you see.',
+    ],
+  },
+  {
+    version: '1.9.0',
+    date: '2026-07-04',
+    notes: [
+      'Search your Library collection and any reader’s profile by title, author or ISBN — a simple search box now sits above each book list.',
+    ],
+  },
+  {
+    version: '1.8.0',
+    date: '2026-07-04',
+    notes: [
+      'Your own profile page is now a true preview — its book section is read-only, so you can see exactly how your collection looks to other readers.',
+      'Clicking one of your books on your profile opens the same read-only overview visitors see, instead of the edit dialog. Add, edit and delete your books from your Library as before.',
+    ],
+  },
+  {
     version: '1.7.1',
     date: '2026-07-04',
     notes: [

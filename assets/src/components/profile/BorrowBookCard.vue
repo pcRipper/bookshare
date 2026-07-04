@@ -14,12 +14,13 @@ const props = defineProps({
   pending: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['request', 'edit', 'open'])
+const emit = defineEmits(['request', 'open'])
 
-// Clicking the card body edits your own book, but opens the read-only detail
-// modal on someone else's (where you can only borrow, not edit).
+// Clicking the card always opens the read-only detail modal — on your own
+// profile too, so the book section stays a preview (management lives in the
+// library, not here).
 function onCardClick() {
-  emit(props.isSelf ? 'edit' : 'open', props.book)
+  emit('open', props.book)
 }
 
 const available = computed(() => props.book.status === 'own')
@@ -33,7 +34,6 @@ const statusBadge = computed(() => {
 })
 
 const action = computed(() => {
-  if (props.isSelf) return { label: 'Manage', state: 'manage' }
   if (props.book.requested) return { label: 'Requested', state: 'requested' }
   if (available.value) return { label: 'Request to Borrow', state: 'available' }
   const label = props.book.status === 'lent' ? 'Currently Lent'
@@ -44,7 +44,6 @@ const action = computed(() => {
 
 function onAction() {
   if (action.value.state === 'available') emit('request', props.book.id)
-  else if (action.value.state === 'manage') emit('edit', props.book)
 }
 </script>
 
@@ -67,7 +66,9 @@ function onAction() {
       <h3 class="borrow-card__title">{{ book.title }}</h3>
       <p class="borrow-card__author">{{ book.author }}</p>
 
+      <!-- Own-profile cards are a preview only — no borrow affordance. -->
       <button
+        v-if="!isSelf"
         class="borrow-card__action"
         :class="`borrow-card__action--${action.state}`"
         :disabled="action.state === 'requested' || action.state === 'disabled' || pending"
@@ -76,7 +77,6 @@ function onAction() {
         <BaseSpinner v-if="pending" size="sm" />
         <span v-else-if="action.state === 'available'" class="material-symbols-outlined">handshake</span>
         <span v-else-if="action.state === 'requested'" class="material-symbols-outlined">check</span>
-        <span v-else-if="action.state === 'manage'" class="material-symbols-outlined">edit</span>
         {{ pending ? 'Requesting…' : action.label }}
       </button>
     </div>
@@ -203,12 +203,4 @@ function onAction() {
   color: var(--color-on-surface-variant);
   cursor: not-allowed;
 }
-
-.borrow-card__action--manage {
-  background: transparent;
-  color: var(--color-primary);
-  border-color: var(--color-outline-variant);
-  cursor: pointer;
-}
-.borrow-card__action--manage:hover { background: var(--color-surface-container-low); }
 </style>

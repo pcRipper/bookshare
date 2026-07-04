@@ -5,7 +5,8 @@ import api from '@/api'
 /**
  * Backs the profile page (`/profile/:id`): a user's identity, derived stats and
  * full book collection, the "Request to Borrow" action (other people's books),
- * and — when viewing your own profile — inline profile editing and book CRUD.
+ * and — when viewing your own profile — inline profile editing. The book
+ * collection here is read-only; book CRUD lives in the library view.
  */
 export const useProfileStore = defineStore('profile', () => {
   const emptyMeta = () => ({ page: 1, perPage: 24, total: 0, totalPages: 1 })
@@ -16,6 +17,7 @@ export const useProfileStore = defineStore('profile', () => {
   const booksLoading = ref(false)       // page-of-books loading (shelf switch / paging)
   const availableCount = ref(0)         // total of the 'available' shelf, for its tab chip
   const shelf = ref('available')        // 'available' (status=own) | 'full'
+  const booksQuery = ref('')            // free-text filter (title/author/ISBN)
   const loading = ref(false)
   const error = ref(null) // 'not-found' | 'private' | 'error' | null
   const currentId = ref(null)
@@ -32,6 +34,7 @@ export const useProfileStore = defineStore('profile', () => {
       profile.value = null
       books.value = []
       shelf.value = 'available'
+      booksQuery.value = ''
       booksMeta.value = emptyMeta()
     }
     try {
@@ -51,29 +54,36 @@ export const useProfileStore = defineStore('profile', () => {
 
   // Load one page of the active shelf. "available" maps to the server's
   // status=own filter (books free to borrow); "full" is the whole collection.
+  // The active search query (if any) narrows it server-side.
   async function fetchBooksPage(page = 1, { silent = false } = {}) {
     if (!silent) booksLoading.value = true
     try {
       const params = { owner: currentId.value, page }
       if (shelf.value === 'available') params.status = 'own'
+      if (booksQuery.value) params.q = booksQuery.value
       const { data } = await api.get('/books', { params })
       books.value = data.items
       booksMeta.value = data.pagination
-      if (shelf.value === 'available') availableCount.value = data.pagination.total
+      // Keep the tab chip on the shelf's true size — don't let a search shrink it.
+      if (shelf.value === 'available' && !booksQuery.value) availableCount.value = data.pagination.total
     } finally {
       if (!silent) booksLoading.value = false
     }
   }
 
-  // Switch shelves, resetting to that shelf's first page.
+  // Switch shelves, resetting to that shelf's first page. Clears the search so a
+  // filter never leaks across shelves.
   function setShelf(next) {
     if (next === shelf.value) return
     shelf.value = next
+    booksQuery.value = ''
     return fetchBooksPage(1)
   }
 
-  function refresh() {
-    if (currentId.value != null) return fetchProfile(currentId.value, { quiet: true })
+  // Set the book search term and reload from the first page.
+  function setBooksSearch(q) {
+    booksQuery.value = q
+    return fetchBooksPage(1)
   }
 
   // Request to borrow a book. Optimistically flag it; a 409 (already pending)
@@ -101,24 +111,9 @@ export const useProfileStore = defineStore('profile', () => {
     }
   }
 
-  async function createBook(payload) {
-    await api.post('/books', payload)
-    await refresh()
-  }
-
-  async function updateBook(id, payload) {
-    await api.patch(`/books/${id}`, payload)
-    await refresh()
-  }
-
-  async function deleteBook(id) {
-    await api.delete(`/books/${id}`)
-    await refresh()
-  }
-
   return {
-    profile, books, booksMeta, booksLoading, availableCount, shelf, loading, error,
-    fetchProfile, fetchBooksPage, setShelf, requestBorrow,
-    updateProfile, createBook, updateBook, deleteBook,
+    profile, books, booksMeta, booksLoading, availableCount, shelf, booksQuery, loading, error,
+    fetchProfile, fetchBooksPage, setShelf, setBooksSearch, requestBorrow,
+    updateProfile,
   }
 })

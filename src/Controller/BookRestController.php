@@ -75,8 +75,11 @@ class BookRestController extends AbstractController
             }
         }
 
+        // Optional free-text filter over title / author / ISBN.
+        $q = trim((string) $request->query->get('q', ''));
+
         $pagination = Pagination::fromRequest($request, self::COLLECTION_PER_PAGE);
-        $result = $repo->findByOwnerPaginated($owner, $status, $pagination);
+        $result = $repo->findByOwnerPaginated($owner, $status, $pagination, $q !== '' ? $q : null);
 
         // Annotate viewer-relative borrow state when browsing someone else's shelf.
         $browsing = $owner !== $viewer;

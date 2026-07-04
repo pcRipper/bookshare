@@ -15,6 +15,7 @@ export const useLibraryStore = defineStore('library', () => {
   const stats = ref({ totalBooks: 0, shared: 0, loaned: 0 })
   const collection = ref([])
   const collectionMeta = ref(emptyMeta())  // pagination for the collection grid
+  const collectionQuery = ref('')          // free-text filter (title/author/ISBN)
   const lending = ref([])
   const requests = ref([])   // open incoming requests (pending + return-pending)
   const history = ref([])    // all incoming requests, any state — lending history (full timeline)
@@ -40,16 +41,25 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   // Collection is a numbered-page grid; defaults to the currently-viewed page so
-  // refetches after a mutation keep the user where they were.
+  // refetches after a mutation keep the user where they were. The active search
+  // query (if any) narrows it server-side.
   async function fetchCollection(page = collectionMeta.value.page) {
     loading.value.collection = true
     try {
-      const { data } = await api.get('/books', { params: { page } })
+      const params = { page }
+      if (collectionQuery.value) params.q = collectionQuery.value
+      const { data } = await api.get('/books', { params })
       collection.value = data.items
       collectionMeta.value = data.pagination
     } finally {
       loading.value.collection = false
     }
+  }
+
+  // Set the collection search term and reload from its first page.
+  function setCollectionSearch(q) {
+    collectionQuery.value = q
+    return fetchCollection(1)
   }
 
   // Lending is a naturally-small in-flight list (books currently out on loan);
@@ -229,8 +239,8 @@ export const useLibraryStore = defineStore('library', () => {
   }
 
   return {
-    profile, stats, collection, collectionMeta, lending, requests, history, historyMeta, borrowing, pendingBorrowing, borrowingHistory, borrowingHistoryMeta, categories, loading, error,
-    fetchMe, fetchCollection, fetchLending, fetchRequests, fetchHistory, fetchBorrowing, fetchPendingBorrowing, fetchBorrowingHistory, fetchCategories,
+    profile, stats, collection, collectionMeta, collectionQuery, lending, requests, history, historyMeta, borrowing, pendingBorrowing, borrowingHistory, borrowingHistoryMeta, categories, loading, error,
+    fetchMe, fetchCollection, setCollectionSearch, fetchLending, fetchRequests, fetchHistory, fetchBorrowing, fetchPendingBorrowing, fetchBorrowingHistory, fetchCategories,
     searchCategories, createCategory, searchBookTemplates,
     createBook, updateBook, deleteBook, exportBooks, importBooks,
     approveRequest, declineRequest, confirmReturn, returnBook, cancelRequest,

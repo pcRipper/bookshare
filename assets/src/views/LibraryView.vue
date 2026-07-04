@@ -18,11 +18,12 @@ import LoanHistoryCard from '@/components/library/LoanHistoryCard.vue'
 import ManageBookModal from '@/components/library/ManageBookModal.vue'
 import ImportBooksModal from '@/components/library/ImportBooksModal.vue'
 import Pagination from '@/components/ui/Pagination.vue'
+import SearchInput from '@/components/ui/SearchInput.vue'
 
 const store = useLibraryStore()
 const subscriptions = useSubscriptionsStore()
 const toast = useToastStore()
-const { profile, stats, collection, collectionMeta, lending, requests, history, historyMeta, borrowing, pendingBorrowing, borrowingHistory, borrowingHistoryMeta, loading } = storeToRefs(store)
+const { profile, stats, collection, collectionMeta, collectionQuery, lending, requests, history, historyMeta, borrowing, pendingBorrowing, borrowingHistory, borrowingHistoryMeta, loading } = storeToRefs(store)
 const { following, followingMeta, loadingFollowing } = storeToRefs(subscriptions)
 
 /* ── Tabs ─────────────────────────────────────────────────────────────── */
@@ -304,33 +305,46 @@ function onImported() {
 
         <!-- Collection tab -->
         <div v-if="activeTab === 'collection'" role="tabpanel">
-          <!-- Import / export toolbar -->
+          <!-- Search + import / export toolbar -->
           <div class="collection-toolbar">
-            <button class="toolbar-btn" type="button" @click="importOpen = true">
-              <span class="material-symbols-outlined">upload</span>
-              Import
-            </button>
-            <button class="toolbar-btn" type="button" :disabled="exporting || !collection.length" @click="onExport">
-              <BaseSpinner v-if="exporting" size="sm" />
-              <span v-else class="material-symbols-outlined">download</span>
-              Export
-            </button>
+            <SearchInput
+              class="collection-toolbar__search"
+              placeholder="Search by title, author or ISBN"
+              :loading="loading.collection"
+              @search="store.setCollectionSearch"
+            />
+            <div class="collection-toolbar__actions">
+              <button class="toolbar-btn" type="button" @click="importOpen = true">
+                <span class="material-symbols-outlined">upload</span>
+                Import
+              </button>
+              <button class="toolbar-btn" type="button" :disabled="exporting || !collection.length" @click="onExport">
+                <BaseSpinner v-if="exporting" size="sm" />
+                <span v-else class="material-symbols-outlined">download</span>
+                Export
+              </button>
+            </div>
           </div>
 
           <BookGridSkeleton v-if="loading.collection && !collection.length" :count="8" class="collection-skeleton" />
+          <!-- No matches for an active search -->
+          <div v-else-if="collectionQuery && !collection.length" class="empty-state">
+            <span class="material-symbols-outlined empty-state__icon">search_off</span>
+            <p class="empty-state__text">No books match “{{ collectionQuery }}”.</p>
+          </div>
           <div v-else class="book-grid">
+            <!-- "Add new book" placeholder card, leading the grid (first page, and not while searching) -->
+            <div v-if="collectionMeta.page === 1 && !collectionQuery" class="add-book-card" @click="openCreate" role="button" tabindex="0">
+              <span class="material-symbols-outlined add-book-card__icon">add_circle</span>
+              <h3 class="add-book-card__title">Catalog a New Book</h3>
+              <p class="add-book-card__hint">Add a title to your collection.</p>
+            </div>
             <BookCard
               v-for="book in collection"
               :key="book.id"
               :book="book"
               @click="openEdit"
             />
-            <!-- "Add new book" placeholder card (only on the first page) -->
-            <div v-if="collectionMeta.page === 1" class="add-book-card" @click="openCreate" role="button" tabindex="0">
-              <span class="material-symbols-outlined add-book-card__icon">add_circle</span>
-              <h3 class="add-book-card__title">Catalog a New Book</h3>
-              <p class="add-book-card__hint">Add a title to your collection.</p>
-            </div>
           </div>
           <Pagination
             :page="collectionMeta.page"
@@ -746,12 +760,20 @@ function onImported() {
 .tab-btn--active .tab-badge { background: var(--color-primary); }
 .tab-btn:not(.tab-btn--active) .tab-badge { background: var(--color-outline); }
 
-/* ── Collection toolbar (import / export) ─────────────────────────────── */
+/* ── Collection toolbar (search + import / export) ────────────────────── */
 .collection-toolbar {
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--space-sm);
   padding-top: var(--space-sm);
+}
+.collection-toolbar__search { flex: 1 1 220px; min-width: 0; max-width: 420px; }
+.collection-toolbar__actions {
+  display: flex;
+  gap: var(--space-sm);
+  flex-shrink: 0;
 }
 .toolbar-btn {
   display: inline-flex;

@@ -14,15 +14,15 @@ import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
 import BorrowBookCard from '@/components/profile/BorrowBookCard.vue'
 import EditProfileModal from '@/components/profile/EditProfileModal.vue'
-import ManageBookModal from '@/components/library/ManageBookModal.vue'
 import BookDetailModal from '@/components/ui/BookDetailModal.vue'
 import Pagination from '@/components/ui/Pagination.vue'
+import SearchInput from '@/components/ui/SearchInput.vue'
 
 const route = useRoute()
 const store = useProfileStore()
 const subscriptions = useSubscriptionsStore()
 const toast = useToastStore()
-const { profile, books, booksMeta, booksLoading, availableCount, shelf, loading, error } = storeToRefs(store)
+const { profile, books, booksMeta, booksLoading, availableCount, shelf, booksQuery, loading, error } = storeToRefs(store)
 
 /* ── Follow / unfollow (other readers' profiles only) ─────────────────── */
 const subscribed = ref(false)
@@ -120,7 +120,8 @@ async function onRequest(bookId) {
   }
 }
 
-/* ── Book detail modal (other readers' books; own books open the editor) ─ */
+/* ── Book detail modal (read-only preview for all profiles, own included ─
+   book management lives in the library, not here) ─────────────────────── */
 const detailBook = ref(null)
 function openDetail(book) { detailBook.value = book }
 
@@ -135,39 +136,6 @@ async function onProfileSave(payload) {
     editProfileOpen.value = false
   } finally {
     editBusy.value = false
-  }
-}
-
-/* ── Own-profile book management (reuses the library's Manage Book modal) ─ */
-const bookModalOpen = ref(false)
-const bookBusy = ref(false)
-const editingBook = ref(null)
-
-function openAddBook() {
-  editingBook.value = null
-  bookModalOpen.value = true
-}
-function openEditBook(book) {
-  editingBook.value = book
-  bookModalOpen.value = true
-}
-async function onBookSave(payload) {
-  bookBusy.value = true
-  try {
-    if (editingBook.value) await store.updateBook(editingBook.value.id, payload)
-    else await store.createBook(payload)
-    bookModalOpen.value = false
-  } finally {
-    bookBusy.value = false
-  }
-}
-async function onBookDelete(id) {
-  bookBusy.value = true
-  try {
-    await store.deleteBook(id)
-    bookModalOpen.value = false
-  } finally {
-    bookBusy.value = false
   }
 }
 </script>
@@ -281,9 +249,18 @@ async function onBookDelete(id) {
           </button>
         </div>
 
+        <!-- ── Search ─────────────────────────────────────────────────── -->
+        <SearchInput
+          :key="`${profile.id}-${shelf}`"
+          class="profile-search"
+          placeholder="Search by title, author or ISBN"
+          :loading="booksLoading"
+          @search="store.setBooksSearch"
+        />
+
         <!-- ── Book grid ──────────────────────────────────────────────── -->
         <BookGridSkeleton v-if="booksLoading" :count="8" />
-        <div v-else-if="books.length || profile.isSelf" class="book-grid" role="tabpanel">
+        <div v-else-if="books.length" class="book-grid" role="tabpanel">
           <BorrowBookCard
             v-for="book in books"
             :key="book.id"
@@ -291,26 +268,13 @@ async function onBookDelete(id) {
             :is-self="profile.isSelf"
             :pending="requesting.has(book.id)"
             @request="onRequest"
-            @edit="openEditBook"
             @open="openDetail"
           />
-          <!-- Add-book placeholder, own profile only (first page) -->
-          <div
-            v-if="profile.isSelf && booksMeta.page === 1"
-            class="add-book-card"
-            role="button"
-            tabindex="0"
-            @click="openAddBook"
-            @keydown.enter="openAddBook"
-          >
-            <span class="material-symbols-outlined add-book-card__icon">add_circle</span>
-            <h3 class="add-book-card__title">Add a Book</h3>
-            <p class="add-book-card__hint">Catalog a new title.</p>
-          </div>
         </div>
         <div v-else class="empty-state">
-          <span class="material-symbols-outlined empty-state__icon">auto_stories</span>
-          <p>{{ shelf === 'available' ? 'No books available to borrow right now.' : 'This collection is empty.' }}</p>
+          <span class="material-symbols-outlined empty-state__icon">{{ booksQuery ? 'search_off' : 'auto_stories' }}</span>
+          <p v-if="booksQuery">No books match “{{ booksQuery }}”.</p>
+          <p v-else>{{ shelf === 'available' ? 'No books available to borrow right now.' : 'This collection is empty.' }}</p>
         </div>
 
         <Pagination
@@ -331,19 +295,12 @@ async function onBookDelete(id) {
       @save="onProfileSave"
       @close="editProfileOpen = false"
     />
-    <ManageBookModal
-      :open="bookModalOpen"
-      :book="editingBook"
-      :busy="bookBusy"
-      @save="onBookSave"
-      @delete="onBookDelete"
-      @close="bookModalOpen = false"
-    />
 
-    <!-- Read-only detail (other readers' books) -->
+    <!-- Read-only detail (all profiles; own books have no borrow action) -->
     <BookDetailModal
       :open="!!detailBook"
       :book="detailBook"
+      :is-self="profile?.isSelf"
       :pending="!!detailBook && requesting.has(detailBook.id)"
       @request="onRequest"
       @close="detailBook = null"
@@ -638,6 +595,9 @@ async function onBookDelete(id) {
 }
 .tab-btn--active .tab-count { background: var(--color-primary-fixed); color: var(--color-on-primary-fixed-variant); }
 
+/* ── Search ───────────────────────────────────────────────────────────── */
+.profile-search { margin-top: var(--space-sm); max-width: 420px; }
+
 /* ── Book grid ────────────────────────────────────────────────────────── */
 .book-grid {
   display: grid;
@@ -647,35 +607,6 @@ async function onBookDelete(id) {
 }
 @media (min-width: 600px) { .book-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (min-width: 960px) { .book-grid { grid-template-columns: repeat(4, 1fr); } }
-
-/* Add-book placeholder (own profile) */
-.add-book-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-xs);
-  background: var(--color-surface-container-low);
-  border: 1.5px dashed var(--color-outline-variant);
-  border-radius: var(--radius-default);
-  padding: var(--space-md);
-  text-align: center;
-  cursor: pointer;
-  min-height: 260px;
-  transition: background 0.2s, border-color 0.2s;
-}
-.add-book-card:hover {
-  background: var(--color-surface-variant);
-  border-color: var(--color-outline);
-}
-.add-book-card__icon { font-size: 40px; color: var(--color-primary); }
-.add-book-card__title {
-  font-family: var(--font-display);
-  font-size: 18px;
-  color: var(--color-primary);
-  margin: 0;
-}
-.add-book-card__hint { font-size: var(--text-label-md); color: var(--color-secondary); margin: 0; }
 
 /* ── Empty ────────────────────────────────────────────────────────────── */
 .empty-state {
