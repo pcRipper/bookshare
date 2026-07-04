@@ -7,6 +7,13 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.9.1',
+    date: '2026-07-04',
+    notes: [
+      'The “Catalog a New Book” card now leads your Library collection instead of trailing it, so adding a book is always the first thing you see.',
+    ],
+  },
+  {
     version: '1.9.0',
     date: '2026-07-04',
     notes: [
