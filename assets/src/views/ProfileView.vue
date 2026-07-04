@@ -9,7 +9,6 @@ import { apiErrorMessage } from '@/utils/apiError'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
-import StatBar from '@/components/ui/StatBar.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
@@ -64,15 +63,6 @@ const tabs = computed(() => [
 ])
 
 /* ── Stats ────────────────────────────────────────────────────────────── */
-const statCards = computed(() => {
-  const s = profile.value?.stats ?? {}
-  return [
-    { label: 'Books',     value: s.totalBooks ?? 0 },
-    { label: 'Available', value: s.shared ?? 0 },
-    { label: 'Lending',   value: s.loaned ?? 0 },
-  ]
-})
-
 /* ── Derived category tags (most frequent across the collection) ──────── */
 const topCategories = computed(() => {
   const map = new Map()
@@ -215,8 +205,6 @@ async function onProfileSave(payload) {
           </div>
         </section>
 
-        <!-- Stat bar (shared component; mirrors the Library header) -->
-        <StatBar :stats="statCards" />
 
         <!-- Tags (mobile: top 3 + overflow) -->
         <div class="profile-header__tags profile-header__tags--mobile">
