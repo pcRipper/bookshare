@@ -591,8 +591,11 @@ function onImported() {
   .profile-header {
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
+    gap: var(--space-md);
   }
+  /* Name/bio takes the slack so the stat card + Add button cluster on the
+     right instead of the stats floating loose in the middle of the band. */
+  .profile-header__info { margin-right: auto; }
 }
 
 .profile-header__info {
@@ -603,7 +606,9 @@ function onImported() {
 /* Let the text column shrink so long names/bios wrap instead of widening the row. */
 .profile-header__info > * { min-width: 0; }
 @media (max-width: 767px) {
-  .profile-header { padding-bottom: var(--space-md); }
+  /* The stat bar already carries its own top + bottom rules; drop the
+     header's own bottom border so two lines don't stack under the stats. */
+  .profile-header { padding-bottom: var(--space-md); border-bottom: none; }
   .profile-header__info { align-items: flex-start; }
 }
 
@@ -664,12 +669,16 @@ function onImported() {
   border-bottom: 1px solid var(--color-outline-variant);
 }
 @media (min-width: 768px) {
+  /* Desktop: a compact, self-contained stat card (divided cells on a soft
+     surface) rather than bare numbers adrift in the header. */
   .profile-stats {
     justify-content: flex-start;
-    gap: var(--space-xl);
+    gap: 0;
     width: auto;
-    border: none;
-    padding: var(--space-base) 0 0;
+    background: var(--color-surface-container-low);
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--radius-lg);
+    padding: var(--space-sm) 0;
   }
 }
 
@@ -680,7 +689,10 @@ function onImported() {
   flex: 1;
   min-width: 0;
 }
-@media (min-width: 768px) { .stat { align-items: flex-start; flex: none; } }
+@media (min-width: 768px) {
+  .stat { align-items: center; flex: none; padding: 0 var(--space-md); }
+  .stat + .stat { border-left: 1px solid var(--color-outline-variant); }
+}
 
 .stat__value {
   font-family: var(--font-display);
