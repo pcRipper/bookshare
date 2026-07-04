@@ -35,22 +35,40 @@ class BookRepository extends ServiceEntityRepository
     }
 
     /**
-     * One page of a user's books, optionally filtered by status, newest first.
-     * Categories stay lazy (loaded per book by the mapper), matching findByOwner.
+     * One page of a user's books, optionally filtered by status and/or narrowed
+     * by a free-text query (title, author or ISBN), newest first. Categories stay
+     * lazy (loaded per book by the mapper), matching findByOwner.
      *
      * @return PaginatedResult<Book>
      */
-    public function findByOwnerPaginated(User $owner, ?BookStatus $status, Pagination $pagination): PaginatedResult
-    {
-        $criteria = ['owner' => $owner];
+    public function findByOwnerPaginated(
+        User $owner,
+        ?BookStatus $status,
+        Pagination $pagination,
+        ?string $query = null,
+    ): PaginatedResult {
+        $qb = $this->createQueryBuilder('b')
+            ->where('b.owner = :owner')
+            ->setParameter('owner', $owner)
+            ->orderBy('b.createdAt', 'DESC')
+            ->addOrderBy('b.id', 'DESC');
+
         if ($status !== null) {
-            $criteria['status'] = $status;
+            $qb->andWhere('b.status = :status')->setParameter('status', $status);
         }
 
-        return new PaginatedResult(
-            $this->findBy($criteria, ['createdAt' => 'DESC'], $pagination->perPage, $pagination->offset()),
-            $this->count($criteria),
-        );
+        if ($query !== null && $query !== '') {
+            // A book matches when the query is a substring of its title, author or ISBN.
+            $qb->andWhere('LOWER(b.title) LIKE :q OR LOWER(b.author) LIKE :q OR LOWER(b.isbn) LIKE :q')
+                ->setParameter('q', '%' . $this->escapeLike(mb_strtolower($query)) . '%');
+        }
+
+        $qb->setFirstResult($pagination->offset())->setMaxResults($pagination->perPage);
+
+        // No to-many fetch join → no collection to page; DISTINCT count stays exact.
+        $paginator = new Paginator($qb->getQuery(), fetchJoinCollection: false);
+
+        return new PaginatedResult(iterator_to_array($paginator), \count($paginator));
     }
 
     public function countByOwner(User $owner): int
