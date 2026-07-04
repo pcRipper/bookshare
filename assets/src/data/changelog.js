@@ -7,6 +7,13 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.9.0',
+    date: '2026-07-04',
+    notes: [
+      'Search your Library collection and any reader’s profile by title, author or ISBN — a simple search box now sits above each book list.',
+    ],
+  },
+  {
     version: '1.8.0',
     date: '2026-07-04',
     notes: [
