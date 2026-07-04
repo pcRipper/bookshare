@@ -2,7 +2,7 @@
 
 namespace App\Service\BookTemplate;
 
-use App\Dto\BookTemplate;
+use App\Dto\BookTemplateResult;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 /**
@@ -38,16 +38,14 @@ final class BookTemplateSearch
     }
 
     /**
-     * @return BookTemplate[]
-     *
      * @throws \InvalidArgumentException when no provider handles $source
      */
-    public function search(string $source, string $query, int $limit): array
+    public function search(string $source, string $query, int $limit, int $offset = 0): BookTemplateResult
     {
         if (!isset($this->providers[$source])) {
             throw new \InvalidArgumentException(sprintf('Unknown template source "%s".', $source));
         }
 
-        return $this->providers[$source]->search($query, $limit);
+        return $this->providers[$source]->search($query, $limit, $offset);
     }
 }

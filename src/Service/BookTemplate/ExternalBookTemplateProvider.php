@@ -3,6 +3,7 @@
 namespace App\Service\BookTemplate;
 
 use App\Dto\BookTemplate;
+use App\Dto\BookTemplateResult;
 use App\Language\LanguageCatalog;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\Cache\CacheInterface;
@@ -61,10 +62,10 @@ final class ExternalBookTemplateProvider implements BookTemplateProvider
         return 'external';
     }
 
-    public function search(string $query, int $limit): array
+    public function search(string $query, int $limit, int $offset = 0): BookTemplateResult
     {
         if (trim($query) === '' || $limit < 1) {
-            return [];
+            return new BookTemplateResult([], false);
         }
 
         // An ISBN-looking query searches the isbn index; anything else the title.
@@ -73,10 +74,16 @@ final class ExternalBookTemplateProvider implements BookTemplateProvider
         $param = $this->looksLikeIsbn($query) ? 'isbn' : 'title';
         $normalized = $this->normalize($param, $query);
         if ($normalized === '') {
-            return [];
+            return new BookTemplateResult([], false);
         }
 
-        $docs = $this->fetchDocsCached($param, $normalized, $limit);
+        // The frontend advances by whole pages, so offset is a multiple of limit.
+        $page = intdiv($offset, $limit) + 1;
+        $docs = $this->fetchDocsCached($param, $normalized, $limit, $page);
+
+        // A full page of raw docs implies another page upstream — independent of
+        // how many survive mapping (so paging never stalls on a thin page).
+        $hasMore = \count($docs) >= $limit;
 
         // Map on read (not cached) so transformation fixes apply without waiting
         // out the TTL; cap at the requested limit.
@@ -91,24 +98,25 @@ final class ExternalBookTemplateProvider implements BookTemplateProvider
             }
         }
 
-        return $templates;
+        return new BookTemplateResult($templates, $hasMore);
     }
 
     /**
-     * Cached raw docs for a normalised query. Only successful fetches are stored
-     * (the callback throws on failure, so nothing is cached and we degrade to []);
-     * empty results get a short TTL, hits the configured long one.
+     * Cached raw docs for a normalised query + page. Only successful fetches are
+     * stored (the callback throws on failure, so nothing is cached and we degrade
+     * to []); empty results get a short TTL, hits the configured long one. Each
+     * page is its own entry, so scrolling back over a page is a cache hit.
      *
      * @return array<int, array<string, mixed>>
      */
-    private function fetchDocsCached(string $param, string $normalized, int $limit): array
+    private function fetchDocsCached(string $param, string $normalized, int $limit, int $page): array
     {
         // sha1 keeps arbitrary query characters out of the (PSR-6 reserved-char) key.
-        $key = sprintf('ol.%s.%d.%s', $param, $limit, sha1($normalized));
+        $key = sprintf('ol.%s.%d.%d.%s', $param, $limit, $page, sha1($normalized));
 
         try {
-            return $this->cache->get($key, function (ItemInterface $item) use ($param, $normalized, $limit): array {
-                $docs = $this->fetchDocs($param, $normalized, $limit);
+            return $this->cache->get($key, function (ItemInterface $item) use ($param, $normalized, $limit, $page): array {
+                $docs = $this->fetchDocs($param, $normalized, $limit, $page);
                 $item->expiresAfter($docs === [] ? min(self::EMPTY_TTL, $this->cacheTtl) : $this->cacheTtl);
 
                 return $docs;
@@ -122,19 +130,20 @@ final class ExternalBookTemplateProvider implements BookTemplateProvider
     }
 
     /**
-     * One live call to the Open Library search index.
+     * One live call to the Open Library search index (one page).
      *
      * @return array<int, array<string, mixed>>
      *
      * @throws HttpExceptionInterface on transport, non-2xx or decode failure
      */
-    private function fetchDocs(string $param, string $query, int $limit): array
+    private function fetchDocs(string $param, string $query, int $limit, int $page): array
     {
         $response = $this->client->request('GET', self::SEARCH_PATH, [
             'query' => [
                 $param   => $query,
                 'fields' => self::FIELDS,
                 'limit'  => $limit,
+                'page'   => $page,
             ],
         ]);
 

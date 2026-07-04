@@ -34,8 +34,8 @@ class BookRestController extends AbstractController
     private const COLLECTION_PER_PAGE = 24;
     /** Books per page in the Discover grid. */
     private const DISCOVER_PER_PAGE = 24;
-    /** Max templates returned by the "Add New Book" search (bounded, bare array). */
-    private const TEMPLATE_RESULTS = 12;
+    /** Page size for the infinite-scrolled "Add New Book" template search. */
+    private const TEMPLATE_PER_PAGE = 24;
 
     public function __construct(
         private readonly ResponseMapper $mapper,
@@ -143,9 +143,11 @@ class BookRestController extends AbstractController
 
     /**
      * Search for book templates to pre-fill the "Add New Book" form. `?source=`
-     * picks the strategy (`site` searches the catalogue, `external` is a
-     * placeholder returning nothing); `?q=` matches title or ISBN. A blank query
-     * yields an empty list. Bounded and consumed whole → a bare array, no envelope.
+     * picks the strategy (`site` searches the catalogue, `external` Open Library,
+     * `bookfinder` the bookfinder.com.ua Ukrainian marketplace); `?q=` matches
+     * title or ISBN; `?page=` drives infinite scroll. A blank query yields no
+     * results. Returns `{ items, hasMore }` — `hasMore`-only, not the numbered
+     * envelope, since deduped/external results have no reliable total.
      */
     #[Route('/templates', methods: ['GET'])]
     public function templates(Request $request, BookTemplateSearch $search): JsonResponse
@@ -157,15 +159,19 @@ class BookRestController extends AbstractController
 
         $q = trim((string) $request->query->get('q', ''));
         if ($q === '') {
-            return $this->json([]);
+            return $this->json(['items' => [], 'hasMore' => false]);
         }
 
-        $templates = $search->search($source, $q, self::TEMPLATE_RESULTS);
+        $pagination = Pagination::fromRequest($request, self::TEMPLATE_PER_PAGE);
+        $result = $search->search($source, $q, $pagination->perPage, $pagination->offset());
 
-        return $this->json(array_map(
-            fn (BookTemplate $t) => $this->mapper->bookTemplate($t),
-            $templates,
-        ));
+        return $this->json([
+            'items' => array_map(
+                fn (BookTemplate $t) => $this->mapper->bookTemplate($t),
+                $result->items,
+            ),
+            'hasMore' => $result->hasMore,
+        ]);
     }
 
     /** Download the signed-in user's collection as a CSV file. */

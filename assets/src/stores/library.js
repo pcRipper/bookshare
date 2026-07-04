@@ -145,9 +145,9 @@ export const useLibraryStore = defineStore('library', () => {
   // strategy ('site' searches the catalogue, 'external' hits Open Library).
   // Pass an AbortSignal so a superseded search can cancel its in-flight request
   // (external calls are rate-limited upstream). Returns the matches — not stored.
-  async function searchBookTemplates(q, source = 'site', signal = undefined) {
-    const { data } = await api.get('/books/templates', { params: { q, source }, signal })
-    return data
+  async function searchBookTemplates(q, source = 'site', page = 1, signal = undefined) {
+    const { data } = await api.get('/books/templates', { params: { q, source, page }, signal })
+    return data // { items, hasMore }
   }
 
   async function createBook(payload) {

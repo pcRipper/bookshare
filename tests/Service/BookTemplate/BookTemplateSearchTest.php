@@ -3,6 +3,7 @@
 namespace App\Tests\Service\BookTemplate;
 
 use App\Dto\BookTemplate;
+use App\Dto\BookTemplateResult;
 use App\Service\BookTemplate\BookTemplateProvider;
 use App\Service\BookTemplate\BookTemplateSearch;
 use PHPUnit\Framework\TestCase;
@@ -13,7 +14,7 @@ class BookTemplateSearchTest extends TestCase
     {
         $provider = $this->createStub(BookTemplateProvider::class);
         $provider->method('key')->willReturn($key);
-        $provider->method('search')->willReturn($results);
+        $provider->method('search')->willReturn(new BookTemplateResult($results, false));
 
         return $provider;
     }
@@ -35,8 +36,20 @@ class BookTemplateSearchTest extends TestCase
             $this->provider('external', []),
         ]);
 
-        self::assertSame([$template], $search->search('site', 'dune', 12));
-        self::assertSame([], $search->search('external', 'dune', 12));
+        self::assertSame([$template], $search->search('site', 'dune', 12)->items);
+        self::assertSame([], $search->search('external', 'dune', 12)->items);
+    }
+
+    public function testPassesLimitAndOffsetThroughToTheProvider(): void
+    {
+        $provider = $this->createMock(BookTemplateProvider::class);
+        $provider->method('key')->willReturn('site');
+        $provider->expects($this->once())
+            ->method('search')
+            ->with('dune', 24, 48)
+            ->willReturn(new BookTemplateResult([], false));
+
+        (new BookTemplateSearch([$provider]))->search('site', 'dune', 24, 48);
     }
 
     public function testUnknownSourceThrows(): void

@@ -21,3 +21,7 @@ framework:
             # in prod without touching this). Per-item TTL is set in code.
             cache.openlibrary:
                 adapter: cache.app
+            # bookfinder.com.ua search responses (the "Ukrainian stores" source).
+            # Same story as cache.openlibrary: bibliographic data, long per-item TTL.
+            cache.bookfinder:
+                adapter: cache.app

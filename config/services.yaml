@@ -37,3 +37,10 @@ services:
             $client: '@openlibrary.client'
             $cache: '@cache.openlibrary'
             $cacheTtl: '%env(int:OPENLIBRARY_CACHE_TTL)%'
+
+    # Same wiring for the bookfinder.com.ua source (the "Ukrainian stores" strategy).
+    App\Service\BookTemplate\BookFinderBookTemplateProvider:
+        arguments:
+            $client: '@bookfinder.client'
+            $cache: '@cache.bookfinder'
+            $cacheTtl: '%env(int:BOOKFINDER_CACHE_TTL)%'

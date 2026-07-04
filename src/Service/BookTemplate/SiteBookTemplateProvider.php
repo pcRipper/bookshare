@@ -3,6 +3,7 @@
 namespace App\Service\BookTemplate;
 
 use App\Dto\BookTemplate;
+use App\Dto\BookTemplateResult;
 use App\Entity\Book;
 use App\Repository\BookRepository;
 
@@ -11,6 +12,10 @@ use App\Repository\BookRepository;
  * against title or ISBN across *every* library (private included) — only the
  * copyable metadata is returned, never the owner — and collapses exact duplicates
  * so the same book held by many readers appears once.
+ *
+ * This source is **single-page** (`hasMore=false`, no infinite scroll): dedup
+ * runs after the fetch, so a SQL OFFSET would slice the result set *before* the
+ * collapse and drift page to page. It returns one generous bounded page instead.
  */
 final class SiteBookTemplateProvider implements BookTemplateProvider
 {
@@ -26,15 +31,16 @@ final class SiteBookTemplateProvider implements BookTemplateProvider
         return 'site';
     }
 
-    public function search(string $query, int $limit): array
+    public function search(string $query, int $limit, int $offset = 0): BookTemplateResult
     {
-        if (trim($query) === '' || $limit < 1) {
-            return [];
+        // Single-page source: there is never a second page to scroll to.
+        if (trim($query) === '' || $limit < 1 || $offset > 0) {
+            return new BookTemplateResult([], false);
         }
 
         $candidates = $this->books->searchTemplates($query, $limit * self::CANDIDATE_MULTIPLIER);
 
-        return $this->collapseDuplicates(
+        $items = $this->collapseDuplicates(
             array_map(
                 fn (Book $b) => new BookTemplate(
                     $b->getTitle(),
@@ -48,6 +54,8 @@ final class SiteBookTemplateProvider implements BookTemplateProvider
             ),
             $limit,
         );
+
+        return new BookTemplateResult($items, false);
     }
 
     /**

@@ -7,6 +7,23 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.7.0',
+    date: '2026-07-04',
+    notes: [
+      'Template search results now load as you scroll — Open Library and Ukrainian stores no longer stop at a fixed number of matches.',
+      'External results are cached longer, so scrolling back through pages and repeating searches is instant.',
+    ],
+  },
+  {
+    version: '1.6.0',
+    date: '2026-07-04',
+    notes: [
+      'The “Find a template” tab can now search Ukrainian bookstores (bookfinder.com.ua) — handy for editions Open Library doesn’t list.',
+      'Pick where to search from a new source dropdown: this site, Open Library, or Ukrainian stores.',
+      'Template search now shows many more matches to scroll through, so the book you want is less likely to be cut off.',
+    ],
+  },
+  {
     version: '1.5.0',
     date: '2026-07-01',
     notes: [

@@ -2,7 +2,7 @@
 
 namespace App\Service\BookTemplate;
 
-use App\Dto\BookTemplate;
+use App\Dto\BookTemplateResult;
 
 /**
  * A source of book templates for the "Add New Book" search. Each implementation
@@ -16,9 +16,10 @@ interface BookTemplateProvider
     public function key(): string;
 
     /**
-     * Search this source for templates matching $query, capped at $limit.
-     *
-     * @return BookTemplate[]
+     * Search this source for templates matching $query, returning the window of
+     * up to $limit results starting at $offset, plus whether more remain (for
+     * the infinite-scroll UI). Sources that can't page (e.g. the local
+     * catalogue) return their bounded set on the first page and `hasMore=false`.
      */
-    public function search(string $query, int $limit): array;
+    public function search(string $query, int $limit, int $offset = 0): BookTemplateResult;
 }

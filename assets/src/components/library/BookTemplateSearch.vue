@@ -2,43 +2,80 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useLibraryStore } from '@/stores/library'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import BaseSelect from '@/components/ui/BaseSelect.vue'
 
 /**
  * "Find a template" panel for the Add New Book modal. A full-width search over
- * title/ISBN, a source toggle (this site vs. external catalogues), and a list of
- * large, easy-to-scan result cards. Picking one emits `select` with the template
- * so the parent can pre-fill the manual form.
+ * title/ISBN, a source dropdown (this site vs. external catalogues), and a list
+ * of large, easy-to-scan result cards. Picking one emits `select` with the
+ * template so the parent can pre-fill the manual form.
  */
 const emit = defineEmits(['select'])
 
 const store = useLibraryStore()
 
-// Per-source debounce. External (Open Library) is rate-limited upstream, so it
-// waits longer after the last keystroke than the local catalogue search.
-const DEBOUNCE_MS = { site: 250, external: 500 }
+// Per-source debounce. External catalogues are network round-trips, so they wait
+// longer after the last keystroke than the local catalogue search.
+const DEBOUNCE_MS = { site: 250, external: 500, bookfinder: 400 }
 
-// The two search strategies the backend exposes, with the copy the brief asks for.
+// The search strategies the backend exposes (source keys mirror the API), with
+// the copy the brief asks for. The local catalogue is the default.
 const SOURCES = [
-  { key: 'site',     label: 'On this site',    hint: 'Search existing templates on the site' },
-  { key: 'external', label: 'External sources', hint: 'Search Open Library' },
+  { key: 'site',       label: 'On this site',     hint: 'Search existing templates on the site' },
+  { key: 'external',   label: 'Open Library',     hint: 'Search Open Library' },
+  { key: 'bookfinder', label: 'Ukrainian stores', hint: 'Search bookfinder.com.ua' },
 ]
+const sourceOptions = SOURCES.map(s => ({ value: s.key, label: s.label }))
 
 const query = ref('')
 const source = ref('site')
-const results = ref([])
-const searching = ref(false)
+const results = ref([])        // accumulated across pages
+const hasMore = ref(false)
+const searching = ref(false)   // initial page load
+const loadingMore = ref(false) // fetching a subsequent page
 const error = ref(null)
 
+const searchInput = ref(null)
+const listEl = ref(null)       // scroll container (IntersectionObserver root)
+const sentinel = ref(null)     // bottom marker; visible ⇒ load the next page
+
 let debounceTimer = null
-let searchSeq = 0 // guards against out-of-order responses
+let searchSeq = 0 // guards against out-of-order responses / superseded searches
 let inFlight = null // AbortController of the current request, if any
+let page = 1
+const seen = new Set() // keys of rendered templates, to drop cross-page repeats
+let observer = null
 
 const trimmedQuery = computed(() => query.value.trim())
 const activeSource = computed(() => SOURCES.find(s => s.key === source.value))
 
-// Re-run whenever the query or the chosen source changes. Each change cancels
-// the pending timer *and* aborts any request already in flight, so a fast typer
-// never leaves a stale external call racing against the newest input.
+// A stable identity for a template, matching the backend dedupeKey fields, so we
+// only drop *exact* repeats across pages (distinct editions still show).
+function keyOf(t) {
+  return [t.title, t.author, t.isbn, t.language, t.coverPath]
+    .map(v => (v ?? '').toString().trim().toLowerCase())
+    .join('|')
+}
+
+function reset() {
+  results.value = []
+  hasMore.value = false
+  page = 1
+  seen.clear()
+}
+
+function appendItems(items) {
+  for (const t of items) {
+    const k = keyOf(t)
+    if (seen.has(k)) continue
+    seen.add(k)
+    results.value.push(t)
+  }
+}
+
+// Re-run whenever the query or the chosen source changes. Each change cancels the
+// pending timer *and* aborts any request already in flight (initial or load-more),
+// so a fast typer never leaves a stale external call racing against the newest input.
 watch([query, source], () => {
   error.value = null
   clearTimeout(debounceTimer)
@@ -46,7 +83,7 @@ watch([query, source], () => {
   inFlight?.abort()
   inFlight = null
   if (trimmedQuery.value === '') {
-    results.value = []
+    reset()
     searching.value = false
     return
   }
@@ -54,25 +91,22 @@ watch([query, source], () => {
   debounceTimer = setTimeout(() => { debounceTimer = null; runSearch() }, DEBOUNCE_MS[source.value] ?? 250)
 })
 
-onBeforeUnmount(() => { clearTimeout(debounceTimer); inFlight?.abort() })
-onMounted(() => searchInput.value?.focus())
-
-const searchInput = ref(null)
-
 async function runSearch() {
   const q = trimmedQuery.value
   if (q === '') return
+  reset()
   const seq = ++searchSeq
   const controller = new AbortController()
   inFlight = controller
   try {
-    const data = await store.searchBookTemplates(q, source.value, controller.signal)
+    const { items, hasMore: more } = await store.searchBookTemplates(q, source.value, 1, controller.signal)
     if (seq !== searchSeq) return // a newer search superseded this one
-    results.value = data
+    appendItems(items)
+    hasMore.value = !!more
   } catch (e) {
     if (e.code === 'ERR_CANCELED') return // aborted by a newer search — ignore
     if (seq === searchSeq) {
-      results.value = []
+      reset()
       error.value = 'Could not search for templates. Try again.'
     }
   } finally {
@@ -81,12 +115,48 @@ async function runSearch() {
   }
 }
 
-// The "nothing found" copy depends on the source — an empty external result is
-// expected (no integration yet), not a dead end.
+async function loadMore() {
+  if (!hasMore.value || loadingMore.value || searching.value) return
+  const q = trimmedQuery.value
+  if (q === '') return
+  const seq = searchSeq // don't bump — a new search bumps and supersedes this
+  const controller = new AbortController()
+  inFlight = controller
+  loadingMore.value = true
+  try {
+    const { items, hasMore: more } = await store.searchBookTemplates(q, source.value, page + 1, controller.signal)
+    if (seq !== searchSeq) return
+    page += 1
+    appendItems(items)
+    hasMore.value = !!more
+  } catch (e) {
+    if (e.code === 'ERR_CANCELED') return
+    if (seq === searchSeq) hasMore.value = false // stop scrolling on error
+  } finally {
+    if (inFlight === controller) inFlight = null
+    if (seq === searchSeq) loadingMore.value = false
+  }
+}
+
+// (Re)wire the observer to the sentinel as it mounts/unmounts. The scroll list is
+// the root, so it fires on the list's own inner scroll, not the page's.
+watch(sentinel, el => {
+  observer?.disconnect()
+  if (!el) return
+  observer = new IntersectionObserver(
+    entries => { if (entries[0].isIntersecting) loadMore() },
+    { root: listEl.value, rootMargin: '120px' },
+  )
+  observer.observe(el)
+}, { flush: 'post' })
+
+onBeforeUnmount(() => { clearTimeout(debounceTimer); inFlight?.abort(); observer?.disconnect() })
+onMounted(() => searchInput.value?.focus())
+
+// The "nothing found" copy names the active source so an empty result reads as
+// "nothing here" rather than a dead end.
 const emptyMessage = computed(() =>
-  source.value === 'external'
-    ? 'No matching books found in Open Library. Try a different title or ISBN.'
-    : 'No matching books found. Try a different title or ISBN.',
+  `No matching books found in ${activeSource.value.label}. Try a different title or ISBN.`,
 )
 
 const showEmpty = computed(() =>
@@ -110,21 +180,11 @@ const showEmpty = computed(() =>
       <BaseSpinner v-if="searching" size="sm" class="tpl__search-spinner" />
     </div>
 
-    <!-- Source toggle -->
-    <div class="tpl__sources" role="radiogroup" aria-label="Search source">
-      <button
-        v-for="s in SOURCES"
-        :key="s.key"
-        type="button"
-        class="tpl__source"
-        :class="{ 'tpl__source--active': source === s.key }"
-        role="radio"
-        :aria-checked="source === s.key"
-        @click="source = s.key"
-      >
-        <span class="tpl__source-label">{{ s.label }}</span>
-        <span class="tpl__source-hint">{{ s.hint }}</span>
-      </button>
+    <!-- Source picker -->
+    <div class="tpl__sources">
+      <label class="tpl__source-label" for="tpl-source">Search source</label>
+      <BaseSelect id="tpl-source" v-model="source" :options="sourceOptions" />
+      <p class="tpl__source-hint">{{ activeSource.hint }}</p>
     </div>
 
     <!-- Results -->
@@ -137,8 +197,8 @@ const showEmpty = computed(() =>
 
       <p v-else-if="showEmpty" class="tpl__msg">{{ emptyMessage }}</p>
 
-      <ul v-else-if="results.length" class="tpl__list">
-        <li v-for="(t, i) in results" :key="`${t.title}-${t.author}-${i}`">
+      <ul v-else-if="results.length" ref="listEl" class="tpl__list">
+        <li v-for="(t, i) in results" :key="`${keyOf(t)}-${i}`">
           <button type="button" class="tpl__option" @click="emit('select', t)">
             <span class="tpl__cover">
               <img v-if="t.coverPath" :src="t.coverPath" :alt="`Cover of ${t.title}`" />
@@ -155,6 +215,10 @@ const showEmpty = computed(() =>
             </span>
             <span class="material-symbols-outlined tpl__pick">arrow_forward</span>
           </button>
+        </li>
+        <!-- Sentinel: when it scrolls into view the next page loads. -->
+        <li v-if="hasMore || loadingMore" ref="sentinel" class="tpl__sentinel">
+          <BaseSpinner v-if="loadingMore" size="sm" />
         </li>
       </ul>
     </div>
@@ -187,26 +251,10 @@ const showEmpty = computed(() =>
 .tpl__search-input:focus { outline: none; border-color: var(--color-primary); }
 .tpl__search-spinner { position: absolute; right: 12px; }
 
-/* Source toggle */
-.tpl__sources { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); }
-.tpl__source {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: var(--space-sm) var(--space-base);
-  border: 1px solid var(--color-outline-variant);
-  border-radius: var(--radius-default);
-  background: var(--color-surface-container-lowest);
-  text-align: left;
-  transition: border-color 0.2s, background 0.2s;
-}
-.tpl__source--active {
-  border-color: var(--color-primary);
-  background: var(--color-surface-container-low);
-}
-.tpl__source-label { font-size: var(--text-body-md); font-weight: 600; color: var(--color-on-background); }
-.tpl__source--active .tpl__source-label { color: var(--color-primary); }
-.tpl__source-hint { font-size: var(--text-label-sm); color: var(--color-secondary); }
+/* Source picker */
+.tpl__sources { display: flex; flex-direction: column; gap: var(--space-xs); }
+.tpl__source-label { font-size: var(--text-label-sm); font-weight: 600; color: var(--color-secondary); }
+.tpl__source-hint { margin: 0; font-size: var(--text-label-sm); color: var(--color-secondary); }
 
 /* Results */
 .tpl__body { min-height: 120px; }
@@ -295,6 +343,7 @@ const showEmpty = computed(() =>
   color: var(--color-on-surface-variant);
 }
 .tpl__isbn { font-size: var(--text-label-sm); color: var(--color-secondary); }
+.tpl__sentinel { display: flex; align-items: center; justify-content: center; min-height: 32px; }
 .tpl__pick { flex-shrink: 0; color: var(--color-secondary); }
 .tpl__option:hover .tpl__pick { color: var(--color-primary); }
 </style>
