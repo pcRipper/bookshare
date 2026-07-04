@@ -576,8 +576,7 @@ function onImported() {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  padding-bottom: var(--space-lg);
-  border-bottom: 1px solid var(--color-surface-container-highest);
+  padding-bottom: var(--space-sm);
 }
 @media (min-width: 768px) {
   .profile-header {
@@ -597,9 +596,6 @@ function onImported() {
 /* Let the text column shrink so long names/bios wrap instead of widening the row. */
 .profile-header__info > * { min-width: 0; }
 @media (max-width: 767px) {
-  /* The stat bar already carries its own top + bottom rules; drop the
-     header's own bottom border so two lines don't stack under the stats. */
-  .profile-header { padding-bottom: var(--space-md); border-bottom: none; }
   .profile-header__info { align-items: flex-start; }
 }
 
