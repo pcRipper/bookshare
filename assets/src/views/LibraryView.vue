@@ -332,18 +332,18 @@ function onImported() {
             <p class="empty-state__text">No books match “{{ collectionQuery }}”.</p>
           </div>
           <div v-else class="book-grid">
+            <!-- "Add new book" placeholder card, leading the grid (first page, and not while searching) -->
+            <div v-if="collectionMeta.page === 1 && !collectionQuery" class="add-book-card" @click="openCreate" role="button" tabindex="0">
+              <span class="material-symbols-outlined add-book-card__icon">add_circle</span>
+              <h3 class="add-book-card__title">Catalog a New Book</h3>
+              <p class="add-book-card__hint">Add a title to your collection.</p>
+            </div>
             <BookCard
               v-for="book in collection"
               :key="book.id"
               :book="book"
               @click="openEdit"
             />
-            <!-- "Add new book" placeholder card (first page, and not while searching) -->
-            <div v-if="collectionMeta.page === 1 && !collectionQuery" class="add-book-card" @click="openCreate" role="button" tabindex="0">
-              <span class="material-symbols-outlined add-book-card__icon">add_circle</span>
-              <h3 class="add-book-card__title">Catalog a New Book</h3>
-              <p class="add-book-card__hint">Add a title to your collection.</p>
-            </div>
           </div>
           <Pagination
             :page="collectionMeta.page"
