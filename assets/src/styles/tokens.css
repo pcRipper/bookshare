@@ -54,8 +54,8 @@
   --color-inverse-primary:          #aec7e3;
 
   /* ── Typography ───────────────────────────────────────────────────────── */
-  --font-display: 'Playfair Display', Georgia, serif;
-  --font-body:    'Work Sans', system-ui, sans-serif;
+  --font-display: 'Literata', Georgia, serif;
+  --font-body:    'IBM Plex Sans', system-ui, sans-serif;
 
   /* Sizes + leading (line-height) + tracking (letter-spacing) */
   --text-headline-xl:        48px;
