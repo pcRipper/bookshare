@@ -4,7 +4,7 @@ import { CHANGELOG } from '@/data/changelog'
 
 function formatDate(iso) {
   if (!iso) return ''
-  return new Date(iso).toLocaleDateString(undefined, {
+  return new Date(iso).toLocaleDateString('en-US', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
