@@ -8,6 +8,7 @@ import { apiErrorMessage } from '@/utils/apiError'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import StatBar from '@/components/ui/StatBar.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import BookCard from '@/components/library/BookCard.vue'
@@ -266,16 +267,8 @@ function onImported() {
             </template>
           </div>
 
-          <!-- Stat bar (full-width; flat bar on mobile, inline on desktop) -->
-          <section v-if="profile" class="profile-stats">
-            <div v-for="stat in statCards" :key="stat.label" class="stat">
-              <span class="stat__value">{{ stat.value }}</span>
-              <span class="stat__label">{{ stat.label }}</span>
-            </div>
-          </section>
-          <section v-else class="profile-stats">
-            <BaseSkeleton v-for="n in 3" :key="n" width="56px" height="40px" />
-          </section>
+          <!-- Stat bar (shared component; mirrors the public Profile header) -->
+          <StatBar :stats="statCards" :loading="!profile" />
         </div>
 
         <button class="btn-add-book" @click="openCreate">
@@ -654,62 +647,6 @@ function onImported() {
    (space-between), instead of the stats hiding under the name on the left. */
 @media (min-width: 768px) {
   .profile-header__lead { display: contents; }
-}
-
-/* Stat bar: a flat, full-width bar on mobile (no cramped boxes), and a
-   borderless inline row on desktop. Mirrors ProfileView's stat bar. */
-.profile-stats {
-  display: flex;
-  justify-content: space-around;
-  align-items: flex-start;
-  gap: var(--space-sm);
-  width: 100%;
-  padding: var(--space-sm) 0;
-  border-top: 1px solid var(--color-outline-variant);
-  border-bottom: 1px solid var(--color-outline-variant);
-}
-@media (min-width: 768px) {
-  /* Desktop: a compact, self-contained stat card (divided cells on a soft
-     surface) rather than bare numbers adrift in the header. */
-  .profile-stats {
-    justify-content: flex-start;
-    gap: 0;
-    width: auto;
-    background: var(--color-surface-container-low);
-    border: 1px solid var(--color-outline-variant);
-    border-radius: var(--radius-lg);
-    padding: var(--space-sm) 0;
-  }
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-  min-width: 0;
-}
-@media (min-width: 768px) {
-  .stat { align-items: center; flex: none; padding: 0 var(--space-md); }
-  .stat + .stat { border-left: 1px solid var(--color-outline-variant); }
-}
-
-.stat__value {
-  font-family: var(--font-display);
-  font-size: var(--text-headline-md);
-  line-height: var(--lh-headline-md);
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-.stat__label {
-  font-size: var(--text-label-sm);
-  line-height: var(--lh-label-sm);
-  letter-spacing: 0.05em;
-  font-weight: 600;
-  color: var(--color-secondary);
-  text-transform: uppercase;
-  text-align: center;
 }
 
 .btn-add-book {
