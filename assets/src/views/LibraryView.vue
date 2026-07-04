@@ -8,6 +8,7 @@ import { apiErrorMessage } from '@/utils/apiError'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import StatBar from '@/components/ui/StatBar.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import BookCard from '@/components/library/BookCard.vue'
@@ -239,49 +240,40 @@ function onImported() {
 
       <!-- ── Profile header ────────────────────────────────────────────── -->
       <section class="profile-header">
-        <div class="profile-header__lead">
-          <div class="profile-header__info">
-            <!-- Real header -->
-            <template v-if="profile">
-              <BaseAvatar
-                :src="profile.avatarUrl"
-                :name="profile.fullName"
-                size="xl"
-                class="profile-header__avatar"
-              />
-              <div class="profile-header__text">
-                <h1 class="profile-header__name">{{ profile.fullName }}</h1>
-                <p v-if="profile.bio" class="profile-header__bio">{{ profile.bio }}</p>
-                <p v-else class="profile-header__bio profile-header__bio--muted">Add a short bio in settings.</p>
-              </div>
-            </template>
-
-            <!-- Skeleton while the profile loads -->
-            <template v-else>
-              <BaseSkeleton width="96px" height="96px" circle />
-              <div class="profile-header__skeleton">
-                <BaseSkeleton width="180px" height="28px" />
-                <BaseSkeleton width="260px" height="14px" />
-              </div>
-            </template>
-          </div>
-
-          <!-- Stat bar (full-width; flat bar on mobile, inline on desktop) -->
-          <section v-if="profile" class="profile-stats">
-            <div v-for="stat in statCards" :key="stat.label" class="stat">
-              <span class="stat__value">{{ stat.value }}</span>
-              <span class="stat__label">{{ stat.label }}</span>
+        <div class="profile-header__info">
+          <!-- Real header -->
+          <template v-if="profile">
+            <BaseAvatar
+              :src="profile.avatarUrl"
+              :name="profile.fullName"
+              size="xl"
+              class="profile-header__avatar"
+            />
+            <div class="profile-header__text">
+              <h1 class="profile-header__name">{{ profile.fullName }}</h1>
+              <p v-if="profile.bio" class="profile-header__bio">{{ profile.bio }}</p>
+              <p v-else class="profile-header__bio profile-header__bio--muted">Add a short bio in settings.</p>
             </div>
-          </section>
-          <section v-else class="profile-stats">
-            <BaseSkeleton v-for="n in 3" :key="n" width="56px" height="40px" />
-          </section>
+          </template>
+
+          <!-- Skeleton while the profile loads -->
+          <template v-else>
+            <BaseSkeleton width="96px" height="96px" circle />
+            <div class="profile-header__skeleton">
+              <BaseSkeleton width="180px" height="28px" />
+              <BaseSkeleton width="260px" height="14px" />
+            </div>
+          </template>
         </div>
 
-        <button class="btn-add-book" @click="openCreate">
-          <span class="material-symbols-outlined">add</span>
-          Add New Book
-        </button>
+        <!-- Right rail: primary action + the dedicated stat block -->
+        <div class="profile-header__aside">
+          <button class="btn-add-book" @click="openCreate">
+            <span class="material-symbols-outlined">add</span>
+            Add New Book
+          </button>
+          <StatBar :stats="statCards" :loading="!profile" />
+        </div>
       </section>
 
       <!-- ── Library content ───────────────────────────────────────────── -->
@@ -567,14 +559,14 @@ function onImported() {
 .library-page {
   max-width: var(--container-max);
   margin: 0 auto;
-  padding: var(--space-xl) var(--space-gutter);
+  padding: var(--space-lg) var(--space-gutter);
   display: flex;
   flex-direction: column;
-  gap: var(--space-xl);
+  gap: var(--space-lg);
 }
 @media (max-width: 767px) {
   .library-page {
-    padding: var(--space-lg) var(--space-gutter) var(--space-xl);
+    padding: var(--space-md) var(--space-gutter) var(--space-xl);
     gap: var(--space-md);
   }
 }
@@ -584,15 +576,16 @@ function onImported() {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  padding-bottom: var(--space-lg);
-  border-bottom: 1px solid var(--color-surface-container-highest);
+  padding-bottom: var(--space-sm);
 }
 @media (min-width: 768px) {
   .profile-header {
     flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-md);
   }
+  /* Identity takes the slack; the aside (action + stat block) sits right. */
+  .profile-header__info { flex: 1; }
 }
 
 .profile-header__info {
@@ -635,62 +628,27 @@ function onImported() {
   .profile-header__bio { margin-bottom: var(--space-md); }
 }
 
-/* Lead column groups the avatar/name/bio row with the stat bar so the bar can
-   span full width on mobile and sit beneath the header on desktop. */
-.profile-header__lead {
+/* Right rail: the primary action over the dedicated stat block.
+   Full-width column on mobile (Add is hidden there → just the stat card);
+   on desktop the two fuse into one framed panel — the navy button is its
+   header, the stat rows its body. */
+.profile-header__aside {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
-  min-width: 0;
-}
-
-/* Stat bar: a flat, full-width bar on mobile (no cramped boxes), and a
-   borderless inline row on desktop. Mirrors ProfileView's stat bar. */
-.profile-stats {
-  display: flex;
-  justify-content: space-around;
-  align-items: flex-start;
   gap: var(--space-sm);
-  width: 100%;
-  padding: var(--space-sm) 0;
-  border-top: 1px solid var(--color-outline-variant);
-  border-bottom: 1px solid var(--color-outline-variant);
+  min-width: 0;
 }
 @media (min-width: 768px) {
-  .profile-stats {
-    justify-content: flex-start;
-    gap: var(--space-xl);
-    width: auto;
-    border: none;
-    padding: var(--space-base) 0 0;
+  .profile-header__aside {
+    align-items: stretch;
+    flex-shrink: 0;
+    width: 232px;
+    gap: 0;
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-container-low);
+    overflow: hidden; /* clip the button's top corners to the panel radius */
   }
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-  min-width: 0;
-}
-@media (min-width: 768px) { .stat { align-items: flex-start; flex: none; } }
-
-.stat__value {
-  font-family: var(--font-display);
-  font-size: var(--text-headline-md);
-  line-height: var(--lh-headline-md);
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-.stat__label {
-  font-size: var(--text-label-sm);
-  line-height: var(--lh-label-sm);
-  letter-spacing: 0.05em;
-  font-weight: 600;
-  color: var(--color-secondary);
-  text-transform: uppercase;
-  text-align: center;
 }
 
 .btn-add-book {
@@ -705,10 +663,20 @@ function onImported() {
   font-weight: 500;
   white-space: nowrap;
   transition: background 0.2s;
-  align-self: flex-start;
 }
-@media (min-width: 768px) { .btn-add-book { align-self: auto; } }
+/* Mobile uses the floating action button instead, so hide the header one
+   to avoid two competing "add book" affordances on the same screen. */
+@media (max-width: 767px) { .btn-add-book { display: none; } }
 .btn-add-book:hover { background: var(--color-primary-container); }
+/* Desktop: the button is the panel header — square (the panel clips to its
+   own radius), centered, and divided from the stat rows below. */
+@media (min-width: 768px) {
+  .profile-header__aside .btn-add-book {
+    justify-content: center;
+    border-radius: 0;
+    border-bottom: 1px solid var(--color-outline-variant);
+  }
+}
 
 /* ── Library content section ─────────────────────────────────────────── */
 .library-content { display: flex; flex-direction: column; gap: var(--space-md); }
@@ -739,7 +707,7 @@ function onImported() {
 .tab-btn:hover { color: var(--color-on-background); }
 .tab-btn--active {
   color: var(--color-primary);
-  border-bottom-color: var(--color-primary);
+  border-bottom-color: var(--color-accent);
   font-weight: 600;
 }
 
@@ -769,7 +737,7 @@ function onImported() {
   gap: var(--space-sm);
   padding-top: var(--space-sm);
 }
-.collection-toolbar__search { flex: 1 1 220px; min-width: 0; max-width: 420px; }
+.collection-toolbar__search { flex: 1 1 220px; min-width: 0; }
 .collection-toolbar__actions {
   display: flex;
   gap: var(--space-sm);

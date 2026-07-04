@@ -314,7 +314,10 @@ function signOut() {
 
 <style scoped>
 .settings-page {
-  max-width: var(--container-max);
+  /* Capped to the nav (256) + gap (48) + panel (768) block plus gutters, so
+     the layout centres with even margins instead of stranding ~40% empty
+     space to the right of the form on wide screens. */
+  max-width: 1120px;
   margin: 0 auto;
   padding: var(--space-lg) var(--space-gutter) var(--space-xl);
 }

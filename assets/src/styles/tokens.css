@@ -1,13 +1,18 @@
 /* ── FolioShare Design Tokens ─────────────────────────────────────────── */
 :root {
-  /* Primary — Bookstore Green */
-  --color-primary:                  #274738;
-  --color-primary-container:        #3e5f4f;
-  --color-primary-fixed:            #c6ebd6;
-  --color-primary-fixed-dim:        #aacfbb;
+  /* Primary — Maritime Navy */
+  --color-primary:                  #223b54;
+  --color-primary-container:        #35506b;
+  --color-primary-fixed:            #d3e2f2;
+  --color-primary-fixed-dim:        #aec7e3;
   --color-on-primary:               #ffffff;
-  --color-on-primary-fixed-variant: #2d4d3e;
-  --color-surface-tint:             #446555;
+  --color-on-primary-fixed-variant: #2b4767;
+  --color-surface-tint:             #3f5f80;
+
+  /* Accent — Antique Brass (used sparingly: active / selected states) */
+  --color-accent:                   #a9781f;
+  --color-accent-container:         #f0d9a8;
+  --color-on-accent:                #ffffff;
 
   /* Secondary — Scholarly Navy */
   --color-secondary:                #565f67;
@@ -19,38 +24,38 @@
   --color-tertiary:                 #5b3912;
   --color-on-tertiary-fixed-variant: #623f18;
 
-  /* Backgrounds & Surfaces (paper tones) */
-  --color-background:               #fbf9f5;
-  --color-surface:                  #fbf9f5;
+  /* Backgrounds & Surfaces (cool paper tones — biased toward the navy) */
+  --color-background:               #f4f6f9;
+  --color-surface:                  #f4f6f9;
   --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low:    #f5f3ef;
-  --color-surface-container:        #efeeea;
-  --color-surface-container-high:   #eae8e4;
-  --color-surface-container-highest:#e4e2de;
-  --color-surface-variant:          #e4e2de;
-  --color-surface-dim:              #dbdad6;
+  --color-surface-container-low:    #eef1f5;
+  --color-surface-container:        #e7ebf1;
+  --color-surface-container-high:   #e0e5ec;
+  --color-surface-container-highest:#d9dfe7;
+  --color-surface-variant:          #d9dfe7;
+  --color-surface-dim:              #d2dae3;
 
   /* On-surface text */
-  --color-on-background:            #1b1c1a;
-  --color-on-surface:               #1b1c1a;
-  --color-on-surface-variant:       #414844;
+  --color-on-background:            #171b21;
+  --color-on-surface:               #171b21;
+  --color-on-surface-variant:       #3c434c;
 
   /* Borders */
-  --color-outline:                  #727974;
-  --color-outline-variant:          #c1c8c2;
+  --color-outline:                  #6b727b;
+  --color-outline-variant:          #c3ccd6;
 
   /* Semantic */
   --color-error:                    #ba1a1a;
   --color-error-container:          #ffdad6;
 
   /* Inverse */
-  --color-inverse-surface:          #30312e;
-  --color-inverse-on-surface:       #f2f0ed;
-  --color-inverse-primary:          #aacfbb;
+  --color-inverse-surface:          #2b2f34;
+  --color-inverse-on-surface:       #eef1f5;
+  --color-inverse-primary:          #aec7e3;
 
   /* ── Typography ───────────────────────────────────────────────────────── */
-  --font-display: 'Playfair Display', Georgia, serif;
-  --font-body:    'Work Sans', system-ui, sans-serif;
+  --font-display: 'Literata', Georgia, serif;
+  --font-body:    'IBM Plex Sans', system-ui, sans-serif;
 
   /* Sizes + leading (line-height) + tracking (letter-spacing) */
   --text-headline-xl:        48px;

@@ -63,15 +63,6 @@ const tabs = computed(() => [
 ])
 
 /* ── Stats ────────────────────────────────────────────────────────────── */
-const statCards = computed(() => {
-  const s = profile.value?.stats ?? {}
-  return [
-    { label: 'Books',     value: s.totalBooks ?? 0 },
-    { label: 'Available', value: s.shared ?? 0 },
-    { label: 'Lending',   value: s.loaned ?? 0 },
-  ]
-})
-
 /* ── Derived category tags (most frequent across the collection) ──────── */
 const topCategories = computed(() => {
   const map = new Map()
@@ -214,13 +205,6 @@ async function onProfileSave(payload) {
           </div>
         </section>
 
-        <!-- Stat bar -->
-        <section class="profile-stats">
-          <div v-for="stat in statCards" :key="stat.label" class="stat">
-            <span class="stat__value">{{ stat.value }}</span>
-            <span class="stat__label">{{ stat.label }}</span>
-          </div>
-        </section>
 
         <!-- Tags (mobile: top 3 + overflow) -->
         <div class="profile-header__tags profile-header__tags--mobile">
@@ -373,7 +357,6 @@ async function onProfileSave(payload) {
     text-align: left;
     gap: var(--space-lg);
     padding-bottom: var(--space-lg);
-    border-bottom: 1px solid var(--color-surface-container-highest);
   }
 }
 
@@ -506,49 +489,6 @@ async function onProfileSave(payload) {
   font-size: var(--text-label-sm);
   font-weight: 600;
   letter-spacing: var(--ls-label-sm);
-}
-
-/* ── Stat bar ─────────────────────────────────────────────────────────── */
-.profile-stats {
-  display: flex;
-  justify-content: space-around;
-  gap: var(--space-md);
-  padding: var(--space-md) 0;
-  border-top: 1px solid var(--color-outline-variant);
-  border-bottom: 1px solid var(--color-outline-variant);
-}
-@media (min-width: 768px) {
-  /* On desktop, stats sit left-aligned and borderless under the header. */
-  .profile-stats {
-    justify-content: flex-start;
-    gap: var(--space-xl);
-    border: none;
-    padding: var(--space-base) 0 0;
-  }
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-@media (min-width: 768px) { .stat { align-items: flex-start; } }
-
-.stat__value {
-  font-family: var(--font-display);
-  font-size: var(--text-headline-md);
-  line-height: var(--lh-headline-md);
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-.stat__label {
-  font-size: var(--text-label-sm);
-  line-height: var(--lh-label-sm);
-  letter-spacing: 0.05em;
-  font-weight: 600;
-  color: var(--color-on-surface-variant);
-  text-transform: uppercase;
 }
 
 /* ── Tabs ─────────────────────────────────────────────────────────────── */

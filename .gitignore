@@ -36,3 +36,8 @@
 
 /tmp
 /certs_test
+
+###> playwright ###
+# Ad-hoc browser-inspection artifacts (screenshots, snapshots, console logs) — never committed.
+/.playwright-mcp/
+###< playwright ###
