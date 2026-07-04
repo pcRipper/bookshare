@@ -14,9 +14,17 @@ const emit = defineEmits(['select'])
 
 const store = useLibraryStore()
 
-// Per-source debounce. External catalogues are network round-trips, so they wait
-// longer after the last keystroke than the local catalogue search.
-const DEBOUNCE_MS = { site: 250, external: 500, bookfinder: 400 }
+// Per-source debounce. External catalogues are rate-limited network round-trips,
+// so they wait notably longer after the last keystroke than the local catalogue
+// search — long enough that normal letter-by-letter typing rarely fires an
+// intermediate (soon-aborted) upstream call. The local site search stays snappy.
+const DEBOUNCE_MS = { site: 250, external: 800, bookfinder: 800 }
+
+// Minimum query length before an external source is queried at all. Short queries
+// ('h', 'ha') are the broadest, most wasteful upstream calls and almost always
+// "still typing", so we never send them. The local site search has no minimum.
+const MIN_QUERY_LEN = { external: 3, bookfinder: 3 }
+const minLenFor = src => MIN_QUERY_LEN[src] ?? 1
 
 // The search strategies the backend exposes (source keys mirror the API), with
 // the copy the brief asks for. The local catalogue is the default.
@@ -48,6 +56,12 @@ let observer = null
 
 const trimmedQuery = computed(() => query.value.trim())
 const activeSource = computed(() => SOURCES.find(s => s.key === source.value))
+const minLen = computed(() => minLenFor(source.value))
+// A non-empty query that hasn't reached the active source's minimum yet — we hold
+// off searching (and tell the user) rather than firing a broad upstream call.
+const tooShort = computed(() =>
+  trimmedQuery.value !== '' && trimmedQuery.value.length < minLen.value,
+)
 
 // A stable identity for a template, matching the backend dedupeKey fields, so we
 // only drop *exact* repeats across pages (distinct editions still show).
@@ -88,7 +102,9 @@ watch([query, source], () => {
   inFlight = null
   loadingMore.value = false // a superseded load-more must not leave the spinner on
   const seq = ++searchSeq
-  if (trimmedQuery.value === '') {
+  // Nothing to search, or the query is still below the source's minimum length:
+  // clear any stale results and stop — no request goes out while typing is short.
+  if (trimmedQuery.value === '' || trimmedQuery.value.length < minLen.value) {
     reset()
     searching.value = false
     return
@@ -199,6 +215,10 @@ const showEmpty = computed(() =>
 
       <p v-else-if="trimmedQuery === ''" class="tpl__msg">
         Search {{ activeSource.label.toLowerCase() }} to fill a new book from an existing one.
+      </p>
+
+      <p v-else-if="tooShort" class="tpl__msg">
+        Type at least {{ minLen }} characters to search {{ activeSource.label.toLowerCase() }}.
       </p>
 
       <p v-else-if="showEmpty" class="tpl__msg">{{ emptyMessage }}</p>
