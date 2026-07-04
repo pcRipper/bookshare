@@ -16,6 +16,13 @@ framework:
                     User-Agent: '%env(OPENLIBRARY_USER_AGENT)%'
                 timeout: 5
                 max_duration: 8
+            # Scoped client for bookfinder.com.ua (the "Ukrainian stores" source).
+            bookfinder.client:
+                base_uri: 'https://www.bookfinder.com.ua'
+                headers:
+                    User-Agent: '%env(BOOKFINDER_USER_AGENT)%'
+                timeout: 5
+                max_duration: 8
 
     #esi: true
     #fragments: true

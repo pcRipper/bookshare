@@ -143,9 +143,10 @@ class BookRestController extends AbstractController
 
     /**
      * Search for book templates to pre-fill the "Add New Book" form. `?source=`
-     * picks the strategy (`site` searches the catalogue, `external` is a
-     * placeholder returning nothing); `?q=` matches title or ISBN. A blank query
-     * yields an empty list. Bounded and consumed whole → a bare array, no envelope.
+     * picks the strategy (`site` searches the catalogue, `external` Open Library,
+     * `bookfinder` the bookfinder.com.ua Ukrainian marketplace); `?q=` matches
+     * title or ISBN. A blank query yields an empty list. Bounded and consumed
+     * whole → a bare array, no envelope.
      */
     #[Route('/templates', methods: ['GET'])]
     public function templates(Request $request, BookTemplateSearch $search): JsonResponse
