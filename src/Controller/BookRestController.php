@@ -34,8 +34,8 @@ class BookRestController extends AbstractController
     private const COLLECTION_PER_PAGE = 24;
     /** Books per page in the Discover grid. */
     private const DISCOVER_PER_PAGE = 24;
-    /** Max templates returned by the "Add New Book" search (bounded, bare array). */
-    private const TEMPLATE_RESULTS = 12;
+    /** Max templates returned by the "Add New Book" search (bounded, bare array; scrolled, not paged). */
+    private const TEMPLATE_RESULTS = 60;
 
     public function __construct(
         private readonly ResponseMapper $mapper,
