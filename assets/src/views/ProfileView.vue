@@ -357,7 +357,6 @@ async function onProfileSave(payload) {
     text-align: left;
     gap: var(--space-lg);
     padding-bottom: var(--space-lg);
-    border-bottom: 1px solid var(--color-surface-container-highest);
   }
 }
 
