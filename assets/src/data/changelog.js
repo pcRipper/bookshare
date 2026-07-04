@@ -7,6 +7,14 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.6.0',
+    date: '2026-07-04',
+    notes: [
+      'The “Find a template” tab can now search Ukrainian bookstores (bookfinder.com.ua) — handy for editions Open Library doesn’t list.',
+      'Pick where to search from a new source dropdown: this site, Open Library, or Ukrainian stores.',
+    ],
+  },
+  {
     version: '1.5.0',
     date: '2026-07-01',
     notes: [
