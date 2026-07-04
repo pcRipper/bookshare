@@ -16,12 +16,13 @@ import BorrowBookCard from '@/components/profile/BorrowBookCard.vue'
 import EditProfileModal from '@/components/profile/EditProfileModal.vue'
 import BookDetailModal from '@/components/ui/BookDetailModal.vue'
 import Pagination from '@/components/ui/Pagination.vue'
+import SearchInput from '@/components/ui/SearchInput.vue'
 
 const route = useRoute()
 const store = useProfileStore()
 const subscriptions = useSubscriptionsStore()
 const toast = useToastStore()
-const { profile, books, booksMeta, booksLoading, availableCount, shelf, loading, error } = storeToRefs(store)
+const { profile, books, booksMeta, booksLoading, availableCount, shelf, booksQuery, loading, error } = storeToRefs(store)
 
 /* ── Follow / unfollow (other readers' profiles only) ─────────────────── */
 const subscribed = ref(false)
@@ -248,6 +249,14 @@ async function onProfileSave(payload) {
           </button>
         </div>
 
+        <!-- ── Search ─────────────────────────────────────────────────── -->
+        <SearchInput
+          :key="`${profile.id}-${shelf}`"
+          class="profile-search"
+          placeholder="Search by title, author or ISBN"
+          @search="store.setBooksSearch"
+        />
+
         <!-- ── Book grid ──────────────────────────────────────────────── -->
         <BookGridSkeleton v-if="booksLoading" :count="8" />
         <div v-else-if="books.length" class="book-grid" role="tabpanel">
@@ -262,8 +271,9 @@ async function onProfileSave(payload) {
           />
         </div>
         <div v-else class="empty-state">
-          <span class="material-symbols-outlined empty-state__icon">auto_stories</span>
-          <p>{{ shelf === 'available' ? 'No books available to borrow right now.' : 'This collection is empty.' }}</p>
+          <span class="material-symbols-outlined empty-state__icon">{{ booksQuery ? 'search_off' : 'auto_stories' }}</span>
+          <p v-if="booksQuery">No books match “{{ booksQuery }}”.</p>
+          <p v-else>{{ shelf === 'available' ? 'No books available to borrow right now.' : 'This collection is empty.' }}</p>
         </div>
 
         <Pagination
@@ -583,6 +593,9 @@ async function onProfileSave(payload) {
   line-height: 1.5;
 }
 .tab-btn--active .tab-count { background: var(--color-primary-fixed); color: var(--color-on-primary-fixed-variant); }
+
+/* ── Search ───────────────────────────────────────────────────────────── */
+.profile-search { margin-top: var(--space-sm); max-width: 420px; }
 
 /* ── Book grid ────────────────────────────────────────────────────────── */
 .book-grid {

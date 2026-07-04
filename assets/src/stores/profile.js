@@ -17,6 +17,7 @@ export const useProfileStore = defineStore('profile', () => {
   const booksLoading = ref(false)       // page-of-books loading (shelf switch / paging)
   const availableCount = ref(0)         // total of the 'available' shelf, for its tab chip
   const shelf = ref('available')        // 'available' (status=own) | 'full'
+  const booksQuery = ref('')            // free-text filter (title/author/ISBN)
   const loading = ref(false)
   const error = ref(null) // 'not-found' | 'private' | 'error' | null
   const currentId = ref(null)
@@ -33,6 +34,7 @@ export const useProfileStore = defineStore('profile', () => {
       profile.value = null
       books.value = []
       shelf.value = 'available'
+      booksQuery.value = ''
       booksMeta.value = emptyMeta()
     }
     try {
@@ -52,24 +54,35 @@ export const useProfileStore = defineStore('profile', () => {
 
   // Load one page of the active shelf. "available" maps to the server's
   // status=own filter (books free to borrow); "full" is the whole collection.
+  // The active search query (if any) narrows it server-side.
   async function fetchBooksPage(page = 1, { silent = false } = {}) {
     if (!silent) booksLoading.value = true
     try {
       const params = { owner: currentId.value, page }
       if (shelf.value === 'available') params.status = 'own'
+      if (booksQuery.value) params.q = booksQuery.value
       const { data } = await api.get('/books', { params })
       books.value = data.items
       booksMeta.value = data.pagination
-      if (shelf.value === 'available') availableCount.value = data.pagination.total
+      // Keep the tab chip on the shelf's true size — don't let a search shrink it.
+      if (shelf.value === 'available' && !booksQuery.value) availableCount.value = data.pagination.total
     } finally {
       if (!silent) booksLoading.value = false
     }
   }
 
-  // Switch shelves, resetting to that shelf's first page.
+  // Switch shelves, resetting to that shelf's first page. Clears the search so a
+  // filter never leaks across shelves.
   function setShelf(next) {
     if (next === shelf.value) return
     shelf.value = next
+    booksQuery.value = ''
+    return fetchBooksPage(1)
+  }
+
+  // Set the book search term and reload from the first page.
+  function setBooksSearch(q) {
+    booksQuery.value = q
     return fetchBooksPage(1)
   }
 
@@ -99,8 +112,8 @@ export const useProfileStore = defineStore('profile', () => {
   }
 
   return {
-    profile, books, booksMeta, booksLoading, availableCount, shelf, loading, error,
-    fetchProfile, fetchBooksPage, setShelf, requestBorrow,
+    profile, books, booksMeta, booksLoading, availableCount, shelf, booksQuery, loading, error,
+    fetchProfile, fetchBooksPage, setShelf, setBooksSearch, requestBorrow,
     updateProfile,
   }
 })
