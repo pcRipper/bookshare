@@ -44,14 +44,15 @@ class BookFinderBookTemplateProviderTest extends TestCase
 
         $result = $this->provider($client)->search('dune', 12);
 
-        self::assertCount(1, $result);
-        self::assertSame('Dune', $result[0]->title);
-        self::assertSame('Frank Herbert', $result[0]->author);           // first author
-        self::assertSame('A desert epic.', $result[0]->description);
-        self::assertSame('https://shop.example/dune.jpg', $result[0]->coverPath);
+        self::assertCount(1, $result->items);
+        self::assertFalse($result->hasMore);
+        self::assertSame('Dune', $result->items[0]->title);
+        self::assertSame('Frank Herbert', $result->items[0]->author);           // first author
+        self::assertSame('A desert epic.', $result->items[0]->description);
+        self::assertSame('https://shop.example/dune.jpg', $result->items[0]->coverPath);
         // The API supplies neither an ISBN nor a language.
-        self::assertNull($result[0]->isbn);
-        self::assertNull($result[0]->language);
+        self::assertNull($result->items[0]->isbn);
+        self::assertNull($result->items[0]->language);
     }
 
     public function testMissingAuthorBecomesUnknownAndEmptyFieldsBecomeNull(): void
@@ -62,9 +63,9 @@ class BookFinderBookTemplateProviderTest extends TestCase
 
         $result = $this->provider($client)->search('x', 12);
 
-        self::assertSame('Unknown', $result[0]->author);
-        self::assertNull($result[0]->coverPath);
-        self::assertNull($result[0]->description);
+        self::assertSame('Unknown', $result->items[0]->author);
+        self::assertNull($result->items[0]->coverPath);
+        self::assertNull($result->items[0]->description);
     }
 
     public function testListingsWithoutATitleAreSkipped(): void
@@ -76,8 +77,8 @@ class BookFinderBookTemplateProviderTest extends TestCase
 
         $result = $this->provider($client)->search('book', 12);
 
-        self::assertCount(1, $result);
-        self::assertSame('Real Book', $result[0]->title);
+        self::assertCount(1, $result->items);
+        self::assertSame('Real Book', $result->items[0]->title);
     }
 
     public function testShopDuplicatesCollapseOnTitleAndAuthor(): void
@@ -93,24 +94,72 @@ class BookFinderBookTemplateProviderTest extends TestCase
 
         $result = $this->provider($client)->search('dune', 12);
 
-        self::assertCount(1, $result);
-        self::assertSame('https://a/1.jpg', $result[0]->coverPath); // the first occurrence survives
+        self::assertCount(1, $result->items);
+        self::assertSame('https://a/1.jpg', $result->items[0]->coverPath); // the first occurrence survives
     }
 
-    public function testResultsAreCappedAtLimit(): void
+    public function testResultsAreCappedAtLimitWithMoreToCome(): void
     {
         $client = new MockHttpClient($this->json([
             ['title' => 'One'], ['title' => 'Two'], ['title' => 'Three'],
         ]));
 
-        self::assertCount(2, $this->provider($client)->search('x', 2));
+        $result = $this->provider($client)->search('x', 2);
+
+        self::assertCount(2, $result->items);
+        self::assertTrue($result->hasMore); // a third distinct book remains
+    }
+
+    public function testSecondPageWindowsTheDedupedSet(): void
+    {
+        $client = new MockHttpClient($this->json([
+            ['title' => 'One'], ['title' => 'Two'], ['title' => 'Three'],
+        ]));
+        $provider = $this->provider($client);
+
+        $page2 = $provider->search('x', 2, 2);
+
+        self::assertCount(1, $page2->items);
+        self::assertSame('Three', $page2->items[0]->title);
+        self::assertFalse($page2->hasMore); // nothing past the third book
+    }
+
+    public function testOffsetBeyondTheEndIsEmpty(): void
+    {
+        $client = new MockHttpClient($this->json([['title' => 'One'], ['title' => 'Two']]));
+
+        $result = $this->provider($client)->search('x', 12, 100);
+
+        self::assertSame([], $result->items);
+        self::assertFalse($result->hasMore);
+    }
+
+    public function testPagingReusesTheSingleCachedFetch(): void
+    {
+        // The whole set is fetched once and cached (key ignores limit/offset), so
+        // scrolling to later pages never hits the API again.
+        $calls = 0;
+        $client = new MockHttpClient(function () use (&$calls) {
+            $calls++;
+
+            return $this->json([['title' => 'One'], ['title' => 'Two'], ['title' => 'Three']]);
+        });
+        $provider = $this->provider($client);
+
+        $provider->search('x', 2, 0);
+        $provider->search('x', 2, 2);
+
+        self::assertSame(1, $calls);
     }
 
     public function testUpstreamFailureDegradesToEmptyList(): void
     {
         $client = new MockHttpClient(new MockResponse('nope', ['http_code' => 503]));
 
-        self::assertSame([], $this->provider($client)->search('dune', 12));
+        $result = $this->provider($client)->search('dune', 12);
+
+        self::assertSame([], $result->items);
+        self::assertFalse($result->hasMore);
     }
 
     public function testBlankQueryMakesNoRequest(): void
@@ -119,7 +168,7 @@ class BookFinderBookTemplateProviderTest extends TestCase
             self::fail('No HTTP request should be made for a blank query.');
         });
 
-        self::assertSame([], $this->provider($client)->search('   ', 12));
+        self::assertSame([], $this->provider($client)->search('   ', 12)->items);
     }
 
     public function testRepeatSearchIsServedFromCache(): void
@@ -166,9 +215,9 @@ class BookFinderBookTemplateProviderTest extends TestCase
         ]);
         $provider = $this->provider($client);
 
-        self::assertSame([], $provider->search('dune', 12));
+        self::assertSame([], $provider->search('dune', 12)->items);
         $second = $provider->search('dune', 12);
-        self::assertCount(1, $second);
-        self::assertSame('Dune', $second[0]->title);
+        self::assertCount(1, $second->items);
+        self::assertSame('Dune', $second->items[0]->title);
     }
 }

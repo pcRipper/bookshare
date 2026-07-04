@@ -37,12 +37,13 @@ class SiteBookTemplateProviderTest extends TestCase
 
         $result = (new SiteBookTemplateProvider($repo))->search('dune', 12);
 
-        self::assertCount(1, $result);
-        self::assertSame('Dune', $result[0]->title);
-        self::assertSame('Frank Herbert', $result[0]->author);
-        self::assertSame('978-1', $result[0]->isbn);
-        self::assertSame('http://c/1.jpg', $result[0]->coverPath);
-        self::assertSame('en', $result[0]->language);
+        self::assertCount(1, $result->items);
+        self::assertFalse($result->hasMore); // single-page source
+        self::assertSame('Dune', $result->items[0]->title);
+        self::assertSame('Frank Herbert', $result->items[0]->author);
+        self::assertSame('978-1', $result->items[0]->isbn);
+        self::assertSame('http://c/1.jpg', $result->items[0]->coverPath);
+        self::assertSame('en', $result->items[0]->language);
     }
 
     public function testCollapsesIdenticalCopiesFromDifferentOwners(): void
@@ -56,9 +57,9 @@ class SiteBookTemplateProviderTest extends TestCase
 
         $result = (new SiteBookTemplateProvider($repo))->search('dune', 12);
 
-        self::assertCount(2, $result);
-        self::assertSame('978-1', $result[0]->isbn);
-        self::assertSame('978-2', $result[1]->isbn);
+        self::assertCount(2, $result->items);
+        self::assertSame('978-1', $result->items[0]->isbn);
+        self::assertSame('978-2', $result->items[1]->isbn);
     }
 
     public function testCapsResultsAtLimitAfterCollapsing(): void
@@ -72,7 +73,20 @@ class SiteBookTemplateProviderTest extends TestCase
 
         $result = (new SiteBookTemplateProvider($repo))->search('x', 2);
 
-        self::assertCount(2, $result);
+        self::assertCount(2, $result->items);
+    }
+
+    public function testSecondPageIsEmptyBecauseTheSourceIsSinglePage(): void
+    {
+        // Any offset past the first page yields nothing without touching the DB —
+        // there is never a "page 2" to scroll to for the local catalogue.
+        $repo = $this->createMock(BookRepository::class);
+        $repo->expects($this->never())->method('searchTemplates');
+
+        $result = (new SiteBookTemplateProvider($repo))->search('x', 24, 24);
+
+        self::assertSame([], $result->items);
+        self::assertFalse($result->hasMore);
     }
 
     public function testBlankQueryReturnsEmptyWithoutHittingTheRepository(): void
@@ -80,6 +94,9 @@ class SiteBookTemplateProviderTest extends TestCase
         $repo = $this->createMock(BookRepository::class);
         $repo->expects($this->never())->method('searchTemplates');
 
-        self::assertSame([], (new SiteBookTemplateProvider($repo))->search('   ', 12));
+        $result = (new SiteBookTemplateProvider($repo))->search('   ', 12);
+
+        self::assertSame([], $result->items);
+        self::assertFalse($result->hasMore);
     }
 }

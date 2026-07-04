@@ -3,6 +3,7 @@
 namespace App\Service\BookTemplate;
 
 use App\Dto\BookTemplate;
+use App\Dto\BookTemplateResult;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -42,10 +43,10 @@ final class BookFinderBookTemplateProvider implements BookTemplateProvider
         return 'bookfinder';
     }
 
-    public function search(string $query, int $limit): array
+    public function search(string $query, int $limit, int $offset = 0): BookTemplateResult
     {
         if (trim($query) === '' || $limit < 1) {
-            return [];
+            return new BookTemplateResult([], false);
         }
 
         // The API has one full-text index, so no ISBN/title split. Normalise so
@@ -53,13 +54,12 @@ final class BookFinderBookTemplateProvider implements BookTemplateProvider
         // the cache entry.
         $normalized = $this->normalize($query);
         if ($normalized === '') {
-            return [];
+            return new BookTemplateResult([], false);
         }
 
+        // The whole relevance-sorted set arrives in one (cached) call. Map on read
+        // (not cached) so transformation fixes apply without waiting out the TTL.
         $items = $this->fetchItemsCached($normalized);
-
-        // Map on read (not cached) so transformation fixes apply without waiting
-        // out the TTL, then collapse shop duplicates and cap at the requested limit.
         $templates = [];
         foreach ($items as $item) {
             $template = $this->toTemplate($item);
@@ -68,7 +68,13 @@ final class BookFinderBookTemplateProvider implements BookTemplateProvider
             }
         }
 
-        return $this->collapseDuplicates($templates, $limit);
+        // Collapse shop duplicates over the *entire* set once (deterministic), then
+        // window it — slicing stays stable across pages because the dedup ran over
+        // everything, not just this page. Every page after the first is a cache hit.
+        $deduped = $this->dedupe($templates);
+        $window = \array_slice($deduped, $offset, $limit);
+
+        return new BookTemplateResult($window, $offset + $limit < \count($deduped));
     }
 
     /**
@@ -165,12 +171,12 @@ final class BookFinderBookTemplateProvider implements BookTemplateProvider
      * on title+author only — case- and whitespace-insensitively. Covers and
      * descriptions differ per shop and there's no ISBN/language to disambiguate,
      * so the shared {@see BookTemplate::dedupeKey()} would leave near-duplicates
-     * uncollapsed.
+     * uncollapsed. No cap here: the caller windows the deduped set for paging.
      *
      * @param BookTemplate[] $templates
      * @return BookTemplate[]
      */
-    private function collapseDuplicates(array $templates, int $limit): array
+    private function dedupe(array $templates): array
     {
         $seen = [];
         $unique = [];
@@ -181,9 +187,6 @@ final class BookFinderBookTemplateProvider implements BookTemplateProvider
             }
             $seen[$key] = true;
             $unique[] = $template;
-            if (\count($unique) >= $limit) {
-                break;
-            }
         }
 
         return $unique;
