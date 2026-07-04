@@ -14,9 +14,17 @@ const emit = defineEmits(['select'])
 
 const store = useLibraryStore()
 
-// Per-source debounce. External catalogues are network round-trips, so they wait
-// longer after the last keystroke than the local catalogue search.
-const DEBOUNCE_MS = { site: 250, external: 500, bookfinder: 400 }
+// Per-source debounce. External catalogues are rate-limited network round-trips,
+// so they wait notably longer after the last keystroke than the local catalogue
+// search — long enough that normal letter-by-letter typing rarely fires an
+// intermediate (soon-aborted) upstream call. The local site search stays snappy.
+const DEBOUNCE_MS = { site: 250, external: 800, bookfinder: 800 }
+
+// Minimum query length before an external source is queried at all. Short queries
+// ('h', 'ha') are the broadest, most wasteful upstream calls and almost always
+// "still typing", so we never send them. The local site search has no minimum.
+const MIN_QUERY_LEN = { external: 3, bookfinder: 3 }
+const minLenFor = src => MIN_QUERY_LEN[src] ?? 1
 
 // The search strategies the backend exposes (source keys mirror the API), with
 // the copy the brief asks for. The local catalogue is the default.
@@ -40,7 +48,7 @@ const listEl = ref(null)       // scroll container (IntersectionObserver root)
 const sentinel = ref(null)     // bottom marker; visible ⇒ load the next page
 
 let debounceTimer = null
-let searchSeq = 0 // guards against out-of-order responses / superseded searches
+let searchSeq = 0 // current search generation; advanced on every query/source change
 let inFlight = null // AbortController of the current request, if any
 let page = 1
 const seen = new Set() // keys of rendered templates, to drop cross-page repeats
@@ -48,6 +56,12 @@ let observer = null
 
 const trimmedQuery = computed(() => query.value.trim())
 const activeSource = computed(() => SOURCES.find(s => s.key === source.value))
+const minLen = computed(() => minLenFor(source.value))
+// A non-empty query that hasn't reached the active source's minimum yet — we hold
+// off searching (and tell the user) rather than firing a broad upstream call.
+const tooShort = computed(() =>
+  trimmedQuery.value !== '' && trimmedQuery.value.length < minLen.value,
+)
 
 // A stable identity for a template, matching the backend dedupeKey fields, so we
 // only drop *exact* repeats across pages (distinct editions still show).
@@ -73,29 +87,39 @@ function appendItems(items) {
   }
 }
 
-// Re-run whenever the query or the chosen source changes. Each change cancels the
-// pending timer *and* aborts any request already in flight (initial or load-more),
-// so a fast typer never leaves a stale external call racing against the newest input.
+// Re-run whenever the query or the chosen source changes. Each change opens a new
+// search generation: it cancels the pending timer, aborts any request already in
+// flight (initial or load-more), *and advances `searchSeq`*. Advancing the guard
+// here — not only inside runSearch — is what makes a superseded request inert:
+// whether it later rejects (aborted) or resolves (it lost the abort race), its
+// captured `seq` no longer matches, so it can't touch results, hasMore, or — the
+// bug this fixes — the loading flags of the newer search that replaced it.
 watch([query, source], () => {
   error.value = null
   clearTimeout(debounceTimer)
   debounceTimer = null
   inFlight?.abort()
   inFlight = null
-  if (trimmedQuery.value === '') {
+  loadingMore.value = false // a superseded load-more must not leave the spinner on
+  const seq = ++searchSeq
+  // Nothing to search, or the query is still below the source's minimum length:
+  // clear any stale results and stop — no request goes out while typing is short.
+  if (trimmedQuery.value === '' || trimmedQuery.value.length < minLen.value) {
     reset()
     searching.value = false
     return
   }
   searching.value = true
-  debounceTimer = setTimeout(() => { debounceTimer = null; runSearch() }, DEBOUNCE_MS[source.value] ?? 250)
+  debounceTimer = setTimeout(() => { debounceTimer = null; runSearch(seq) }, DEBOUNCE_MS[source.value] ?? 250)
 })
 
-async function runSearch() {
+// Fetches the first page for the generation `seq` captured when the watch fired.
+// Every shared-state write is gated on `seq === searchSeq`, so a run the user has
+// already moved past cannot mutate anything (results *or* the searching flag).
+async function runSearch(seq) {
   const q = trimmedQuery.value
-  if (q === '') return
+  if (q === '' || seq !== searchSeq) return
   reset()
-  const seq = ++searchSeq
   const controller = new AbortController()
   inFlight = controller
   try {
@@ -104,11 +128,9 @@ async function runSearch() {
     appendItems(items)
     hasMore.value = !!more
   } catch (e) {
-    if (e.code === 'ERR_CANCELED') return // aborted by a newer search — ignore
-    if (seq === searchSeq) {
-      reset()
-      error.value = 'Could not search for templates. Try again.'
-    }
+    if (seq !== searchSeq || e.code === 'ERR_CANCELED') return // superseded/aborted — ignore
+    reset()
+    error.value = 'Could not search for templates. Try again.'
   } finally {
     if (inFlight === controller) inFlight = null
     if (seq === searchSeq) searching.value = false
@@ -119,7 +141,7 @@ async function loadMore() {
   if (!hasMore.value || loadingMore.value || searching.value) return
   const q = trimmedQuery.value
   if (q === '') return
-  const seq = searchSeq // don't bump — a new search bumps and supersedes this
+  const seq = searchSeq // same generation as the active search — a new query/source bumps and supersedes it
   const controller = new AbortController()
   inFlight = controller
   loadingMore.value = true
@@ -130,8 +152,8 @@ async function loadMore() {
     appendItems(items)
     hasMore.value = !!more
   } catch (e) {
-    if (e.code === 'ERR_CANCELED') return
-    if (seq === searchSeq) hasMore.value = false // stop scrolling on error
+    if (seq !== searchSeq || e.code === 'ERR_CANCELED') return
+    hasMore.value = false // stop scrolling on error
   } finally {
     if (inFlight === controller) inFlight = null
     if (seq === searchSeq) loadingMore.value = false
@@ -193,6 +215,10 @@ const showEmpty = computed(() =>
 
       <p v-else-if="trimmedQuery === ''" class="tpl__msg">
         Search {{ activeSource.label.toLowerCase() }} to fill a new book from an existing one.
+      </p>
+
+      <p v-else-if="tooShort" class="tpl__msg">
+        Type at least {{ minLen }} characters to search {{ activeSource.label.toLowerCase() }}.
       </p>
 
       <p v-else-if="showEmpty" class="tpl__msg">{{ emptyMessage }}</p>
