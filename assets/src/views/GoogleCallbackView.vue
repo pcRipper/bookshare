@@ -44,17 +44,17 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #fbf9f5;
-  font-family: 'Work Sans', system-ui, sans-serif;
+  background-color: var(--color-background);
+  font-family: var(--font-body);
 }
 
 .status {
-  color: #414844;
+  color: var(--color-on-surface-variant);
   font-size: 16px;
 }
 
 .error {
-  color: #ba1a1a;
+  color: var(--color-error);
   font-size: 15px;
   text-align: center;
   line-height: 1.8;

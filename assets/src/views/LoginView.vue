@@ -57,13 +57,13 @@ async function loginWithGoogle() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #fbf9f5;
+  background-color: var(--color-background);
   padding: 16px;
 }
 
 .login-card {
-  background: #ffffff;
-  border: 1px solid #e4e2de;
+  background: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-surface-variant);
   border-radius: 8px;
   padding: 48px 40px;
   width: 100%;
@@ -72,23 +72,23 @@ async function loginWithGoogle() {
 }
 
 .brand {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-display);
   font-size: 32px;
   font-weight: 700;
-  color: #1b1c1a;
+  color: var(--color-on-background);
   margin: 0 0 8px;
 }
 
 .subtitle {
-  font-family: 'Work Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
-  color: #727974;
+  color: var(--color-outline);
   margin: 0 0 32px;
 }
 
 .divider {
   height: 1px;
-  background: #e4e2de;
+  background: var(--color-surface-variant);
   margin-bottom: 32px;
 }
 
@@ -101,7 +101,7 @@ async function loginWithGoogle() {
   padding: 12px 24px;
   background: var(--color-primary);
   color: var(--color-on-primary);
-  font-family: 'Work Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 15px;
   font-weight: 500;
   border: none;
@@ -128,13 +128,13 @@ async function loginWithGoogle() {
 .error {
   margin-top: 16px;
   font-size: 13px;
-  color: #ba1a1a;
+  color: var(--color-error);
 }
 
 .footer-note {
   margin-top: 24px;
   font-size: 12px;
-  color: #727974;
+  color: var(--color-outline);
   line-height: 1.5;
 }
 
