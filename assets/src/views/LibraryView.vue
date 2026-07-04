@@ -739,7 +739,7 @@ function onImported() {
 .tab-btn:hover { color: var(--color-on-background); }
 .tab-btn--active {
   color: var(--color-primary);
-  border-bottom-color: var(--color-primary);
+  border-bottom-color: var(--color-accent);
   font-weight: 600;
 }
 
