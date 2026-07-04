@@ -7,6 +7,14 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.8.0',
+    date: '2026-07-04',
+    notes: [
+      'Your own profile page is now a true preview — its book section is read-only, so you can see exactly how your collection looks to other readers.',
+      'Clicking one of your books on your profile opens the same read-only overview visitors see, instead of the edit dialog. Add, edit and delete your books from your Library as before.',
+    ],
+  },
+  {
     version: '1.7.1',
     date: '2026-07-04',
     notes: [
