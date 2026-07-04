@@ -7,6 +7,14 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.7.0',
+    date: '2026-07-04',
+    notes: [
+      'Template search results now load as you scroll — Open Library and Ukrainian stores no longer stop at a fixed number of matches.',
+      'External results are cached longer, so scrolling back through pages and repeating searches is instant.',
+    ],
+  },
+  {
     version: '1.6.0',
     date: '2026-07-04',
     notes: [
