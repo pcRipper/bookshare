@@ -632,9 +632,10 @@ function onImported() {
   .profile-header__bio { margin-bottom: var(--space-md); }
 }
 
-/* Right rail: the primary action stacked over the dedicated stat block.
-   Full-width column on mobile (Add is hidden there → just the stat bar);
-   a compact right-aligned rail on desktop. */
+/* Right rail: the primary action over the dedicated stat block.
+   Full-width column on mobile (Add is hidden there → just the stat card);
+   on desktop the two fuse into one framed panel — the navy button is its
+   header, the stat rows its body. */
 .profile-header__aside {
   display: flex;
   flex-direction: column;
@@ -642,7 +643,16 @@ function onImported() {
   min-width: 0;
 }
 @media (min-width: 768px) {
-  .profile-header__aside { align-items: flex-end; flex-shrink: 0; }
+  .profile-header__aside {
+    align-items: stretch;
+    flex-shrink: 0;
+    width: 232px;
+    gap: 0;
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-container-low);
+    overflow: hidden; /* clip the button's top corners to the panel radius */
+  }
 }
 
 .btn-add-book {
@@ -662,6 +672,15 @@ function onImported() {
    to avoid two competing "add book" affordances on the same screen. */
 @media (max-width: 767px) { .btn-add-book { display: none; } }
 .btn-add-book:hover { background: var(--color-primary-container); }
+/* Desktop: the button is the panel header — square (the panel clips to its
+   own radius), centered, and divided from the stat rows below. */
+@media (min-width: 768px) {
+  .profile-header__aside .btn-add-book {
+    justify-content: center;
+    border-radius: 0;
+    border-bottom: 1px solid var(--color-outline-variant);
+  }
+}
 
 /* ── Library content section ─────────────────────────────────────────── */
 .library-content { display: flex; flex-direction: column; gap: var(--space-md); }

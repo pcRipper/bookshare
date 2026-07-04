@@ -2,10 +2,12 @@
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 
 /**
- * The library header's dedicated stat block. Renders a flat, full-width framed
- * bar on mobile and a small, self-contained vertical card (stacked rows) on
- * desktop. Only the Library uses it — the public Profile drops stats entirely
- * since its tabs already surface the same counts.
+ * The library header's dedicated stat block. On mobile it's a solid enclosed
+ * card with divided cells; on desktop it renders flush (no frame of its own)
+ * so it can fill the shared action panel it sits in, directly under the
+ * "Add New Book" button — the two read as one solid unit. Only the Library
+ * uses it — the public Profile drops stats entirely since its tabs already
+ * surface the same counts.
  */
 defineProps({
   stats: { type: Array, default: () => [] }, // [{ label, value }]
@@ -28,24 +30,26 @@ defineProps({
 </template>
 
 <style scoped>
-/* Mobile: a flat, full-width framed bar with divided cells. */
+/* Mobile: a solid, enclosed card with divided cells. */
 .stat-bar {
   display: flex;
   align-items: stretch;
   width: 100%;
   padding: var(--space-sm) 0;
-  border-top: 1px solid var(--color-outline-variant);
-  border-bottom: 1px solid var(--color-outline-variant);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-container-low);
 }
-/* Desktop: a small, dedicated vertical block — stacked rows in a soft card. */
+/* Desktop: flush, frameless stacked rows that fill the parent action panel
+   (the panel — shared with the Add New Book button — provides the frame). */
 @media (min-width: 768px) {
   .stat-bar {
     flex-direction: column;
-    width: fit-content;
+    width: 100%;
     padding: 0;
-    border: 1px solid var(--color-outline-variant);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface-container-low);
+    border: none;
+    border-radius: 0;
+    background: transparent;
   }
 }
 
