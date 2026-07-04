@@ -254,6 +254,7 @@ async function onProfileSave(payload) {
           :key="`${profile.id}-${shelf}`"
           class="profile-search"
           placeholder="Search by title, author or ISBN"
+          :loading="booksLoading"
           @search="store.setBooksSearch"
         />
 

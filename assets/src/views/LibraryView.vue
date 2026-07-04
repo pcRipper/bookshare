@@ -310,6 +310,7 @@ function onImported() {
             <SearchInput
               class="collection-toolbar__search"
               placeholder="Search by title, author or ISBN"
+              :loading="loading.collection"
               @search="store.setCollectionSearch"
             />
             <div class="collection-toolbar__actions">
