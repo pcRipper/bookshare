@@ -17,6 +17,9 @@ const props = defineProps({
   book: { type: Object, default: null },
   // Parent-controlled: true while this book's borrow request is in flight.
   pending: { type: Boolean, default: false },
+  // When the viewer owns this book (own profile) there's no borrow action —
+  // the footer shows only Close and the modal is a pure preview.
+  isSelf: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['close', 'request'])
@@ -128,6 +131,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
         <footer class="modal__footer">
           <button class="btn-secondary" type="button" @click="close">Close</button>
           <button
+            v-if="!isSelf"
             class="btn-request"
             :class="`btn-request--${action.state}`"
             type="button"

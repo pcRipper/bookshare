@@ -5,7 +5,8 @@ import api from '@/api'
 /**
  * Backs the profile page (`/profile/:id`): a user's identity, derived stats and
  * full book collection, the "Request to Borrow" action (other people's books),
- * and — when viewing your own profile — inline profile editing and book CRUD.
+ * and — when viewing your own profile — inline profile editing. The book
+ * collection here is read-only; book CRUD lives in the library view.
  */
 export const useProfileStore = defineStore('profile', () => {
   const emptyMeta = () => ({ page: 1, perPage: 24, total: 0, totalPages: 1 })
@@ -72,10 +73,6 @@ export const useProfileStore = defineStore('profile', () => {
     return fetchBooksPage(1)
   }
 
-  function refresh() {
-    if (currentId.value != null) return fetchProfile(currentId.value, { quiet: true })
-  }
-
   // Request to borrow a book. Optimistically flag it; a 409 (already pending)
   // is benign and means it's effectively requested already.
   async function requestBorrow(bookId) {
@@ -101,24 +98,9 @@ export const useProfileStore = defineStore('profile', () => {
     }
   }
 
-  async function createBook(payload) {
-    await api.post('/books', payload)
-    await refresh()
-  }
-
-  async function updateBook(id, payload) {
-    await api.patch(`/books/${id}`, payload)
-    await refresh()
-  }
-
-  async function deleteBook(id) {
-    await api.delete(`/books/${id}`)
-    await refresh()
-  }
-
   return {
     profile, books, booksMeta, booksLoading, availableCount, shelf, loading, error,
     fetchProfile, fetchBooksPage, setShelf, requestBorrow,
-    updateProfile, createBook, updateBook, deleteBook,
+    updateProfile,
   }
 })
