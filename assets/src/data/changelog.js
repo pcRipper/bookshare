@@ -7,6 +7,13 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.7.1',
+    date: '2026-07-04',
+    notes: [
+      'Fixed template search sometimes showing no results while typing quickly in an external source — matches now appear reliably without switching the source.',
+    ],
+  },
+  {
     version: '1.7.0',
     date: '2026-07-04',
     notes: [
