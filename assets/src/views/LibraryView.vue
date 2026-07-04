@@ -567,14 +567,14 @@ function onImported() {
 .library-page {
   max-width: var(--container-max);
   margin: 0 auto;
-  padding: var(--space-xl) var(--space-gutter);
+  padding: var(--space-lg) var(--space-gutter);
   display: flex;
   flex-direction: column;
-  gap: var(--space-xl);
+  gap: var(--space-lg);
 }
 @media (max-width: 767px) {
   .library-page {
-    padding: var(--space-lg) var(--space-gutter) var(--space-xl);
+    padding: var(--space-md) var(--space-gutter) var(--space-xl);
     gap: var(--space-md);
   }
 }
@@ -603,6 +603,7 @@ function onImported() {
 /* Let the text column shrink so long names/bios wrap instead of widening the row. */
 .profile-header__info > * { min-width: 0; }
 @media (max-width: 767px) {
+  .profile-header { padding-bottom: var(--space-md); }
   .profile-header__info { align-items: flex-start; }
 }
 
@@ -642,6 +643,12 @@ function onImported() {
   flex-direction: column;
   gap: var(--space-md);
   min-width: 0;
+}
+/* On desktop the wrapper dissolves so avatar/name, the stat row and the
+   Add button become siblings of the header and spread across its width
+   (space-between), instead of the stats hiding under the name on the left. */
+@media (min-width: 768px) {
+  .profile-header__lead { display: contents; }
 }
 
 /* Stat bar: a flat, full-width bar on mobile (no cramped boxes), and a
@@ -708,6 +715,9 @@ function onImported() {
   align-self: flex-start;
 }
 @media (min-width: 768px) { .btn-add-book { align-self: auto; } }
+/* Mobile uses the floating action button instead, so hide the header one
+   to avoid two competing "add book" affordances on the same screen. */
+@media (max-width: 767px) { .btn-add-book { display: none; } }
 .btn-add-book:hover { background: var(--color-primary-container); }
 
 /* ── Library content section ─────────────────────────────────────────── */
@@ -769,7 +779,7 @@ function onImported() {
   gap: var(--space-sm);
   padding-top: var(--space-sm);
 }
-.collection-toolbar__search { flex: 1 1 220px; min-width: 0; max-width: 420px; }
+.collection-toolbar__search { flex: 1 1 220px; min-width: 0; }
 .collection-toolbar__actions {
   display: flex;
   gap: var(--space-sm);
