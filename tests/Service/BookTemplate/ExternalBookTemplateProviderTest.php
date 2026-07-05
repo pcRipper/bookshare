@@ -67,6 +67,7 @@ class ExternalBookTemplateProviderTest extends TestCase
 
     public function testUnmappedLanguageAndMissingCoverBecomeNull(): void
     {
+        // A Latin title yields no language guess, so an unmapped MARC code stays null.
         $client = new MockHttpClient($this->json(['docs' => [
             ['title' => 'Untitled Tongue', 'author_name' => ['A'], 'language' => ['xyz']],
         ]]));
@@ -76,6 +77,31 @@ class ExternalBookTemplateProviderTest extends TestCase
         self::assertNull($result->items[0]->language);
         self::assertNull($result->items[0]->coverPath);
         self::assertNull($result->items[0]->isbn);
+    }
+
+    public function testLanguageIsGuessedFromTheTitleWhenMarcIsMissing(): void
+    {
+        // No MARC language on the doc — fall back to guessing from the title's
+        // script (Cyrillic here, Ukrainian by default).
+        $client = new MockHttpClient($this->json(['docs' => [
+            ['title' => 'Кобзар', 'author_name' => ['Тарас Шевченко']],
+        ]]));
+
+        $result = $this->provider($client)->search('кобзар', 12);
+
+        self::assertSame('uk', $result->items[0]->language);
+    }
+
+    public function testMarcLanguageWinsOverTheTitleGuess(): void
+    {
+        // A doc that carries a mappable MARC code keeps it — the guess is a fallback.
+        $client = new MockHttpClient($this->json(['docs' => [
+            ['title' => 'Кобзар', 'author_name' => ['A'], 'language' => ['eng']],
+        ]]));
+
+        $result = $this->provider($client)->search('кобзар', 12);
+
+        self::assertSame('en', $result->items[0]->language);
     }
 
     public function testDocsWithoutATitleAreSkipped(): void

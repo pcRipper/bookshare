@@ -4,6 +4,7 @@ namespace App\Service\BookTemplate;
 
 use App\Dto\BookTemplate;
 use App\Dto\BookTemplateResult;
+use App\Language\LanguageGuesser;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -142,10 +143,12 @@ final class BookFinderBookTemplateProvider implements BookTemplateProvider
         return new BookTemplate(
             title: $title,
             author: $this->firstAuthor($item['authors'] ?? null) ?? 'Unknown',
-            // The API supplies neither an ISBN nor a language for its listings.
+            // The API supplies no ISBN and no language for its listings — so the
+            // language is guessed from the title's script (Ukrainian by default,
+            // this being the Ukrainian market it indexes).
             isbn: null,
             coverPath: $cover !== '' ? $cover : null,
-            language: null,
+            language: LanguageGuesser::guess($title),
             description: $description !== '' ? $description : null,
         );
     }

@@ -50,9 +50,22 @@ class BookFinderBookTemplateProviderTest extends TestCase
         self::assertSame('Frank Herbert', $result->items[0]->author);           // first author
         self::assertSame('A desert epic.', $result->items[0]->description);
         self::assertSame('https://shop.example/dune.jpg', $result->items[0]->coverPath);
-        // The API supplies neither an ISBN nor a language.
+        // The API supplies no ISBN; a Latin title yields no language guess either.
         self::assertNull($result->items[0]->isbn);
         self::assertNull($result->items[0]->language);
+    }
+
+    public function testLanguageIsGuessedFromTheTitleScript(): void
+    {
+        // The API never supplies a language, so it's inferred from the title —
+        // Ukrainian by default for Cyrillic (the market this source indexes).
+        $client = new MockHttpClient($this->json([
+            ['title' => 'Кобзар', 'authors' => [['fullName' => 'Тарас Шевченко']]],
+        ]));
+
+        $result = $this->provider($client)->search('кобзар', 12);
+
+        self::assertSame('uk', $result->items[0]->language);
     }
 
     public function testMissingAuthorBecomesUnknownAndEmptyFieldsBecomeNull(): void
