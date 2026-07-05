@@ -7,6 +7,13 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.9.2',
+    date: '2026-07-05',
+    notes: [
+      'Fixed the “Ukrainian stores” (and Open Library) template search returning no results on the very first try — a transient upstream hiccup is now retried automatically instead of showing an empty list.',
+    ],
+  },
+  {
     version: '1.9.1',
     date: '2026-07-04',
     notes: [
