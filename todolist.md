@@ -27,6 +27,7 @@
 - [x] add error page and not found page
 - [x] Improve mobile layout, now it has horizontal scroll because of shifted elements. Revise positioning for mobile version and overall improve look of it
 - [x] detailed read-only book overview modal (opens on click from Discover, Following feed and other readers' profiles — not from your own editable library); replaces the hover blurb that clipped long descriptions
+- [x] no language info on the book card on the profile page 
 
 
 # Functional
@@ -41,6 +42,7 @@
 - [x] add API support to fill book from template. It should be as option in add new book modal(only on create), split the create modal int two tabs: create manually, search for existing template in db or API. DB or API search should be as a toggle element with description like: 1# search for existing templates on the site 2# search in external sources. For now no API search is needed, on the backend it should return empty list. Make a strategy pattern for it with dedicated interface, it will be implemented later, with more details. Search bar itself should be looking for both title and ISBN, the option of the select list should contain author, name, cover, language. The whole space of the modal should be taken by input box, toggle for search type and the rest - for the options, they should be pretty large to easilly see what are the offers. If you click on one of the options - move to the manuall create and apply data from the search.
 - [x] add only text search to the profile's and library's book list pages, make it as simple as possible
 - [x] move "add book" card to the very top of the book list on the my library page, make it appear only on the first page(as it is right now)
+- [x] language value guessing from the name if the language didnt come from the external source in api call
 
 
 # Deployment
