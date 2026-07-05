@@ -6,7 +6,7 @@ const props = defineProps({
   book: {
     type: Object,
     required: true,
-    /* shape: { id, title, author, description, coverPath, status, requested, categories } */
+    /* shape: { id, title, author, description, coverPath, status, requested, categories, languageName } */
   },
   // When true the viewer owns this profile — borrowing is hidden.
   isSelf: { type: Boolean, default: false },
@@ -65,6 +65,11 @@ function onAction() {
     <div class="borrow-card__body">
       <h3 class="borrow-card__title">{{ book.title }}</h3>
       <p class="borrow-card__author">{{ book.author }}</p>
+
+      <p v-if="book.languageName" class="borrow-card__lang">
+        <span class="material-symbols-outlined">language</span>
+        {{ book.languageName }}
+      </p>
 
       <!-- Own-profile cards are a preview only — no borrow affordance. -->
       <button
@@ -167,6 +172,16 @@ function onAction() {
   color: var(--color-on-surface-variant);
   margin: 0 0 var(--space-sm);
 }
+
+.borrow-card__lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-secondary);
+  margin: 0 0 var(--space-sm);
+}
+.borrow-card__lang .material-symbols-outlined { font-size: 14px; }
 
 .borrow-card__action {
   margin-top: auto;

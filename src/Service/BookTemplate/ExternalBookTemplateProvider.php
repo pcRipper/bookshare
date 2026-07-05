@@ -5,6 +5,7 @@ namespace App\Service\BookTemplate;
 use App\Dto\BookTemplate;
 use App\Dto\BookTemplateResult;
 use App\Language\LanguageCatalog;
+use App\Language\LanguageGuesser;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -173,7 +174,9 @@ final class ExternalBookTemplateProvider implements BookTemplateProvider
             author: $this->first($doc['author_name'] ?? null) ?? 'Unknown',
             isbn: $this->first($doc['isbn'] ?? null),
             coverPath: isset($doc['cover_i']) ? sprintf(self::COVER_URL, (int) $doc['cover_i']) : null,
-            language: $this->mapLanguage($doc['language'] ?? null),
+            // Prefer the doc's own MARC language; fall back to guessing from the
+            // title's script when it's missing or unmapped.
+            language: $this->mapLanguage($doc['language'] ?? null) ?? LanguageGuesser::guess($title),
             // The Search API has no full description; its first sentence is the
             // best blurb we can supply without a second (per-result) Works call.
             description: $this->first($doc['first_sentence'] ?? null),

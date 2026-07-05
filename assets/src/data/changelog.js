@@ -7,6 +7,14 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.10.0',
+    date: '2026-07-05',
+    notes: [
+      'Template search now fills in a language even when the source doesn’t provide one — it’s inferred from the title’s script (Ukrainian by default for Cyrillic titles, matching the Ukrainian book stores).',
+      'Books on reader profiles now show their language, matching the Library and Discover book cards.',
+    ],
+  },
+  {
     version: '1.9.2',
     date: '2026-07-05',
     notes: [
