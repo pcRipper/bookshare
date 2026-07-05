@@ -5,9 +5,14 @@ framework:
     # Note that the session will be started ONLY if you read or write from it.
     session: true
 
-    # Scoped HTTP client for the Open Library API (the "external" book-template
-    # source). The User-Agent identifies us for the higher (3 req/s) rate limit;
-    # short timeouts keep a slow upstream from stalling the template search.
+    # Scoped HTTP clients for the external book-template sources. The User-Agent
+    # identifies us (Open Library grants a higher 3 req/s rate limit). Timeouts
+    # keep a slow upstream from stalling the template search, but a *single*
+    # transient hiccup must not blank the results: `retry_failed` re-issues a
+    # failed call (transport errors + 5xx) a couple of times before the provider
+    # degrades to an empty list. Without this, one timed-out first request
+    # returned HTTP 200 `{items:[],hasMore:false}` — indistinguishable from "no
+    # matches" — and only a manual re-search recovered it.
     http_client:
         scoped_clients:
             openlibrary.client:
@@ -15,14 +20,20 @@ framework:
                 headers:
                     User-Agent: '%env(OPENLIBRARY_USER_AGENT)%'
                 timeout: 5
-                max_duration: 8
+                max_duration: 12
+                retry_failed:
+                    max_retries: 2
+                    delay: 200
             # Scoped client for bookfinder.com.ua (the "Ukrainian stores" source).
             bookfinder.client:
                 base_uri: 'https://www.bookfinder.com.ua'
                 headers:
                     User-Agent: '%env(BOOKFINDER_USER_AGENT)%'
                 timeout: 5
-                max_duration: 8
+                max_duration: 12
+                retry_failed:
+                    max_retries: 2
+                    delay: 200
 
     #esi: true
     #fragments: true
