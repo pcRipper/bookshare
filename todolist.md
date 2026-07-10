@@ -28,7 +28,7 @@
 - [x] Improve mobile layout, now it has horizontal scroll because of shifted elements. Revise positioning for mobile version and overall improve look of it
 - [x] detailed read-only book overview modal (opens on click from Discover, Following feed and other readers' profiles — not from your own editable library); replaces the hover blurb that clipped long descriptions
 - [x] no language info on the book card on the profile page 
-
+- [ ] fix ios navigation bar, icon is shifted upwards
 
 # Functional
 - [x] Time landing: lending side is saying when will be the due date for book return, no approval from requester side needed, its the requirement of the lending side only
