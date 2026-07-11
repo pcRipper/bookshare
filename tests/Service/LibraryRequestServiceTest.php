@@ -174,6 +174,19 @@ class LibraryRequestServiceTest extends TestCase
         $this->service()->approve($request, $owner);
     }
 
+    public function testApproveIsRejectedWhenBookIsNoLongerAvailable(): void
+    {
+        // The request is still Pending, but the book was lent by another request
+        // since — approving would re-lend it and orphan the first loan.
+        $owner = new User();
+        $book = $this->book($owner, BookStatus::Lent);
+        $request = $this->request($book, new User(), RequestStatus::Pending);
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('no longer available');
+        $this->service()->approve($request, $owner);
+    }
+
     /* ───────────────────────── decline ───────────────────────── */
 
     public function testDeclineByOwnerSetsDeclinedStatusAndEvent(): void

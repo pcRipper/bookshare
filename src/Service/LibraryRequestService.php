@@ -69,6 +69,14 @@ class LibraryRequestService
         $this->assertOwner($request, $actor);
         $this->assertStatusIn($request, [RequestStatus::Pending], 'This request has already been resolved.');
 
+        // Re-check availability at approval time: another request (individual or a
+        // collection child) may have lent this book since this one was filed. Without
+        // this a second approval would silently re-lend it and orphan the first loan.
+        $book = $request->getBook();
+        if ($book->getStatus() !== BookStatus::Own) {
+            throw new \DomainException('This book is no longer available to lend.');
+        }
+
         $request
             ->setStatus(RequestStatus::Approved)
             ->setResolvedAt(new \DateTimeImmutable())
@@ -76,7 +84,6 @@ class LibraryRequestService
         $request->addEvent(LibraryRequestEventType::Approved, $actor, $dueDate);
 
         // The book is now lent: it leaves the owner's hands for the borrower's.
-        $book = $request->getBook();
         $book->setStatus(BookStatus::Lent);
         $book->setCurrentHolder($request->getRequester());
 

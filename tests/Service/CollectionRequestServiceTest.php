@@ -179,6 +179,20 @@ class CollectionRequestServiceTest extends TestCase
         $this->service()->approve($parent, $owner);
     }
 
+    public function testApproveIsAllOrNothingWhenAMemberBookBecameUnavailable(): void
+    {
+        $owner = new User();
+        $requester = new User();
+        [$parent, $books] = $this->pendingBorrow($owner, $requester);
+        // The first member book was lent by another request after this borrow was
+        // filed — the whole collection approve must fail rather than partial-lend.
+        $books[0]->setStatus(BookStatus::Lent);
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('no longer available');
+        $this->service()->approve($parent, $owner);
+    }
+
     /* ───────────────────────── decline ───────────────────────── */
 
     public function testDeclineByOwnerDeclinesEveryChildAndStoresMessage(): void
