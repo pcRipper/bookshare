@@ -337,7 +337,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   transition: border-color 0.15s, background 0.15s;
 }
 .book-row:hover:not(.book-row--locked):not(.book-row--static) { border-color: var(--color-outline-variant); }
-.book-row--selected { border-color: var(--color-primary); background: var(--color-primary-container); }
+/* Light, low-alpha tint so a selected row stays easy to read from a distance. */
+.book-row--selected { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, transparent); }
 .book-row--locked { cursor: not-allowed; opacity: 0.6; }
 .book-row--static { cursor: default; }
 

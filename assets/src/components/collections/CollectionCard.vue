@@ -4,9 +4,12 @@ import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 
 /**
  * A book collection card. Two variants:
- *  - 'owner'  → the viewer's own collection (Library tab): Edit + Delete, or a
- *    lock note while it's out on loan (canEdit=false).
- *  - 'browse' → someone else's collection (Profile tab): "Borrow collection".
+ *  - 'owner'  → the viewer's own collection (Library tab). The whole card opens
+ *    the edit modal (mirroring how a BookCard opens the Manage Book modal —
+ *    edit/delete live in that modal, not on the card). An "On loan" badge marks
+ *    a collection that's frozen while borrowed.
+ *  - 'browse' → someone else's collection (Profile tab): the card opens a preview
+ *    and carries a "Borrow collection" action.
  *
  * Always badged "Collection" so it's never mistaken for a single-book card.
  */
@@ -19,19 +22,13 @@ const props = defineProps({
   variant: { type: String, default: 'owner' }, // 'owner' | 'browse'
   // 'browse' only: viewer owns this profile → borrowing is hidden (preview).
   isSelf: { type: Boolean, default: false },
-  // Parent-controlled: true while a delete/borrow for this card is in flight.
+  // Parent-controlled: true while a borrow for this card is in flight.
   pending: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['edit', 'delete', 'borrow', 'open'])
+const emit = defineEmits(['borrow', 'open', 'edit'])
 
 const isOwner = computed(() => props.variant === 'owner')
-
-// On a reader's profile the whole card opens a read-only preview (mirroring how
-// a book card opens the book detail modal).
-function onCardClick() {
-  if (props.variant === 'browse') emit('open', props.collection)
-}
 
 // A collection is borrowable only when at least two of its books are available.
 const borrowable = computed(() => props.collection.availableCount >= 2)
@@ -43,14 +40,14 @@ const previewCovers = computed(() =>
     .filter(Boolean)
     .slice(0, 3),
 )
+
+function onCardClick() {
+  emit(isOwner.value ? 'edit' : 'open', props.collection)
+}
 </script>
 
 <template>
-  <article
-    class="collection-card"
-    :class="{ 'collection-card--clickable': variant === 'browse' }"
-    @click="onCardClick"
-  >
+  <article class="collection-card collection-card--clickable" @click="onCardClick">
     <div class="collection-card__cover">
       <img
         v-if="collection.coverUrl"
@@ -77,6 +74,11 @@ const previewCovers = computed(() =>
       <span class="collection-card__badge">
         <span class="material-symbols-outlined">library_books</span>Collection
       </span>
+
+      <!-- Owner: frozen while out on loan. -->
+      <span v-if="isOwner && !collection.canEdit" class="collection-card__status">
+        <span class="material-symbols-outlined">handshake</span>On loan
+      </span>
     </div>
 
     <div class="collection-card__body">
@@ -89,26 +91,9 @@ const previewCovers = computed(() =>
         <span>{{ collection.availableCount }} available</span>
       </p>
 
-      <!-- Owner actions -->
-      <div v-if="isOwner" class="collection-card__actions">
-        <template v-if="collection.canEdit">
-          <button class="collection-btn collection-btn--outline" @click.stop="emit('edit', collection)">
-            <span class="material-symbols-outlined">edit</span> Edit
-          </button>
-          <button class="collection-btn collection-btn--danger" :disabled="pending" @click.stop="emit('delete', collection)">
-            <BaseSpinner v-if="pending" size="sm" />
-            <span v-else class="material-symbols-outlined">delete</span>
-            Delete
-          </button>
-        </template>
-        <p v-else class="collection-card__locked">
-          <span class="material-symbols-outlined">lock</span> Out on loan
-        </p>
-      </div>
-
       <!-- Browse action (someone else's collection) -->
       <button
-        v-else-if="!isSelf"
+        v-if="!isOwner && !isSelf"
         class="collection-btn collection-btn--borrow"
         :disabled="!borrowable || pending"
         @click.stop="emit('borrow', collection)"
@@ -195,6 +180,28 @@ const previewCovers = computed(() =>
 }
 .collection-card__badge .material-symbols-outlined { font-size: 13px; }
 
+.collection-card__status {
+  position: absolute;
+  top: var(--space-base);
+  right: var(--space-base);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px 3px 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 1px 4px rgba(35, 44, 51, 0.18);
+}
+.collection-card__status .material-symbols-outlined {
+  font-size: 13px;
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+}
+
 .collection-card__body {
   padding: var(--space-sm);
   display: flex;
@@ -233,14 +240,7 @@ const previewCovers = computed(() =>
 }
 .collection-card__dot { opacity: 0.6; }
 
-.collection-card__actions {
-  margin-top: auto;
-  display: flex;
-  gap: var(--space-sm);
-}
-
 .collection-btn {
-  flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -255,22 +255,6 @@ const previewCovers = computed(() =>
 .collection-btn .material-symbols-outlined { font-size: 18px; }
 .collection-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-.collection-btn--outline {
-  border-color: var(--color-outline-variant);
-  color: var(--color-on-surface-variant);
-  background: var(--color-surface-container-lowest);
-  cursor: pointer;
-}
-.collection-btn--outline:hover { background: var(--color-surface-container-low); color: var(--color-on-background); }
-
-.collection-btn--danger {
-  border-color: var(--color-error);
-  color: var(--color-error);
-  background: transparent;
-  cursor: pointer;
-}
-.collection-btn--danger:hover:not(:disabled) { background: var(--color-error-container); }
-
 .collection-btn--borrow {
   margin-top: auto;
   width: 100%;
@@ -280,15 +264,4 @@ const previewCovers = computed(() =>
 }
 .collection-btn--borrow:hover:not(:disabled) { background: var(--color-primary-container); }
 .collection-btn--borrow:active:not(:disabled) { transform: scale(0.98); }
-
-.collection-card__locked {
-  margin: auto 0 0;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-xs);
-  font-size: var(--text-label-sm);
-  color: var(--color-on-surface-variant);
-  font-style: italic;
-}
-.collection-card__locked .material-symbols-outlined { font-size: 16px; }
 </style>

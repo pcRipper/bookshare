@@ -270,7 +270,6 @@ function onImported() {
 const collectionModalOpen = ref(false)
 const collectionModalBusy = ref(false)
 const editingCollection = ref(null)
-const deletingCollections = reactive(new Set())
 
 function openCreateCollection() {
   editingCollection.value = null
@@ -295,15 +294,15 @@ async function onCollectionSave(payload) {
     collectionModalBusy.value = false
   }
 }
-async function onCollectionDelete(c) {
-  if (deletingCollections.has(c.id)) return
-  deletingCollections.add(c.id)
+async function onCollectionDelete(id) {
+  collectionModalBusy.value = true
   try {
-    await collections.deleteCollection(c.id)
+    await collections.deleteCollection(id)
+    collectionModalOpen.value = false
   } catch (e) {
     toast.error(apiErrorMessage(e, 'Could not delete the collection.'))
   } finally {
-    deletingCollections.delete(c.id)
+    collectionModalBusy.value = false
   }
 }
 
@@ -475,9 +474,7 @@ async function handleCCancel(id) {
                 :key="c.id"
                 :collection="c"
                 variant="owner"
-                :pending="deletingCollections.has(c.id)"
                 @edit="openEditCollection"
-                @delete="onCollectionDelete"
               />
             </div>
             <Pagination
@@ -784,12 +781,13 @@ async function handleCCancel(id) {
       @close="importOpen = false"
     />
 
-    <!-- Create / edit collection modal -->
+    <!-- Create / edit collection modal (edit mode carries a Delete action) -->
     <CollectionEditModal
       :open="collectionModalOpen"
       :collection="editingCollection"
       :busy="collectionModalBusy"
       @save="onCollectionSave"
+      @delete="onCollectionDelete"
       @close="collectionModalOpen = false"
     />
   </AppLayout>

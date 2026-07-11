@@ -2,13 +2,16 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import api from '@/api'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import SearchInput from '@/components/ui/SearchInput.vue'
 import { useToastStore } from '@/stores/toast'
 import { apiErrorMessage } from '@/utils/apiError'
 
 /**
- * Create or edit a collection: name, optional description + cover URL, and a
- * multi-select of the owner's books. Save is gated on a name and at least two
- * selected books (matching the server rule).
+ * Create or edit a collection: cover, name, description, and a two-pane book
+ * picker (already-selected vs. books to add, the latter searchable). Save is
+ * gated on a name and at least two selected books (matching the server rule).
+ * Edit mode carries a Delete action; a collection that's out on loan opens
+ * read-only (mirroring the book modal's on-loan lock).
  */
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -16,7 +19,7 @@ const props = defineProps({
   busy: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['save', 'close'])
+const emit = defineEmits(['save', 'delete', 'close'])
 
 const MIN = 2
 const toast = useToastStore()
@@ -25,12 +28,27 @@ const name = ref('')
 const description = ref('')
 const coverUrl = ref('')
 const selected = ref(new Set())
+const bookQuery = ref('')
 
 const books = ref([])          // the owner's books to choose from
 const loadingBooks = ref(false)
+const pendingAction = ref(null) // 'save' | 'delete' — drives the right spinner
 
 const isEdit = computed(() => !!props.collection)
-const canSave = computed(() => name.value.trim().length > 0 && selected.value.size >= MIN)
+// A collection that's out on loan is frozen server-side (CollectionVoter).
+const readOnly = computed(() => isEdit.value && props.collection?.canEdit === false)
+const canSave = computed(() => !readOnly.value && name.value.trim().length > 0 && selected.value.size >= MIN)
+
+// The two panes: what's in the collection vs. what can still be added.
+const selectedBooks = computed(() => books.value.filter(b => selected.value.has(b.id)))
+const availableBooks = computed(() => {
+  const q = bookQuery.value.trim().toLowerCase()
+  return books.value.filter(b => {
+    if (selected.value.has(b.id)) return false
+    if (!q) return true
+    return [b.title, b.author, b.isbn].some(f => (f ?? '').toLowerCase().includes(q))
+  })
+})
 
 // Load the owner's available books to pick from; for edit, merge in the current
 // members (which may now be on loan) so they can be kept, and pre-select them.
@@ -58,29 +76,43 @@ watch(
     description.value = props.collection?.description ?? ''
     coverUrl.value = props.collection?.coverUrl ?? ''
     selected.value = new Set((props.collection?.books ?? []).map(b => b.id))
+    bookQuery.value = ''
+    pendingAction.value = null
     loadBooks()
   },
   { immediate: true },
 )
 
-function toggle(book) {
+function add(book) {
+  if (readOnly.value) return
   const next = new Set(selected.value)
-  next.has(book.id) ? next.delete(book.id) : next.add(book.id)
+  next.add(book.id)
+  selected.value = next
+}
+function remove(book) {
+  if (readOnly.value) return
+  const next = new Set(selected.value)
+  next.delete(book.id)
   selected.value = next
 }
 
 function close() {
   if (!props.busy) emit('close')
 }
-
 function onSave() {
   if (!canSave.value || props.busy) return
+  pendingAction.value = 'save'
   emit('save', {
     name: name.value.trim(),
     description: description.value.trim() || null,
     coverUrl: coverUrl.value.trim() || null,
     bookIds: [...selected.value],
   })
+}
+function onDelete() {
+  if (props.busy) return
+  pendingAction.value = 'delete'
+  emit('delete', props.collection.id)
 }
 
 function onKeydown(e) {
@@ -107,7 +139,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
         </header>
 
         <div class="modal__body">
-          <!-- Cover preview + URL (matches the book modal) -->
+          <p v-if="readOnly" class="modal__notice">
+            <span class="material-symbols-outlined">lock</span>
+            This collection is out on loan and can't be edited until it's returned.
+          </p>
+
+          <!-- Cover preview + URL (matches the book create/edit modal) -->
           <div class="field">
             <span class="field__label">Cover image URL <span class="field__opt">(optional)</span></span>
             <div class="cover-row">
@@ -115,24 +152,55 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                 <img v-if="coverUrl" :src="coverUrl" alt="Cover preview" />
                 <span v-else class="material-symbols-outlined cover-preview__icon">library_books</span>
               </div>
-              <input v-model="coverUrl" class="field__input" type="url" maxlength="500" placeholder="https://…" :disabled="busy" />
+              <input v-model="coverUrl" class="field__input" type="url" maxlength="500" placeholder="https://…" :disabled="busy || readOnly" />
             </div>
           </div>
 
           <label class="field">
             <span class="field__label">Name</span>
-            <input v-model="name" class="field__input" type="text" maxlength="255" placeholder="e.g. The Expanse" :disabled="busy" />
+            <input v-model="name" class="field__input" type="text" maxlength="255" placeholder="e.g. The Expanse" :disabled="busy || readOnly" />
           </label>
 
           <label class="field">
             <span class="field__label">Description <span class="field__opt">(optional)</span></span>
-            <textarea v-model="description" class="field__input field__textarea" maxlength="500" rows="2" placeholder="What ties these books together?" :disabled="busy" />
+            <textarea v-model="description" class="field__input field__textarea" maxlength="500" rows="2" placeholder="What ties these books together?" :disabled="busy || readOnly" />
           </label>
 
+          <!-- Selected books -->
           <div class="field">
-            <span class="field__label">
-              Books <span class="field__opt">(pick at least {{ MIN }})</span>
-            </span>
+            <span class="field__label">In this collection ({{ selected.size }})</span>
+            <p v-if="!selectedBooks.length" class="picker__empty">Pick at least {{ MIN }} books below.</p>
+            <ul v-else class="picker">
+              <li
+                v-for="book in selectedBooks"
+                :key="book.id"
+                class="picker__row picker__row--selected"
+                :class="{ 'picker__row--static': readOnly }"
+                @click="remove(book)"
+              >
+                <span class="picker__check picker__check--remove" aria-hidden="true">
+                  <span class="material-symbols-outlined">{{ readOnly ? 'check' : 'remove_circle' }}</span>
+                </span>
+                <div class="picker__cover">
+                  <img v-if="book.coverPath" :src="book.coverPath" :alt="`Cover of ${book.title}`" />
+                  <span v-else class="material-symbols-outlined">menu_book</span>
+                </div>
+                <div class="picker__info">
+                  <p class="picker__title">{{ book.title }}</p>
+                  <p class="picker__author">{{ book.author }}</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Books to add -->
+          <div v-if="!readOnly" class="field">
+            <span class="field__label">Add books</span>
+            <SearchInput
+              placeholder="Search your books by title, author or ISBN"
+              :debounce="150"
+              @search="bookQuery = $event"
+            />
 
             <div v-if="loadingBooks" class="picker__loading">
               <BaseSpinner size="sm" /> Loading your books…
@@ -140,16 +208,18 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             <p v-else-if="!books.length" class="picker__empty">
               You need at least {{ MIN }} books in your library to make a collection.
             </p>
+            <p v-else-if="!availableBooks.length" class="picker__empty">
+              {{ bookQuery ? 'No books match your search.' : 'Every book is already in this collection.' }}
+            </p>
             <ul v-else class="picker">
               <li
-                v-for="book in books"
+                v-for="book in availableBooks"
                 :key="book.id"
                 class="picker__row"
-                :class="{ 'picker__row--selected': selected.has(book.id) }"
-                @click="toggle(book)"
+                @click="add(book)"
               >
                 <span class="picker__check" aria-hidden="true">
-                  <span class="material-symbols-outlined">{{ selected.has(book.id) ? 'check_box' : 'check_box_outline_blank' }}</span>
+                  <span class="material-symbols-outlined">add_circle</span>
                 </span>
                 <div class="picker__cover">
                   <img v-if="book.coverPath" :src="book.coverPath" :alt="`Cover of ${book.title}`" />
@@ -165,14 +235,25 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
         </div>
 
         <footer class="modal__footer">
-          <span class="modal__count">{{ selected.size }} selected</span>
-          <div class="modal__footer-actions">
-            <button class="btn-secondary" type="button" :disabled="busy" @click="close">Cancel</button>
-            <button class="btn-primary" type="button" :disabled="!canSave || busy" @click="onSave">
-              <BaseSpinner v-if="busy" size="sm" />
-              {{ busy ? 'Saving…' : isEdit ? 'Save changes' : 'Create collection' }}
+          <template v-if="readOnly">
+            <div class="modal__footer-actions">
+              <button class="btn-secondary" type="button" @click="close">Close</button>
+            </div>
+          </template>
+          <template v-else>
+            <button v-if="isEdit" class="btn-delete" type="button" :disabled="busy" @click="onDelete">
+              <BaseSpinner v-if="busy && pendingAction === 'delete'" size="sm" />
+              <span v-else class="material-symbols-outlined">delete</span>
+              {{ busy && pendingAction === 'delete' ? 'Deleting…' : 'Delete' }}
             </button>
-          </div>
+            <div class="modal__footer-actions">
+              <button class="btn-secondary" type="button" :disabled="busy" @click="close">Cancel</button>
+              <button class="btn-primary" type="button" :disabled="!canSave || busy" @click="onSave">
+                <BaseSpinner v-if="busy && pendingAction === 'save'" size="sm" />
+                {{ busy && pendingAction === 'save' ? 'Saving…' : isEdit ? 'Save changes' : 'Create collection' }}
+              </button>
+            </div>
+          </template>
         </footer>
       </div>
     </div>
@@ -249,6 +330,19 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   gap: var(--space-md);
 }
 
+.modal__notice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin: 0;
+  padding: var(--space-sm) var(--space-base);
+  border-radius: var(--radius-default);
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface-variant);
+  font-size: var(--text-label-md);
+}
+.modal__notice .material-symbols-outlined { font-size: 18px; }
+
 .field { display: flex; flex-direction: column; gap: var(--space-xs); }
 .field__label {
   font-size: var(--text-label-sm);
@@ -298,17 +392,18 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   gap: var(--space-xs);
   font-size: var(--text-label-md);
   color: var(--color-on-surface-variant);
-  padding: var(--space-sm) 0;
+  padding: var(--space-xs) 0;
+  margin: 0;
 }
 
 .picker {
   list-style: none;
-  margin: 0;
+  margin: var(--space-xs) 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
-  max-height: 240px;
+  max-height: 220px;
   overflow-y: auto;
 }
 .picker__row {
@@ -322,8 +417,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   transition: border-color 0.15s, background 0.15s;
 }
 .picker__row:hover { border-color: var(--color-outline-variant); }
-.picker__row--selected { border-color: var(--color-primary); background: var(--color-primary-container); }
+/* A light, low-alpha tint so selected rows stay easy to read from a distance. */
+.picker__row--selected {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+.picker__row--static { cursor: default; }
 .picker__check { display: flex; color: var(--color-primary); }
+.picker__check--remove { color: var(--color-error); }
+.picker__row--static .picker__check--remove { color: var(--color-primary); }
 .picker__check .material-symbols-outlined { font-size: 22px; }
 .picker__cover {
   width: 32px;
@@ -366,8 +468,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   padding: var(--space-md);
   border-top: 1px solid var(--color-surface-container-highest);
 }
-.modal__count { font-size: var(--text-label-sm); color: var(--color-on-surface-variant); }
-.modal__footer-actions { display: flex; gap: var(--space-sm); }
+.modal__footer-actions { display: flex; gap: var(--space-sm); margin-left: auto; }
 
 .btn-secondary {
   padding: var(--space-sm) var(--space-md);
@@ -400,6 +501,21 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 }
 .btn-primary:hover:not(:disabled) { background: var(--color-primary-container); }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) 0;
+  background: transparent;
+  color: var(--color-error);
+  font-size: var(--text-label-md);
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn-delete:hover:not(:disabled) { text-decoration: underline; }
+.btn-delete:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-delete .material-symbols-outlined { font-size: 20px; }
 
 @media (max-width: 639px) {
   .modal { max-width: 100%; }
