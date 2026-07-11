@@ -7,6 +7,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 class CollectionBorrowInput
 {
+    #[Assert\Positive(message: 'A collection is required.')]
+    public int $collectionId = 0;
+
     /**
      * IDs of the collection's books the borrower selected. At least two must be
      * chosen; availability and membership are re-validated server-side.
