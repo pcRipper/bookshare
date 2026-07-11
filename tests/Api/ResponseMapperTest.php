@@ -462,4 +462,87 @@ class ResponseMapperTest extends TestCase
         self::assertSame('Not right now.', $data['message']);
         self::assertSame('Not right now.', $data['events'][1]['message']);
     }
+
+    public function testCollectionRequestTimelineForActiveLoan(): void
+    {
+        $collection = (new BookCollection())->setOwner((new User())->setFullName('Owner'))->setName('Series');
+        $request = (new CollectionRequest())
+            ->setCollection($collection)
+            ->setRequester((new User())->setFullName('Borrower'))
+            ->setStatus(RequestStatus::Approved)
+            ->setResolvedAt(new \DateTimeImmutable('2030-01-01'))
+            ->setDueDate(new \DateTimeImmutable('2030-02-01'));
+
+        $data = $this->mapper()->collectionRequest($request);
+
+        // An active loan stops at approved — no returned milestone yet.
+        self::assertSame(['requested', 'approved'], array_column($data['events'], 'type'));
+        self::assertNotFalse(\DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $data['events'][1]['dueDate']));
+    }
+
+    public function testCollectionRequestReturnPendingOmitsTransientStep(): void
+    {
+        $collection = (new BookCollection())->setOwner((new User())->setFullName('Owner'))->setName('Series');
+        $request = (new CollectionRequest())
+            ->setCollection($collection)
+            ->setRequester((new User())->setFullName('Borrower'))
+            ->setStatus(RequestStatus::ReturnPending)
+            ->setResolvedAt(new \DateTimeImmutable('2030-01-01'))
+            ->setDueDate(new \DateTimeImmutable('2030-02-01'));
+
+        $data = $this->mapper()->collectionRequest($request);
+
+        // The transient return-requested step isn't timestamped on the parent, so
+        // the synthesized timeline deliberately stops at approved.
+        self::assertSame(['requested', 'approved'], array_column($data['events'], 'type'));
+    }
+
+    public function testCollectionTimelineAttributesActorsToRequesterAndOwner(): void
+    {
+        $collection = (new BookCollection())->setOwner((new User())->setFullName('Owner'))->setName('Series');
+        $request = (new CollectionRequest())
+            ->setCollection($collection)
+            ->setRequester((new User())->setFullName('Borrower'))
+            ->setStatus(RequestStatus::Returned)
+            ->setResolvedAt(new \DateTimeImmutable('2030-01-01'))
+            ->setReturnedAt(new \DateTimeImmutable('2030-01-20'));
+
+        $events = $this->mapper()->collectionRequest($request)['events'];
+
+        self::assertSame('Borrower', $events[0]['actor']['fullName']); // requested
+        self::assertSame('Owner', $events[1]['actor']['fullName']);    // approved
+        self::assertSame('Owner', $events[2]['actor']['fullName']);    // returned
+    }
+
+    public function testCollectionCanEditIsFalseWhenNotGranted(): void
+    {
+        $collection = (new BookCollection())->setOwner((new User())->setFullName('Owner'))->setName('C');
+
+        self::assertFalse($this->mapper(false)->collection($collection)['canEdit']);
+    }
+
+    public function testCollectionsPluralMapsEachCollection(): void
+    {
+        $owner = (new User())->setFullName('Owner');
+        $c1 = (new BookCollection())->setOwner($owner)->setName('One');
+        $c2 = (new BookCollection())->setOwner($owner)->setName('Two');
+
+        $data = $this->mapper()->collections([$c1, $c2]);
+
+        self::assertSame(['One', 'Two'], array_column($data, 'name'));
+    }
+
+    public function testCollectionRequestsPluralMapsEachRequest(): void
+    {
+        $owner = (new User())->setFullName('Owner');
+        $collection = (new BookCollection())->setOwner($owner)->setName('Series');
+        $r1 = (new CollectionRequest())->setCollection($collection)->setRequester((new User())->setFullName('A'));
+        $r2 = (new CollectionRequest())->setCollection($collection)->setRequester((new User())->setFullName('B'));
+
+        $data = $this->mapper()->collectionRequests([$r1, $r2]);
+
+        self::assertCount(2, $data);
+        self::assertSame('A', $data[0]['requester']['fullName']);
+        self::assertSame('B', $data[1]['requester']['fullName']);
+    }
 }

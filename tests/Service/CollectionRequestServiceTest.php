@@ -98,6 +98,28 @@ class CollectionRequestServiceTest extends TestCase
         $this->service()->createBorrow(new User(), $collection, [1, 2]);
     }
 
+    public function testCreateBorrowPersistsTheParentRequest(): void
+    {
+        $owner = new User();
+        $requester = new User();
+        $collection = $this->collection($owner, [
+            $this->book($owner, BookStatus::Own, 1),
+            $this->book($owner, BookStatus::Own, 2),
+        ]);
+
+        // create() persists each child too, so capture every persist and assert
+        // the parent is among them (rather than expecting a single call).
+        $persisted = [];
+        $em = $this->createStub(EntityManagerInterface::class);
+        $em->method('persist')->willReturnCallback(function ($entity) use (&$persisted) {
+            $persisted[] = $entity;
+        });
+
+        $parent = $this->service($em)->createBorrow($requester, $collection, [1, 2]);
+
+        self::assertContains($parent, $persisted);
+    }
+
     /* ───────────────────────── approve ───────────────────────── */
 
     public function testApproveByOwnerLendsEveryChildBook(): void
@@ -242,6 +264,36 @@ class CollectionRequestServiceTest extends TestCase
 
         $this->expectException(AccessDeniedException::class);
         $this->service()->confirmReturn($parent, $requester);
+    }
+
+    public function testConfirmReturnDirectlyFromApprovedClosesEveryChildLoan(): void
+    {
+        $owner = new User();
+        $requester = new User();
+        [$parent, $books] = $this->pendingBorrow($owner, $requester);
+        $this->service()->approve($parent, $owner);
+
+        // The owner can close an active loan without a borrower return request first.
+        $this->service()->confirmReturn($parent, $owner);
+
+        self::assertSame(RequestStatus::Returned, $parent->getStatus());
+        self::assertNotNull($parent->getReturnedAt());
+        foreach ($parent->getChildren() as $child) {
+            self::assertSame(RequestStatus::Returned, $child->getStatus());
+        }
+        foreach ($books as $book) {
+            self::assertTrue($book->isHome());
+        }
+    }
+
+    public function testConfirmReturnOnInactiveLoanIsRejected(): void
+    {
+        $owner = new User();
+        [$parent] = $this->pendingBorrow($owner, new User());
+
+        // Still pending — never approved, so there's no live loan to confirm.
+        $this->expectException(\DomainException::class);
+        $this->service()->confirmReturn($parent, $owner);
     }
 
     /* ───────────────────────── cancel ───────────────────────── */

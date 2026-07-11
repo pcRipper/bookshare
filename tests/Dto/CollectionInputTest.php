@@ -79,6 +79,17 @@ class CollectionInputTest extends TestCase
         self::assertContains('coverUrl', $this->violations($input));
     }
 
+    public function testOverlongCoverUrlIsRejected(): void
+    {
+        $input = new CollectionInput();
+        $input->name = 'C';
+        // Valid URL shape but past the 500-char cap.
+        $input->coverUrl = 'https://example.test/' . str_repeat('a', 500) . '.jpg';
+        $input->bookIds = [1, 2];
+
+        self::assertContains('coverUrl', $this->violations($input));
+    }
+
     public function testNullCoverUrlIsAccepted(): void
     {
         $input = new CollectionInput();
