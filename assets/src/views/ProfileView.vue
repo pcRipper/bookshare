@@ -344,6 +344,7 @@ async function onProfileSave(payload) {
               variant="browse"
               :is-self="profile.isSelf"
               @borrow="openBorrow"
+              @open="openBorrow"
             />
           </div>
           <div v-else class="empty-state">
@@ -381,11 +382,12 @@ async function onProfileSave(payload) {
       @close="detailBook = null"
     />
 
-    <!-- Borrow a whole/partial collection -->
+    <!-- Collection preview + borrow (whole or partial) -->
     <CollectionBorrowModal
       :open="borrowOpen"
       :collection="borrowCollection"
       :busy="borrowBusy"
+      :is-self="profile?.isSelf"
       @borrow="onBorrowCollection"
       @close="borrowOpen = false"
     />

@@ -107,6 +107,18 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
         </header>
 
         <div class="modal__body">
+          <!-- Cover preview + URL (matches the book modal) -->
+          <div class="field">
+            <span class="field__label">Cover image URL <span class="field__opt">(optional)</span></span>
+            <div class="cover-row">
+              <div class="cover-preview">
+                <img v-if="coverUrl" :src="coverUrl" alt="Cover preview" />
+                <span v-else class="material-symbols-outlined cover-preview__icon">library_books</span>
+              </div>
+              <input v-model="coverUrl" class="field__input" type="url" maxlength="500" placeholder="https://…" :disabled="busy" />
+            </div>
+          </div>
+
           <label class="field">
             <span class="field__label">Name</span>
             <input v-model="name" class="field__input" type="text" maxlength="255" placeholder="e.g. The Expanse" :disabled="busy" />
@@ -115,11 +127,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
           <label class="field">
             <span class="field__label">Description <span class="field__opt">(optional)</span></span>
             <textarea v-model="description" class="field__input field__textarea" maxlength="500" rows="2" placeholder="What ties these books together?" :disabled="busy" />
-          </label>
-
-          <label class="field">
-            <span class="field__label">Cover image URL <span class="field__opt">(optional)</span></span>
-            <input v-model="coverUrl" class="field__input" type="url" maxlength="500" placeholder="https://…" :disabled="busy" />
           </label>
 
           <div class="field">
@@ -264,6 +271,25 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 .field__input:focus { outline: none; border-color: var(--color-primary); }
 .field__input:disabled { opacity: 0.6; }
 .field__textarea { resize: vertical; }
+
+/* Cover preview + URL row (consistent with the book create/edit modal). */
+.cover-row { display: flex; gap: var(--space-sm); align-items: center; }
+.cover-preview {
+  width: 56px;
+  height: 80px;
+  flex-shrink: 0;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-default);
+  overflow: hidden;
+  background: var(--color-surface-container-low);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-outline);
+}
+.cover-preview img { width: 100%; height: 100%; object-fit: cover; }
+.cover-preview__icon { font-size: 24px; }
+.cover-row .field__input { flex: 1; min-width: 0; }
 
 .picker__loading,
 .picker__empty {

@@ -23,9 +23,15 @@ const props = defineProps({
   pending: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['edit', 'delete', 'borrow'])
+const emit = defineEmits(['edit', 'delete', 'borrow', 'open'])
 
 const isOwner = computed(() => props.variant === 'owner')
+
+// On a reader's profile the whole card opens a read-only preview (mirroring how
+// a book card opens the book detail modal).
+function onCardClick() {
+  if (props.variant === 'browse') emit('open', props.collection)
+}
 
 // A collection is borrowable only when at least two of its books are available.
 const borrowable = computed(() => props.collection.availableCount >= 2)
@@ -40,7 +46,11 @@ const previewCovers = computed(() =>
 </script>
 
 <template>
-  <article class="collection-card">
+  <article
+    class="collection-card"
+    :class="{ 'collection-card--clickable': variant === 'browse' }"
+    @click="onCardClick"
+  >
     <div class="collection-card__cover">
       <img
         v-if="collection.coverUrl"
@@ -82,10 +92,10 @@ const previewCovers = computed(() =>
       <!-- Owner actions -->
       <div v-if="isOwner" class="collection-card__actions">
         <template v-if="collection.canEdit">
-          <button class="collection-btn collection-btn--outline" @click="emit('edit', collection)">
+          <button class="collection-btn collection-btn--outline" @click.stop="emit('edit', collection)">
             <span class="material-symbols-outlined">edit</span> Edit
           </button>
-          <button class="collection-btn collection-btn--danger" :disabled="pending" @click="emit('delete', collection)">
+          <button class="collection-btn collection-btn--danger" :disabled="pending" @click.stop="emit('delete', collection)">
             <BaseSpinner v-if="pending" size="sm" />
             <span v-else class="material-symbols-outlined">delete</span>
             Delete
@@ -101,7 +111,7 @@ const previewCovers = computed(() =>
         v-else-if="!isSelf"
         class="collection-btn collection-btn--borrow"
         :disabled="!borrowable || pending"
-        @click="emit('borrow', collection)"
+        @click.stop="emit('borrow', collection)"
       >
         <BaseSpinner v-if="pending" size="sm" />
         <span v-else class="material-symbols-outlined">handshake</span>
@@ -125,9 +135,11 @@ const previewCovers = computed(() =>
   border-color: var(--color-outline-variant);
   box-shadow: 0 6px 20px rgba(35, 44, 51, 0.08);
 }
+.collection-card--clickable { cursor: pointer; }
 
+/* Portrait 2/3 cover so a collection card matches a book card in the grid. */
 .collection-card__cover {
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 2 / 3;
   overflow: hidden;
   background: var(--color-surface-container-low);
   position: relative;
