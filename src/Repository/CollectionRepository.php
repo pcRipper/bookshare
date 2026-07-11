@@ -42,4 +42,15 @@ class CollectionRepository extends ServiceEntityRepository
 
         return new PaginatedResult(iterator_to_array($paginator), count($paginator));
     }
+
+    /** How many collections a user owns — powers the profile tab counter. */
+    public function countByOwner(User $owner): int
+    {
+        return (int) $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->where('c.owner = :owner')
+            ->setParameter('owner', $owner)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }
