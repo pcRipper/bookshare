@@ -291,7 +291,13 @@ Design is **signal-and-refetch, not state-push**: after a transition commits, `A
 `nelmio/cors-bundle`. `CORS_ALLOW_ORIGIN` in `.env` defaults to a regex matching any `localhost` port (covers the Vite dev server). Adjust for production in `.env.local` / deployment config.
 
 ### Testing
-PHPUnit suite under `tests/`, run with `php bin/phpunit`. It is **unit-level** (mirrors `src/`: `Entity/`, `Service/`, `Dto/`, `Api/`, `Security/Voter/`, `EventSubscriber/`, `Category/`, `Language/`) — no kernel boot or DB, so it runs fast and doesn't need the audit tables. `phpunit.dist.xml` sets `failOnDeprecation` / `failOnNotice` / `failOnWarning` = **true**, so under PHPUnit 13: use `createStub()` (not `createMock()`) when you only need a return value, and pair `->with(...)` with an explicit `->expects(...)`. There is no HTTP/`WebTestCase` layer (the test env disables the firewall: `when@test: security: ~`).
+PHPUnit suite under `tests/`, run with `php bin/phpunit`. It is **mostly unit-level** (mirrors `src/`: `Entity/`, `Service/`, `Dto/`, `Api/`, `Security/Voter/`, `EventSubscriber/`, `Category/`, `Language/`) — no kernel boot or DB, so it runs fast and doesn't need the audit tables. `phpunit.dist.xml` sets `failOnDeprecation` / `failOnNotice` / `failOnWarning` = **true**, so under PHPUnit 13: use `createStub()` (not `createMock()`) when you only need a return value, and pair `->with(...)` with an explicit `->expects(...)`. There is no HTTP/`WebTestCase` layer (the test env disables the firewall: `when@test: security: ~`).
+
+The one exception is **`tests/Repository/`** — DB-backed integration tests (extend `RepositoryTestCase`, a `KernelTestCase`) that exercise the actual DQL, since repository query bugs (e.g. an unbound `:statuses` param, or the `parentRequest IS NULL` child-exclusion) can't surface in unit tests. Each test runs inside a transaction that's rolled back, so no schema re-creation; if the test DB isn't reachable the test **skips** (not fails), keeping the default run green on machines that never provisioned it. Auditing is **off under test** (`when@test: dh_auditor: enabled: false`) so its flush listeners don't fight the rollback isolation. Provision the test DB once:
+```bash
+php bin/console doctrine:database:create --env=test
+php bin/console doctrine:migrations:migrate --env=test -n
+```
 
 ## Environment Setup Notes (Windows-specific)
 
