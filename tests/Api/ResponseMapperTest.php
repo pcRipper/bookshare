@@ -6,13 +6,16 @@ use App\Api\ResponseMapper;
 use App\Dto\Pagination;
 use App\Entity\ActivityItem;
 use App\Entity\Book;
+use App\Entity\BookCollection;
 use App\Entity\Category;
+use App\Entity\CollectionRequest;
 use App\Entity\LibraryRequest;
 use App\Entity\Subscription;
 use App\Entity\User;
 use App\Enum\ActivityType;
 use App\Enum\BookStatus;
 use App\Enum\LibraryRequestEventType;
+use App\Enum\RequestStatus;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
@@ -360,5 +363,103 @@ class ResponseMapperTest extends TestCase
 
         self::assertNull($data['targetBook']);
         self::assertNull($data['targetUser']);
+    }
+
+    /* ─────────────────────────── collections ─────────────────────────── */
+
+    public function testCollectionShapeIncludesCountsCanEditAndBooks(): void
+    {
+        $owner = (new User())->setFullName('Jane');
+        $b1 = (new Book())->setOwner($owner)->setTitle('One')->setAuthor('A')->setStatus(BookStatus::Own);
+        $b2 = (new Book())->setOwner($owner)->setTitle('Two')->setAuthor('A')->setStatus(BookStatus::Lent);
+        $collection = (new BookCollection())->setOwner($owner)->setName('Sci-Fi')->setCoverUrl('http://c/x.jpg');
+        $collection->addBook($b1)->addBook($b2);
+
+        $data = $this->mapper(true)->collection($collection);
+
+        self::assertSame('Sci-Fi', $data['name']);
+        self::assertSame('http://c/x.jpg', $data['coverUrl']);
+        self::assertSame('Jane', $data['owner']['fullName']);
+        self::assertSame(2, $data['bookCount']);
+        self::assertSame(1, $data['availableCount']); // only the Own book is available
+        self::assertTrue($data['canEdit']);
+        self::assertCount(2, $data['books']);
+        self::assertNotFalse(\DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $data['createdAt']));
+    }
+
+    public function testCollectionFlagsAlreadyRequestedBooks(): void
+    {
+        $owner = (new User())->setFullName('Jane');
+        $book = (new Book())->setOwner($owner)->setTitle('One')->setAuthor('A');
+        $collection = (new BookCollection())->setOwner($owner)->setName('C')->addBook($book);
+
+        // Book id is null here, so key the lookup on null to match getId().
+        $data = $this->mapper()->collection($collection, [$book->getId() => true]);
+
+        self::assertTrue($data['books'][0]['requested']);
+    }
+
+    public function testCollectionRequestShapeAndPendingTimeline(): void
+    {
+        $owner = (new User())->setFullName('Owner');
+        $requester = (new User())->setFullName('Borrower');
+        $book = (new Book())->setOwner($owner)->setTitle('Book')->setAuthor('Auth');
+        $collection = (new BookCollection())->setOwner($owner)->setName('Series');
+        $child = (new LibraryRequest())->setBook($book)->setRequester($requester);
+        $request = (new CollectionRequest())->setCollection($collection)->setRequester($requester);
+        $request->addChild($child);
+
+        $data = $this->mapper()->collectionRequest($request);
+
+        self::assertSame('pending', $data['status']);
+        self::assertSame('Borrower', $data['requester']['fullName']);
+        self::assertSame('Series', $data['collection']['name']);
+        self::assertSame('Owner', $data['collection']['owner']['fullName']);
+        self::assertCount(1, $data['books']);
+        self::assertSame('Book', $data['books'][0]['title']);
+        // A pending request has a single 'requested' milestone.
+        self::assertCount(1, $data['events']);
+        self::assertSame('requested', $data['events'][0]['type']);
+        self::assertNotFalse(\DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $data['requestedAt']));
+    }
+
+    public function testCollectionRequestTimelineForReturnedLoan(): void
+    {
+        $owner = (new User())->setFullName('Owner');
+        $requester = (new User())->setFullName('Borrower');
+        $collection = (new BookCollection())->setOwner($owner)->setName('Series');
+        $request = (new CollectionRequest())
+            ->setCollection($collection)
+            ->setRequester($requester)
+            ->setStatus(RequestStatus::Returned)
+            ->setResolvedAt(new \DateTimeImmutable('2030-01-01'))
+            ->setDueDate(new \DateTimeImmutable('2030-02-01'))
+            ->setReturnedAt(new \DateTimeImmutable('2030-01-20'));
+
+        $data = $this->mapper()->collectionRequest($request);
+
+        $types = array_column($data['events'], 'type');
+        self::assertSame(['requested', 'approved', 'returned'], $types);
+        // The approval milestone carries the lender-set due date.
+        self::assertNotFalse(\DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $data['events'][1]['dueDate']));
+    }
+
+    public function testCollectionRequestDeclineTimelineCarriesMessage(): void
+    {
+        $owner = (new User())->setFullName('Owner');
+        $collection = (new BookCollection())->setOwner($owner)->setName('Series');
+        $request = (new CollectionRequest())
+            ->setCollection($collection)
+            ->setRequester((new User())->setFullName('Borrower'))
+            ->setStatus(RequestStatus::Declined)
+            ->setResolvedAt(new \DateTimeImmutable('2030-01-01'))
+            ->setDeclineMessage('Not right now.');
+
+        $data = $this->mapper()->collectionRequest($request);
+
+        $types = array_column($data['events'], 'type');
+        self::assertSame(['requested', 'declined'], $types);
+        self::assertSame('Not right now.', $data['message']);
+        self::assertSame('Not right now.', $data['events'][1]['message']);
     }
 }

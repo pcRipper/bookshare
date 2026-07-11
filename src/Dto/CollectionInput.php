@@ -15,7 +15,7 @@ class CollectionInput
     public ?string $description = null;
 
     #[Assert\Length(max: 500)]
-    #[Assert\Url(message: 'The cover must be a valid URL.')]
+    #[Assert\Url(message: 'The cover must be a valid URL.', requireTld: true)]
     public ?string $coverUrl = null;
 
     /**
