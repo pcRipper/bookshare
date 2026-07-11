@@ -30,6 +30,8 @@ const books = computed(() => props.collection?.books ?? [])
 const availableBooks = computed(() => books.value.filter(isAvailable))
 const availableCount = computed(() => availableBooks.value.length)
 const canBorrow = computed(() => !props.isSelf && selected.value.size >= MIN)
+// Too few available to ever meet the ≥2 rule — explain why borrowing is blocked.
+const notEnoughAvailable = computed(() => !props.isSelf && availableCount.value < MIN)
 
 // (Re)seed the selection with every available book each time the modal opens.
 watch(
@@ -163,7 +165,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
         </div>
 
         <footer class="modal__footer">
-          <span v-if="!isSelf" class="modal__count">{{ selected.size }} selected</span>
+          <span
+            v-if="!isSelf"
+            class="modal__count"
+            :class="{ 'modal__count--warn': notEnoughAvailable }"
+          >{{ notEnoughAvailable ? `Needs ${MIN}+ available books` : `${selected.size} selected` }}</span>
           <div class="modal__footer-actions">
             <button class="btn-secondary" type="button" :disabled="busy" @click="close">Close</button>
             <button v-if="!isSelf" class="btn-primary" type="button" :disabled="!canBorrow || busy" @click="onBorrow">
@@ -398,6 +404,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   border-top: 1px solid var(--color-surface-container-highest);
 }
 .modal__count { font-size: var(--text-label-sm); color: var(--color-on-surface-variant); }
+.modal__count--warn { color: var(--color-error); font-weight: 600; }
 .modal__footer-actions { display: flex; gap: var(--space-sm); margin-left: auto; }
 
 .btn-secondary {

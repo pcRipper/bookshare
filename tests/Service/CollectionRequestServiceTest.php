@@ -120,6 +120,21 @@ class CollectionRequestServiceTest extends TestCase
         self::assertContains($parent, $persisted);
     }
 
+    public function testBorrowIsAllOrNothingWhenAChildGuardTrips(): void
+    {
+        // A private owner trips the per-book create() guard (reused per child), so
+        // the whole borrow is rejected rather than partially created.
+        $owner = (new User())->setIsPrivate(true);
+        $collection = $this->collection($owner, [
+            $this->book($owner, BookStatus::Own, 1),
+            $this->book($owner, BookStatus::Own, 2),
+        ]);
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('private');
+        $this->service()->createBorrow(new User(), $collection, [1, 2]);
+    }
+
     /* ───────────────────────── approve ───────────────────────── */
 
     public function testApproveByOwnerLendsEveryChildBook(): void
