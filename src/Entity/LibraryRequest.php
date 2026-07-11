@@ -27,6 +27,15 @@ class LibraryRequest
     #[ORM\JoinColumn(nullable: false)]
     private User $requester;
 
+    /**
+     * Set when this loan is one book of a collection borrow — it points at the
+     * parent CollectionRequest that groups the whole set. Null for a standalone
+     * single-book request. Deleting the parent cascades its children away.
+     */
+    #[ORM\ManyToOne(inversedBy: 'children')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'CASCADE')]
+    private ?CollectionRequest $parentRequest = null;
+
     #[ORM\Column(enumType: RequestStatus::class)]
     private RequestStatus $status = RequestStatus::Pending;
 
@@ -67,6 +76,9 @@ class LibraryRequest
 
     public function getRequester(): User { return $this->requester; }
     public function setRequester(User $requester): static { $this->requester = $requester; return $this; }
+
+    public function getParentRequest(): ?CollectionRequest { return $this->parentRequest; }
+    public function setParentRequest(?CollectionRequest $parentRequest): static { $this->parentRequest = $parentRequest; return $this; }
 
     public function getStatus(): RequestStatus { return $this->status; }
     public function setStatus(RequestStatus $status): static { $this->status = $status; return $this; }
