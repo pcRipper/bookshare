@@ -66,7 +66,7 @@ const collectionsLoaded = ref(false)
 
 const tabs = computed(() => [
   { key: 'available',   label: 'Available to Borrow', count: availableCount.value },
-  { key: 'full',        label: 'Full Collection',     count: profile.value?.stats?.totalBooks ?? 0 },
+  { key: 'full',        label: 'All Books',           count: profile.value?.stats?.totalBooks ?? 0 },
   { key: 'collections', label: 'Collections',         count: collectionsLoaded.value ? profileMeta.value.total : null, collections: true },
 ])
 

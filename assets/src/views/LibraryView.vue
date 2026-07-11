@@ -44,7 +44,7 @@ const { following, followingMeta, loadingFollowing } = storeToRefs(subscriptions
 const activeTab = ref('collection')
 
 const tabs = computed(() => [
-  { key: 'collection',  label: 'Collection' },
+  { key: 'collection',  label: 'Books' },
   { key: 'collections', label: 'Collections' },
   { key: 'borrowing',   label: 'Borrowing', badge: (borrowing.value.length + cBorrowing.value.length) || null },
   { key: 'lending',     label: 'Lending' },
