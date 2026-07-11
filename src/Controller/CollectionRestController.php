@@ -128,11 +128,7 @@ class CollectionRestController extends AbstractController
     {
         $this->denyAccessUnlessGranted(CollectionVoter::DELETE, $collection, 'This collection is out on loan and can\'t be deleted.');
 
-        try {
-            $this->service->delete($collection);
-        } catch (\DomainException $e) {
-            return $this->json(['error' => $e->getMessage()], Response::HTTP_CONFLICT);
-        }
+        $this->service->delete($collection);
         $this->em->flush();
 
         return new Response(null, Response::HTTP_NO_CONTENT);

@@ -7,7 +7,6 @@ use App\Entity\BookCollection;
 use App\Entity\User;
 use App\Enum\BookStatus;
 use App\Repository\BookRepository;
-use App\Repository\CollectionRequestRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
@@ -23,7 +22,6 @@ class CollectionService
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly BookRepository $books,
-        private readonly CollectionRequestRepository $collectionRequests,
     ) {}
 
     public function create(User $owner, CollectionInput $input): BookCollection
@@ -43,12 +41,13 @@ class CollectionService
         $this->applyInput($collection, $input, $owner, requireAvailable: false);
     }
 
+    /**
+     * Deletes a collection. The active-loan guard lives in {@see \App\Security\Voter\CollectionVoter}
+     * (checked by the controller before this runs), mirroring how BookVoter guards
+     * book deletion; the FK cascades any borrow-request history away.
+     */
     public function delete(BookCollection $collection): void
     {
-        if ($this->collectionRequests->hasActiveForCollection($collection)) {
-            throw new \DomainException('This collection is currently out on loan and can\'t be deleted.');
-        }
-
         $this->em->remove($collection);
     }
 
