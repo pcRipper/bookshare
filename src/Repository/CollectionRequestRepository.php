@@ -56,6 +56,7 @@ class CollectionRequestRepository extends ServiceEntityRepository
             ->andWhere('cr.requester = :requester')
             ->andWhere('cr.status IN (:statuses)')
             ->setParameter('requester', $requester)
+            ->setParameter('statuses', $statuses)
             ->orderBy('cr.requestedAt', 'DESC')
             ->addOrderBy('cr.id', 'DESC')
             ->getQuery()
