@@ -2,6 +2,7 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useLibraryStore } from '@/stores/library'
+import { useCollectionsStore } from '@/stores/collections'
 import { useSubscriptionsStore } from '@/stores/subscriptions'
 import { useToastStore } from '@/stores/toast'
 import { apiErrorMessage } from '@/utils/apiError'
@@ -18,25 +19,38 @@ import RequestCard from '@/components/library/RequestCard.vue'
 import LoanHistoryCard from '@/components/library/LoanHistoryCard.vue'
 import ManageBookModal from '@/components/library/ManageBookModal.vue'
 import ImportBooksModal from '@/components/library/ImportBooksModal.vue'
+import CollectionCard from '@/components/collections/CollectionCard.vue'
+import CollectionEditModal from '@/components/collections/CollectionEditModal.vue'
+import CollectionRequestCard from '@/components/collections/CollectionRequestCard.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
 
 const store = useLibraryStore()
+const collections = useCollectionsStore()
 const subscriptions = useSubscriptionsStore()
 const toast = useToastStore()
 const { profile, stats, collection, collectionMeta, collectionQuery, lending, requests, history, historyMeta, borrowing, pendingBorrowing, borrowingHistory, borrowingHistoryMeta, loading } = storeToRefs(store)
+const {
+  mine: myCollections, mineMeta,
+  incoming: cIncoming, pendingBorrowing: cPendingBorrowing,
+  borrowing: cBorrowing, lending: cLending,
+  history: cHistory, historyMeta: cHistoryMeta,
+  borrowingHistory: cBorrowingHistory, borrowingHistoryMeta: cBorrowingHistoryMeta,
+  loading: cLoading,
+} = storeToRefs(collections)
 const { following, followingMeta, loadingFollowing } = storeToRefs(subscriptions)
 
 /* ── Tabs ─────────────────────────────────────────────────────────────── */
 const activeTab = ref('collection')
 
 const tabs = computed(() => [
-  { key: 'collection', label: 'Collection' },
-  { key: 'borrowing',  label: 'Borrowing', badge: borrowing.value.length || null },
-  { key: 'lending',    label: 'Lending' },
-  { key: 'requests',   label: 'Requests', badge: (requests.value.length + pendingBorrowing.value.length) || null },
-  { key: 'following',  label: 'Following', badge: followingMeta.value.total || null },
-  { key: 'history',    label: 'History' },
+  { key: 'collection',  label: 'Collection' },
+  { key: 'collections', label: 'Collections' },
+  { key: 'borrowing',   label: 'Borrowing', badge: (borrowing.value.length + cBorrowing.value.length) || null },
+  { key: 'lending',     label: 'Lending' },
+  { key: 'requests',    label: 'Requests', badge: (requests.value.length + pendingBorrowing.value.length + cIncoming.value.length + cPendingBorrowing.value.length) || null },
+  { key: 'following',   label: 'Following', badge: followingMeta.value.total || null },
+  { key: 'history',     label: 'History' },
 ])
 
 const statCards = computed(() => [
@@ -58,19 +72,35 @@ const historyItems = computed(() =>
 const historyPageMeta = computed(() =>
   historySide.value === 'lending' ? historyMeta.value : borrowingHistoryMeta.value,
 )
+
+// Collection history mirrors the same lending/borrowing toggle.
+const cHistoryLoading = computed(() =>
+  historySide.value === 'lending' ? cLoading.value.history : cLoading.value.borrowingHistory,
+)
+const cHistoryItems = computed(() =>
+  historySide.value === 'lending' ? cHistory.value : cBorrowingHistory.value,
+)
+const cHistoryPageMeta = computed(() =>
+  historySide.value === 'lending' ? cHistoryMeta.value : cBorrowingHistoryMeta.value,
+)
 function onHistoryPage(page) {
   if (historySide.value === 'lending') store.fetchHistory(page)
   else store.fetchBorrowingHistory(page)
 }
+function onCollectionHistoryPage(page) {
+  if (historySide.value === 'lending') collections.fetchHistory(page)
+  else collections.fetchBorrowingHistory(page)
+}
 
 /* ── Data loading: collection + profile up front, others lazily ───────── */
-const loaded = ref({ borrowing: false, lending: false, requests: false, following: false })
+const loaded = ref({ collections: false, borrowing: false, lending: false, requests: false, following: false })
 
 // History shows in-progress loans too, whose state changes as the owner/borrower
-// acts in other tabs — so refetch the visible side each time it's viewed.
+// acts in other tabs — so refetch the visible side each time it's viewed. Both
+// the per-book and collection histories share the lending/borrowing toggle.
 function loadHistorySide(side) {
-  if (side === 'lending') store.fetchHistory()
-  if (side === 'borrowing') store.fetchBorrowingHistory()
+  if (side === 'lending') { store.fetchHistory(); collections.fetchHistory() }
+  if (side === 'borrowing') { store.fetchBorrowingHistory(); collections.fetchBorrowingHistory() }
 }
 
 onMounted(() => {
@@ -80,9 +110,10 @@ onMounted(() => {
 })
 
 watch(activeTab, tab => {
-  if (tab === 'borrowing' && !loaded.value.borrowing) { loaded.value.borrowing = true; store.fetchBorrowing() }
-  if (tab === 'lending'  && !loaded.value.lending)  { loaded.value.lending  = true; store.fetchLending() }
-  if (tab === 'requests' && !loaded.value.requests) { loaded.value.requests = true; store.fetchRequests(); store.fetchPendingBorrowing() }
+  if (tab === 'collections' && !loaded.value.collections) { loaded.value.collections = true; collections.fetchMine() }
+  if (tab === 'borrowing' && !loaded.value.borrowing) { loaded.value.borrowing = true; store.fetchBorrowing(); collections.fetchBorrowing() }
+  if (tab === 'lending'  && !loaded.value.lending)  { loaded.value.lending  = true; store.fetchLending(); collections.fetchLending() }
+  if (tab === 'requests' && !loaded.value.requests) { loaded.value.requests = true; store.fetchRequests(); store.fetchPendingBorrowing(); collections.fetchIncoming(); collections.fetchPendingBorrowing() }
   if (tab === 'following' && !loaded.value.following) { loaded.value.following = true; subscriptions.fetchFollowing() }
   if (tab === 'history') loadHistorySide(historySide.value)
 })
@@ -94,6 +125,8 @@ watch(historySide, side => { if (activeTab.value === 'history') loadHistorySide(
 onMounted(() => store.fetchRequests().then(() => { loaded.value.requests = true }))
 onMounted(() => store.fetchBorrowing().then(() => { loaded.value.borrowing = true }))
 onMounted(() => store.fetchPendingBorrowing())
+// Collection badges (Requests + Borrowing) — kept in sync from first load.
+onMounted(() => { collections.fetchIncoming(); collections.fetchBorrowing(); collections.fetchPendingBorrowing() })
 
 /* ── Request actions (owner inbox) ────────────────────────────────────── */
 // Per-request in-flight action ('approve' | 'decline' | 'confirm-return').
@@ -232,6 +265,86 @@ function onImported() {
   loaded.value.lending = false
   toast.success('Your collection has been updated.')
 }
+
+/* ── Collections: CRUD ───────────────────────────────────────────────── */
+const collectionModalOpen = ref(false)
+const collectionModalBusy = ref(false)
+const editingCollection = ref(null)
+const deletingCollections = reactive(new Set())
+
+function openCreateCollection() {
+  editingCollection.value = null
+  collectionModalOpen.value = true
+}
+function openEditCollection(c) {
+  editingCollection.value = c
+  collectionModalOpen.value = true
+}
+async function onCollectionSave(payload) {
+  collectionModalBusy.value = true
+  try {
+    if (editingCollection.value) {
+      await collections.updateCollection(editingCollection.value.id, payload)
+    } else {
+      await collections.createCollection(payload)
+    }
+    collectionModalOpen.value = false
+  } catch (e) {
+    toast.error(apiErrorMessage(e, 'Could not save the collection.'))
+  } finally {
+    collectionModalBusy.value = false
+  }
+}
+async function onCollectionDelete(c) {
+  if (deletingCollections.has(c.id)) return
+  deletingCollections.add(c.id)
+  try {
+    await collections.deleteCollection(c.id)
+  } catch (e) {
+    toast.error(apiErrorMessage(e, 'Could not delete the collection.'))
+  } finally {
+    deletingCollections.delete(c.id)
+  }
+}
+
+/* ── Collections: grouped request actions (owner inbox) ──────────────── */
+const cProcessing = reactive({})
+async function handleCApprove(id, dueDate) {
+  cProcessing[id] = 'approve'
+  try { await collections.approve(id, dueDate); loaded.value.lending = true }
+  catch (e) { toast.error(apiErrorMessage(e, 'Could not approve the request.')) }
+  finally { delete cProcessing[id] }
+}
+async function handleCDecline(id, message = null) {
+  cProcessing[id] = 'decline'
+  try { await collections.decline(id, message) }
+  catch (e) { toast.error(apiErrorMessage(e, 'Could not decline the request.')) }
+  finally { delete cProcessing[id] }
+}
+async function handleCConfirmReturn(id) {
+  cProcessing[id] = 'confirm-return'
+  try { await collections.confirmReturn(id); loaded.value.lending = true }
+  catch (e) { toast.error(apiErrorMessage(e, 'Could not confirm the return.')) }
+  finally { delete cProcessing[id] }
+}
+
+/* ── Collections: borrower-side actions ──────────────────────────────── */
+const cReturning = reactive(new Set())
+async function handleCReturn(id) {
+  if (cReturning.has(id)) return
+  cReturning.add(id)
+  try { await collections.returnCollection(id) }
+  catch (e) { toast.error(apiErrorMessage(e, 'Could not return the collection.')) }
+  finally { cReturning.delete(id) }
+}
+const cCancelling = reactive(new Set())
+async function handleCCancel(id) {
+  if (cCancelling.has(id)) return
+  cCancelling.add(id)
+  try { await collections.cancel(id) }
+  catch (e) { toast.error(apiErrorMessage(e, 'Could not cancel the request.')) }
+  finally { cCancelling.delete(id) }
+}
 </script>
 
 <template>
@@ -346,18 +459,66 @@ function onImported() {
           />
         </div>
 
+        <!-- Collections tab (curated groups you own) -->
+        <div v-else-if="activeTab === 'collections'" role="tabpanel">
+          <BookGridSkeleton v-if="cLoading.mine && !myCollections.length" :count="4" />
+          <template v-else>
+            <div class="book-grid">
+              <!-- "New collection" lead card (first page only) -->
+              <div v-if="mineMeta.page === 1" class="add-book-card" role="button" tabindex="0" @click="openCreateCollection">
+                <span class="material-symbols-outlined add-book-card__icon">library_add</span>
+                <h3 class="add-book-card__title">New Collection</h3>
+                <p class="add-book-card__hint">Group two or more books to lend together.</p>
+              </div>
+              <CollectionCard
+                v-for="c in myCollections"
+                :key="c.id"
+                :collection="c"
+                variant="owner"
+                :pending="deletingCollections.has(c.id)"
+                @edit="openEditCollection"
+                @delete="onCollectionDelete"
+              />
+            </div>
+            <Pagination
+              :page="mineMeta.page"
+              :total-pages="mineMeta.totalPages"
+              :disabled="cLoading.mine"
+              @change="collections.fetchMine"
+            />
+          </template>
+        </div>
+
         <!-- Borrowing tab (books I'm borrowing from others) -->
         <div v-else-if="activeTab === 'borrowing'" role="tabpanel">
-          <BookGridSkeleton v-if="loading.borrowing && !borrowing.length" :count="4" />
-          <div v-else-if="borrowing.length" class="book-grid">
-            <BorrowingCard
-              v-for="loan in borrowing"
-              :key="loan.id"
-              :loan="loan"
-              :pending="returning.has(loan.id)"
-              @return="handleReturn"
-            />
-          </div>
+          <BookGridSkeleton v-if="loading.borrowing && !borrowing.length && !cBorrowing.length" :count="4" />
+          <template v-else-if="borrowing.length || cBorrowing.length">
+            <section v-if="cBorrowing.length" class="tab-section">
+              <h3 class="tab-section__title">Collections</h3>
+              <div class="request-grid">
+                <CollectionRequestCard
+                  v-for="loan in cBorrowing"
+                  :key="loan.id"
+                  :request="loan"
+                  variant="borrowing"
+                  :pending="cReturning.has(loan.id)"
+                  @return="handleCReturn"
+                />
+              </div>
+            </section>
+            <section v-if="borrowing.length" class="tab-section">
+              <h3 v-if="cBorrowing.length" class="tab-section__title">Individual books</h3>
+              <div class="book-grid">
+                <BorrowingCard
+                  v-for="loan in borrowing"
+                  :key="loan.id"
+                  :loan="loan"
+                  :pending="returning.has(loan.id)"
+                  @return="handleReturn"
+                />
+              </div>
+            </section>
+          </template>
           <div v-else class="empty-state">
             <span class="material-symbols-outlined empty-state__icon">auto_stories</span>
             <p class="empty-state__text">You're not borrowing any books right now.</p>
@@ -367,10 +528,26 @@ function onImported() {
 
         <!-- Lending tab -->
         <div v-else-if="activeTab === 'lending'" role="tabpanel">
-          <BookGridSkeleton v-if="loading.lending" :count="4" />
-          <div v-else-if="lending.length" class="book-grid">
-            <BookCard v-for="book in lending" :key="book.id" :book="book" @click="openEdit" />
-          </div>
+          <BookGridSkeleton v-if="loading.lending && !lending.length && !cLending.length" :count="4" />
+          <template v-else-if="lending.length || cLending.length">
+            <section v-if="cLending.length" class="tab-section">
+              <h3 class="tab-section__title">Collections</h3>
+              <div class="request-grid">
+                <CollectionRequestCard
+                  v-for="loan in cLending"
+                  :key="loan.id"
+                  :request="loan"
+                  variant="lending"
+                />
+              </div>
+            </section>
+            <section v-if="lending.length" class="tab-section">
+              <h3 v-if="cLending.length" class="tab-section__title">Individual books</h3>
+              <div class="book-grid">
+                <BookCard v-for="book in lending" :key="book.id" :book="book" @click="openEdit" />
+              </div>
+            </section>
+          </template>
           <div v-else class="empty-state">
             <span class="material-symbols-outlined empty-state__icon">local_library</span>
             <p class="empty-state__text">No books currently lent out.</p>
@@ -395,7 +572,24 @@ function onImported() {
               </div>
             </div>
           </div>
-          <template v-else-if="requests.length || pendingBorrowing.length">
+          <template v-else-if="requests.length || pendingBorrowing.length || cIncoming.length || cPendingBorrowing.length">
+            <!-- Incoming collection requests. -->
+            <section v-if="cIncoming.length" class="tab-section">
+              <h3 class="tab-section__title">Collection requests for you</h3>
+              <div class="request-grid">
+                <CollectionRequestCard
+                  v-for="req in cIncoming"
+                  :key="req.id"
+                  :request="req"
+                  variant="incoming"
+                  :pending="cProcessing[req.id] || null"
+                  @approve="handleCApprove"
+                  @decline="handleCDecline"
+                  @confirm-return="handleCConfirmReturn"
+                />
+              </div>
+            </section>
+
             <!-- Incoming: other readers asking to borrow your books. -->
             <section v-if="requests.length" class="tab-section">
               <h3 class="tab-section__title">Requests for your books</h3>
@@ -408,6 +602,21 @@ function onImported() {
                   @approve="handleApprove"
                   @decline="handleDecline"
                   @confirm-return="handleConfirmReturn"
+                />
+              </div>
+            </section>
+
+            <!-- Outgoing collection requests still awaiting a decision. -->
+            <section v-if="cPendingBorrowing.length" class="tab-section">
+              <h3 class="tab-section__title">Your collection requests</h3>
+              <div class="request-grid">
+                <CollectionRequestCard
+                  v-for="req in cPendingBorrowing"
+                  :key="req.id"
+                  :request="req"
+                  variant="outgoing-pending"
+                  :pending="cCancelling.has(req.id)"
+                  @cancel="handleCCancel"
                 />
               </div>
             </section>
@@ -500,21 +709,44 @@ function onImported() {
               <BaseSkeleton width="100%" height="72px" radius="var(--radius-default)" />
             </li>
           </ul>
-          <template v-else-if="historyItems.length">
-            <ul class="history-list">
-              <LoanHistoryCard
-                v-for="item in historyItems"
-                :key="item.id"
-                :request="item"
-                :perspective="historySide"
+          <template v-else-if="historyItems.length || cHistoryItems.length">
+            <!-- Collection loan history -->
+            <section v-if="cHistoryItems.length" class="tab-section">
+              <h3 class="tab-section__title">Collections</h3>
+              <div class="request-grid">
+                <CollectionRequestCard
+                  v-for="item in cHistoryItems"
+                  :key="item.id"
+                  :request="item"
+                  variant="history"
+                />
+              </div>
+              <Pagination
+                :page="cHistoryPageMeta.page"
+                :total-pages="cHistoryPageMeta.totalPages"
+                :disabled="cHistoryLoading"
+                @change="onCollectionHistoryPage"
               />
-            </ul>
-            <Pagination
-              :page="historyPageMeta.page"
-              :total-pages="historyPageMeta.totalPages"
-              :disabled="historyLoading"
-              @change="onHistoryPage"
-            />
+            </section>
+
+            <!-- Per-book loan history -->
+            <section v-if="historyItems.length" class="tab-section">
+              <h3 v-if="cHistoryItems.length" class="tab-section__title">Individual books</h3>
+              <ul class="history-list">
+                <LoanHistoryCard
+                  v-for="item in historyItems"
+                  :key="item.id"
+                  :request="item"
+                  :perspective="historySide"
+                />
+              </ul>
+              <Pagination
+                :page="historyPageMeta.page"
+                :total-pages="historyPageMeta.totalPages"
+                :disabled="historyLoading"
+                @change="onHistoryPage"
+              />
+            </section>
           </template>
           <div v-else class="empty-state">
             <span class="material-symbols-outlined empty-state__icon">history</span>
@@ -550,6 +782,15 @@ function onImported() {
       :open="importOpen"
       @imported="onImported"
       @close="importOpen = false"
+    />
+
+    <!-- Create / edit collection modal -->
+    <CollectionEditModal
+      :open="collectionModalOpen"
+      :collection="editingCollection"
+      :busy="collectionModalBusy"
+      @save="onCollectionSave"
+      @close="collectionModalOpen = false"
     />
   </AppLayout>
 </template>

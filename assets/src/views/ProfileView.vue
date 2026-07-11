@@ -3,6 +3,7 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useProfileStore } from '@/stores/profile'
+import { useCollectionsStore } from '@/stores/collections'
 import { useSubscriptionsStore } from '@/stores/subscriptions'
 import { useToastStore } from '@/stores/toast'
 import { apiErrorMessage } from '@/utils/apiError'
@@ -15,14 +16,18 @@ import CategoryTag from '@/components/ui/CategoryTag.vue'
 import BorrowBookCard from '@/components/profile/BorrowBookCard.vue'
 import EditProfileModal from '@/components/profile/EditProfileModal.vue'
 import BookDetailModal from '@/components/ui/BookDetailModal.vue'
+import CollectionCard from '@/components/collections/CollectionCard.vue'
+import CollectionBorrowModal from '@/components/collections/CollectionBorrowModal.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
 
 const route = useRoute()
 const store = useProfileStore()
+const collections = useCollectionsStore()
 const subscriptions = useSubscriptionsStore()
 const toast = useToastStore()
 const { profile, books, booksMeta, booksLoading, availableCount, shelf, booksQuery, loading, error } = storeToRefs(store)
+const { profileCollections, profileMeta, loading: cLoading } = storeToRefs(collections)
 
 /* ── Follow / unfollow (other readers' profiles only) ─────────────────── */
 const subscribed = ref(false)
@@ -53,14 +58,39 @@ async function toggleSubscription() {
   }
 }
 
-/* ── Tabs (shelves) ───────────────────────────────────────────────────── */
-// "Available to Borrow" and "Full Collection" are two server-paginated shelves
-// (the former filters to status=own). Counts come from each shelf's total: the
-// available shelf reports its own total; the full shelf uses the profile stat.
+/* ── Tabs (book shelves + collections) ────────────────────────────────── */
+// The two book shelves are server-paginated (available = status=own); a third
+// tab shows the reader's curated collections (read-only, borrowable as a set).
+const section = ref('books') // 'books' | 'collections'
+const collectionsLoaded = ref(false)
+
 const tabs = computed(() => [
-  { key: 'available', label: 'Available to Borrow', count: availableCount.value },
-  { key: 'full',      label: 'Full Collection',     count: profile.value?.stats?.totalBooks ?? 0 },
+  { key: 'available',   label: 'Available to Borrow', count: availableCount.value },
+  { key: 'full',        label: 'Full Collection',     count: profile.value?.stats?.totalBooks ?? 0 },
+  { key: 'collections', label: 'Collections',         count: collectionsLoaded.value ? profileMeta.value.total : null, collections: true },
 ])
+
+function isTabActive(tab) {
+  return tab.collections ? section.value === 'collections' : (section.value === 'books' && shelf.value === tab.key)
+}
+
+function selectTab(tab) {
+  if (tab.collections) {
+    section.value = 'collections'
+    if (!collectionsLoaded.value) {
+      collectionsLoaded.value = true
+      loadProfileCollections(1)
+    }
+  } else {
+    section.value = 'books'
+    store.setShelf(tab.key)
+  }
+}
+
+function loadProfileCollections(page = 1) {
+  collections.fetchProfileCollections(route.params.id, page)
+    .catch(e => toast.error(apiErrorMessage(e, 'Could not load collections.')))
+}
 
 /* ── Stats ────────────────────────────────────────────────────────────── */
 /* ── Derived category tags (most frequent across the collection) ──────── */
@@ -94,6 +124,8 @@ const stateMessage = computed(() => ({
 /* ── Loading ──────────────────────────────────────────────────────────── */
 function load() {
   // fetchProfile resets to page 1 of the "available" shelf.
+  section.value = 'books'
+  collectionsLoaded.value = false
   store.fetchProfile(route.params.id)
 }
 onMounted(load)
@@ -115,6 +147,37 @@ async function onRequest(bookId) {
    book management lives in the library, not here) ─────────────────────── */
 const detailBook = ref(null)
 function openDetail(book) { detailBook.value = book }
+
+/* ── Collection borrow modal ──────────────────────────────────────────── */
+const borrowCollection = ref(null)  // the collection (with fresh books) being borrowed
+const borrowOpen = ref(false)
+const borrowBusy = ref(false)
+
+async function openBorrow(collection) {
+  try {
+    // Fetch fresh so the book statuses/requested flags are current at borrow time.
+    borrowCollection.value = await collections.fetchCollection(collection.id)
+    borrowOpen.value = true
+  } catch (e) {
+    toast.error(apiErrorMessage(e, 'Could not open this collection.'))
+  }
+}
+
+async function onBorrowCollection(bookIds) {
+  if (!borrowCollection.value) return
+  borrowBusy.value = true
+  try {
+    await collections.borrowCollection(borrowCollection.value.id, bookIds)
+    toast.success('Collection borrow request sent.')
+    borrowOpen.value = false
+    // Reflect the new pending state on the cards.
+    loadProfileCollections(profileMeta.value.page)
+  } catch (e) {
+    toast.error(apiErrorMessage(e, 'Could not borrow this collection.'))
+  } finally {
+    borrowBusy.value = false
+  }
+}
 
 /* ── Own-profile editing (only when profile.isSelf) ───────────────────── */
 const editProfileOpen = ref(false)
@@ -223,51 +286,79 @@ async function onProfileSave(payload) {
             v-for="tab in tabs"
             :key="tab.key"
             class="tab-btn"
-            :class="{ 'tab-btn--active': shelf === tab.key }"
+            :class="{ 'tab-btn--active': isTabActive(tab) }"
             role="tab"
-            :aria-selected="shelf === tab.key"
-            @click="store.setShelf(tab.key)"
+            :aria-selected="isTabActive(tab)"
+            @click="selectTab(tab)"
           >
             {{ tab.label }}
-            <span class="tab-count">{{ tab.count }}</span>
+            <span v-if="tab.count != null" class="tab-count">{{ tab.count }}</span>
           </button>
         </div>
 
-        <!-- ── Search ─────────────────────────────────────────────────── -->
-        <SearchInput
-          :key="`${profile.id}-${shelf}`"
-          class="profile-search"
-          placeholder="Search by title, author or ISBN"
-          :loading="booksLoading"
-          @search="store.setBooksSearch"
-        />
-
-        <!-- ── Book grid ──────────────────────────────────────────────── -->
-        <BookGridSkeleton v-if="booksLoading" :count="8" />
-        <div v-else-if="books.length" class="book-grid" role="tabpanel">
-          <BorrowBookCard
-            v-for="book in books"
-            :key="book.id"
-            :book="book"
-            :is-self="profile.isSelf"
-            :pending="requesting.has(book.id)"
-            @request="onRequest"
-            @open="openDetail"
+        <!-- ── Books section (shelves) ────────────────────────────────── -->
+        <template v-if="section === 'books'">
+          <SearchInput
+            :key="`${profile.id}-${shelf}`"
+            class="profile-search"
+            placeholder="Search by title, author or ISBN"
+            :loading="booksLoading"
+            @search="store.setBooksSearch"
           />
-        </div>
-        <div v-else class="empty-state">
-          <span class="material-symbols-outlined empty-state__icon">{{ booksQuery ? 'search_off' : 'auto_stories' }}</span>
-          <p v-if="booksQuery">No books match “{{ booksQuery }}”.</p>
-          <p v-else>{{ shelf === 'available' ? 'No books available to borrow right now.' : 'This collection is empty.' }}</p>
-        </div>
 
-        <Pagination
-          v-if="!booksLoading"
-          :page="booksMeta.page"
-          :total-pages="booksMeta.totalPages"
-          :disabled="booksLoading"
-          @change="store.fetchBooksPage"
-        />
+          <BookGridSkeleton v-if="booksLoading" :count="8" />
+          <div v-else-if="books.length" class="book-grid" role="tabpanel">
+            <BorrowBookCard
+              v-for="book in books"
+              :key="book.id"
+              :book="book"
+              :is-self="profile.isSelf"
+              :pending="requesting.has(book.id)"
+              @request="onRequest"
+              @open="openDetail"
+            />
+          </div>
+          <div v-else class="empty-state">
+            <span class="material-symbols-outlined empty-state__icon">{{ booksQuery ? 'search_off' : 'auto_stories' }}</span>
+            <p v-if="booksQuery">No books match “{{ booksQuery }}”.</p>
+            <p v-else>{{ shelf === 'available' ? 'No books available to borrow right now.' : 'This collection is empty.' }}</p>
+          </div>
+
+          <Pagination
+            v-if="!booksLoading"
+            :page="booksMeta.page"
+            :total-pages="booksMeta.totalPages"
+            :disabled="booksLoading"
+            @change="store.fetchBooksPage"
+          />
+        </template>
+
+        <!-- ── Collections section ────────────────────────────────────── -->
+        <template v-else>
+          <BookGridSkeleton v-if="cLoading.profile && !profileCollections.length" :count="4" />
+          <div v-else-if="profileCollections.length" class="book-grid" role="tabpanel">
+            <CollectionCard
+              v-for="c in profileCollections"
+              :key="c.id"
+              :collection="c"
+              variant="browse"
+              :is-self="profile.isSelf"
+              @borrow="openBorrow"
+            />
+          </div>
+          <div v-else class="empty-state">
+            <span class="material-symbols-outlined empty-state__icon">library_books</span>
+            <p>{{ profile.isSelf ? 'You haven’t created any collections yet.' : 'This reader has no collections yet.' }}</p>
+          </div>
+
+          <Pagination
+            v-if="!cLoading.profile && profileCollections.length"
+            :page="profileMeta.page"
+            :total-pages="profileMeta.totalPages"
+            :disabled="cLoading.profile"
+            @change="loadProfileCollections"
+          />
+        </template>
       </template>
     </div>
 
@@ -288,6 +379,15 @@ async function onProfileSave(payload) {
       :pending="!!detailBook && requesting.has(detailBook.id)"
       @request="onRequest"
       @close="detailBook = null"
+    />
+
+    <!-- Borrow a whole/partial collection -->
+    <CollectionBorrowModal
+      :open="borrowOpen"
+      :collection="borrowCollection"
+      :busy="borrowBusy"
+      @borrow="onBorrowCollection"
+      @close="borrowOpen = false"
     />
   </AppLayout>
 </template>

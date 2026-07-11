@@ -1,0 +1,282 @@
+<script setup>
+import { computed } from 'vue'
+import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+
+/**
+ * A book collection card. Two variants:
+ *  - 'owner'  → the viewer's own collection (Library tab): Edit + Delete, or a
+ *    lock note while it's out on loan (canEdit=false).
+ *  - 'browse' → someone else's collection (Profile tab): "Borrow collection".
+ *
+ * Always badged "Collection" so it's never mistaken for a single-book card.
+ */
+const props = defineProps({
+  collection: {
+    type: Object,
+    required: true,
+    /* shape: { id, name, description, coverUrl, bookCount, availableCount, canEdit, books } */
+  },
+  variant: { type: String, default: 'owner' }, // 'owner' | 'browse'
+  // 'browse' only: viewer owns this profile → borrowing is hidden (preview).
+  isSelf: { type: Boolean, default: false },
+  // Parent-controlled: true while a delete/borrow for this card is in flight.
+  pending: { type: Boolean, default: false },
+})
+
+const emit = defineEmits(['edit', 'delete', 'borrow'])
+
+const isOwner = computed(() => props.variant === 'owner')
+
+// A collection is borrowable only when at least two of its books are available.
+const borrowable = computed(() => props.collection.availableCount >= 2)
+
+// Up to three member covers to hint at the contents behind the header.
+const previewCovers = computed(() =>
+  (props.collection.books ?? [])
+    .map(b => b.coverPath)
+    .filter(Boolean)
+    .slice(0, 3),
+)
+</script>
+
+<template>
+  <article class="collection-card">
+    <div class="collection-card__cover">
+      <img
+        v-if="collection.coverUrl"
+        :src="collection.coverUrl"
+        :alt="`Cover of ${collection.name}`"
+        class="collection-card__img"
+        loading="lazy"
+      />
+      <div v-else class="collection-card__motif" aria-hidden="true">
+        <div v-if="previewCovers.length" class="collection-card__stack">
+          <img
+            v-for="(cover, i) in previewCovers"
+            :key="i"
+            :src="cover"
+            class="collection-card__stack-img"
+            :style="{ '--i': i }"
+            alt=""
+          />
+        </div>
+        <span v-else class="material-symbols-outlined collection-card__motif-icon">library_books</span>
+      </div>
+
+      <!-- Always mark it as a collection. -->
+      <span class="collection-card__badge">
+        <span class="material-symbols-outlined">library_books</span>Collection
+      </span>
+    </div>
+
+    <div class="collection-card__body">
+      <h3 class="collection-card__title">{{ collection.name }}</h3>
+      <p v-if="collection.description" class="collection-card__desc">{{ collection.description }}</p>
+
+      <p class="collection-card__meta">
+        <span>{{ collection.bookCount }} {{ collection.bookCount === 1 ? 'book' : 'books' }}</span>
+        <span class="collection-card__dot">·</span>
+        <span>{{ collection.availableCount }} available</span>
+      </p>
+
+      <!-- Owner actions -->
+      <div v-if="isOwner" class="collection-card__actions">
+        <template v-if="collection.canEdit">
+          <button class="collection-btn collection-btn--outline" @click="emit('edit', collection)">
+            <span class="material-symbols-outlined">edit</span> Edit
+          </button>
+          <button class="collection-btn collection-btn--danger" :disabled="pending" @click="emit('delete', collection)">
+            <BaseSpinner v-if="pending" size="sm" />
+            <span v-else class="material-symbols-outlined">delete</span>
+            Delete
+          </button>
+        </template>
+        <p v-else class="collection-card__locked">
+          <span class="material-symbols-outlined">lock</span> Out on loan
+        </p>
+      </div>
+
+      <!-- Browse action (someone else's collection) -->
+      <button
+        v-else-if="!isSelf"
+        class="collection-btn collection-btn--borrow"
+        :disabled="!borrowable || pending"
+        @click="emit('borrow', collection)"
+      >
+        <BaseSpinner v-if="pending" size="sm" />
+        <span v-else class="material-symbols-outlined">handshake</span>
+        {{ borrowable ? 'Borrow collection' : 'Not enough available' }}
+      </button>
+    </div>
+  </article>
+</template>
+
+<style scoped>
+.collection-card {
+  background: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-surface-container-highest);
+  border-radius: var(--radius-default);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.collection-card:hover {
+  border-color: var(--color-outline-variant);
+  box-shadow: 0 6px 20px rgba(35, 44, 51, 0.08);
+}
+
+.collection-card__cover {
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: var(--color-surface-container-low);
+  position: relative;
+}
+.collection-card__img { width: 100%; height: 100%; object-fit: cover; }
+
+.collection-card__motif {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-primary-container) 0%, var(--color-surface-variant) 100%);
+}
+.collection-card__motif-icon { font-size: 48px; color: var(--color-primary); opacity: 0.6; }
+
+/* Fanned member covers as a preview when there's no explicit cover. */
+.collection-card__stack {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  height: 100%;
+  padding: var(--space-sm);
+}
+.collection-card__stack-img {
+  width: 64px;
+  height: 92px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-surface-container-lowest);
+  box-shadow: 0 2px 6px rgba(35, 44, 51, 0.2);
+  margin-left: calc(var(--i) * -14px);
+  transform: rotate(calc((var(--i) - 1) * 4deg));
+}
+
+.collection-card__badge {
+  position: absolute;
+  top: var(--space-base);
+  left: var(--space-base);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px 3px 7px;
+  border-radius: var(--radius-full);
+  background: var(--color-inverse-surface);
+  color: var(--color-inverse-on-surface);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 1px 4px rgba(35, 44, 51, 0.18);
+}
+.collection-card__badge .material-symbols-outlined { font-size: 13px; }
+
+.collection-card__body {
+  padding: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+@media (min-width: 768px) { .collection-card__body { padding: 16px; } }
+
+.collection-card__title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  line-height: 1.3;
+  color: var(--color-on-background);
+  margin: 0 0 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.collection-card__desc {
+  font-size: 13px;
+  color: var(--color-on-surface-variant);
+  margin: 0 0 var(--space-sm);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.collection-card__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-label-sm);
+  color: var(--color-secondary);
+  margin: 0 0 var(--space-sm);
+}
+.collection-card__dot { opacity: 0.6; }
+
+.collection-card__actions {
+  margin-top: auto;
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.collection-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-default);
+  font-size: var(--text-label-md);
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: background 0.2s, color 0.2s, opacity 0.2s;
+}
+.collection-btn .material-symbols-outlined { font-size: 18px; }
+.collection-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.collection-btn--outline {
+  border-color: var(--color-outline-variant);
+  color: var(--color-on-surface-variant);
+  background: var(--color-surface-container-lowest);
+  cursor: pointer;
+}
+.collection-btn--outline:hover { background: var(--color-surface-container-low); color: var(--color-on-background); }
+
+.collection-btn--danger {
+  border-color: var(--color-error);
+  color: var(--color-error);
+  background: transparent;
+  cursor: pointer;
+}
+.collection-btn--danger:hover:not(:disabled) { background: var(--color-error-container); }
+
+.collection-btn--borrow {
+  margin-top: auto;
+  width: 100%;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  cursor: pointer;
+}
+.collection-btn--borrow:hover:not(:disabled) { background: var(--color-primary-container); }
+.collection-btn--borrow:active:not(:disabled) { transform: scale(0.98); }
+
+.collection-card__locked {
+  margin: auto 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-label-sm);
+  color: var(--color-on-surface-variant);
+  font-style: italic;
+}
+.collection-card__locked .material-symbols-outlined { font-size: 16px; }
+</style>
