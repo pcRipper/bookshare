@@ -92,8 +92,22 @@ function onCollectionHistoryPage(page) {
   else collections.fetchBorrowingHistory(page)
 }
 
+/* ── Lending: hide books already shown grouped under a collection loan ──── */
+// A collection-borrowed book is status=lent, so /books?status=lent returns it
+// too. Filter those out of the per-book "Individual books" list so a member book
+// isn't displayed both grouped (collection card) and individually.
+const collectionLentBookIds = computed(
+  () => new Set(cLending.value.flatMap(loan => (loan.books ?? []).map(b => b.id))),
+)
+const individualLending = computed(
+  () => lending.value.filter(b => !collectionLentBookIds.value.has(b.id)),
+)
+
 /* ── Data loading: collection + profile up front, others lazily ───────── */
-const loaded = ref({ collections: false, borrowing: false, lending: false, requests: false, following: false })
+// Lending is fetched lazily per side (per-book vs collection), so each side owns
+// its own loaded flag — otherwise approving on one side would suppress the
+// other side's first fetch when the tab opens.
+const loaded = ref({ collections: false, borrowing: false, lending: false, cLending: false, requests: false, following: false })
 
 // History shows in-progress loans too, whose state changes as the owner/borrower
 // acts in other tabs — so refetch the visible side each time it's viewed. Both
@@ -112,7 +126,10 @@ onMounted(() => {
 watch(activeTab, tab => {
   if (tab === 'collections' && !loaded.value.collections) { loaded.value.collections = true; collections.fetchMine() }
   if (tab === 'borrowing' && !loaded.value.borrowing) { loaded.value.borrowing = true; store.fetchBorrowing(); collections.fetchBorrowing() }
-  if (tab === 'lending'  && !loaded.value.lending)  { loaded.value.lending  = true; store.fetchLending(); collections.fetchLending() }
+  if (tab === 'lending') {
+    if (!loaded.value.lending)  { loaded.value.lending  = true; store.fetchLending() }
+    if (!loaded.value.cLending) { loaded.value.cLending = true; collections.fetchLending() }
+  }
   if (tab === 'requests' && !loaded.value.requests) { loaded.value.requests = true; store.fetchRequests(); store.fetchPendingBorrowing(); collections.fetchIncoming(); collections.fetchPendingBorrowing() }
   if (tab === 'following' && !loaded.value.following) { loaded.value.following = true; subscriptions.fetchFollowing() }
   if (tab === 'history') loadHistorySide(historySide.value)
@@ -310,7 +327,7 @@ async function onCollectionDelete(id) {
 const cProcessing = reactive({})
 async function handleCApprove(id, dueDate) {
   cProcessing[id] = 'approve'
-  try { await collections.approve(id, dueDate); loaded.value.lending = true }
+  try { await collections.approve(id, dueDate); loaded.value.cLending = true }
   catch (e) { toast.error(apiErrorMessage(e, 'Could not approve the request.')) }
   finally { delete cProcessing[id] }
 }
@@ -322,7 +339,7 @@ async function handleCDecline(id, message = null) {
 }
 async function handleCConfirmReturn(id) {
   cProcessing[id] = 'confirm-return'
-  try { await collections.confirmReturn(id); loaded.value.lending = true }
+  try { await collections.confirmReturn(id); loaded.value.cLending = true }
   catch (e) { toast.error(apiErrorMessage(e, 'Could not confirm the return.')) }
   finally { delete cProcessing[id] }
 }
@@ -526,7 +543,7 @@ async function handleCCancel(id) {
         <!-- Lending tab -->
         <div v-else-if="activeTab === 'lending'" role="tabpanel">
           <BookGridSkeleton v-if="loading.lending && !lending.length && !cLending.length" :count="4" />
-          <template v-else-if="lending.length || cLending.length">
+          <template v-else-if="individualLending.length || cLending.length">
             <section v-if="cLending.length" class="tab-section">
               <h3 class="tab-section__title">Collections</h3>
               <div class="request-grid">
@@ -538,10 +555,10 @@ async function handleCCancel(id) {
                 />
               </div>
             </section>
-            <section v-if="lending.length" class="tab-section">
+            <section v-if="individualLending.length" class="tab-section">
               <h3 v-if="cLending.length" class="tab-section__title">Individual books</h3>
               <div class="book-grid">
-                <BookCard v-for="book in lending" :key="book.id" :book="book" @click="openEdit" />
+                <BookCard v-for="book in individualLending" :key="book.id" :book="book" @click="openEdit" />
               </div>
             </section>
           </template>
