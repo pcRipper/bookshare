@@ -21,9 +21,10 @@ class CollectionRepository extends ServiceEntityRepository
     }
 
     /**
-     * A user's collections, newest first, paginated. Books are fetched lazily
-     * per collection by the mapper — the count stays correct because we page on
-     * the root entity only.
+     * A user's collections, newest first, paginated. We page on the root entity
+     * only (so the count stays correct), then eagerly hydrate each collection's
+     * books — and their categories/holder/owner — in one follow-up query, so the
+     * mapper doesn't N+1 per collection and per book.
      *
      * @return PaginatedResult<BookCollection>
      */
@@ -39,8 +40,34 @@ class CollectionRepository extends ServiceEntityRepository
             ->getQuery();
 
         $paginator = new Paginator($query, fetchJoinCollection: false);
+        $collections = iterator_to_array($paginator);
 
-        return new PaginatedResult(iterator_to_array($paginator), count($paginator));
+        return new PaginatedResult($this->hydrateBooks($collections), count($paginator));
+    }
+
+    /**
+     * Populates the books collection (+ each book's categories, current holder and
+     * owner) on already-managed BookCollection entities via the Unit of Work, in a
+     * single query — so mapping the page never lazy-loads per collection/book.
+     *
+     * @param BookCollection[] $collections
+     * @return BookCollection[]
+     */
+    private function hydrateBooks(array $collections): array
+    {
+        if ($collections !== []) {
+            $this->createQueryBuilder('c')
+                ->leftJoin('c.books', 'b')->addSelect('b')
+                ->leftJoin('b.categories', 'cat')->addSelect('cat')
+                ->leftJoin('b.currentHolder', 'ch')->addSelect('ch')
+                ->leftJoin('b.owner', 'o')->addSelect('o')
+                ->andWhere('c IN (:collections)')
+                ->setParameter('collections', $collections)
+                ->getQuery()
+                ->getResult();
+        }
+
+        return $collections;
     }
 
     /** How many collections a user owns — powers the profile tab counter. */
