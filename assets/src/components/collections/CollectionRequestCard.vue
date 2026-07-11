@@ -87,14 +87,20 @@ const statusLabel = computed(() => STATUS_LABELS[req.value.status] ?? req.value.
       </span>
     </div>
 
-    <!-- Member book thumbnails -->
-    <div class="cr-card__books">
-      <div v-for="book in books" :key="book.id" class="cr-card__thumb" :title="book.title">
-        <img v-if="book.coverPath" :src="book.coverPath" :alt="`Cover of ${book.title}`" loading="lazy" />
-        <span v-else class="material-symbols-outlined">menu_book</span>
-      </div>
-    </div>
+    <!-- Member books — a titled list (covers are optional, titles always show) -->
     <p class="cr-card__count">{{ books.length }} {{ books.length === 1 ? 'book' : 'books' }}</p>
+    <ul class="cr-card__book-list">
+      <li v-for="book in books" :key="book.id" class="cr-card__book">
+        <span class="cr-card__book-cover" aria-hidden="true">
+          <img v-if="book.coverPath" :src="book.coverPath" :alt="`Cover of ${book.title}`" loading="lazy" />
+          <span v-else class="material-symbols-outlined">menu_book</span>
+        </span>
+        <span class="cr-card__book-text">
+          <span class="cr-card__book-title">{{ book.title }}</span>
+          <span class="cr-card__book-author">{{ book.author }}</span>
+        </span>
+      </li>
+    </ul>
 
     <!-- Timeline (history) -->
     <RequestTimeline v-if="variant === 'history'" :events="req.events" class="cr-card__timeline" />
@@ -252,14 +258,30 @@ const statusLabel = computed(() => STATUS_LABELS[req.value.status] ?? req.value.
 }
 .cr-card__person-text strong { color: var(--color-on-background); font-weight: 600; }
 
-.cr-card__books {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+.cr-card__count {
+  font-size: var(--text-label-sm);
+  color: var(--color-on-surface-variant);
+  margin: 0;
 }
-.cr-card__thumb {
-  width: 40px;
-  height: 58px;
+
+.cr-card__book-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  max-height: 156px;
+  overflow-y: auto;
+}
+.cr-card__book {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.cr-card__book-cover {
+  width: 28px;
+  height: 40px;
   flex-shrink: 0;
   background: var(--color-surface-variant);
   border: 1px solid var(--color-outline-variant);
@@ -270,13 +292,23 @@ const statusLabel = computed(() => STATUS_LABELS[req.value.status] ?? req.value.
   justify-content: center;
   color: var(--color-outline);
 }
-.cr-card__thumb img { width: 100%; height: 100%; object-fit: cover; }
-.cr-card__thumb .material-symbols-outlined { font-size: 18px; }
-
-.cr-card__count {
+.cr-card__book-cover img { width: 100%; height: 100%; object-fit: cover; }
+.cr-card__book-cover .material-symbols-outlined { font-size: 16px; }
+.cr-card__book-text { display: flex; flex-direction: column; min-width: 0; }
+.cr-card__book-title {
+  font-size: var(--text-label-md);
+  font-weight: 600;
+  color: var(--color-on-background);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cr-card__book-author {
   font-size: var(--text-label-sm);
-  color: var(--color-on-surface-variant);
-  margin: 0;
+  color: var(--color-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cr-card__timeline {
