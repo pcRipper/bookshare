@@ -92,17 +92,6 @@ function onCollectionHistoryPage(page) {
   else collections.fetchBorrowingHistory(page)
 }
 
-/* ── Lending: hide books already shown grouped under a collection loan ──── */
-// A collection-borrowed book is status=lent, so /books?status=lent returns it
-// too. Filter those out of the per-book "Individual books" list so a member book
-// isn't displayed both grouped (collection card) and individually.
-const collectionLentBookIds = computed(
-  () => new Set(cLending.value.flatMap(loan => (loan.books ?? []).map(b => b.id))),
-)
-const individualLending = computed(
-  () => lending.value.filter(b => !collectionLentBookIds.value.has(b.id)),
-)
-
 /* ── Data loading: collection + profile up front, others lazily ───────── */
 // Lending is fetched lazily per side (per-book vs collection), so each side owns
 // its own loaded flag — otherwise approving on one side would suppress the
@@ -543,7 +532,7 @@ async function handleCCancel(id) {
         <!-- Lending tab -->
         <div v-else-if="activeTab === 'lending'" role="tabpanel">
           <BookGridSkeleton v-if="loading.lending && !lending.length && !cLending.length" :count="4" />
-          <template v-else-if="individualLending.length || cLending.length">
+          <template v-else-if="lending.length || cLending.length">
             <section v-if="cLending.length" class="tab-section">
               <h3 class="tab-section__title">Collections</h3>
               <div class="request-grid">
@@ -555,10 +544,10 @@ async function handleCCancel(id) {
                 />
               </div>
             </section>
-            <section v-if="individualLending.length" class="tab-section">
+            <section v-if="lending.length" class="tab-section">
               <h3 v-if="cLending.length" class="tab-section__title">Individual books</h3>
               <div class="book-grid">
-                <BookCard v-for="book in individualLending" :key="book.id" :book="book" @click="openEdit" />
+                <BookCard v-for="book in lending" :key="book.id" :book="book" @click="openEdit" />
               </div>
             </section>
           </template>

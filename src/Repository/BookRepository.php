@@ -6,8 +6,10 @@ use App\Dto\PaginatedResult;
 use App\Dto\Pagination;
 use App\Entity\Book;
 use App\Entity\Category;
+use App\Entity\LibraryRequest;
 use App\Entity\User;
 use App\Enum\BookStatus;
+use App\Enum\RequestStatus;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
@@ -69,6 +71,7 @@ class BookRepository extends ServiceEntityRepository
         ?BookStatus $status,
         Pagination $pagination,
         ?string $query = null,
+        bool $excludeCollectionHeld = false,
     ): PaginatedResult {
         $qb = $this->createQueryBuilder('b')
             ->where('b.owner = :owner')
@@ -78,6 +81,20 @@ class BookRepository extends ServiceEntityRepository
 
         if ($status !== null) {
             $qb->andWhere('b.status = :status')->setParameter('status', $status);
+        }
+
+        // Exclude books out on loan as part of a collection borrow, so the owner's
+        // Lending list shows them only grouped (in the collection card), never also
+        // as individual books — mirroring how the request lists exclude children.
+        if ($excludeCollectionHeld) {
+            $sub = $this->getEntityManager()->createQueryBuilder()
+                ->select('IDENTITY(lr.book)')
+                ->from(LibraryRequest::class, 'lr')
+                ->where('lr.parentRequest IS NOT NULL')
+                ->andWhere('lr.status IN (:collectionActive)')
+                ->getDQL();
+            $qb->andWhere($qb->expr()->notIn('b.id', $sub))
+                ->setParameter('collectionActive', [RequestStatus::Approved, RequestStatus::ReturnPending]);
         }
 
         if ($query !== null && $query !== '') {

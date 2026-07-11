@@ -78,8 +78,12 @@ class BookRestController extends AbstractController
         // Optional free-text filter over title / author / ISBN.
         $q = trim((string) $request->query->get('q', ''));
 
+        // The Lending grid asks to hide books already shown grouped under a
+        // collection loan, so a member book isn't listed twice.
+        $excludeCollectionHeld = $request->query->getBoolean('excludeCollectionLoans');
+
         $pagination = Pagination::fromRequest($request, self::COLLECTION_PER_PAGE);
-        $result = $repo->findByOwnerPaginated($owner, $status, $pagination, $q !== '' ? $q : null);
+        $result = $repo->findByOwnerPaginated($owner, $status, $pagination, $q !== '' ? $q : null, $excludeCollectionHeld);
 
         // Annotate viewer-relative borrow state when browsing someone else's shelf.
         $browsing = $owner !== $viewer;
