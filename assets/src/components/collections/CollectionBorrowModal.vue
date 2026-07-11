@@ -223,26 +223,30 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 .modal__content {
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  flex: 1;
+  min-height: 0;      /* let the info column own the scroll */
+  overflow-y: auto;   /* mobile: the whole stacked body scrolls */
 }
 @media (min-width: 640px) {
   .modal__content { flex-direction: row; align-items: stretch; overflow: hidden; }
 }
 
+/* Mobile: a short banner so a long book list isn't pushed off-screen. */
 .modal__cover {
   flex-shrink: 0;
-  aspect-ratio: 2 / 3;
+  width: 100%;
+  height: 160px;
   background: var(--color-surface-container-low);
   overflow: hidden;
 }
 @media (min-width: 640px) {
-  .modal__cover { width: 200px; aspect-ratio: auto; }
+  /* Desktop: fixed side column pinned to the top so it never stretches. */
+  .modal__cover { width: 190px; height: auto; align-self: flex-start; aspect-ratio: 2 / 3; }
 }
 .modal__cover-img { width: 100%; height: 100%; object-fit: cover; }
 .modal__cover-placeholder {
   width: 100%;
   height: 100%;
-  min-height: 200px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -257,7 +261,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   gap: var(--space-sm);
 }
 @media (min-width: 640px) {
-  .modal__info { flex: 1; min-width: 0; overflow-y: auto; padding: var(--space-lg); }
+  .modal__info { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; padding: var(--space-lg); }
 }
 
 .detail-eyebrow {

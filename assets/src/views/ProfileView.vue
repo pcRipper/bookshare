@@ -67,7 +67,7 @@ const collectionsLoaded = ref(false)
 const tabs = computed(() => [
   { key: 'available',   label: 'Available to Borrow', count: availableCount.value },
   { key: 'full',        label: 'All Books',           count: profile.value?.stats?.totalBooks ?? 0 },
-  { key: 'collections', label: 'Collections',         count: collectionsLoaded.value ? profileMeta.value.total : null, collections: true },
+  { key: 'collections', label: 'Collections',         count: profile.value?.stats?.collections ?? 0, collections: true },
 ])
 
 function isTabActive(tab) {
@@ -153,14 +153,12 @@ const borrowCollection = ref(null)  // the collection (with fresh books) being b
 const borrowOpen = ref(false)
 const borrowBusy = ref(false)
 
-async function openBorrow(collection) {
-  try {
-    // Fetch fresh so the book statuses/requested flags are current at borrow time.
-    borrowCollection.value = await collections.fetchCollection(collection.id)
-    borrowOpen.value = true
-  } catch (e) {
-    toast.error(apiErrorMessage(e, 'Could not open this collection.'))
-  }
+function openBorrow(collection) {
+  // The list payload already carries the collection's books (with status +
+  // requested flags), so open instantly — no round-trip needed. The server
+  // re-validates availability on borrow anyway.
+  borrowCollection.value = collection
+  borrowOpen.value = true
 }
 
 async function onBorrowCollection(bookIds) {

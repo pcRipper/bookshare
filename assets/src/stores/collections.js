@@ -87,13 +87,6 @@ export const useCollectionsStore = defineStore('collections', () => {
     }
   }
 
-  // Fetch a single collection with its books (used by the borrow modal so the
-  // book statuses/requested flags are fresh at the moment of borrowing).
-  async function fetchCollection(id) {
-    const { data } = await api.get(`/collections/${id}`)
-    return data
-  }
-
   /* ── Borrow + grouped-request lists ──────────────────────────────────── */
 
   async function borrowCollection(collectionId, bookIds) {
@@ -198,7 +191,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     incoming, pendingBorrowing, borrowing, lending, history, historyMeta,
     borrowingHistory, borrowingHistoryMeta, loading,
     fetchMine, createCollection, updateCollection, deleteCollection,
-    fetchProfileCollections, fetchCollection, borrowCollection,
+    fetchProfileCollections, borrowCollection,
     fetchIncoming, fetchPendingBorrowing, fetchBorrowing, fetchLending,
     fetchHistory, fetchBorrowingHistory,
     approve, decline, confirmReturn, returnCollection, cancel,
