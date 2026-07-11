@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/api'
 import { relativeTime } from '@/utils/time'
+import { useLibraryStore } from '@/stores/library'
 
 /**
  * Backs the book-collections feature: the owner's collections (Library tab) with
@@ -161,7 +162,9 @@ export const useCollectionsStore = defineStore('collections', () => {
   async function approve(id, dueDate = null) {
     await api.post(`/collection-requests/${id}/approve`, { dueDate })
     incoming.value = incoming.value.filter(r => r.id !== id)
-    await Promise.all([fetchLending(), fetchHistory()])
+    // Member books are now lent — refresh the owner's stats too (mirrors the
+    // per-book approve, which refetches the profile so "Loaned" stays right).
+    await Promise.all([fetchLending(), fetchHistory(), useLibraryStore().fetchMe()])
   }
 
   async function decline(id, message = null) {
@@ -173,7 +176,10 @@ export const useCollectionsStore = defineStore('collections', () => {
   async function confirmReturn(id) {
     await api.post(`/collection-requests/${id}/confirm-return`)
     incoming.value = incoming.value.filter(r => r.id !== id)
-    await Promise.all([fetchLending(), fetchHistory()])
+    // Books are home again — refresh the owner's stats and Books grid so their
+    // status flips back from lent (mirrors the per-book confirm-return).
+    const lib = useLibraryStore()
+    await Promise.all([fetchLending(), fetchHistory(), lib.fetchMe(), lib.fetchCollection()])
   }
 
   async function returnCollection(id) {
