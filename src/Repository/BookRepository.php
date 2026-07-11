@@ -35,6 +35,29 @@ class BookRepository extends ServiceEntityRepository
     }
 
     /**
+     * Resolves a set of book ids to the ones actually owned by $owner — used to
+     * build/borrow collections without trusting client-supplied ids. Order is
+     * not guaranteed; unknown or foreign ids simply yield no match.
+     *
+     * @param int[] $ids
+     * @return Book[]
+     */
+    public function findByIdsForOwner(array $ids, User $owner): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        return $this->createQueryBuilder('b')
+            ->andWhere('b.id IN (:ids)')
+            ->andWhere('b.owner = :owner')
+            ->setParameter('ids', $ids)
+            ->setParameter('owner', $owner)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * One page of a user's books, optionally filtered by status and/or narrowed
      * by a free-text query (title, author or ISBN), newest first. Categories stay
      * lazy (loaded per book by the mapper), matching findByOwner.
