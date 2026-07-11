@@ -4,12 +4,18 @@ namespace App\Api;
 
 use App\Entity\Book;
 use App\Entity\ActivityItem;
+use App\Entity\BookCollection;
+use App\Entity\CollectionRequest;
 use App\Entity\LibraryRequest;
 use App\Entity\LibraryRequestEvent;
 use App\Entity\Subscription;
 use App\Entity\User;
 use App\Dto\Pagination;
+use App\Enum\BookStatus;
+use App\Enum\LibraryRequestEventType;
+use App\Enum\RequestStatus;
 use App\Security\Voter\BookVoter;
+use App\Security\Voter\CollectionVoter;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 /**
@@ -161,6 +167,148 @@ class ResponseMapper
             'message'   => $event->getMessage(),
             'actor'     => $this->userSummary($event->getActor()),
         ];
+    }
+
+    /**
+     * A book collection: identity, cover, owner, its books and derived counts.
+     * `canEdit` is server-authoritative (owner + not out on loan). Each book is
+     * flagged `requested` when the viewer already has a pending request for it,
+     * so the borrow modal can lock it.
+     *
+     * @param array<int, mixed> $pendingBookIds Lookup (book id => any) of the
+     *   viewer's already-requested books; empty on the owner's own collections.
+     */
+    public function collection(BookCollection $collection, array $pendingBookIds = []): array
+    {
+        $books = $collection->getBooks()->toArray();
+        $available = array_filter($books, static fn (Book $b) => $b->getStatus() === BookStatus::Own);
+
+        return [
+            'id'             => $collection->getId(),
+            'name'           => $collection->getName(),
+            'description'    => $collection->getDescription(),
+            'coverUrl'       => $collection->getCoverUrl(),
+            'owner'          => $this->userSummary($collection->getOwner()),
+            'bookCount'      => count($books),
+            'availableCount' => count($available),
+            'canEdit'        => $this->authChecker->isGranted(CollectionVoter::EDIT, $collection),
+            'createdAt'      => $collection->getCreatedAt()->format(\DateTimeInterface::ATOM),
+            'books'          => array_map(
+                fn (Book $b) => $this->book($b) + ['requested' => isset($pendingBookIds[$b->getId()])],
+                $books,
+            ),
+        ];
+    }
+
+    /** @param BookCollection[] $collections */
+    public function collections(array $collections, array $pendingBookIds = []): array
+    {
+        return array_map(fn (BookCollection $c) => $this->collection($c, $pendingBookIds), $collections);
+    }
+
+    /**
+     * A collection borrow (the parent request): aggregate status, lender-set due
+     * date, the member books, and a synthesized milestone timeline reusing the
+     * per-book event shape so the frontend RequestTimeline renders unchanged.
+     * (The transient return-requested step isn't timestamped on the parent, so it
+     * is omitted — the status badge conveys that state.)
+     */
+    public function collectionRequest(CollectionRequest $request): array
+    {
+        $collection = $request->getCollection();
+        $owner = $collection->getOwner();
+
+        return [
+            'id'          => $request->getId(),
+            'status'      => $request->getStatus()->value,
+            'requestedAt' => $request->getRequestedAt()->format(\DateTimeInterface::ATOM),
+            'resolvedAt'  => $request->getResolvedAt()?->format(\DateTimeInterface::ATOM),
+            'dueDate'     => $request->getDueDate()?->format(\DateTimeInterface::ATOM),
+            'returnedAt'  => $request->getReturnedAt()?->format(\DateTimeInterface::ATOM),
+            'message'     => $request->getDeclineMessage(),
+            'requester'   => $this->userSummary($request->getRequester()),
+            'collection'  => [
+                'id'       => $collection->getId(),
+                'name'     => $collection->getName(),
+                'coverUrl' => $collection->getCoverUrl(),
+                'owner'    => $this->userSummary($owner),
+            ],
+            'books'       => array_map(
+                fn (LibraryRequest $child) => [
+                    'id'        => $child->getBook()->getId(),
+                    'title'     => $child->getBook()->getTitle(),
+                    'author'    => $child->getBook()->getAuthor(),
+                    'coverPath' => $child->getBook()->getCoverPath(),
+                ],
+                $request->getChildren()->toArray(),
+            ),
+            'events'      => $this->collectionTimeline($request),
+        ];
+    }
+
+    /** @param CollectionRequest[] $requests */
+    public function collectionRequests(array $requests): array
+    {
+        return array_map(fn (CollectionRequest $r) => $this->collectionRequest($r), $requests);
+    }
+
+    /**
+     * Builds a RequestTimeline-compatible milestone list from the parent's stored
+     * timestamps (requested → approved/declined → returned).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function collectionTimeline(CollectionRequest $request): array
+    {
+        $requester = $this->userSummary($request->getRequester());
+        $owner = $this->userSummary($request->getCollection()->getOwner());
+        $status = $request->getStatus();
+
+        $events = [[
+            'id'        => 'requested',
+            'type'      => LibraryRequestEventType::Requested->value,
+            'createdAt' => $request->getRequestedAt()->format(\DateTimeInterface::ATOM),
+            'dueDate'   => null,
+            'message'   => null,
+            'actor'     => $requester,
+        ]];
+
+        if ($status === RequestStatus::Declined) {
+            $events[] = [
+                'id'        => 'declined',
+                'type'      => LibraryRequestEventType::Declined->value,
+                'createdAt' => $request->getResolvedAt()?->format(\DateTimeInterface::ATOM),
+                'dueDate'   => null,
+                'message'   => $request->getDeclineMessage(),
+                'actor'     => $owner,
+            ];
+
+            return $events;
+        }
+
+        if (in_array($status, [RequestStatus::Approved, RequestStatus::ReturnPending, RequestStatus::Returned], true)) {
+            $events[] = [
+                'id'        => 'approved',
+                'type'      => LibraryRequestEventType::Approved->value,
+                'createdAt' => $request->getResolvedAt()?->format(\DateTimeInterface::ATOM),
+                'dueDate'   => $request->getDueDate()?->format(\DateTimeInterface::ATOM),
+                'message'   => null,
+                'actor'     => $owner,
+            ];
+        }
+
+        if ($status === RequestStatus::Returned) {
+            $events[] = [
+                'id'        => 'returned',
+                'type'      => LibraryRequestEventType::Returned->value,
+                'createdAt' => $request->getReturnedAt()?->format(\DateTimeInterface::ATOM),
+                'dueDate'   => null,
+                'message'   => null,
+                'actor'     => $owner,
+            ];
+        }
+
+        return $events;
     }
 
     public function me(User $user, array $stats): array

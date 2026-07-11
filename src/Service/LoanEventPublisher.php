@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Entity\CollectionRequest;
 use App\Entity\LibraryRequest;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Mercure\HubInterface;
@@ -28,6 +29,16 @@ final class LoanEventPublisher
     public const REQUEST_APPROVED = 'request.approved';
     public const REQUEST_DECLINED = 'request.declined';
     public const RETURN_CONFIRMED = 'return.confirmed';
+
+    // Collection borrows — one signal per collection action (never per book).
+    // Recipient = collection owner.
+    public const COLLECTION_REQUEST_RECEIVED = 'collection.request.received';
+    public const COLLECTION_RETURN_REQUESTED = 'collection.return.requested';
+    public const COLLECTION_REQUEST_CANCELLED = 'collection.request.cancelled';
+    // Recipient = requester.
+    public const COLLECTION_REQUEST_APPROVED = 'collection.request.approved';
+    public const COLLECTION_REQUEST_DECLINED = 'collection.request.declined';
+    public const COLLECTION_RETURN_CONFIRMED = 'collection.return.confirmed';
 
     public function __construct(
         private readonly HubInterface $hub,
@@ -57,12 +68,49 @@ final class LoanEventPublisher
      */
     public function publishToUser(int $userId, string $reason, ?int $requestId): void
     {
+        $this->send($userId, $reason, ['requestId' => $requestId]);
+    }
+
+    /**
+     * One collection-level signal per action — never one per member book. Routes
+     * to the collection owner or the requester by reason. Best-effort, after flush.
+     */
+    public function publishCollectionSignal(CollectionRequest $request, string $reason): void
+    {
+        $recipient = match ($reason) {
+            self::COLLECTION_REQUEST_RECEIVED, self::COLLECTION_RETURN_REQUESTED, self::COLLECTION_REQUEST_CANCELLED => $request->getCollection()->getOwner(),
+            self::COLLECTION_REQUEST_APPROVED, self::COLLECTION_REQUEST_DECLINED, self::COLLECTION_RETURN_CONFIRMED => $request->getRequester(),
+            default => throw new \InvalidArgumentException(sprintf('Unknown collection signal reason "%s".', $reason)),
+        };
+
+        $recipientId = $recipient->getId();
+        if ($recipientId === null) {
+            return; // unpersisted user — nothing to notify
+        }
+
+        $this->publishCollectionToUser($recipientId, $reason, $request->getId());
+    }
+
+    /**
+     * Publishes a collection signal to an explicit user id. Use for a cancellation
+     * that deletes the row: capture owner id + request id BEFORE flush, call AFTER.
+     */
+    public function publishCollectionToUser(int $userId, string $reason, ?int $collectionRequestId): void
+    {
+        $this->send($userId, $reason, ['collectionRequestId' => $collectionRequestId]);
+    }
+
+    /**
+     * Low-level private publish: builds the per-user private Update and swallows
+     * hub failures (the transition already committed — never fail the request).
+     *
+     * @param array<string, mixed> $extra reason-specific payload fields
+     */
+    private function send(int $userId, string $reason, array $extra): void
+    {
         $update = new Update(
             topics: sprintf('user/%d', $userId),
-            data: json_encode([
-                'reason' => $reason,
-                'requestId' => $requestId,
-            ], \JSON_THROW_ON_ERROR),
+            data: json_encode(['reason' => $reason] + $extra, \JSON_THROW_ON_ERROR),
             // Private: only delivered to a subscriber whose JWT grants this exact
             // topic — i.e. the recipient themselves. Closes the cross-user leak.
             private: true,
@@ -72,9 +120,8 @@ final class LoanEventPublisher
             $this->hub->publish($update);
         } catch (\Throwable $e) {
             // Best-effort: the loan transition already committed. Don't fail the request.
-            $this->logger->warning('Mercure publish failed for loan signal "{reason}": {error}', [
+            $this->logger->warning('Mercure publish failed for signal "{reason}": {error}', [
                 'reason' => $reason,
-                'requestId' => $requestId,
                 'error' => $e->getMessage(),
             ]);
         }

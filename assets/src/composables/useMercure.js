@@ -1,6 +1,7 @@
 import api from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { useLibraryStore } from '@/stores/library'
+import { useCollectionsStore } from '@/stores/collections'
 import { useToastStore } from '@/stores/toast'
 
 // Same-origin path to the Mercure hub (Vite proxies it in dev, nginx in prod).
@@ -48,6 +49,7 @@ export function useMercure() {
 
   function handle({ reason }) {
     const lib = useLibraryStore()
+    const col = useCollectionsStore()
     const toast = useToastStore()
 
     switch (reason) {
@@ -75,6 +77,33 @@ export function useMercure() {
         toast.success('Your book return was confirmed.')
         scheduleRefetch([lib.fetchBorrowing, lib.fetchBorrowingHistory, lib.fetchMe])
         break
+
+      /* ── Collection borrows (one signal per collection, never per book) ── */
+      case 'collection.request.received':
+        toast.info('New request to borrow one of your collections.')
+        scheduleRefetch([col.fetchIncoming])
+        break
+      case 'collection.request.cancelled':
+        toast.info('A collection borrow request was withdrawn.')
+        scheduleRefetch([col.fetchIncoming])
+        break
+      case 'collection.request.approved':
+        toast.success('Your collection borrow request was approved.')
+        scheduleRefetch([col.fetchPendingBorrowing, col.fetchBorrowing, col.fetchBorrowingHistory])
+        break
+      case 'collection.request.declined':
+        toast.info('Your collection borrow request was declined.')
+        scheduleRefetch([col.fetchPendingBorrowing, col.fetchBorrowingHistory])
+        break
+      case 'collection.return.requested':
+        toast.info('A borrower marked a collection as returned.')
+        scheduleRefetch([col.fetchIncoming, col.fetchLending])
+        break
+      case 'collection.return.confirmed':
+        toast.success('Your collection return was confirmed.')
+        scheduleRefetch([col.fetchBorrowing, col.fetchBorrowingHistory, lib.fetchMe])
+        break
+
       default:
         // Unknown reason — ignore rather than guess.
         break
@@ -108,6 +137,7 @@ export function useMercure() {
       // up by refetching every loan list so nothing is silently missed.
       if (everConnected) {
         const lib = useLibraryStore()
+        const col = useCollectionsStore()
         scheduleRefetch([
           lib.fetchRequests,
           lib.fetchLending,
@@ -115,6 +145,10 @@ export function useMercure() {
           lib.fetchPendingBorrowing,
           lib.fetchBorrowingHistory,
           lib.fetchMe,
+          col.fetchIncoming,
+          col.fetchLending,
+          col.fetchBorrowing,
+          col.fetchPendingBorrowing,
         ])
       }
       everConnected = true

@@ -43,7 +43,7 @@
 - [x] add only text search to the profile's and library's book list pages, make it as simple as possible
 - [x] move "add book" card to the very top of the book list on the my library page, make it appear only on the first page(as it is right now)
 - [x] language value guessing from the name if the language didnt come from the external source in api call
-- [ ] implement book collections functional, made it as a separate tab on both library and profile pages. Update borrowing functional with full or partial collection borrowing. Frontend should contain separate modal for collection borrow, db should be updated to contain id of parent request for each book. Frontend modal shoud provide selection of books to borrow from collecrion, while by defaul unavailable books should be locked. Also to borrow a collection or create one you have to pick at least two available books
+- [x] implement book collections functional, made it as a separate tab on both library and profile pages. Update borrowing functional with full or partial collection borrowing. Frontend should contain separate modal for collection borrow, db should be updated to contain id of parent request for each book. Frontend modal shoud provide selection of books to borrow from collecrion, while by defaul unavailable books should be locked. Also to borrow a collection or create one you have to pick at least two available books
 
 # Deployment
 - [x] add script to install all needed dependenices on droplet(like docker to start up, git to pull a branch etc)

@@ -15,6 +15,15 @@ dh_auditor:
                 App\Entity\Category: ~
                 App\Entity\LibraryRequest: ~
                 App\Entity\Subscription: ~
+                App\Entity\BookCollection: ~
+                App\Entity\CollectionRequest: ~
             # The bundle ships a built-in web viewer; this is a JSON API, so keep
             # it off (its routes are not imported either).
             viewer: false
+
+# Under test the repository integration tests manage their own transaction +
+# rollback isolation; the auditor's flush listeners would fight that (and the
+# unit suite needs no audit tables at all), so switch auditing off in test.
+when@test:
+    dh_auditor:
+        enabled: false

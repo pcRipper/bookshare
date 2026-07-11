@@ -7,6 +7,15 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.11.0',
+    date: '2026-07-11',
+    notes: [
+      'Introducing collections — group two or more of your books and lend them together. Create and manage them from the new Collections tab in your Library.',
+      'Borrow a whole collection, or just the titles you want: the borrow dialog lets you pick from the set (unavailable books are locked) and needs at least two.',
+      'Owners approve, decline and confirm the return of a borrowed collection in one step, with a single due date for the whole set. Collections are clearly marked everywhere so they’re never confused with single books.',
+    ],
+  },
+  {
     version: '1.10.0',
     date: '2026-07-05',
     notes: [

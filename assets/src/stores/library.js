@@ -68,7 +68,9 @@ export const useLibraryStore = defineStore('library', () => {
   async function fetchLending() {
     loading.value.lending = true
     try {
-      const { data } = await api.get('/books', { params: { status: 'lent', perPage: 100 } })
+      // excludeCollectionLoans: books out via a collection are shown grouped in
+      // the collection card, so keep them out of the individual Lending grid.
+      const { data } = await api.get('/books', { params: { status: 'lent', perPage: 100, excludeCollectionLoans: 1 } })
       lending.value = data.items
     } finally {
       loading.value.lending = false

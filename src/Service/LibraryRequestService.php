@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\Book;
+use App\Entity\CollectionRequest;
 use App\Entity\LibraryRequest;
 use App\Entity\User;
 use App\Enum\ActivityType;
@@ -27,7 +28,13 @@ class LibraryRequestService
         private readonly ActivityRecorder $activity,
     ) {}
 
-    public function create(User $requester, Book $book): LibraryRequest
+    /**
+     * Creates a pending borrow request. When $parent is set the request is one
+     * book of a collection borrow — it's linked to the parent CollectionRequest
+     * and surfaced grouped rather than as an individual request. All the same
+     * borrow guards apply per book.
+     */
+    public function create(User $requester, Book $book, ?CollectionRequest $parent = null): LibraryRequest
     {
         if ($book->getOwner() === $requester) {
             throw new \DomainException('You cannot request your own book.');
@@ -48,7 +55,8 @@ class LibraryRequestService
 
         $request = (new LibraryRequest())
             ->setBook($book)
-            ->setRequester($requester);
+            ->setRequester($requester)
+            ->setParentRequest($parent);
         $request->addEvent(LibraryRequestEventType::Requested, $requester);
 
         $this->em->persist($request);
@@ -61,6 +69,14 @@ class LibraryRequestService
         $this->assertOwner($request, $actor);
         $this->assertStatusIn($request, [RequestStatus::Pending], 'This request has already been resolved.');
 
+        // Re-check availability at approval time: another request (individual or a
+        // collection child) may have lent this book since this one was filed. Without
+        // this a second approval would silently re-lend it and orphan the first loan.
+        $book = $request->getBook();
+        if ($book->getStatus() !== BookStatus::Own) {
+            throw new \DomainException('This book is no longer available to lend.');
+        }
+
         $request
             ->setStatus(RequestStatus::Approved)
             ->setResolvedAt(new \DateTimeImmutable())
@@ -68,7 +84,6 @@ class LibraryRequestService
         $request->addEvent(LibraryRequestEventType::Approved, $actor, $dueDate);
 
         // The book is now lent: it leaves the owner's hands for the borrower's.
-        $book = $request->getBook();
         $book->setStatus(BookStatus::Lent);
         $book->setCurrentHolder($request->getRequester());
 
