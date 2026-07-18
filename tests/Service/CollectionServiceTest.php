@@ -13,10 +13,11 @@ use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Covers collection CRUD: create gates on ≥2 *available* owned books, update keeps
- * the ≥2 rule but deliberately does NOT re-check availability (members may be on
- * loan), and delete simply removes (the active-loan guard lives in CollectionVoter).
- * The owner's books are resolved through a stubbed BookRepository.
+ * Covers collection CRUD: both create and update gate on ≥2 owned books of *any*
+ * status (a lent/unavailable/reading book can be grouped — the borrow-side
+ * availability gate lives in CollectionRequestService), and delete simply removes
+ * (the active-loan guard lives in CollectionVoter). The owner's books are resolved
+ * through a stubbed BookRepository (owner-scoped, so borrowed-in books never appear).
  */
 class CollectionServiceTest extends TestCase
 {
@@ -51,15 +52,15 @@ class CollectionServiceTest extends TestCase
         $this->service(null, $books)->create($owner, $this->input('C'));
     }
 
-    public function testCreateRejectsWhenFewerThanTwoBooksAreAvailable(): void
+    public function testCreateAllowsBooksOfAnyStatus(): void
     {
         $owner = new User();
-        // Two resolve, but one is on loan → fewer than two available to create with.
-        $books = [$this->book($owner, BookStatus::Own), $this->book($owner, BookStatus::Lent)];
+        // A mix including a lent and an unavailable book — all owned, so all group.
+        $books = [$this->book($owner, BookStatus::Lent), $this->book($owner, BookStatus::Unavailable)];
 
-        $this->expectException(\DomainException::class);
-        $this->expectExceptionMessage('available');
-        $this->service(null, $books)->create($owner, $this->input('C'));
+        $collection = $this->service(null, $books)->create($owner, $this->input('C'));
+
+        self::assertCount(2, $collection->getBooks());
     }
 
     public function testCreateNormalizesBlankOptionalFieldsToNullAndTrimsName(): void

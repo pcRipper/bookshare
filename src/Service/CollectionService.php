@@ -5,7 +5,6 @@ namespace App\Service;
 use App\Dto\CollectionInput;
 use App\Entity\BookCollection;
 use App\Entity\User;
-use App\Enum\BookStatus;
 use App\Repository\BookRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -27,7 +26,7 @@ class CollectionService
     public function create(User $owner, CollectionInput $input): BookCollection
     {
         $collection = (new BookCollection())->setOwner($owner);
-        $this->applyInput($collection, $input, $owner, requireAvailable: true);
+        $this->applyInput($collection, $input, $owner);
 
         $this->em->persist($collection);
 
@@ -36,9 +35,7 @@ class CollectionService
 
     public function update(BookCollection $collection, CollectionInput $input, User $owner): void
     {
-        // Editing membership is allowed even when some members are currently on
-        // loan, so availability isn't re-checked here — only the ≥2 rule is.
-        $this->applyInput($collection, $input, $owner, requireAvailable: false);
+        $this->applyInput($collection, $input, $owner);
     }
 
     /**
@@ -51,24 +48,22 @@ class CollectionService
         $this->em->remove($collection);
     }
 
-    private function applyInput(BookCollection $collection, CollectionInput $input, User $owner, bool $requireAvailable): void
+    private function applyInput(BookCollection $collection, CollectionInput $input, User $owner): void
     {
         $collection
             ->setName(trim($input->name))
             ->setDescription($input->description !== null && trim($input->description) !== '' ? trim($input->description) : null)
             ->setCoverUrl($input->coverUrl !== null && trim($input->coverUrl) !== '' ? trim($input->coverUrl) : null);
 
-        // Only the owner's own books can be grouped; foreign/unknown ids drop out.
+        // Only the owner's own books can be grouped; foreign/unknown ids (including
+        // books merely borrowed-in, which the owner doesn't own) drop out here.
+        // Membership accepts books of any status — a lent/unavailable/reading book
+        // can sit in a collection; it just won't be borrowable until it's `own`
+        // again (the borrow-side availability gate lives in CollectionRequestService).
         $resolved = $this->books->findByIdsForOwner($input->bookIds, $owner);
 
-        if (count($resolved) < self::MIN_BOOKS) {
+        if (\count($resolved) < self::MIN_BOOKS) {
             throw new \DomainException('A collection needs at least ' . self::MIN_BOOKS . ' of your books.');
-        }
-        if ($requireAvailable) {
-            $available = array_filter($resolved, static fn ($b) => $b->getStatus() === BookStatus::Own);
-            if (count($available) < self::MIN_BOOKS) {
-                throw new \DomainException('Pick at least ' . self::MIN_BOOKS . ' available books to create a collection.');
-            }
         }
 
         $collection->clearBooks();
