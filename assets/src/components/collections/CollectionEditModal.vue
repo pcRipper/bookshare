@@ -50,12 +50,14 @@ const availableBooks = computed(() => {
   })
 })
 
-// Load the owner's available books to pick from; for edit, merge in the current
-// members (which may now be on loan) so they can be kept, and pre-select them.
+// Books of any status can be grouped — only the owner's own books are listed
+// (the endpoint is owner-scoped, so borrowed-in books never appear); a member
+// that isn't available just can't be borrowed until it's home again. For edit,
+// merge in the current members so they can be kept, and pre-select them.
 async function loadBooks() {
   loadingBooks.value = true
   try {
-    const { data } = await api.get('/books', { params: { status: 'own', perPage: 100 } })
+    const { data } = await api.get('/books', { params: { perPage: 100 } })
     const byId = new Map(data.items.map(b => [b.id, b]))
     if (isEdit.value) {
       for (const b of props.collection.books ?? []) if (!byId.has(b.id)) byId.set(b.id, b)
@@ -66,6 +68,17 @@ async function loadBooks() {
   } finally {
     loadingBooks.value = false
   }
+}
+
+// A short badge for members that can't currently be borrowed, so the owner
+// knows what state each book is in when building the collection.
+const STATUS_LABELS = {
+  lent: 'On loan',
+  unavailable: 'Unavailable',
+  currently_reading: 'Reading',
+}
+function statusLabel(book) {
+  return STATUS_LABELS[book.status] ?? null
 }
 
 watch(
@@ -189,6 +202,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                   <p class="picker__title">{{ book.title }}</p>
                   <p class="picker__author">{{ book.author }}</p>
                 </div>
+                <span v-if="statusLabel(book)" class="picker__status">{{ statusLabel(book) }}</span>
               </li>
             </ul>
           </div>
@@ -229,6 +243,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                   <p class="picker__title">{{ book.title }}</p>
                   <p class="picker__author">{{ book.author }}</p>
                 </div>
+                <span v-if="statusLabel(book)" class="picker__status">{{ statusLabel(book) }}</span>
               </li>
             </ul>
           </div>
@@ -458,6 +473,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* Marks a member that can't currently be borrowed (on loan / unavailable / reading). */
+.picker__status {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface-variant);
+  font-size: var(--text-label-sm);
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .modal__footer {

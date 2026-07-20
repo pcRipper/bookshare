@@ -7,6 +7,13 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.12.0',
+    date: '2026-07-18',
+    notes: [
+      'You can now add any of your books to a collection, not just the available ones — a book that’s on loan, unavailable or currently being read can be grouped too. Borrowers still only borrow the titles that are available at the time.',
+    ],
+  },
+  {
     version: '1.11.0',
     date: '2026-07-11',
     notes: [
