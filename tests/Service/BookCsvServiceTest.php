@@ -58,7 +58,7 @@ class BookCsvServiceTest extends TestCase
         $csv = $this->service()->export([$book]);
 
         $lines = preg_split('/\r\n|\n/', trim($csv));
-        self::assertSame('title,author,description,isbn,cover,language,status,categories', $lines[0]);
+        self::assertSame('title,author,description,isbn,cover,language,status,read,categories', $lines[0]);
         self::assertStringContainsString('Dune', $lines[1]);
         self::assertStringContainsString('Herbert', $lines[1]);
         self::assertStringContainsString('/covers/dune.jpg', $lines[1]);
@@ -96,6 +96,39 @@ class BookCsvServiceTest extends TestCase
 
         self::assertSame(1, $summary['imported']);
         self::assertSame('A desert epic.', $created[0]->getDescription());
+    }
+
+    public function testExportAndImportRoundTripReadFlag(): void
+    {
+        $read = (new Book())->setOwner(new User())->setTitle('Dune')->setAuthor('Herbert')->setIsRead(true);
+        $unread = (new Book())->setOwner(new User())->setTitle('1984')->setAuthor('Orwell');
+
+        $csv = $this->service()->export([$read, $unread]);
+
+        $created = [];
+        $em = $this->createStub(EntityManagerInterface::class);
+        $em->method('persist')->willReturnCallback(function (Book $b) use (&$created) { $created[] = $b; });
+
+        $summary = $this->service($em)->import(new User(), $csv, replace: false, abortOnError: false);
+
+        self::assertSame(2, $summary['imported']);
+        self::assertTrue($created[0]->isRead());
+        self::assertFalse($created[1]->isRead());
+    }
+
+    public function testImportDefaultsReadToFalseWhenColumnMissing(): void
+    {
+        $created = [];
+        $em = $this->createStub(EntityManagerInterface::class);
+        $em->method('persist')->willReturnCallback(function (Book $b) use (&$created) { $created[] = $b; });
+
+        // Older files predate the `read` column — such rows import as unread.
+        $csv = "title,author\nDune,Herbert\n";
+
+        $summary = $this->service($em)->import(new User(), $csv, replace: false, abortOnError: false);
+
+        self::assertSame(1, $summary['imported']);
+        self::assertFalse($created[0]->isRead());
     }
 
     public function testAppendSkipsDuplicateOfExistingBook(): void

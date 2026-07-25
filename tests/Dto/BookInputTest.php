@@ -134,4 +134,19 @@ class BookInputTest extends TestCase
 
         self::assertContains('status', $this->violations($input));
     }
+
+    public function testIsReadDefaultsToFalse(): void
+    {
+        self::assertFalse((new BookInput())->isRead);
+    }
+
+    public function testIsReadTrueIsAccepted(): void
+    {
+        $input = new BookInput();
+        $input->title = 'T';
+        $input->author = 'A';
+        $input->isRead = true;
+
+        self::assertCount(0, $this->validator->validate($input));
+    }
 }

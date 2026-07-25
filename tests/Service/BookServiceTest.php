@@ -47,6 +47,7 @@ class BookServiceTest extends TestCase
         $input->coverPath = '   ';
         $input->description = '  A desert epic.  ';
         $input->status = BookStatus::Lent;
+        $input->isRead = true;
         $input->categoryIds = [7];
 
         $book = $service->create($owner, $input);
@@ -59,6 +60,7 @@ class BookServiceTest extends TestCase
         self::assertSame('A desert epic.', $book->getDescription());
         self::assertNull($book->getCoverPath());
         self::assertSame(BookStatus::Lent, $book->getStatus());
+        self::assertTrue($book->isRead());
         self::assertTrue($book->getCategories()->contains($category));
 
         self::assertSame($owner, $recorded['actor']);
@@ -110,12 +112,14 @@ class BookServiceTest extends TestCase
         $input = new BookInput();
         $input->title = 'New Title';
         $input->author = 'New Author';
+        $input->isRead = true;
         $input->categoryIds = [];
 
         $service->update($book, $input);
 
         self::assertSame('New Title', $book->getTitle());
         self::assertSame('New Author', $book->getAuthor());
+        self::assertTrue($book->isRead());
         // Categories are rebuilt from the input — the previous one is cleared.
         self::assertCount(0, $book->getCategories());
     }
