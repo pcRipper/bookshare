@@ -39,6 +39,10 @@ class Book
     #[ORM\Column(length: 8, nullable: true)]
     private ?string $language = null;
 
+    /** Owner's personal "I've read this" flag — orthogonal to lending status. */
+    #[ORM\Column]
+    private bool $isRead = false;
+
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     private User $owner;
@@ -89,6 +93,9 @@ class Book
 
     public function getLanguage(): ?string { return $this->language; }
     public function setLanguage(?string $language): static { $this->language = $language; return $this; }
+
+    public function isRead(): bool { return $this->isRead; }
+    public function setIsRead(bool $isRead): static { $this->isRead = $isRead; return $this; }
 
     public function getOwner(): User { return $this->owner; }
     public function setOwner(User $owner): static

@@ -7,6 +7,14 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.13.0',
+    date: '2026-07-25',
+    notes: [
+      'Mark a book as read: the Manage Book form now has an “I’ve read this book” checkbox, and a “Read” badge shows on your books wherever they appear — your library, Discover, reader profiles and the book detail view.',
+      'The read status travels with your CSV export/import, so it’s preserved when you move your collection around.',
+    ],
+  },
+  {
     version: '1.12.0',
     date: '2026-07-18',
     notes: [

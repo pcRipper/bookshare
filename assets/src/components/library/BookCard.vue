@@ -44,6 +44,11 @@ const statusBadge = computed(() => {
         <span class="material-symbols-outlined">{{ statusBadge.icon }}</span>
         {{ statusBadge.label }}
       </span>
+
+      <span v-if="book.isRead" class="book-card__read" title="You've read this book">
+        <span class="material-symbols-outlined">check_circle</span>
+        Read
+      </span>
     </div>
 
     <!-- Body -->
@@ -149,6 +154,29 @@ const statusBadge = computed(() => {
 .book-card__badge--reading {
   background: var(--color-tertiary);
   color: #ffffff;
+}
+
+/* "Read" marker — top-left, so it never collides with the status badge */
+.book-card__read {
+  position: absolute;
+  top: var(--space-base);
+  left: var(--space-base);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px 3px 6px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: 0 1px 4px rgba(35, 44, 51, 0.18);
+}
+.book-card__read .material-symbols-outlined {
+  font-size: 13px;
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
 }
 
 /* Body */

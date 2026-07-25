@@ -46,6 +46,9 @@ class BookInput
     #[Assert\Choice(callback: [LanguageCatalog::class, 'codes'], message: 'Unknown language.')]
     public ?string $language = null;
 
+    /** Owner's "already read" flag; defaults to unread. */
+    public bool $isRead = false;
+
     /**
      * IDs of categories to attach. They must already exist — new categories are
      * created up-front via POST /api/categories, then referenced here by id.

@@ -52,6 +52,10 @@ function onAction() {
         :color="primaryCategory.colorHex"
         class="discover-card__chip"
       />
+      <span v-if="book.isRead" class="discover-card__read" title="This reader has read this book">
+        <span class="material-symbols-outlined">check_circle</span>
+        Read
+      </span>
     </div>
 
     <div class="discover-card__body">
@@ -136,6 +140,28 @@ function onAction() {
   position: absolute;
   top: var(--space-base);
   left: var(--space-base);
+}
+
+.discover-card__read {
+  position: absolute;
+  top: var(--space-base);
+  right: var(--space-base);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px 3px 6px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: 0 1px 4px rgba(35, 44, 51, 0.18);
+}
+.discover-card__read .material-symbols-outlined {
+  font-size: 13px;
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
 }
 
 .discover-card__body {

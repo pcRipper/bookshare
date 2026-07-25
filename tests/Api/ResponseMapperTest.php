@@ -50,6 +50,16 @@ class ResponseMapperTest extends TestCase
         self::assertSame('#E8F0EA', $data['categories'][0]['colorHex']);
     }
 
+    public function testBookIsReadFlagIsEmitted(): void
+    {
+        $owner = (new User())->setFullName('Jane');
+        $unread = (new Book())->setOwner($owner)->setTitle('T')->setAuthor('A');
+        $read = (new Book())->setOwner($owner)->setTitle('T')->setAuthor('A')->setIsRead(true);
+
+        self::assertFalse($this->mapper()->book($unread)['isRead']);
+        self::assertTrue($this->mapper()->book($read)['isRead']);
+    }
+
     public function testBookLanguageIsEmittedAsCodeAndName(): void
     {
         $book = (new Book())->setOwner((new User())->setFullName('Jane'))

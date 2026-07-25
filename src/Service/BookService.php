@@ -51,7 +51,8 @@ class BookService
             ->setDescription($input->description !== null && trim($input->description) !== '' ? trim($input->description) : null)
             ->setCoverPath($input->coverPath !== null && trim($input->coverPath) !== '' ? trim($input->coverPath) : null)
             ->setStatus($input->status)
-            ->setLanguage($input->language !== null && trim($input->language) !== '' ? trim($input->language) : null);
+            ->setLanguage($input->language !== null && trim($input->language) !== '' ? trim($input->language) : null)
+            ->setIsRead($input->isRead);
 
         $book->clearCategories();
         foreach ($this->categories->findByIds($input->categoryIds) as $category) {
