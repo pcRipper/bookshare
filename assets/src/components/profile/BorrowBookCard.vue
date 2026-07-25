@@ -60,6 +60,10 @@ function onAction() {
         <span class="material-symbols-outlined">menu_book</span>
       </div>
       <span v-if="statusBadge" class="borrow-card__badge">{{ statusBadge }}</span>
+      <span v-if="book.isRead" class="borrow-card__read" title="This reader has read this book">
+        <span class="material-symbols-outlined">check_circle</span>
+        Read
+      </span>
     </div>
 
     <div class="borrow-card__body">
@@ -140,6 +144,27 @@ function onAction() {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.borrow-card__read {
+  position: absolute;
+  top: var(--space-base);
+  left: var(--space-base);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px 2px 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.borrow-card__read .material-symbols-outlined {
+  font-size: 12px;
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
 }
 
 .borrow-card__body {

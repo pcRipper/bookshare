@@ -53,7 +53,7 @@ const descRemaining = computed(() => DESC_MAX - form.value.description.length)
 
 function blank() {
   // categories: array of { id, name, colorHex }
-  return { title: '', author: '', description: '', isbn: '', status: 'own', language: null, coverPath: '', categories: [] }
+  return { title: '', author: '', description: '', isbn: '', status: 'own', language: null, coverPath: '', isRead: false, categories: [] }
 }
 
 // Repopulate whenever the modal opens or the target book changes.
@@ -73,6 +73,7 @@ watch(
           status: props.book.status ?? 'own',
           language: props.book.language ?? null,
           coverPath: props.book.coverPath ?? '',
+          isRead: props.book.isRead ?? false,
           categories: [...(props.book.categories ?? [])],
         }
       : blank()
@@ -98,6 +99,7 @@ function onSave() {
     status: form.value.status,
     language: form.value.language || null,
     coverPath: form.value.coverPath.trim() || null,
+    isRead: form.value.isRead,
     categoryIds: form.value.categories.map(c => c.id),
   })
 }
@@ -119,6 +121,7 @@ function applyTemplate(t) {
     status: 'own',
     language: t.language ?? null,
     coverPath: t.coverPath ?? '',
+    isRead: false,
     categories: [],
   }
   errorMsg.value = null
@@ -231,6 +234,12 @@ function applyTemplate(t) {
             <label class="field__label" for="mb-language">Language</label>
             <LanguageSelect id="mb-language" v-model="form.language" :disabled="readOnly" placeholder="No language set" />
           </div>
+
+          <label class="checkbox-field">
+            <input type="checkbox" v-model="form.isRead" :disabled="readOnly" />
+            <span class="material-symbols-outlined">check_circle</span>
+            I've read this book
+          </label>
 
           <div class="field">
             <label class="field__label">Categories</label>
@@ -353,6 +362,18 @@ function applyTemplate(t) {
   text-transform: uppercase;
 }
 .req { color: var(--color-error); }
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-body-md);
+  color: var(--color-on-background);
+  cursor: pointer;
+}
+.checkbox-field input { width: 16px; height: 16px; accent-color: var(--color-primary); cursor: pointer; }
+.checkbox-field input:disabled { cursor: not-allowed; }
+.checkbox-field .material-symbols-outlined { font-size: 18px; color: var(--color-secondary); }
 
 .textarea { resize: vertical; min-height: 88px; font-family: var(--font-body); line-height: 1.5; }
 .field__counter {

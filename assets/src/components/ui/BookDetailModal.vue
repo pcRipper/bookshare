@@ -86,9 +86,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
           <!-- Info (scrolls independently on desktop) -->
           <div class="modal__info">
-            <span v-if="statusPill" class="detail-status" :class="`detail-status--${statusPill.tone}`">
-              {{ statusPill.label }}
-            </span>
+            <div v-if="statusPill || book.isRead" class="detail-pills">
+              <span v-if="statusPill" class="detail-status" :class="`detail-status--${statusPill.tone}`">
+                {{ statusPill.label }}
+              </span>
+              <span v-if="book.isRead" class="detail-status detail-status--read">
+                <span class="material-symbols-outlined">check_circle</span>
+                Read
+              </span>
+            </div>
 
             <h2 class="detail-title">{{ book.title }}</h2>
             <p class="detail-author">by {{ book.author }}</p>
@@ -246,14 +252,29 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   }
 }
 
+.detail-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
 .detail-status {
-  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   padding: 2px 10px;
   border-radius: var(--radius-full);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+.detail-status .material-symbols-outlined {
+  font-size: 13px;
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+}
+.detail-status--read {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
 }
 .detail-status--available {
   background: var(--color-primary-container);
