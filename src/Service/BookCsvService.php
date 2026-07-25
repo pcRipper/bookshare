@@ -37,7 +37,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class BookCsvService
 {
     /** Columns, in export order. Import matches them case-insensitively by header. */
-    private const COLUMNS = ['title', 'author', 'description', 'isbn', 'cover', 'language', 'status', 'categories'];
+    private const COLUMNS = ['title', 'author', 'description', 'isbn', 'cover', 'language', 'status', 'read', 'categories'];
 
     /** Statuses a book may be imported as — never 'lent', which needs a live loan. */
     private const IMPORTABLE_STATUSES = ['own', 'unavailable', 'currently_reading'];
@@ -72,6 +72,7 @@ class BookCsvService
                 $book->getCoverPath() ?? '',
                 $book->getLanguage() ?? '',
                 $book->getStatus()->value,
+                $book->isRead() ? '1' : '0',
                 implode('; ', array_map(static fn ($c) => $c->getName(), $book->getCategories()->toArray())),
             ], ',', '"', '');
         }
@@ -226,6 +227,9 @@ class BookCsvService
         $input->coverPath = $cover !== '' ? $cover : null;
         $language = strtolower($get('language'));
         $input->language = $language !== '' ? $language : null;
+
+        // Truthy read flag; a missing column (older files) defaults to unread.
+        $input->isRead = in_array(strtolower($get('read')), ['1', 'true', 'yes', 'y'], true);
 
         $statusRaw = strtolower($get('status')) ?: 'own';
         if (in_array($statusRaw, self::IMPORTABLE_STATUSES, true)) {
