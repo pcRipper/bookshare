@@ -13,6 +13,7 @@
 - [x] improve external api rates usage for book creation search (per-source debounce + abort in-flight request on new input)
 - [x] cache Open Library template-search responses (dedicated pool, 7-day TTL, map-on-read, errors never cached, normalized keys)
 - [x] add book description field (creation + template + Open Library first_sentence; shown in the book detail modal; CSV round-trip)
+- [ ] cache images of book covers, maybe add local s3, do it on each change of corresponding fields, use caching key by hash of the file (hash of content + name + type)
 
 ## Security & Tests
 - [x] add all possible unit tests
