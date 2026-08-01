@@ -1,12 +1,18 @@
 <script setup>
 /**
  * Segmented control switching a book list between the card grid and the compact
- * table. Two icon buttons; v-model carries 'cards' | 'table'.
+ * table. `v-model` carries 'cards' | 'table'.
+ *
+ * In table mode a third segment appears — the "all columns" switch
+ * (`v-model:detailed`), which expands the table from the essential fields to
+ * the full record. It's part of the same cluster so the two related layout
+ * choices read as one control.
  */
 defineProps({
   modelValue: { type: String, default: 'cards' }, // 'cards' | 'table'
+  detailed: { type: Boolean, default: false },
 })
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'update:detailed'])
 
 const options = [
   { value: 'cards', icon: 'grid_view', label: 'Card view' },
@@ -28,6 +34,20 @@ const options = [
       @click="emit('update:modelValue', opt.value)"
     >
       <span class="material-symbols-outlined">{{ opt.icon }}</span>
+    </button>
+
+    <!-- Only meaningful for the table; the grid has no columns to expand. -->
+    <button
+      v-if="modelValue === 'table'"
+      type="button"
+      class="view-toggle__btn view-toggle__btn--divided"
+      :class="{ 'view-toggle__btn--active': detailed }"
+      :aria-pressed="detailed"
+      :title="detailed ? 'Show essential columns only' : 'Show all columns'"
+      :aria-label="detailed ? 'Show essential columns only' : 'Show all columns'"
+      @click="emit('update:detailed', !detailed)"
+    >
+      <span class="material-symbols-outlined">view_column</span>
     </button>
   </div>
 </template>
@@ -57,5 +77,19 @@ const options = [
 .view-toggle__btn--active {
   background: var(--color-primary);
   color: var(--color-on-primary);
+}
+/* Separates the layout choice from the column-density choice. */
+.view-toggle__btn--divided {
+  margin-left: 5px;
+  position: relative;
+}
+.view-toggle__btn--divided::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 5px;
+  bottom: 5px;
+  width: 1px;
+  background: var(--color-outline-variant);
 }
 </style>

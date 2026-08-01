@@ -1,24 +1,34 @@
 import { ref, watch } from 'vue'
 
 /**
- * A single, app-wide preference for how book lists render — 'cards' (the
- * cover-heavy grid) or 'table' (the compact, scannable list). Shared by the
- * Library, Profile and Discover book lists and persisted to localStorage so the
- * app reopens in the last-used view.
+ * App-wide preferences for how book lists render, shared by the Library,
+ * Profile and Discover book lists and persisted to localStorage so the app
+ * reopens the way it was left:
  *
- * Module-level ref ⇒ a singleton: every caller reads/writes the same value.
+ *  - `bookView`      — 'cards' (the cover-heavy grid) or 'table' (compact list)
+ *  - `tableDetailed` — in table mode, show the full record (categories,
+ *                      description, ISBN, holder, added date) instead of only
+ *                      the essential columns
+ *
+ * Module-level refs ⇒ singletons: every caller reads/writes the same values.
  */
-const STORAGE_KEY = 'bookView'
+const VIEW_KEY = 'bookView'
+const DETAILED_KEY = 'bookTableDetailed'
 
-const stored = localStorage.getItem(STORAGE_KEY)
-const bookView = ref(stored === 'table' ? 'table' : 'cards')
+const bookView = ref(localStorage.getItem(VIEW_KEY) === 'table' ? 'table' : 'cards')
+const tableDetailed = ref(localStorage.getItem(DETAILED_KEY) === '1')
 
-watch(bookView, v => localStorage.setItem(STORAGE_KEY, v))
+watch(bookView, v => localStorage.setItem(VIEW_KEY, v))
+watch(tableDetailed, v => localStorage.setItem(DETAILED_KEY, v ? '1' : '0'))
 
 export function useBookView() {
   function setBookView(v) {
     bookView.value = v === 'table' ? 'table' : 'cards'
   }
 
-  return { bookView, setBookView }
+  function setTableDetailed(v) {
+    tableDetailed.value = !!v
+  }
+
+  return { bookView, tableDetailed, setBookView, setTableDetailed }
 }
