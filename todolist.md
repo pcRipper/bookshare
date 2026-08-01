@@ -31,6 +31,7 @@
 - [x] no language info on the book card on the profile page 
 - [x] fix ios navigation bar, icons are shifted upwards when bottom bar with controll elements disappear
 - [x] add table view for lists with card-only format. Display only essential fields + checkbox for complete version
+- [x] table view amendments: owner column on discover, table-shaped loading skeletons, an "all columns" switch for the full record, horizontal scroll on mobile instead of dropped columns, and a labelled read column (interactive in your own library only)
 
 # Functional
 - [x] Time landing: lending side is saying when will be the due date for book return, no approval from requester side needed, its the requirement of the lending side only
