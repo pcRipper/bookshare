@@ -7,6 +7,13 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.16.0',
+    date: '2026-08-01',
+    notes: [
+      'Discover’s Readers tab no longer waits for you to type: it now lists community members, newest first, so you can browse and follow people without knowing their name in advance. Searching still works exactly as before.',
+    ],
+  },
+  {
     version: '1.15.1',
     date: '2026-08-01',
     notes: [
