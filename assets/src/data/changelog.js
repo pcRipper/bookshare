@@ -11,6 +11,7 @@ export const CHANGELOG = [
     date: '2026-08-01',
     notes: [
       'Discover’s Readers tab no longer waits for you to type: it now lists community members, newest first, so you can browse and follow people without knowing their name in advance. Searching still works exactly as before.',
+      'CSV exports now carry the cover links you actually provided, instead of FolioShare’s internal image paths. Covers saved before this change export as full links to our copy, so every row stays usable outside the site.',
     ],
   },
   {
