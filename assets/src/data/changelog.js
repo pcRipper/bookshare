@@ -7,6 +7,14 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.15.0',
+    date: '2026-08-01',
+    notes: [
+      'Switch any book list between the cover grid and a new compact table view — a scannable layout showing cover, title, author, language and status at a glance. Your choice is remembered across visits and applies in your Library, on reader profiles and in Discover.',
+      'The table view has an inline “read” checkbox: tick your own books as read (or unread) right from the list, without opening each one.',
+    ],
+  },
+  {
     version: '1.14.0',
     date: '2026-08-01',
     notes: [
