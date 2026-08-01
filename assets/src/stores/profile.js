@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/api'
-import { toBookInput } from '@/utils/bookPayload'
 
 /**
  * Backs the profile page (`/profile/:id`): a user's identity, derived stats and
@@ -100,22 +99,6 @@ export const useProfileStore = defineStore('profile', () => {
     }
   }
 
-  // Inline "mark as read" toggle from the table view (own-profile books only —
-  // gated by canEdit in the UI). Optimistically flip, PATCH the whole DTO, revert
-  // on failure.
-  async function setBookRead(bookId, isRead) {
-    const book = books.value.find(b => b.id === bookId)
-    if (!book) return
-    const prev = book.isRead
-    book.isRead = isRead
-    try {
-      await api.patch(`/books/${bookId}`, toBookInput({ ...book, isRead }))
-    } catch (e) {
-      book.isRead = prev
-      throw e
-    }
-  }
-
   /* ── Own-profile mutations (only meaningful when profile.isSelf) ──────── */
 
   // Update the current user's editable profile fields (bio, location).
@@ -130,7 +113,7 @@ export const useProfileStore = defineStore('profile', () => {
 
   return {
     profile, books, booksMeta, booksLoading, availableCount, shelf, booksQuery, loading, error,
-    fetchProfile, fetchBooksPage, setShelf, setBooksSearch, requestBorrow, setBookRead,
+    fetchProfile, fetchBooksPage, setShelf, setBooksSearch, requestBorrow,
     updateProfile,
   }
 })

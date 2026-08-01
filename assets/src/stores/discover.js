@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/api'
-import { toBookInput } from '@/utils/bookPayload'
 
 /**
  * Backs the Discover page (`/discover`). The search surface has two modes:
@@ -142,21 +141,6 @@ export const useDiscoverStore = defineStore('discover', () => {
     }
   }
 
-  // Inline "mark as read" toggle from the table view (only your own books here
-  // carry canEdit). Optimistically flip, PATCH the whole DTO, revert on failure.
-  async function setBookRead(bookId, isRead) {
-    const book = books.value.find(b => b.id === bookId)
-    if (!book) return
-    const prev = book.isRead
-    book.isRead = isRead
-    try {
-      await api.patch(`/books/${bookId}`, toBookInput({ ...book, isRead }))
-    } catch (e) {
-      book.isRead = prev
-      throw e
-    }
-  }
-
   // Follow / unfollow a reader from an account card. Optimistic; the same 409
   // tolerance as requestBorrow (a duplicate follow is effectively a no-op).
   async function follow(userId) {
@@ -179,6 +163,6 @@ export const useDiscoverStore = defineStore('discover', () => {
   return {
     mode, books, booksMeta, accounts, accountsMeta, categories, loading, error, query, activeCategory, activeLanguage,
     init, fetchBooks, fetchAccounts, fetchActive, setMode, setQuery, setCategory, setLanguage,
-    clearFilters, requestBorrow, setBookRead, follow, unfollow,
+    clearFilters, requestBorrow, follow, unfollow,
   }
 })
