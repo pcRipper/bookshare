@@ -261,6 +261,15 @@ Per-list page sizes are **controller constants** (the "reasonable preset" per li
 
 Frontend: the numbered control is the shared `ui/Pagination.vue` (prev/next + page numbers with ellipsis; renders nothing for a single page) — never hand-roll list paging. Paginated stores hold `{ items, page, perPage, total, totalPages }` and expose `fetchX(page)` that **replaces** the page. Refetches triggered by Mercure default their `page` arg to the current page so a signal never yanks the user back to page 1.
 
+### Image localization & caching
+Remote images (Google avatars, Open Library / bookfinder / pasted book covers) are **downloaded once, server-side, to our own origin** so the browser never hotlinks — and gets 429'd by — a third-party CDN, and so nginx can hard-cache them. `App\Service\ImageLocalizer::localize(?string $url, string $category)` fetches an `http(s)` image (5 MiB cap, content-type allow-list), names it by **xxh128 content hash** (identical bytes ⇒ same file = dedup + implicit change-detection; the extension encodes the type) and persists it via `App\Service\Storage\ImageStorage`. It is **best-effort**: a null/empty/already-owned/non-http input is returned unchanged, and any fetch/validation failure logs and returns the original URL (worst case: the old hotlink). `owns()` delegates to the store.
+
+`ImageStorage` is a **swappable backend** (only the persist step): `LocalImageStorage` (the default, aliased in `services.yaml`) writes to `public/uploads/{category}/` and returns `/uploads/{category}/<hash>.<ext>`; nginx (`docker/local` + `docker/production`) already serves `/uploads/` `expires 1y, immutable`. To move to DO Spaces / S3 later, implement `ImageStorage` and repoint the alias — `ImageLocalizer` and callers don't change. Categories are `ImageLocalizer::AVATARS` / `COVERS`.
+
+**Where localization runs (on write):** `AuthRestController` localizes the Google avatar (only avatars we own — null / already-localized / a `googleusercontent.com` URL — never a URL pasted in Settings); `BookRestController` create/update localizes `BookInput.coverPath` before persisting. **CSV import deliberately does not** localize (a 1000-row import would fire 1000 synchronous downloads) — imported covers stay remote and are picked up by the backfill.
+
+**Backfill:** `php bin/console app:localize-images` (manual — makes outbound HTTP) scans every `Book` cover and `User` avatar still pointing at a remote CDN and localizes it, flushing in batches of 50; idempotent (owned URLs skipped) and best-effort per row. `--dry-run` lists candidates without downloading.
+
 ### Authorization (voters)
 `App\Security\Voter\BookVoter` decides `BOOK_EDIT` / `BOOK_DELETE`: the actor must be the **owner** *and* the book must be **home** (`isHome()`) — a book that's out on loan is frozen. Controllers call `denyAccessUnlessGranted(...)`; `ResponseMapper` emits a **`canEdit`** boolean on every book so the SPA disables the Manage Book modal without re-deriving the rule client-side. Private profiles: `UserRestController::show` returns 403 to non-owners (mirrors the private-library book listing).
 
