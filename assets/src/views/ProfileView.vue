@@ -22,6 +22,7 @@ import Pagination from '@/components/ui/Pagination.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
 import ViewToggle from '@/components/ui/ViewToggle.vue'
 import BookTable from '@/components/ui/BookTable.vue'
+import BookTableSkeleton from '@/components/ui/BookTableSkeleton.vue'
 import { useBookView } from '@/composables/useBookView'
 
 const route = useRoute()
@@ -31,17 +32,7 @@ const subscriptions = useSubscriptionsStore()
 const toast = useToastStore()
 const { profile, books, booksMeta, booksLoading, availableCount, shelf, booksQuery, loading, error } = storeToRefs(store)
 const { profileCollections, profileMeta, loading: cLoading } = storeToRefs(collections)
-const { bookView } = useBookView()
-
-// Inline "mark as read" toggle from the table view (only your own books carry
-// canEdit); the store reverts on failure, so just toast a failure.
-async function onToggleRead({ id, isRead }) {
-  try {
-    await store.setBookRead(id, isRead)
-  } catch (e) {
-    toast.error(apiErrorMessage(e, 'Could not update the book.'))
-  }
-}
+const { bookView, tableDetailed } = useBookView()
 
 /* ── Follow / unfollow (other readers' profiles only) ─────────────────── */
 const subscribed = ref(false)
@@ -318,16 +309,19 @@ async function onProfileSave(payload) {
               :loading="booksLoading"
               @search="store.setBooksSearch"
             />
-            <ViewToggle v-model="bookView" />
+            <ViewToggle v-model="bookView" v-model:detailed="tableDetailed" />
           </div>
 
-          <BookGridSkeleton v-if="booksLoading" :count="8" />
+          <template v-if="booksLoading">
+            <BookTableSkeleton v-if="bookView === 'table'" :count="8" :detailed="tableDetailed" />
+            <BookGridSkeleton v-else :count="8" />
+          </template>
           <BookTable
             v-else-if="books.length && bookView === 'table'"
             :books="books"
+            :detailed="tableDetailed"
             role="tabpanel"
             @open="openDetail"
-            @toggle-read="onToggleRead"
           />
           <div v-else-if="books.length" class="book-grid" role="tabpanel">
             <BorrowBookCard

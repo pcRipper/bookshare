@@ -11,25 +11,13 @@ import LanguageSelect from '@/components/ui/LanguageSelect.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import ViewToggle from '@/components/ui/ViewToggle.vue'
 import BookTable from '@/components/ui/BookTable.vue'
+import BookTableSkeleton from '@/components/ui/BookTableSkeleton.vue'
 import { useBookView } from '@/composables/useBookView'
-import { useToastStore } from '@/stores/toast'
-import { apiErrorMessage } from '@/utils/apiError'
 import { resolveCategoryColors } from '@/utils/categoryColors'
 
 const store = useDiscoverStore()
-const toast = useToastStore()
 const { mode, books, booksMeta, accounts, accountsMeta, categories, loading, error, query, activeCategory, activeLanguage } = storeToRefs(store)
-const { bookView } = useBookView()
-
-// Inline "mark as read" toggle from the table view (only your own books carry
-// canEdit); the store reverts on failure, so just toast a failure.
-async function onToggleRead({ id, isRead }) {
-  try {
-    await store.setBookRead(id, isRead)
-  } catch (e) {
-    toast.error(apiErrorMessage(e, 'Could not update the book.'))
-  }
-}
+const { bookView, tableDetailed } = useBookView()
 
 onMounted(store.init)
 
@@ -194,12 +182,20 @@ async function onToggleFollow(action, id) {
             <button v-if="hasFilters" class="discover-results__clear" @click="store.clearFilters()">
               Clear filters
             </button>
-            <ViewToggle v-if="!isAccounts" v-model="bookView" />
+            <ViewToggle v-if="!isAccounts" v-model="bookView" v-model:detailed="tableDetailed" />
           </div>
         </div>
 
-        <!-- Loading -->
-        <BookGridSkeleton v-if="loading" :count="8" />
+        <!-- Loading — matches the layout that's about to render (accounts are
+             always cards). -->
+        <template v-if="loading">
+          <BookTableSkeleton
+            v-if="!isAccounts && bookView === 'table'"
+            :count="8"
+            :detailed="tableDetailed"
+          />
+          <BookGridSkeleton v-else :count="8" />
+        </template>
 
         <!-- Error -->
         <div v-else-if="error" class="discover-state">
@@ -250,8 +246,9 @@ async function onToggleFollow(action, id) {
             <BookTable
               v-if="bookView === 'table'"
               :books="books"
+              :detailed="tableDetailed"
+              show-owner
               @open="openDetail"
-              @toggle-read="onToggleRead"
             />
             <div v-else class="book-grid">
               <DiscoverBookCard
