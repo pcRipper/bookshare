@@ -7,6 +7,31 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.15.1',
+    date: '2026-08-01',
+    notes: [
+      'The table view has a new “all columns” switch: expand any list to the full record — categories, description, ISBN, who’s holding the book and when you added it — and collapse it back to the essentials.',
+      'Discover’s table now shows who owns each book, so you can tell whose shelf you’re browsing without opening it.',
+      'On a phone the table scrolls sideways instead of quietly hiding the language and status columns — nothing is left out any more.',
+      'The read column is labelled, and on books that aren’t yours it shows as a plain marker rather than a checkbox you can’t use.',
+    ],
+  },
+  {
+    version: '1.15.0',
+    date: '2026-08-01',
+    notes: [
+      'Switch any book list between the cover grid and a new compact table view — a scannable layout showing cover, title, author, language and status at a glance. Your choice is remembered across visits and applies in your Library, on reader profiles and in Discover.',
+      'The table view has an inline “read” checkbox: tick your own books as read (or unread) right from the list, without opening each one.',
+    ],
+  },
+  {
+    version: '1.14.0',
+    date: '2026-08-01',
+    notes: [
+      'Book covers you add from a template or a pasted link are now saved to FolioShare’s own servers, so they load faster, stay cached and don’t break if the original image host goes down.',
+    ],
+  },
+  {
     version: '1.13.0',
     date: '2026-07-25',
     notes: [

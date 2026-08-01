@@ -20,6 +20,10 @@ import CollectionCard from '@/components/collections/CollectionCard.vue'
 import CollectionBorrowModal from '@/components/collections/CollectionBorrowModal.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
+import ViewToggle from '@/components/ui/ViewToggle.vue'
+import BookTable from '@/components/ui/BookTable.vue'
+import BookTableSkeleton from '@/components/ui/BookTableSkeleton.vue'
+import { useBookView } from '@/composables/useBookView'
 
 const route = useRoute()
 const store = useProfileStore()
@@ -28,6 +32,7 @@ const subscriptions = useSubscriptionsStore()
 const toast = useToastStore()
 const { profile, books, booksMeta, booksLoading, availableCount, shelf, booksQuery, loading, error } = storeToRefs(store)
 const { profileCollections, profileMeta, loading: cLoading } = storeToRefs(collections)
+const { bookView, tableDetailed } = useBookView()
 
 /* ── Follow / unfollow (other readers' profiles only) ─────────────────── */
 const subscribed = ref(false)
@@ -296,15 +301,28 @@ async function onProfileSave(payload) {
 
         <!-- ── Books section (shelves) ────────────────────────────────── -->
         <template v-if="section === 'books'">
-          <SearchInput
-            :key="`${profile.id}-${shelf}`"
-            class="profile-search"
-            placeholder="Search by title, author or ISBN"
-            :loading="booksLoading"
-            @search="store.setBooksSearch"
-          />
+          <div class="profile-books-toolbar">
+            <SearchInput
+              :key="`${profile.id}-${shelf}`"
+              class="profile-search"
+              placeholder="Search by title, author or ISBN"
+              :loading="booksLoading"
+              @search="store.setBooksSearch"
+            />
+            <ViewToggle v-model="bookView" v-model:detailed="tableDetailed" />
+          </div>
 
-          <BookGridSkeleton v-if="booksLoading" :count="8" />
+          <template v-if="booksLoading">
+            <BookTableSkeleton v-if="bookView === 'table'" :count="8" :detailed="tableDetailed" />
+            <BookGridSkeleton v-else :count="8" />
+          </template>
+          <BookTable
+            v-else-if="books.length && bookView === 'table'"
+            :books="books"
+            :detailed="tableDetailed"
+            role="tabpanel"
+            @open="openDetail"
+          />
           <div v-else-if="books.length" class="book-grid" role="tabpanel">
             <BorrowBookCard
               v-for="book in books"
@@ -636,7 +654,13 @@ async function onProfileSave(payload) {
 .tab-btn--active .tab-count { background: var(--color-primary-fixed); color: var(--color-on-primary-fixed-variant); }
 
 /* ── Search ───────────────────────────────────────────────────────────── */
-.profile-search { margin-top: var(--space-sm); max-width: 420px; }
+.profile-books-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+.profile-search { flex: 1 1 auto; max-width: 420px; }
 
 /* ── Book grid ────────────────────────────────────────────────────────── */
 .book-grid {

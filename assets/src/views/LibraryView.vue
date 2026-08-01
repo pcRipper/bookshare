@@ -24,6 +24,10 @@ import CollectionEditModal from '@/components/collections/CollectionEditModal.vu
 import CollectionRequestCard from '@/components/collections/CollectionRequestCard.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
+import ViewToggle from '@/components/ui/ViewToggle.vue'
+import BookTable from '@/components/ui/BookTable.vue'
+import BookTableSkeleton from '@/components/ui/BookTableSkeleton.vue'
+import { useBookView } from '@/composables/useBookView'
 
 const store = useLibraryStore()
 const collections = useCollectionsStore()
@@ -39,6 +43,17 @@ const {
   loading: cLoading,
 } = storeToRefs(collections)
 const { following, followingMeta, loadingFollowing } = storeToRefs(subscriptions)
+const { bookView, tableDetailed } = useBookView()
+
+// Inline "mark as read" toggle from the table view; revert is handled in the
+// store, so just surface a failure as a toast.
+async function onToggleRead({ id, isRead }) {
+  try {
+    await store.setBookRead(id, isRead)
+  } catch (e) {
+    toast.error(apiErrorMessage(e, 'Could not update the book.'))
+  }
+}
 
 /* ── Tabs ─────────────────────────────────────────────────────────────── */
 const activeTab = ref('collection')
@@ -424,6 +439,13 @@ async function handleCCancel(id) {
               @search="store.setCollectionSearch"
             />
             <div class="collection-toolbar__actions">
+              <ViewToggle v-model="bookView" v-model:detailed="tableDetailed" />
+              <!-- The grid leads with an "add" placeholder card; the table has no
+                   such cell, so the affordance moves into the toolbar. -->
+              <button v-if="bookView === 'table'" class="toolbar-btn" type="button" @click="openCreate">
+                <span class="material-symbols-outlined">add</span>
+                Add Book
+              </button>
               <button class="toolbar-btn" type="button" @click="importOpen = true">
                 <span class="material-symbols-outlined">upload</span>
                 Import
@@ -436,12 +458,23 @@ async function handleCCancel(id) {
             </div>
           </div>
 
-          <BookGridSkeleton v-if="loading.collection && !collection.length" :count="8" class="collection-skeleton" />
+          <template v-if="loading.collection && !collection.length">
+            <BookTableSkeleton v-if="bookView === 'table'" :count="8" :detailed="tableDetailed" />
+            <BookGridSkeleton v-else :count="8" class="collection-skeleton" />
+          </template>
           <!-- No matches for an active search -->
           <div v-else-if="collectionQuery && !collection.length" class="empty-state">
             <span class="material-symbols-outlined empty-state__icon">search_off</span>
             <p class="empty-state__text">No books match “{{ collectionQuery }}”.</p>
           </div>
+          <BookTable
+            v-else-if="bookView === 'table'"
+            :books="collection"
+            :detailed="tableDetailed"
+            read-editable
+            @open="openEdit"
+            @toggle-read="onToggleRead"
+          />
           <div v-else class="book-grid">
             <!-- "Add new book" placeholder card, leading the grid (first page, and not while searching) -->
             <div v-if="collectionMeta.page === 1 && !collectionQuery" class="add-book-card" @click="openCreate" role="button" tabindex="0">

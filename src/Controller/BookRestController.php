@@ -18,6 +18,7 @@ use App\Security\Voter\BookVoter;
 use App\Service\BookCsvService;
 use App\Service\BookService;
 use App\Service\BookTemplate\BookTemplateSearch;
+use App\Service\ImageLocalizer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -41,6 +42,7 @@ class BookRestController extends AbstractController
         private readonly ResponseMapper $mapper,
         private readonly BookService $books,
         private readonly BookCsvService $csv,
+        private readonly ImageLocalizer $images,
         private readonly EntityManagerInterface $em,
     ) {}
 
@@ -233,6 +235,10 @@ class BookRestController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
+        // Download a remote cover to our own origin so it's served cached and
+        // never hotlinks a third-party CDN (best-effort; a failure keeps the URL).
+        $input->coverPath = $this->images->localize($input->coverPath, ImageLocalizer::COVERS);
+
         $book = $this->books->create($user, $input);
         $this->em->flush();
 
@@ -243,6 +249,8 @@ class BookRestController extends AbstractController
     public function update(Book $book, #[MapRequestPayload] BookInput $input): JsonResponse
     {
         $this->denyAccessUnlessGranted(BookVoter::EDIT, $book, self::lockedMessage($book));
+
+        $input->coverPath = $this->images->localize($input->coverPath, ImageLocalizer::COVERS);
 
         $this->books->update($book, $input);
         $this->em->flush();
