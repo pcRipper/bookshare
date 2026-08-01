@@ -60,7 +60,14 @@ class MeRestController extends AbstractController
         }
         if (in_array('avatarUrl', $present, true)) {
             $avatar = $input->avatarUrl !== null ? trim($input->avatarUrl) : null;
-            $user->setAvatarUrl($avatar === '' ? null : $avatar);
+            $avatar = $avatar === '' ? null : $avatar;
+            // A link pasted here is never localized, so it has no source URL of its
+            // own; drop the recorded one rather than let it outlive its image. An
+            // unchanged value (the form echoes the current avatar back) keeps it.
+            if ($avatar !== $user->getAvatarUrl()) {
+                $user->setAvatarSourceUrl(null);
+            }
+            $user->setAvatarUrl($avatar);
         }
         if (in_array('isPrivate', $present, true)) {
             $user->setIsPrivate((bool) $input->isPrivate);

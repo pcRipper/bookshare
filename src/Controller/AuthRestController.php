@@ -59,7 +59,11 @@ class AuthRestController extends AbstractController
             || $images->owns($current)
             || str_contains($current, 'googleusercontent.com');
         if ($isOurs && ($picture = $info['picture'] ?? null)) {
-            $user->setAvatarUrl($images->localize($picture, ImageLocalizer::AVATARS));
+            $localized = $images->localize($picture, ImageLocalizer::AVATARS);
+            // Keep the Google URL we downloaded from; null it when the fetch failed
+            // (localize() returned its argument, so the avatar *is* the remote URL).
+            $user->setAvatarUrl($localized)
+                ->setAvatarSourceUrl($localized !== $picture ? $picture : null);
         }
 
         $this->entityManager->flush();

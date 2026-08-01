@@ -21,10 +21,14 @@ class BookService
         private readonly ActivityRecorder $activity,
     ) {}
 
-    public function create(User $owner, BookInput $input): Book
+    /**
+     * $coverSourceUrl is the remote URL the cover was localized from, when it was —
+     * the controller resolves it; CSV import (which never localizes) passes none.
+     */
+    public function create(User $owner, BookInput $input, ?string $coverSourceUrl = null): Book
     {
         $book = (new Book())->setOwner($owner);
-        $this->applyInput($book, $input);
+        $this->applyInput($book, $input, $coverSourceUrl);
 
         $this->em->persist($book);
         $this->activity->record($owner, ActivityType::AddedBook, targetBook: $book);
@@ -32,9 +36,9 @@ class BookService
         return $book;
     }
 
-    public function update(Book $book, BookInput $input): void
+    public function update(Book $book, BookInput $input, ?string $coverSourceUrl = null): void
     {
-        $this->applyInput($book, $input);
+        $this->applyInput($book, $input, $coverSourceUrl);
     }
 
     public function delete(Book $book): void
@@ -42,14 +46,23 @@ class BookService
         $this->em->remove($book);
     }
 
-    private function applyInput(Book $book, BookInput $input): void
+    private function applyInput(Book $book, BookInput $input, ?string $coverSourceUrl = null): void
     {
+        $coverPath = $input->coverPath !== null && trim($input->coverPath) !== '' ? trim($input->coverPath) : null;
+
+        // Only re-point the recorded source when the cover itself moves. The edit
+        // modal round-trips the localized /uploads path, so an unrelated edit
+        // arrives with an unchanged path and no source — it must not erase the link.
+        if ($coverPath !== $book->getCoverPath()) {
+            $book->setCoverSourceUrl($coverSourceUrl);
+        }
+
         $book
             ->setTitle(trim($input->title))
             ->setAuthor(trim($input->author))
             ->setIsbn($input->isbn !== null && trim($input->isbn) !== '' ? trim($input->isbn) : null)
             ->setDescription($input->description !== null && trim($input->description) !== '' ? trim($input->description) : null)
-            ->setCoverPath($input->coverPath !== null && trim($input->coverPath) !== '' ? trim($input->coverPath) : null)
+            ->setCoverPath($coverPath)
             ->setStatus($input->status)
             ->setLanguage($input->language !== null && trim($input->language) !== '' ? trim($input->language) : null)
             ->setIsRead($input->isRead);

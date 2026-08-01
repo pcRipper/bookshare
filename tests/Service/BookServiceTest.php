@@ -124,6 +124,67 @@ class BookServiceTest extends TestCase
         self::assertCount(0, $book->getCategories());
     }
 
+    public function testCreateRecordsTheCoverSourceUrl(): void
+    {
+        $service = $this->service();
+
+        $input = $this->coverInput('/uploads/covers/a1b2.jpg');
+        $book = $service->create(new User(), $input, 'https://covers.example/8225261-L.jpg');
+
+        self::assertSame('/uploads/covers/a1b2.jpg', $book->getCoverPath());
+        self::assertSame('https://covers.example/8225261-L.jpg', $book->getCoverSourceUrl());
+    }
+
+    /** The edit modal round-trips the localized path, so an unrelated edit must keep the link. */
+    public function testUpdateKeepsTheSourceWhenTheCoverPathIsUnchanged(): void
+    {
+        $book = (new Book())->setOwner(new User())
+            ->setCoverPath('/uploads/covers/a1b2.jpg')
+            ->setCoverSourceUrl('https://covers.example/8225261-L.jpg');
+
+        $this->service()->update($book, $this->coverInput('/uploads/covers/a1b2.jpg'));
+
+        self::assertSame('https://covers.example/8225261-L.jpg', $book->getCoverSourceUrl());
+    }
+
+    public function testUpdateRepointsTheSourceWhenTheCoverChanges(): void
+    {
+        $book = (new Book())->setOwner(new User())
+            ->setCoverPath('/uploads/covers/a1b2.jpg')
+            ->setCoverSourceUrl('https://covers.example/old.jpg');
+
+        $service = $this->service();
+
+        // A new cover that localized: path and source move together.
+        $service->update($book, $this->coverInput('/uploads/covers/c3d4.jpg'), 'https://covers.example/new.jpg');
+        self::assertSame('https://covers.example/new.jpg', $book->getCoverSourceUrl());
+
+        // A cover that didn't localize (or was cleared): no source to record.
+        $service->update($book, $this->coverInput('https://covers.example/hotlink.jpg'));
+        self::assertNull($book->getCoverSourceUrl());
+    }
+
+    private function service(): BookService
+    {
+        $categories = $this->createStub(CategoryRepository::class);
+        $categories->method('findByIds')->willReturn([]);
+
+        $activity = $this->createStub(ActivityRecorder::class);
+        $activity->method('record')->willReturn(new ActivityItem());
+
+        return new BookService($this->createStub(EntityManagerInterface::class), $categories, $activity);
+    }
+
+    private function coverInput(?string $coverPath): BookInput
+    {
+        $input = new BookInput();
+        $input->title = 'Dune';
+        $input->author = 'Herbert';
+        $input->coverPath = $coverPath;
+
+        return $input;
+    }
+
     public function testDeleteRemovesTheBook(): void
     {
         $book = (new Book())->setOwner(new User());

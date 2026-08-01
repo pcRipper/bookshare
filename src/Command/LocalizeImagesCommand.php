@@ -58,7 +58,7 @@ class LocalizeImagesCommand extends Command
             'Book covers',
             $this->em->getRepository(Book::class)->findAll(),
             static fn (Book $b) => $b->getCoverPath(),
-            fn (Book $b, string $url) => $b->setCoverPath($url),
+            fn (Book $b, string $url, string $source) => $b->setCoverPath($url)->setCoverSourceUrl($source),
             ImageLocalizer::COVERS,
             $dryRun,
         );
@@ -68,7 +68,7 @@ class LocalizeImagesCommand extends Command
             'Avatars',
             $this->em->getRepository(User::class)->findAll(),
             static fn (User $u) => $u->getAvatarUrl(),
-            fn (User $u, string $url) => $u->setAvatarUrl($url),
+            fn (User $u, string $url, string $source) => $u->setAvatarUrl($url)->setAvatarSourceUrl($source),
             ImageLocalizer::AVATARS,
             $dryRun,
         );
@@ -85,7 +85,7 @@ class LocalizeImagesCommand extends Command
     /**
      * @param iterable<object>       $entities
      * @param callable(object):?string $get
-     * @param callable(object,string):mixed $set
+     * @param callable(object,string,string):mixed $set receives the localized URL and the remote one it replaced
      */
     private function process(
         SymfonyStyle $io,
@@ -120,7 +120,8 @@ class LocalizeImagesCommand extends Command
                 continue;
             }
 
-            $set($entity, $result);
+            // The fetch succeeded, so $url is the source this copy came from.
+            $set($entity, $result, $url);
             ++$localized;
 
             if (++$pending >= self::BATCH) {

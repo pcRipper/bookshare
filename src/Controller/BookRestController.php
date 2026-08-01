@@ -235,11 +235,7 @@ class BookRestController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        // Download a remote cover to our own origin so it's served cached and
-        // never hotlinks a third-party CDN (best-effort; a failure keeps the URL).
-        $input->coverPath = $this->images->localize($input->coverPath, ImageLocalizer::COVERS);
-
-        $book = $this->books->create($user, $input);
+        $book = $this->books->create($user, $input, $this->localizeCover($input));
         $this->em->flush();
 
         return $this->json($this->mapper->book($book), Response::HTTP_CREATED);
@@ -250,12 +246,25 @@ class BookRestController extends AbstractController
     {
         $this->denyAccessUnlessGranted(BookVoter::EDIT, $book, self::lockedMessage($book));
 
-        $input->coverPath = $this->images->localize($input->coverPath, ImageLocalizer::COVERS);
-
-        $this->books->update($book, $input);
+        $this->books->update($book, $input, $this->localizeCover($input));
         $this->em->flush();
 
         return $this->json($this->mapper->book($book));
+    }
+
+    /**
+     * Download a remote cover to our own origin so it's served cached and never
+     * hotlinks a third-party CDN (best-effort; a failure keeps the URL). Rewrites
+     * $input->coverPath in place and returns the URL it came from — but only when
+     * localization actually replaced it, since localize() hands back its argument
+     * unchanged for a failed fetch or a URL we already host.
+     */
+    private function localizeCover(BookInput $input): ?string
+    {
+        $original = $input->coverPath;
+        $input->coverPath = $this->images->localize($original, ImageLocalizer::COVERS);
+
+        return $input->coverPath !== $original ? $original : null;
     }
 
     #[Route('/{id}', methods: ['DELETE'], requirements: ['id' => '\d+'])]
