@@ -7,6 +7,13 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.14.0',
+    date: '2026-08-01',
+    notes: [
+      'Book covers you add from a template or a pasted link are now saved to FolioShare’s own servers, so they load faster, stay cached and don’t break if the original image host goes down.',
+    ],
+  },
+  {
     version: '1.13.0',
     date: '2026-07-25',
     notes: [
