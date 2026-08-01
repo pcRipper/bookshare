@@ -9,10 +9,27 @@ import DiscoverUserCard from '@/components/discover/DiscoverUserCard.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import LanguageSelect from '@/components/ui/LanguageSelect.vue'
 import Pagination from '@/components/ui/Pagination.vue'
+import ViewToggle from '@/components/ui/ViewToggle.vue'
+import BookTable from '@/components/ui/BookTable.vue'
+import { useBookView } from '@/composables/useBookView'
+import { useToastStore } from '@/stores/toast'
+import { apiErrorMessage } from '@/utils/apiError'
 import { resolveCategoryColors } from '@/utils/categoryColors'
 
 const store = useDiscoverStore()
+const toast = useToastStore()
 const { mode, books, booksMeta, accounts, accountsMeta, categories, loading, error, query, activeCategory, activeLanguage } = storeToRefs(store)
+const { bookView } = useBookView()
+
+// Inline "mark as read" toggle from the table view (only your own books carry
+// canEdit); the store reverts on failure, so just toast a failure.
+async function onToggleRead({ id, isRead }) {
+  try {
+    await store.setBookRead(id, isRead)
+  } catch (e) {
+    toast.error(apiErrorMessage(e, 'Could not update the book.'))
+  }
+}
 
 onMounted(store.init)
 
@@ -173,9 +190,12 @@ async function onToggleFollow(action, id) {
       <section class="discover-results">
         <div class="discover-results__header">
           <h2 class="discover-results__heading">{{ resultsHeading }}</h2>
-          <button v-if="hasFilters" class="discover-results__clear" @click="store.clearFilters()">
-            Clear filters
-          </button>
+          <div class="discover-results__actions">
+            <button v-if="hasFilters" class="discover-results__clear" @click="store.clearFilters()">
+              Clear filters
+            </button>
+            <ViewToggle v-if="!isAccounts" v-model="bookView" />
+          </div>
         </div>
 
         <!-- Loading -->
@@ -227,7 +247,13 @@ async function onToggleFollow(action, id) {
         <template v-else>
           <!-- Results grid -->
           <template v-if="books.length">
-            <div class="book-grid">
+            <BookTable
+              v-if="bookView === 'table'"
+              :books="books"
+              @open="openDetail"
+              @toggle-read="onToggleRead"
+            />
+            <div v-else class="book-grid">
               <DiscoverBookCard
                 v-for="book in books"
                 :key="book.id"
@@ -469,6 +495,11 @@ async function onToggleFollow(action, id) {
   margin: 0;
 }
 @media (min-width: 768px) { .discover-results__heading { font-size: var(--text-headline-lg); line-height: var(--lh-headline-lg); } }
+.discover-results__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
 .discover-results__clear {
   font-size: var(--text-label-md);
   font-weight: 500;
