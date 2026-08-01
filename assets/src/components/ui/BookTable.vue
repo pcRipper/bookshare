@@ -1,12 +1,26 @@
 <script setup>
 /**
  * Compact, scannable table view for a book list — the alternative to the card
- * grid. Shows only essential fields (cover, title, author, language, status)
- * plus a "read" checkbox. The checkbox is an inline toggle on books the viewer
- * can edit (own + home, per the server's `canEdit`) and a read-only indicator
- * otherwise. A row click opens the same modal the card does (borrow/edit live
- * there); clicking the checkbox never opens it.
+ * grid.
+ *
+ * Two densities: the default shows the essential fields (read, cover, title,
+ * author, language, status); `detailed` adds the rest of the record
+ * (categories, description, ISBN, holder, added date). `showOwner` adds the
+ * owner column, which only Discover needs — elsewhere every row shares one
+ * owner. Wide modes scroll horizontally rather than dropping columns, so no
+ * data silently disappears on a narrow screen.
+ *
+ * The read column is an inline toggle only where `readEditable` is set (the
+ * owner's own Library) and the server says the book is editable; everywhere
+ * else it's a static indicator, never a dead disabled control.
+ *
+ * A row click opens the same modal the card does (borrow/edit live there);
+ * clicking the read checkbox or the owner link never opens it.
  */
+import BaseAvatar from '@/components/ui/BaseAvatar.vue'
+import CategoryTag from '@/components/ui/CategoryTag.vue'
+import { relativeTime } from '@/utils/time'
+
 const STATUS_LABELS = {
   own: 'Available',
   lent: 'On Loan',
@@ -16,6 +30,12 @@ const STATUS_LABELS = {
 
 defineProps({
   books: { type: Array, required: true },
+  // Show the full record instead of only the essential columns.
+  detailed: { type: Boolean, default: false },
+  // Discover only: whose book is this?
+  showOwner: { type: Boolean, default: false },
+  // Allow ticking "read" inline (owner's own library; still gated on canEdit).
+  readEditable: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['open', 'toggle-read'])
@@ -23,80 +43,173 @@ const emit = defineEmits(['open', 'toggle-read'])
 function onToggle(book, e) {
   emit('toggle-read', { id: book.id, isRead: e.target.checked })
 }
+
+function absoluteDate(iso) {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })
+}
 </script>
 
 <template>
-  <table class="book-table">
-    <thead>
-      <tr>
-        <th class="book-table__col-read" scope="col">
-          <span class="material-symbols-outlined" title="Read">check_circle</span>
-        </th>
-        <th class="book-table__col-cover" scope="col"><span class="sr-only">Cover</span></th>
-        <th scope="col">Title</th>
-        <th class="book-table__col-lang" scope="col">Language</th>
-        <th class="book-table__col-status" scope="col">Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr
-        v-for="book in books"
-        :key="book.id"
-        class="book-table__row"
-        @click="emit('open', book)"
-      >
-        <!-- Read checkbox: editable where canEdit, else a read-only indicator. -->
-        <td class="book-table__col-read" @click.stop>
-          <input
-            type="checkbox"
-            class="book-table__check"
-            :checked="book.isRead"
-            :disabled="!book.canEdit"
-            :aria-label="`Mark “${book.title}” as read`"
-            @change="onToggle(book, $event)"
-          />
-        </td>
+  <!-- Scroll container: wide (detailed) tables and narrow screens pan sideways
+       instead of losing columns. -->
+  <div class="book-table__scroll">
+    <table class="book-table" :class="{ 'book-table--detailed': detailed }">
+      <thead>
+        <tr>
+          <th class="book-table__col-read" scope="col">Read</th>
+          <th class="book-table__col-cover" scope="col"><span class="sr-only">Cover</span></th>
+          <th class="book-table__col-title" scope="col">Title</th>
+          <template v-if="detailed">
+            <th class="book-table__col-categories" scope="col">Categories</th>
+            <th class="book-table__col-desc" scope="col">Description</th>
+            <th class="book-table__col-isbn" scope="col">ISBN</th>
+          </template>
+          <th class="book-table__col-lang" scope="col">Language</th>
+          <th class="book-table__col-status" scope="col">Status</th>
+          <th v-if="detailed" class="book-table__col-person" scope="col">Holder</th>
+          <th v-if="showOwner" class="book-table__col-person" scope="col">Owner</th>
+          <th v-if="detailed" class="book-table__col-added" scope="col">Added</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          v-for="book in books"
+          :key="book.id"
+          class="book-table__row"
+          @click="emit('open', book)"
+        >
+          <!-- Read: an inline toggle on your own editable books, a static
+               indicator anywhere else. -->
+          <td class="book-table__col-read" @click.stop>
+            <input
+              v-if="readEditable && book.canEdit"
+              type="checkbox"
+              class="book-table__check"
+              :checked="book.isRead"
+              :title="book.isRead ? 'Read — click to mark unread' : 'Not read yet — click to mark read'"
+              :aria-label="`Mark “${book.title}” as read`"
+              @change="onToggle(book, $event)"
+            />
+            <span
+              v-else
+              class="material-symbols-outlined book-table__read-icon"
+              :class="{ 'book-table__read-icon--on': book.isRead }"
+              :title="book.isRead ? 'Read' : 'Not read yet'"
+            >{{ book.isRead ? 'check_circle' : 'radio_button_unchecked' }}</span>
+          </td>
 
-        <td class="book-table__col-cover">
-          <img
-            v-if="book.coverPath"
-            :src="book.coverPath"
-            :alt="`Cover of ${book.title}`"
-            class="book-table__cover"
-            loading="lazy"
-          />
-          <span v-else class="book-table__cover book-table__cover--empty" aria-hidden="true">
-            <span class="material-symbols-outlined">menu_book</span>
-          </span>
-        </td>
+          <td class="book-table__col-cover">
+            <img
+              v-if="book.coverPath"
+              :src="book.coverPath"
+              :alt="`Cover of ${book.title}`"
+              class="book-table__cover"
+              loading="lazy"
+            />
+            <span v-else class="book-table__cover book-table__cover--empty" aria-hidden="true">
+              <span class="material-symbols-outlined">menu_book</span>
+            </span>
+          </td>
 
-        <td>
-          <span class="book-table__title">{{ book.title }}</span>
-          <span class="book-table__author">{{ book.author }}</span>
-        </td>
+          <td class="book-table__col-title">
+            <span class="book-table__title">{{ book.title }}</span>
+            <span class="book-table__author">{{ book.author }}</span>
+          </td>
 
-        <td class="book-table__col-lang">
-          <span v-if="book.languageName" class="book-table__lang">{{ book.languageName }}</span>
-          <span v-else class="book-table__muted">—</span>
-        </td>
+          <template v-if="detailed">
+            <td class="book-table__col-categories">
+              <span v-if="book.categories?.length" class="book-table__chips">
+                <CategoryTag
+                  v-for="c in book.categories"
+                  :key="c.id"
+                  :label="c.name"
+                  :color="c.colorHex"
+                />
+              </span>
+              <span v-else class="book-table__muted">—</span>
+            </td>
 
-        <td class="book-table__col-status">
-          <span class="book-table__status" :class="`book-table__status--${book.status}`">
-            {{ STATUS_LABELS[book.status] ?? book.status }}
-          </span>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+            <td class="book-table__col-desc">
+              <span v-if="book.description" class="book-table__desc" :title="book.description">
+                {{ book.description }}
+              </span>
+              <span v-else class="book-table__muted">—</span>
+            </td>
+
+            <td class="book-table__col-isbn">
+              <span v-if="book.isbn">{{ book.isbn }}</span>
+              <span v-else class="book-table__muted">—</span>
+            </td>
+          </template>
+
+          <td class="book-table__col-lang">
+            <span v-if="book.languageName" class="book-table__lang">{{ book.languageName }}</span>
+            <span v-else class="book-table__muted">—</span>
+          </td>
+
+          <td class="book-table__col-status">
+            <span class="book-table__status" :class="`book-table__status--${book.status}`">
+              {{ STATUS_LABELS[book.status] ?? book.status }}
+            </span>
+          </td>
+
+          <!-- Holder: only interesting once the book has left its shelf. -->
+          <td v-if="detailed" class="book-table__col-person">
+            <RouterLink
+              v-if="!book.isHome && book.currentHolder"
+              :to="`/profile/${book.currentHolder.id}`"
+              class="book-table__person"
+              @click.stop
+            >
+              <BaseAvatar :src="book.currentHolder.avatarUrl" :name="book.currentHolder.fullName" size="sm" />
+              <span class="book-table__person-name">{{ book.currentHolder.fullName }}</span>
+            </RouterLink>
+            <span v-else class="book-table__muted">—</span>
+          </td>
+
+          <td v-if="showOwner" class="book-table__col-person">
+            <RouterLink
+              v-if="book.owner"
+              :to="`/profile/${book.owner.id}`"
+              class="book-table__person"
+              @click.stop
+            >
+              <BaseAvatar :src="book.owner.avatarUrl" :name="book.owner.fullName" size="sm" />
+              <span class="book-table__person-name">{{ book.owner.fullName }}</span>
+            </RouterLink>
+            <span v-else class="book-table__muted">—</span>
+          </td>
+
+          <td v-if="detailed" class="book-table__col-added">
+            <span v-if="book.createdAt" :title="absoluteDate(book.createdAt)">
+              {{ relativeTime(book.createdAt) }}
+            </span>
+            <span v-else class="book-table__muted">—</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </template>
 
 <style scoped>
+.book-table__scroll {
+  overflow-x: auto;
+  /* Room for the focus ring / hover row edge while scrolling. */
+  margin-inline: calc(var(--space-xs) * -1);
+  padding-inline: var(--space-xs);
+}
+
 .book-table {
   width: 100%;
+  min-width: 520px;
   border-collapse: collapse;
   margin-top: var(--space-sm);
   font-size: var(--text-body-md);
 }
+/* The full record needs more room than a phone has — the wrapper scrolls. */
+.book-table--detailed { min-width: 1080px; }
 
 .book-table thead th {
   text-align: left;
@@ -109,10 +222,6 @@ function onToggle(book, e) {
   border-bottom: 1px solid var(--color-outline-variant);
   white-space: nowrap;
 }
-.book-table thead .book-table__col-read .material-symbols-outlined {
-  font-size: 18px;
-  vertical-align: middle;
-}
 
 .book-table__row {
   cursor: pointer;
@@ -122,15 +231,23 @@ function onToggle(book, e) {
 .book-table__row:hover { background: var(--color-surface-container-low); }
 .book-table__row td { padding: var(--space-sm); vertical-align: middle; }
 
-/* Read checkbox column */
-.book-table__col-read { width: 40px; text-align: center; }
+/* Read column */
+.book-table__col-read { width: 48px; text-align: center; }
 .book-table__check {
   width: 18px;
   height: 18px;
   accent-color: var(--color-primary);
   cursor: pointer;
 }
-.book-table__check:disabled { cursor: default; opacity: 0.85; }
+.book-table__read-icon {
+  font-size: 20px;
+  color: var(--color-outline);
+  vertical-align: middle;
+}
+.book-table__read-icon--on {
+  color: var(--color-primary);
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+}
 
 /* Cover column */
 .book-table__col-cover { width: 40px; }
@@ -155,6 +272,7 @@ function onToggle(book, e) {
 }
 
 /* Title + author stacked */
+.book-table__col-title { min-width: 180px; }
 .book-table__title {
   display: block;
   font-family: var(--font-display);
@@ -168,7 +286,51 @@ function onToggle(book, e) {
   color: var(--color-secondary);
 }
 
-.book-table__lang { color: var(--color-on-surface-variant); }
+/* Detailed columns */
+.book-table__col-categories { max-width: 220px; }
+.book-table__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+.book-table__col-desc { max-width: 280px; }
+.book-table__desc {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-on-surface-variant);
+}
+.book-table__col-isbn {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-on-surface-variant);
+}
+.book-table__col-added {
+  white-space: nowrap;
+  color: var(--color-on-surface-variant);
+}
+
+/* Person (owner / holder) */
+.book-table__col-person { max-width: 180px; }
+.book-table__person {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--color-secondary);
+  min-width: 0;
+}
+.book-table__person:hover .book-table__person-name { color: var(--color-primary); }
+.book-table__person-name {
+  font-size: var(--text-label-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.15s;
+}
+
+.book-table__lang { color: var(--color-on-surface-variant); white-space: nowrap; }
 .book-table__muted { color: var(--color-outline); }
 
 /* Status pill */
@@ -185,12 +347,6 @@ function onToggle(book, e) {
 .book-table__status--own { background: var(--color-primary-fixed); color: var(--color-on-primary-fixed-variant); }
 .book-table__status--lent { background: var(--color-primary); color: var(--color-on-primary); }
 .book-table__status--currently_reading { background: var(--color-tertiary); color: #fff; }
-
-/* Non-essential columns collapse on narrow screens. */
-@media (max-width: 599px) {
-  .book-table__col-lang,
-  .book-table__col-status { display: none; }
-}
 
 .sr-only {
   position: absolute;
