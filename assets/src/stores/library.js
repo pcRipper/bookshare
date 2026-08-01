@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/api'
 import { relativeTime } from '@/utils/time'
+import { toBookInput } from '@/utils/bookPayload'
 
 /**
  * Backs the Library page: profile + stats, the four tab datasets, and the
@@ -175,6 +176,22 @@ export const useLibraryStore = defineStore('library', () => {
     if (lending.value.length) await fetchLending()
   }
 
+  // Inline "mark as read" toggle from the table view. Optimistically flip the
+  // local flag, PATCH the whole DTO (the endpoint maps the full BookInput), and
+  // revert on failure so the checkbox reflects the true server state.
+  async function setBookRead(id, isRead) {
+    const book = collection.value.find(b => b.id === id) || lending.value.find(b => b.id === id)
+    if (!book) return
+    const prev = book.isRead
+    book.isRead = isRead
+    try {
+      await api.patch(`/books/${id}`, toBookInput({ ...book, isRead }))
+    } catch (e) {
+      book.isRead = prev
+      throw e
+    }
+  }
+
   async function deleteBook(id) {
     await api.delete(`/books/${id}`)
     await Promise.all([fetchCollection(), fetchMe()])
@@ -244,7 +261,7 @@ export const useLibraryStore = defineStore('library', () => {
     profile, stats, collection, collectionMeta, collectionQuery, lending, requests, history, historyMeta, borrowing, pendingBorrowing, borrowingHistory, borrowingHistoryMeta, categories, loading, error,
     fetchMe, fetchCollection, setCollectionSearch, fetchLending, fetchRequests, fetchHistory, fetchBorrowing, fetchPendingBorrowing, fetchBorrowingHistory, fetchCategories,
     searchCategories, createCategory, searchBookTemplates,
-    createBook, updateBook, deleteBook, exportBooks, importBooks,
+    createBook, updateBook, deleteBook, setBookRead, exportBooks, importBooks,
     approveRequest, declineRequest, confirmReturn, returnBook, cancelRequest,
   }
 })
