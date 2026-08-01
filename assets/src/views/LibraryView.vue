@@ -441,8 +441,15 @@ async function handleCCancel(id) {
             <div class="collection-toolbar__actions">
               <ViewToggle v-model="bookView" v-model:detailed="tableDetailed" />
               <!-- The grid leads with an "add" placeholder card; the table has no
-                   such cell, so the affordance moves into the toolbar. -->
-              <button v-if="bookView === 'table'" class="toolbar-btn" type="button" @click="openCreate">
+                   such cell, so the affordance moves into the toolbar (desktop
+                   only — mobile already has the FAB, and a fourth control here
+                   pushes Export off-screen). -->
+              <button
+                v-if="bookView === 'table'"
+                class="toolbar-btn toolbar-btn--add"
+                type="button"
+                @click="openCreate"
+              >
                 <span class="material-symbols-outlined">add</span>
                 Add Book
               </button>
@@ -1018,9 +1025,13 @@ async function handleCCancel(id) {
 .collection-toolbar__search { flex: 1 1 220px; min-width: 0; }
 .collection-toolbar__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-sm);
   flex-shrink: 0;
 }
+/* Mobile uses the floating action button instead, so hide the toolbar one —
+   same rule as .btn-add-book, and it keeps Export inside the viewport. */
+@media (max-width: 767px) { .toolbar-btn--add { display: none; } }
 .toolbar-btn {
   display: inline-flex;
   align-items: center;
