@@ -1029,9 +1029,6 @@ async function handleCCancel(id) {
   gap: var(--space-sm);
   flex-shrink: 0;
 }
-/* Mobile uses the floating action button instead, so hide the toolbar one —
-   same rule as .btn-add-book, and it keeps Export inside the viewport. */
-@media (max-width: 767px) { .toolbar-btn--add { display: none; } }
 .toolbar-btn {
   display: inline-flex;
   align-items: center;
@@ -1052,6 +1049,10 @@ async function handleCCancel(id) {
 }
 .toolbar-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .toolbar-btn .material-symbols-outlined { font-size: 18px; }
+/* Mobile uses the floating action button instead, so hide the toolbar one —
+   same rule as .btn-add-book, and it keeps Export inside the viewport.
+   Must come after the .toolbar-btn base rule: same specificity, later wins. */
+@media (max-width: 767px) { .toolbar-btn--add { display: none; } }
 
 /* ── Book grid ────────────────────────────────────────────────────────── */
 .book-grid {
