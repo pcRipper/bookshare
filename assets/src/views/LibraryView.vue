@@ -976,6 +976,25 @@ async function handleCCancel(id) {
 }
 .tab-nav::-webkit-scrollbar { display: none; }
 
+/* Seven tabs don't fit a phone, and a hidden scrollbar leaves nothing to say the
+   strip scrolls — Lending through History read as missing. Wrapping would cost
+   three rows, so keep the scroller and give it the cue it lacked: a shadow at
+   whichever edge has more tabs behind it, which retracts once you reach that
+   end. The `local` gradients are the page-coloured covers that hide each shadow
+   when there's nothing more to scroll to; the `scroll` ones are the shadows.
+   Tighter padding fits one more tab in the same width. */
+@media (max-width: 767px) {
+  .tab-nav {
+    background:
+      linear-gradient(to right, var(--color-background) 45%, transparent) left center / 36px 100% no-repeat local,
+      linear-gradient(to left, var(--color-background) 45%, transparent) right center / 36px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, rgba(35, 44, 51, 0.3), transparent) left center / 20px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, rgba(35, 44, 51, 0.3), transparent) right center / 20px 100% no-repeat scroll;
+    scroll-behavior: smooth;
+  }
+  .tab-btn { padding-inline: var(--space-sm); }
+}
+
 .tab-btn {
   display: inline-flex;
   align-items: center;
