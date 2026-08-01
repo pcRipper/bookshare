@@ -80,4 +80,33 @@ class CollectionRepository extends ServiceEntityRepository
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    /**
+     * The same counter for a whole page of owners in one grouped query — the
+     * Discover reader cards would otherwise run countByOwner() per card.
+     *
+     * @param  User[]         $owners
+     * @return array<int,int> owner id => count (owners with none are absent)
+     */
+    public function countByOwners(array $owners): array
+    {
+        if ($owners === []) {
+            return [];
+        }
+
+        $rows = $this->createQueryBuilder('c')
+            ->select('IDENTITY(c.owner) AS ownerId, COUNT(c.id) AS total')
+            ->where('c.owner IN (:owners)')
+            ->setParameter('owners', $owners)
+            ->groupBy('c.owner')
+            ->getQuery()
+            ->getScalarResult();
+
+        $counts = [];
+        foreach ($rows as $row) {
+            $counts[(int) $row['ownerId']] = (int) $row['total'];
+        }
+
+        return $counts;
+    }
 }

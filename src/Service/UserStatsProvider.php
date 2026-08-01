@@ -28,4 +28,33 @@ class UserStatsProvider
             'collections' => $this->collections->countByOwner($user),
         ];
     }
+
+    /**
+     * The same counters for a page of users, in four grouped queries instead of
+     * four per user. Used by the Discover "Accounts" list, which now renders a
+     * full page of reader cards on every visit rather than only after a search.
+     *
+     * @param  User[] $users
+     * @return array<int, array{totalBooks:int, shared:int, loaned:int, collections:int}> keyed by user id
+     */
+    public function forUsers(array $users): array
+    {
+        $totals      = $this->books->countByOwners($users);
+        $shared      = $this->books->countShareableByOwners($users);
+        $loaned      = $this->books->countByOwnersAndStatus($users, BookStatus::Lent);
+        $collections = $this->collections->countByOwners($users);
+
+        $stats = [];
+        foreach ($users as $user) {
+            $id = $user->getId();
+            $stats[$id] = [
+                'totalBooks'  => $totals[$id] ?? 0,
+                'shared'      => $shared[$id] ?? 0,
+                'loaned'      => $loaned[$id] ?? 0,
+                'collections' => $collections[$id] ?? 0,
+            ];
+        }
+
+        return $stats;
+    }
 }

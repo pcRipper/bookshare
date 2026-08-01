@@ -11,6 +11,7 @@ use App\Entity\User;
 use App\Enum\BookStatus;
 use App\Enum\RequestStatus;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -138,6 +139,65 @@ class BookRepository extends ServiceEntityRepository
     public function countByOwnerAndStatus(User $owner, BookStatus $status): int
     {
         return $this->count(['owner' => $owner, 'status' => $status]);
+    }
+
+    /**
+     * The per-owner variants of the three counters above, for a whole page of
+     * users at once: a Discover page of reader cards would otherwise fire three
+     * COUNTs per card. One grouped query each, keyed by owner id.
+     *
+     * @param  User[]         $owners
+     * @return array<int,int> owner id => count (owners with none are absent)
+     */
+    public function countByOwners(array $owners): array
+    {
+        return $this->groupedCountByOwners($owners);
+    }
+
+    /** @param User[] $owners @return array<int,int> */
+    public function countShareableByOwners(array $owners): array
+    {
+        return $this->groupedCountByOwners($owners, static function (QueryBuilder $qb): void {
+            $qb->andWhere('b.status != :unavailable')
+                ->setParameter('unavailable', BookStatus::Unavailable);
+        });
+    }
+
+    /** @param User[] $owners @return array<int,int> */
+    public function countByOwnersAndStatus(array $owners, BookStatus $status): array
+    {
+        return $this->groupedCountByOwners($owners, static function (QueryBuilder $qb) use ($status): void {
+            $qb->andWhere('b.status = :status')->setParameter('status', $status);
+        });
+    }
+
+    /**
+     * @param  User[]              $owners
+     * @param  ?callable(QueryBuilder):void $filter extra constraints on the counted books
+     * @return array<int,int>
+     */
+    private function groupedCountByOwners(array $owners, ?callable $filter = null): array
+    {
+        if ($owners === []) {
+            return [];
+        }
+
+        $qb = $this->createQueryBuilder('b')
+            ->select('IDENTITY(b.owner) AS ownerId, COUNT(b.id) AS total')
+            ->where('b.owner IN (:owners)')
+            ->setParameter('owners', $owners)
+            ->groupBy('b.owner');
+
+        if ($filter !== null) {
+            $filter($qb);
+        }
+
+        $counts = [];
+        foreach ($qb->getQuery()->getScalarResult() as $row) {
+            $counts[(int) $row['ownerId']] = (int) $row['total'];
+        }
+
+        return $counts;
     }
 
     /**
