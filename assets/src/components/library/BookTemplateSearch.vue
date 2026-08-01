@@ -3,6 +3,9 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useLibraryStore } from '@/stores/library'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
+import { useCoverFallback } from '@/composables/useCoverFallback'
+
+const { hasCover, onCoverError } = useCoverFallback()
 
 /**
  * "Find a template" panel for the Add New Book modal. A full-width search over
@@ -227,7 +230,12 @@ const showEmpty = computed(() =>
         <li v-for="(t, i) in results" :key="`${keyOf(t)}-${i}`">
           <button type="button" class="tpl__option" @click="emit('select', t)">
             <span class="tpl__cover">
-              <img v-if="t.coverPath" :src="t.coverPath" :alt="`Cover of ${t.title}`" />
+              <img
+                v-if="hasCover(t.coverPath)"
+                :src="t.coverPath"
+                :alt="`Cover of ${t.title}`"
+                @error="onCoverError(t.coverPath)"
+              />
               <span v-else class="material-symbols-outlined tpl__cover-icon">menu_book</span>
             </span>
             <span class="tpl__meta">

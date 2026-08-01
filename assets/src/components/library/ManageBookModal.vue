@@ -5,6 +5,9 @@ import BookTemplateSearch from '@/components/library/BookTemplateSearch.vue'
 import LanguageSelect from '@/components/ui/LanguageSelect.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import { useCoverFallback } from '@/composables/useCoverFallback'
+
+const { hasCover, onCoverError } = useCoverFallback()
 
 const props = defineProps({
   open:  { type: Boolean, default: false },
@@ -181,7 +184,12 @@ function applyTemplate(t) {
             <label class="field__label" for="mb-cover">Cover image URL</label>
             <div class="cover-row">
               <div class="cover-preview">
-                <img v-if="form.coverPath" :src="form.coverPath" alt="Cover preview" />
+                <img
+                  v-if="hasCover(form.coverPath)"
+                  :src="form.coverPath"
+                  alt="Cover preview"
+                  @error="onCoverError(form.coverPath)"
+                />
                 <span v-else class="material-symbols-outlined cover-preview__icon">menu_book</span>
               </div>
               <input

@@ -1,6 +1,9 @@
 <script setup>
 import { computed } from 'vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import { useCoverFallback } from '@/composables/useCoverFallback'
+
+const { hasCover, onCoverError } = useCoverFallback()
 
 const props = defineProps({
   book: {
@@ -51,10 +54,11 @@ function onAction() {
   <article class="borrow-card borrow-card--clickable" @click="onCardClick">
     <div class="borrow-card__cover">
       <img
-        v-if="book.coverPath"
+        v-if="hasCover(book)"
         :src="book.coverPath"
         :alt="`Cover of ${book.title}`"
         class="borrow-card__img"
+        @error="onCoverError(book.id)"
       />
       <div v-else class="borrow-card__placeholder" aria-hidden="true">
         <span class="material-symbols-outlined">menu_book</span>

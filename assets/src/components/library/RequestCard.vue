@@ -2,6 +2,9 @@
 import { ref, computed } from 'vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import { useCoverFallback } from '@/composables/useCoverFallback'
+
+const { hasCover, onCoverError } = useCoverFallback()
 
 const props = defineProps({
   request: {
@@ -65,9 +68,10 @@ function approve() {
     <div class="request-card__book">
       <div class="request-card__book-cover">
         <img
-          v-if="request.book.coverPath"
+          v-if="hasCover(request.book)"
           :src="request.book.coverPath"
           :alt="`Cover of ${request.book.title}`"
+          @error="onCoverError(request.book.id)"
         />
         <span v-else class="material-symbols-outlined">menu_book</span>
       </div>

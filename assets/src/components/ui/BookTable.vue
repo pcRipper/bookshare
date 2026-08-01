@@ -19,7 +19,10 @@
  */
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
+import { useCoverFallback } from '@/composables/useCoverFallback'
 import { relativeTime } from '@/utils/time'
+
+const { hasCover, onCoverError } = useCoverFallback()
 
 const STATUS_LABELS = {
   own: 'Available',
@@ -101,11 +104,12 @@ function absoluteDate(iso) {
 
           <td class="book-table__col-cover">
             <img
-              v-if="book.coverPath"
+              v-if="hasCover(book)"
               :src="book.coverPath"
               :alt="`Cover of ${book.title}`"
               class="book-table__cover"
               loading="lazy"
+              @error="onCoverError(book.id)"
             />
             <span v-else class="book-table__cover book-table__cover--empty" aria-hidden="true">
               <span class="material-symbols-outlined">menu_book</span>

@@ -5,6 +5,9 @@ import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
 import { useToastStore } from '@/stores/toast'
 import { apiErrorMessage } from '@/utils/apiError'
+import { useCoverFallback } from '@/composables/useCoverFallback'
+
+const { hasCover, onCoverError } = useCoverFallback()
 
 /**
  * Create or edit a collection: cover, name, description, and a two-pane book
@@ -162,7 +165,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             <span class="field__label">Cover image URL <span class="field__opt">(optional)</span></span>
             <div class="cover-row">
               <div class="cover-preview">
-                <img v-if="coverUrl" :src="coverUrl" alt="Cover preview" />
+                <img
+                  v-if="hasCover(coverUrl)"
+                  :src="coverUrl"
+                  alt="Cover preview"
+                  @error="onCoverError(coverUrl)"
+                />
                 <span v-else class="material-symbols-outlined cover-preview__icon">library_books</span>
               </div>
               <input v-model="coverUrl" class="field__input" type="url" maxlength="500" placeholder="https://…" :disabled="busy || readOnly" />
@@ -195,7 +203,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                   <span class="material-symbols-outlined">{{ readOnly ? 'check' : 'remove_circle' }}</span>
                 </span>
                 <div class="picker__cover">
-                  <img v-if="book.coverPath" :src="book.coverPath" :alt="`Cover of ${book.title}`" />
+                  <img
+                    v-if="hasCover(book)"
+                    :src="book.coverPath"
+                    :alt="`Cover of ${book.title}`"
+                    @error="onCoverError(book.id)"
+                  />
                   <span v-else class="material-symbols-outlined">menu_book</span>
                 </div>
                 <div class="picker__info">
@@ -236,7 +249,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                   <span class="material-symbols-outlined">add_circle</span>
                 </span>
                 <div class="picker__cover">
-                  <img v-if="book.coverPath" :src="book.coverPath" :alt="`Cover of ${book.title}`" />
+                  <img
+                    v-if="hasCover(book)"
+                    :src="book.coverPath"
+                    :alt="`Cover of ${book.title}`"
+                    @error="onCoverError(book.id)"
+                  />
                   <span v-else class="material-symbols-outlined">menu_book</span>
                 </div>
                 <div class="picker__info">

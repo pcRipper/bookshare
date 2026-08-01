@@ -2,6 +2,9 @@
 import { computed } from 'vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import { useCoverFallback } from '@/composables/useCoverFallback'
+
+const { hasCover, onCoverError } = useCoverFallback()
 
 const props = defineProps({
   loan: {
@@ -40,11 +43,12 @@ function onReturn() {
   <article class="borrowing-card">
     <div class="borrowing-card__cover">
       <img
-        v-if="book.coverPath"
+        v-if="hasCover(book)"
         :src="book.coverPath"
         :alt="`Cover of ${book.title}`"
         class="borrowing-card__img"
         loading="lazy"
+        @error="onCoverError(book.id)"
       />
       <div v-else class="borrowing-card__placeholder" aria-hidden="true">
         <span class="material-symbols-outlined">menu_book</span>

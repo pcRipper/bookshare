@@ -3,6 +3,9 @@ import { ref, computed } from 'vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import RequestTimeline from '@/components/library/RequestTimeline.vue'
+import { useCoverFallback } from '@/composables/useCoverFallback'
+
+const { hasCover, onCoverError } = useCoverFallback()
 
 /**
  * A grouped collection-borrow request, badged "Collection" so it never reads as
@@ -92,7 +95,13 @@ const statusLabel = computed(() => STATUS_LABELS[req.value.status] ?? req.value.
     <ul class="cr-card__book-list">
       <li v-for="book in books" :key="book.id" class="cr-card__book">
         <span class="cr-card__book-cover" aria-hidden="true">
-          <img v-if="book.coverPath" :src="book.coverPath" :alt="`Cover of ${book.title}`" loading="lazy" />
+          <img
+            v-if="hasCover(book)"
+            :src="book.coverPath"
+            :alt="`Cover of ${book.title}`"
+            loading="lazy"
+            @error="onCoverError(book.id)"
+          />
           <span v-else class="material-symbols-outlined">menu_book</span>
         </span>
         <span class="cr-card__book-text">

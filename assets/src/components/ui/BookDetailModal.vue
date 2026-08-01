@@ -3,6 +3,7 @@ import { computed, onMounted, onBeforeUnmount } from 'vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
+import { useCoverFallback } from '@/composables/useCoverFallback'
 
 /**
  * Read-only book overview. Opens from browse surfaces (Discover, the Following
@@ -23,6 +24,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'request'])
+
+const { hasCover, onCoverError } = useCoverFallback()
 
 const hasDescription = computed(() => !!props.book?.description?.trim())
 
@@ -74,10 +77,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
           <!-- Cover -->
           <div class="modal__cover">
             <img
-              v-if="book.coverPath"
+              v-if="hasCover(book)"
               :src="book.coverPath"
               :alt="`Cover of ${book.title}`"
               class="modal__cover-img"
+              @error="onCoverError(book.id)"
             />
             <div v-else class="modal__cover-placeholder" aria-hidden="true">
               <span class="material-symbols-outlined">menu_book</span>

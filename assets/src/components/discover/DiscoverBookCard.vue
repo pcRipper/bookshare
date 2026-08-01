@@ -3,6 +3,9 @@ import { computed } from 'vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
+import { useCoverFallback } from '@/composables/useCoverFallback'
+
+const { hasCover, onCoverError } = useCoverFallback()
 
 const props = defineProps({
   book: {
@@ -37,11 +40,12 @@ function onAction() {
   <article class="discover-card discover-card--clickable" @click="emit('open', book)">
     <div class="discover-card__cover">
       <img
-        v-if="book.coverPath"
+        v-if="hasCover(book)"
         :src="book.coverPath"
         :alt="`Cover of ${book.title}`"
         class="discover-card__img"
         loading="lazy"
+        @error="onCoverError(book.id)"
       />
       <div v-else class="discover-card__placeholder" aria-hidden="true">
         <span class="material-symbols-outlined">menu_book</span>

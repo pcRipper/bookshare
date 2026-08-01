@@ -1,6 +1,9 @@
 <script setup>
 import { computed } from 'vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
+import { useCoverFallback } from '@/composables/useCoverFallback'
+
+const { hasCover, onCoverError } = useCoverFallback()
 
 const props = defineProps({
   book: {
@@ -27,10 +30,11 @@ const statusBadge = computed(() => {
     <!-- Cover -->
     <div class="book-card__cover">
       <img
-        v-if="book.coverPath"
+        v-if="hasCover(book)"
         :src="book.coverPath"
         :alt="`Cover of ${book.title}`"
         class="book-card__img"
+        @error="onCoverError(book.id)"
       />
       <div v-else class="book-card__placeholder" aria-hidden="true">
         <span class="material-symbols-outlined book-card__placeholder-icon">menu_book</span>

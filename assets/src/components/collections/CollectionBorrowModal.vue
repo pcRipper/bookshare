@@ -2,6 +2,9 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import { useCoverFallback } from '@/composables/useCoverFallback'
+
+const { hasCover, onCoverError } = useCoverFallback()
 
 /**
  * Read-only collection preview that doubles as the borrow dialog — the collection
@@ -85,10 +88,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
           <!-- Cover -->
           <div class="modal__cover">
             <img
-              v-if="collection.coverUrl"
+              v-if="hasCover(collection)"
               :src="collection.coverUrl"
               :alt="`Cover of ${collection.name}`"
               class="modal__cover-img"
+              @error="onCoverError(collection.id)"
             />
             <div v-else class="modal__cover-placeholder" aria-hidden="true">
               <span class="material-symbols-outlined">library_books</span>
@@ -146,7 +150,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                 </span>
 
                 <div class="book-row__cover">
-                  <img v-if="book.coverPath" :src="book.coverPath" :alt="`Cover of ${book.title}`" />
+                  <img
+                    v-if="hasCover(book)"
+                    :src="book.coverPath"
+                    :alt="`Cover of ${book.title}`"
+                    @error="onCoverError(book.id)"
+                  />
                   <span v-else class="material-symbols-outlined">menu_book</span>
                 </div>
 
