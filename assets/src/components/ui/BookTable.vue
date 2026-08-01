@@ -316,7 +316,10 @@ function absoluteDate(iso) {
 }
 
 /* Person (owner / holder) */
-.book-table__col-person { max-width: 180px; }
+/* min-width matters as much as max: the table is allowed to outgrow its scroll
+   container, so without a floor the browser squeezes this column and ellipsis
+   turns a name into "Mal" instead of scrolling. */
+.book-table__col-person { min-width: 128px; max-width: 180px; }
 .book-table__person {
   display: inline-flex;
   align-items: center;
