@@ -3,8 +3,8 @@
 namespace App\Controller;
 
 use App\Repository\UserRepository;
-use App\Service\AvatarLocalizer;
 use App\Service\GoogleAuthService;
+use App\Service\ImageLocalizer;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -30,7 +30,7 @@ class AuthRestController extends AbstractController
         Request $request,
         GoogleAuthService $google,
         UserRepository $users,
-        AvatarLocalizer $avatars,
+        ImageLocalizer $images,
         JWTTokenManagerInterface $jwt,
     ): JsonResponse {
         $code = $request->toArray()['code'] ?? null;
@@ -56,10 +56,10 @@ class AuthRestController extends AbstractController
         // legacy Google URL — never an external URL the user pasted in Settings.
         $current = $user->getAvatarUrl();
         $isOurs = $current === null || $current === ''
-            || str_starts_with($current, AvatarLocalizer::PUBLIC_PREFIX)
+            || $images->owns($current)
             || str_contains($current, 'googleusercontent.com');
         if ($isOurs && ($picture = $info['picture'] ?? null)) {
-            $user->setAvatarUrl($avatars->localize($picture));
+            $user->setAvatarUrl($images->localize($picture, ImageLocalizer::AVATARS));
         }
 
         $this->entityManager->flush();

@@ -24,6 +24,11 @@ services:
     App\:
         resource: '../src/'
 
+    # Where localized images (avatars, covers) are persisted. Local disk today;
+    # repoint this alias at a DO Spaces / S3 implementation to swap the backend
+    # without touching ImageLocalizer.
+    App\Service\Storage\ImageStorage: '@App\Service\Storage\LocalImageStorage'
+
     App\Service\GoogleAuthService:
         arguments:
             $clientId: '%env(GOOGLE_CLIENT_ID)%'
