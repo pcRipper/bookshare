@@ -10,13 +10,16 @@ use App\Language\LanguageCatalog;
 use App\Repository\BookRepository;
 use App\Repository\CategoryRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\UrlHelper;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * CSV export / import for a user's book collection.
  *
  * The CSV carries one book per row with the columns: title, author, description,
- * isbn, cover, language (ISO 639-1 code), status, categories (semicolon-joined names).
+ * isbn, cover, language (ISO 639-1 code), status, read, categories (semicolon-joined
+ * names). `cover` exports the remote URL the image came from rather than our
+ * localized copy of it (see coverLink()).
  *
  * Import is parameterised by two independent choices:
  *  - replace:  wipe the user's existing (home) books first, vs. append.
@@ -51,6 +54,7 @@ class BookCsvService
         private readonly CategoryRepository $categories,
         private readonly EntityManagerInterface $em,
         private readonly ValidatorInterface $validator,
+        private readonly UrlHelper $urls,
     ) {}
 
     /**
@@ -69,7 +73,7 @@ class BookCsvService
                 $book->getAuthor(),
                 $book->getDescription() ?? '',
                 $book->getIsbn() ?? '',
-                $book->getCoverPath() ?? '',
+                $this->coverLink($book),
                 $book->getLanguage() ?? '',
                 $book->getStatus()->value,
                 $book->isRead() ? '1' : '0',
@@ -82,6 +86,20 @@ class BookCsvService
         fclose($handle);
 
         return $csv;
+    }
+
+    /**
+     * The cover cell: the URL the owner supplied, when we recorded it before
+     * localizing. Books localized before that column existed (and books whose
+     * cover was never remote) fall back to the stored path, absolutized — a CSV
+     * leaving the site should carry links that resolve anywhere, not /uploads/…
+     * getAbsoluteUrl() leaves an already-absolute source URL untouched.
+     */
+    private function coverLink(Book $book): string
+    {
+        $cover = $book->getCoverSourceUrl() ?? $book->getCoverPath();
+
+        return $cover !== null ? $this->urls->getAbsoluteUrl($cover) : '';
     }
 
     /**

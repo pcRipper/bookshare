@@ -14,6 +14,9 @@ use App\Service\BookCsvService;
 use App\Service\BookService;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\UrlHelper;
 use Symfony\Component\Validator\Validation;
 
 class BookCsvServiceTest extends TestCase
@@ -37,7 +40,16 @@ class BookCsvServiceTest extends TestCase
         $books = new BookService($em, $categories, $recorder);
         $validator = Validation::createValidatorBuilder()->enableAttributeMapping()->getValidator();
 
-        return new BookCsvService($books, $bookRepo, $categories, $em, $validator);
+        return new BookCsvService($books, $bookRepo, $categories, $em, $validator, $this->urlHelper());
+    }
+
+    /** UrlHelper is final, so it's built for real over a request instead of stubbed. */
+    private function urlHelper(): UrlHelper
+    {
+        $stack = new RequestStack();
+        $stack->push(Request::create('https://folioshare.test/api/books/export'));
+
+        return new UrlHelper($stack);
     }
 
     /** Stamp an id onto an entity (DB normally does this) so it survives validation. */
@@ -64,6 +76,37 @@ class BookCsvServiceTest extends TestCase
         self::assertStringContainsString('/covers/dune.jpg', $lines[1]);
         self::assertStringContainsString('en', $lines[1]);
         self::assertStringContainsString('Sci-Fi', $lines[1]);
+    }
+
+    public function testExportPrefersTheRecordedSourceUrlOverTheLocalizedCopy(): void
+    {
+        $book = (new Book())->setOwner(new User())->setTitle('Dune')->setAuthor('Herbert')
+            ->setCoverPath('/uploads/covers/a1b2c3d4.jpg')
+            ->setCoverSourceUrl('https://covers.openlibrary.org/b/id/8225261-L.jpg');
+
+        $row = preg_split('/\r\n|\n/', trim($this->service()->export([$book])))[1];
+
+        self::assertStringContainsString('https://covers.openlibrary.org/b/id/8225261-L.jpg', $row);
+        self::assertStringNotContainsString('/uploads/covers/a1b2c3d4.jpg', $row);
+    }
+
+    public function testExportAbsolutizesALocalCoverWhenNoSourceWasRecorded(): void
+    {
+        $book = (new Book())->setOwner(new User())->setTitle('Dune')->setAuthor('Herbert')
+            ->setCoverPath('/uploads/covers/a1b2c3d4.jpg');
+
+        $row = preg_split('/\r\n|\n/', trim($this->service()->export([$book])))[1];
+
+        self::assertStringContainsString('https://folioshare.test/uploads/covers/a1b2c3d4.jpg', $row);
+    }
+
+    public function testExportLeavesTheCoverCellEmptyWhenThereIsNoCover(): void
+    {
+        $book = (new Book())->setOwner(new User())->setTitle('Dune')->setAuthor('Herbert');
+
+        $row = preg_split('/\r\n|\n/', trim($this->service()->export([$book])))[1];
+
+        self::assertSame('Dune,Herbert,,,,,own,0,', $row);
     }
 
     public function testImportSetsCoverFromCoverColumn(): void
