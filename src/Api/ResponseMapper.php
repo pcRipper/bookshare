@@ -69,6 +69,8 @@ class ResponseMapper
             'languageName' => \App\Language\LanguageCatalog::name($book->getLanguage()),
             // Owner's personal "already read" flag.
             'isRead'       => $book->isRead(),
+            // When the book was catalogued — shown as the table view's "Added" column.
+            'createdAt'    => $book->getCreatedAt()->format(\DateTimeInterface::ATOM),
             // Who currently holds the book — owner while home, borrower while lent.
             'currentHolder' => $this->userSummary($book->getCurrentHolder()),
             'isHome'        => $book->isHome(),

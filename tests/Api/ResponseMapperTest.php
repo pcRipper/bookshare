@@ -60,6 +60,18 @@ class ResponseMapperTest extends TestCase
         self::assertTrue($this->mapper()->book($read)['isRead']);
     }
 
+    public function testBookCreatedAtIsEmittedInAtomFormat(): void
+    {
+        $book = (new Book())->setOwner((new User())->setFullName('Jane'))->setTitle('T')->setAuthor('A');
+
+        $data = $this->mapper()->book($book);
+
+        self::assertSame(
+            $book->getCreatedAt()->format(\DateTimeInterface::ATOM),
+            $data['createdAt'],
+        );
+    }
+
     public function testBookLanguageIsEmittedAsCodeAndName(): void
     {
         $book = (new Book())->setOwner((new User())->setFullName('Jane'))
