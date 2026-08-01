@@ -1,6 +1,9 @@
 <script setup>
 import { computed } from 'vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import { useCoverFallback } from '@/composables/useCoverFallback'
+
+const { hasCover, onCoverError } = useCoverFallback()
 
 /**
  * A book collection card. Two variants:
@@ -50,11 +53,12 @@ function onCardClick() {
   <article class="collection-card collection-card--clickable" @click="onCardClick">
     <div class="collection-card__cover">
       <img
-        v-if="collection.coverUrl"
+        v-if="hasCover(collection)"
         :src="collection.coverUrl"
         :alt="`Cover of ${collection.name}`"
         class="collection-card__img"
         loading="lazy"
+        @error="onCoverError(collection.id)"
       />
       <div v-else class="collection-card__motif" aria-hidden="true">
         <div v-if="previewCovers.length" class="collection-card__stack">
@@ -70,9 +74,11 @@ function onCardClick() {
         <span v-else class="material-symbols-outlined collection-card__motif-icon">library_books</span>
       </div>
 
-      <!-- Always mark it as a collection. -->
+      <!-- Always mark it as a collection. On a phone the label folds away and the
+           icon carries the meaning — see the badge styles for why. -->
       <span class="collection-card__badge">
-        <span class="material-symbols-outlined">library_books</span>Collection
+        <span class="material-symbols-outlined">library_books</span>
+        <span class="collection-card__badge-label">Collection</span>
       </span>
 
       <!-- Owner: frozen while out on loan. -->
@@ -179,6 +185,16 @@ function onCardClick() {
   box-shadow: 0 1px 4px rgba(35, 44, 51, 0.18);
 }
 .collection-card__badge .material-symbols-outlined { font-size: 13px; }
+
+/* Both badges are absolutely pinned to opposite corners and neither shrinks, so
+   in the 2-column phone grid (~155px of cover) an on-loan collection had them
+   collide and the card's overflow clipped this one to "COLLEC". Below the 2-col
+   breakpoint the label folds away; the icon still marks it as a collection, and
+   "On loan" — the state, not the type — keeps its words. */
+@media (max-width: 599px) {
+  .collection-card__badge { padding: 3px 7px; }
+  .collection-card__badge-label { display: none; }
+}
 
 .collection-card__status {
   position: absolute;
