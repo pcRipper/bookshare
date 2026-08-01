@@ -12,6 +12,8 @@ export const CHANGELOG = [
     notes: [
       'Discover’s Readers tab no longer waits for you to type: it now lists community members, newest first, so you can browse and follow people without knowing their name in advance. Searching still works exactly as before.',
       'CSV exports now carry the cover links you actually provided, instead of FolioShare’s internal image paths. Covers saved before this change export as full links to our copy, so every row stays usable outside the site.',
+      'On a phone your library’s tabs now show a shadow at the edge when there are more of them off-screen — Lending, Requests, Following and History no longer look like they’re missing.',
+      'A collection that’s out on loan keeps both of its badges readable on a narrow screen, and a book whose cover image can’t be loaded falls back to the placeholder icon instead of showing the image’s description text.',
     ],
   },
   {
