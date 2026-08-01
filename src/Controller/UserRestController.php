@@ -28,8 +28,9 @@ class UserRestController extends AbstractController
     ) {}
 
     /**
-     * Discover "Accounts" search: public members matching a name query. Empty
-     * query returns [] (the SPA prompts to search rather than listing everyone).
+     * Discover "Accounts": public members, optionally filtered by a name query.
+     * A blank query browses the membership newest-first instead of returning
+     * nothing, mirroring the books feed.
      * Declared before show() so the literal path wins over the /{id} pattern.
      */
     #[Route('/discover', methods: ['GET'])]
@@ -41,13 +42,8 @@ class UserRestController extends AbstractController
         $pagination = Pagination::fromRequest($request, self::DISCOVER_PER_PAGE);
 
         $q = trim((string) $request->query->get('q', ''));
-        if ($q === '') {
-            // The SPA prompts to search rather than listing everyone — return an
-            // empty page so the response shape stays consistent with a real search.
-            return $this->json($this->mapper->paginated([], 0, $pagination, static fn ($u) => $u));
-        }
 
-        $result = $users->findPublicForDiscoverPaginated($viewer, $q, $pagination);
+        $result = $users->findPublicForDiscoverPaginated($viewer, $q !== '' ? $q : null, $pagination);
 
         // Resolve the viewer's follow state for the whole result set in one query
         // instead of an isSubscribed() probe per row.
@@ -57,13 +53,16 @@ class UserRestController extends AbstractController
             $followedIds[$subscription->getSubscribedTo()->getId()] = true;
         }
 
+        // Likewise the stat counters: four grouped queries for the page, not four per card.
+        $stats = $this->stats->forUsers($result->items);
+
         return $this->json($this->mapper->paginated(
             $result->items,
             $result->total,
             $pagination,
             fn (User $u) => $this->mapper->userCard(
                 $u,
-                $this->stats->forUser($u),
+                $stats[$u->getId()],
                 isset($followedIds[$u->getId()]),
             ),
         ));

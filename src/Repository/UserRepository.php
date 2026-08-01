@@ -44,26 +44,12 @@ class UserRepository extends ServiceEntityRepository
     }
 
     /**
-     * Public members matching a free-text name query, for the Discover "Accounts"
-     * search: other users (never the viewer) whose profile is public, name a
-     * case-insensitive substring of the query. Alphabetical, capped.
-     *
-     * @return User[]
-     */
-    public function findPublicForDiscover(User $viewer, string $query, int $limit = 20): array
-    {
-        return $this->discoverQuery($viewer, $query)
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
-    }
-
-    /**
-     * One page of Discover "Accounts" matches, with the total matching count.
+     * One page of Discover "Accounts" readers, with the total matching count.
+     * A null/blank query browses instead of searching (see discoverQuery).
      *
      * @return PaginatedResult<User>
      */
-    public function findPublicForDiscoverPaginated(User $viewer, string $query, Pagination $pagination): PaginatedResult
+    public function findPublicForDiscoverPaginated(User $viewer, ?string $query, Pagination $pagination): PaginatedResult
     {
         $query = $this->discoverQuery($viewer, $query)
             ->setFirstResult($pagination->offset())
@@ -75,13 +61,27 @@ class UserRepository extends ServiceEntityRepository
         return new PaginatedResult(iterator_to_array($paginator), \count($paginator));
     }
 
-    private function discoverQuery(User $viewer, string $query): \Doctrine\ORM\QueryBuilder
+    /**
+     * Other users (never the viewer) whose profile is public. With a query it is a
+     * case-insensitive substring search on the name, ordered alphabetically; with a
+     * blank one it browses the whole public membership newest-first, mirroring the
+     * books feed (BookRepository::findForDiscover) so the tab isn't empty by default.
+     */
+    private function discoverQuery(User $viewer, ?string $query): \Doctrine\ORM\QueryBuilder
     {
-        return $this->createQueryBuilder('u')
+        $qb = $this->createQueryBuilder('u')
             ->where('u.id != :viewer')
             ->andWhere('u.isPrivate = false')
+            ->setParameter('viewer', $viewer->getId());
+
+        if ($query === null || $query === '') {
+            // id breaks ties so paging stays stable when several members were
+            // created in the same instant (fixtures, bulk imports).
+            return $qb->orderBy('u.createdAt', 'DESC')->addOrderBy('u.id', 'DESC');
+        }
+
+        return $qb
             ->andWhere('LOWER(u.fullName) LIKE :q')
-            ->setParameter('viewer', $viewer->getId())
             ->setParameter('q', '%' . $this->escapeLike(mb_strtolower($query)) . '%')
             ->orderBy('u.fullName', 'ASC');
     }
