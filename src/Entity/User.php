@@ -27,6 +27,14 @@ class User implements UserInterface
     #[ORM\Column(length: 500, nullable: true)]
     private ?string $avatarUrl = null;
 
+    /**
+     * The remote URL $avatarUrl was downloaded from (a Google profile photo), kept
+     * so the original is never lost to localization. Null whenever $avatarUrl is
+     * not a localized copy — a link pasted in Settings, a failed fetch, or no avatar.
+     */
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $avatarSourceUrl = null;
+
     #[ORM\Column(length: 300, nullable: true)]
     private ?string $bio = null;
 
@@ -70,6 +78,9 @@ class User implements UserInterface
 
     public function getAvatarUrl(): ?string { return $this->avatarUrl; }
     public function setAvatarUrl(?string $avatarUrl): static { $this->avatarUrl = $avatarUrl; return $this; }
+
+    public function getAvatarSourceUrl(): ?string { return $this->avatarSourceUrl; }
+    public function setAvatarSourceUrl(?string $avatarSourceUrl): static { $this->avatarSourceUrl = $avatarSourceUrl; return $this; }
 
     public function getBio(): ?string { return $this->bio; }
     public function setBio(?string $bio): static { $this->bio = $bio; return $this; }

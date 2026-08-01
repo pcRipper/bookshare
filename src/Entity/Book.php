@@ -32,6 +32,15 @@ class Book
     #[ORM\Column(length: 500, nullable: true)]
     private ?string $coverPath = null;
 
+    /**
+     * The remote URL $coverPath was downloaded from, kept so exports can hand back
+     * the link the owner actually supplied instead of our internal /uploads path.
+     * Null whenever $coverPath is not a localized copy — never localized, the fetch
+     * failed (the remote URL is then the path itself), or there is no cover.
+     */
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $coverSourceUrl = null;
+
     #[ORM\Column(enumType: BookStatus::class)]
     private BookStatus $status = BookStatus::Own;
 
@@ -87,6 +96,9 @@ class Book
 
     public function getCoverPath(): ?string { return $this->coverPath; }
     public function setCoverPath(?string $coverPath): static { $this->coverPath = $coverPath; return $this; }
+
+    public function getCoverSourceUrl(): ?string { return $this->coverSourceUrl; }
+    public function setCoverSourceUrl(?string $coverSourceUrl): static { $this->coverSourceUrl = $coverSourceUrl; return $this; }
 
     public function getStatus(): BookStatus { return $this->status; }
     public function setStatus(BookStatus $status): static { $this->status = $status; return $this; }
