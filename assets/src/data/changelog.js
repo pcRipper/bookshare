@@ -7,6 +7,16 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.15.1',
+    date: '2026-08-01',
+    notes: [
+      'The table view has a new “all columns” switch: expand any list to the full record — categories, description, ISBN, who’s holding the book and when you added it — and collapse it back to the essentials.',
+      'Discover’s table now shows who owns each book, so you can tell whose shelf you’re browsing without opening it.',
+      'On a phone the table scrolls sideways instead of quietly hiding the language and status columns — nothing is left out any more.',
+      'The read column is labelled, and on books that aren’t yours it shows as a plain marker rather than a checkbox you can’t use.',
+    ],
+  },
+  {
     version: '1.15.0',
     date: '2026-08-01',
     notes: [
