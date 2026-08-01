@@ -6,13 +6,15 @@ import api from '@/api'
  * Backs the Discover page (`/discover`). The search surface has two modes:
  *  - 'books'    — shareable books from other public members (filter by query/category),
  *                 with a "request to borrow" action.
- *  - 'accounts' — other public members by name, with an inline follow/unfollow action.
+ *  - 'accounts' — other public members (newest first, or filtered by name), with an
+ *                 inline follow/unfollow action.
  * The category pills are books-only. The free-text query is shared across modes.
  */
 export const useDiscoverStore = defineStore('discover', () => {
   const mode = ref('books') // 'books' | 'accounts'
 
-  const emptyMeta = () => ({ page: 1, perPage: 24, total: 0, totalPages: 1 })
+  // Matches the server's envelope for an empty result (totalPages = ceil(0/perPage)).
+  const emptyMeta = () => ({ page: 1, perPage: 24, total: 0, totalPages: 0 })
 
   const books = ref([])
   const booksMeta = ref(emptyMeta())
@@ -62,18 +64,13 @@ export const useDiscoverStore = defineStore('discover', () => {
 
   async function fetchAccounts(page = 1) {
     const token = ++reqToken
-    // Prompt-to-search: with an empty box we don't list every public reader.
-    if (!query.value.trim()) {
-      accounts.value = []
-      accountsMeta.value = emptyMeta()
-      loading.value = false
-      error.value = null
-      return
-    }
     loading.value = true
     error.value = null
     try {
-      const { data } = await api.get('/users/discover', { params: { q: query.value.trim(), page } })
+      // Like books: no query just browses the membership (newest members first).
+      const params = { page }
+      if (query.value.trim()) params.q = query.value.trim()
+      const { data } = await api.get('/users/discover', { params })
       if (token === reqToken) {
         accounts.value = data.items
         accountsMeta.value = data.pagination
@@ -91,7 +88,7 @@ export const useDiscoverStore = defineStore('discover', () => {
   }
 
   async function init() {
-    await Promise.all([fetchCategories(), fetchBooks()])
+    await Promise.all([fetchCategories(), fetchActive()])
   }
 
   function setMode(next) {

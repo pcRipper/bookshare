@@ -7,6 +7,7 @@ import DiscoverBookCard from '@/components/discover/DiscoverBookCard.vue'
 import BookDetailModal from '@/components/ui/BookDetailModal.vue'
 import DiscoverUserCard from '@/components/discover/DiscoverUserCard.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
+import UserCardSkeleton from '@/components/ui/UserCardSkeleton.vue'
 import LanguageSelect from '@/components/ui/LanguageSelect.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import ViewToggle from '@/components/ui/ViewToggle.vue'
@@ -55,7 +56,7 @@ const hasFilters = computed(() =>
 )
 
 const resultsHeading = computed(() => {
-  if (isAccounts.value) return 'Readers'
+  if (isAccounts.value) return hasQuery.value ? 'Results' : 'New Readers'
   return hasFilters.value ? 'Results' : 'Recommended for You'
 })
 
@@ -186,11 +187,13 @@ async function onToggleFollow(action, id) {
           </div>
         </div>
 
-        <!-- Loading — matches the layout that's about to render (accounts are
-             always cards). -->
+        <!-- Loading — matches the layout that's about to render. -->
         <template v-if="loading">
+          <div v-if="isAccounts" class="book-grid" role="status" aria-label="Loading readers">
+            <UserCardSkeleton v-for="n in 8" :key="n" />
+          </div>
           <BookTableSkeleton
-            v-if="!isAccounts && bookView === 'table'"
+            v-else-if="bookView === 'table'"
             :count="8"
             :detailed="tableDetailed"
           />
@@ -226,16 +229,13 @@ async function onToggleFollow(action, id) {
             />
           </template>
 
-          <!-- Prompt to search (empty box) -->
-          <div v-else-if="!hasQuery" class="discover-state">
-            <span class="material-symbols-outlined discover-state__icon">person_search</span>
-            <p>Search for readers by name to find people to follow.</p>
-          </div>
-
-          <!-- No matches -->
+          <!-- No matches for a search, or a community with nobody else in it yet -->
           <div v-else class="discover-state">
-            <span class="material-symbols-outlined discover-state__icon">search_off</span>
-            <p>No readers match your search just yet.</p>
+            <span class="material-symbols-outlined discover-state__icon">
+              {{ hasQuery ? 'search_off' : 'person_search' }}
+            </span>
+            <p v-if="hasQuery">No readers match your search just yet.</p>
+            <p v-else>No other readers here yet.</p>
           </div>
         </template>
 
