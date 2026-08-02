@@ -49,7 +49,9 @@
 - [x] implement book collections functional, made it as a separate tab on both library and profile pages. Update borrowing functional with full or partial collection borrowing. Frontend should contain separate modal for collection borrow, db should be updated to contain id of parent request for each book. Frontend modal shoud provide selection of books to borrow from collecrion, while by defaul unavailable books should be locked. Also to borrow a collection or create one you have to pick at least two available books
 - [x] allow to add into book collections books with all types
 - [x] checkbox for alread read books
-- [ ] list of "want to read" + notify when some of the following accounts have this book available(cron or event)
+- [ skip for now ] list of "want to read" + notify when some of the following accounts have this book available(cron or event)
+- [ ] multi-languag ui: english, polish, german, french, spanish, czech, italian. Setup on configuraton page.
+- [ ] public access to the library(without authorization): by link or qr code(just encode link here), button on library page or profile page.
 
 # Deployment
 - [x] add script to install all needed dependenices on droplet(like docker to start up, git to pull a branch etc)
