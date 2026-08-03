@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Api\ApiError;
 use App\Api\ResponseMapper;
 use App\Dto\Pagination;
 use App\Entity\Subscription;
@@ -25,6 +26,7 @@ class UserRestController extends AbstractController
         private readonly ResponseMapper $mapper,
         private readonly UserStatsProvider $stats,
         private readonly SubscriptionRepository $subscriptions,
+        private readonly ApiError $errors,
     ) {}
 
     /**
@@ -80,7 +82,7 @@ class UserRestController extends AbstractController
         // A private profile is hidden from everyone but its owner — same rule the
         // book listing applies to a private library.
         if (!$isSelf && $user->isPrivate()) {
-            return $this->json(['error' => 'This profile is private.'], Response::HTTP_FORBIDDEN);
+            return $this->errors->response('This profile is private.', Response::HTTP_FORBIDDEN);
         }
 
         // The owner always sees their own location; others only if the user

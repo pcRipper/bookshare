@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Api\ApiError;
 use App\Api\ResponseMapper;
 use App\Dto\ProfileInput;
 use App\Entity\User;
@@ -20,6 +21,7 @@ class MeRestController extends AbstractController
     public function __construct(
         private readonly ResponseMapper $mapper,
         private readonly UserStatsProvider $stats,
+        private readonly ApiError $errors,
     ) {}
 
     #[Route('', methods: ['GET'])]
@@ -48,7 +50,7 @@ class MeRestController extends AbstractController
         if (in_array('fullName', $present, true)) {
             $name = trim((string) $input->fullName);
             if ($name === '') {
-                return $this->json(['error' => 'Name cannot be empty.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+                return $this->errors->response('Name cannot be empty.', Response::HTTP_UNPROCESSABLE_ENTITY);
             }
             $user->setFullName($name);
         }

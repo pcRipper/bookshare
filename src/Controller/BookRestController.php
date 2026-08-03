@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Api\ApiError;
 use App\Api\ResponseMapper;
 use App\Dto\BookInput;
 use App\Dto\BookTemplate;
@@ -44,6 +45,7 @@ class BookRestController extends AbstractController
         private readonly BookCsvService $csv,
         private readonly ImageLocalizer $images,
         private readonly EntityManagerInterface $em,
+        private readonly ApiError $errors,
     ) {}
 
     #[Route('', methods: ['GET'])]
@@ -61,11 +63,11 @@ class BookRestController extends AbstractController
         if ($raw = $request->query->get('owner')) {
             $owner = $users->find($raw);
             if (!$owner instanceof User) {
-                return $this->json(['error' => 'User not found.'], Response::HTTP_NOT_FOUND);
+                return $this->errors->response('User not found.', Response::HTTP_NOT_FOUND);
             }
             // A private profile's collection is visible only to its owner.
             if ($owner !== $viewer && $owner->isPrivate()) {
-                return $this->json(['error' => 'This library is private.'], Response::HTTP_FORBIDDEN);
+                return $this->errors->response('This library is private.', Response::HTTP_FORBIDDEN);
             }
         }
 
@@ -73,7 +75,7 @@ class BookRestController extends AbstractController
         if ($raw = $request->query->get('status')) {
             $status = BookStatus::tryFrom($raw);
             if ($status === null) {
-                return $this->json(['error' => 'Invalid status filter.'], Response::HTTP_BAD_REQUEST);
+                return $this->errors->response('Invalid status filter.', Response::HTTP_BAD_REQUEST);
             }
         }
 
@@ -121,18 +123,18 @@ class BookRestController extends AbstractController
         $category = null;
         if (($raw = $request->query->get('category')) !== null && $raw !== '') {
             if (!ctype_digit((string) $raw)) {
-                return $this->json(['error' => 'Invalid category filter.'], Response::HTTP_BAD_REQUEST);
+                return $this->errors->response('Invalid category filter.', Response::HTTP_BAD_REQUEST);
             }
             $category = $categories->find((int) $raw);
             if ($category === null) {
-                return $this->json(['error' => 'Category not found.'], Response::HTTP_NOT_FOUND);
+                return $this->errors->response('Category not found.', Response::HTTP_NOT_FOUND);
             }
         }
 
         $language = null;
         if (($raw = $request->query->get('language')) !== null && $raw !== '') {
             if (!LanguageCatalog::isValid((string) $raw)) {
-                return $this->json(['error' => 'Invalid language filter.'], Response::HTTP_BAD_REQUEST);
+                return $this->errors->response('Invalid language filter.', Response::HTTP_BAD_REQUEST);
             }
             $language = (string) $raw;
         }
@@ -163,7 +165,7 @@ class BookRestController extends AbstractController
     {
         $source = trim((string) $request->query->get('source', 'site')) ?: 'site';
         if (!$search->supports($source)) {
-            return $this->json(['error' => 'Unknown template source.'], Response::HTTP_BAD_REQUEST);
+            return $this->errors->response('Unknown template source.', Response::HTTP_BAD_REQUEST);
         }
 
         $q = trim((string) $request->query->get('q', ''));
@@ -211,7 +213,7 @@ class BookRestController extends AbstractController
 
         $file = $request->files->get('file');
         if (!$file instanceof UploadedFile) {
-            return $this->json(['error' => 'No file was uploaded.'], Response::HTTP_BAD_REQUEST);
+            return $this->errors->response('No file was uploaded.', Response::HTTP_BAD_REQUEST);
         }
 
         $replace = $request->request->get('mode') === 'replace';

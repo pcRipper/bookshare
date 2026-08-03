@@ -4,13 +4,15 @@ namespace App\Service;
 
 use App\Entity\Subscription;
 use App\Entity\User;
+use App\Exception\DomainRuleException;
 use App\Repository\SubscriptionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
  * Follow/unfollow another reader. Methods persist/remove but never flush — the
  * controller flushes once per request. Business-rule violations throw
- * \DomainException (controller maps to 409).
+ * DomainRuleException, a \DomainException whose message is also its translation
+ * id (controller maps to 409).
  */
 class SubscriptionService
 {
@@ -26,10 +28,10 @@ class SubscriptionService
         if ($target === $subscriber
             || ($subscriber->getId() !== null && $target->getId() === $subscriber->getId())
         ) {
-            throw new \DomainException('You cannot follow yourself.');
+            throw new DomainRuleException('You cannot follow yourself.');
         }
         if ($target->isPrivate()) {
-            throw new \DomainException('This reader keeps their library private.');
+            throw new DomainRuleException('This reader keeps their library private.');
         }
 
         // Idempotent: following someone you already follow returns the existing edge.

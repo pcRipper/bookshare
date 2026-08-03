@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Api\ApiError;
 use App\Api\ResponseMapper;
 use App\Dto\CollectionBorrowInput;
 use App\Dto\Pagination;
@@ -32,6 +33,7 @@ class CollectionRequestRestController extends AbstractController
         private readonly CollectionRequestService $service,
         private readonly EntityManagerInterface $em,
         private readonly LoanEventPublisher $publisher,
+        private readonly ApiError $errors,
     ) {}
 
     /** Incoming collection requests for the current user's collections (owner side). */
@@ -44,7 +46,7 @@ class CollectionRequestRestController extends AbstractController
         $keyword = $request->query->get('status', 'open');
         $statuses = $this->statusFilter($keyword);
         if ($statuses === null) {
-            return $this->json(['error' => 'Invalid status filter.'], Response::HTTP_BAD_REQUEST);
+            return $this->errors->response('Invalid status filter.', Response::HTTP_BAD_REQUEST);
         }
 
         if ($keyword === 'all') {
@@ -72,7 +74,7 @@ class CollectionRequestRestController extends AbstractController
         $keyword = $request->query->get('status', 'active');
         $statuses = $this->statusFilter($keyword);
         if ($statuses === null) {
-            return $this->json(['error' => 'Invalid status filter.'], Response::HTTP_BAD_REQUEST);
+            return $this->errors->response('Invalid status filter.', Response::HTTP_BAD_REQUEST);
         }
 
         if ($keyword === 'all') {
@@ -123,16 +125,16 @@ class CollectionRequestRestController extends AbstractController
 
         $collection = $collections->find($input->collectionId);
         if (!$collection instanceof BookCollection) {
-            return $this->json(['error' => 'Collection not found.'], Response::HTTP_NOT_FOUND);
+            return $this->errors->response('Collection not found.', Response::HTTP_NOT_FOUND);
         }
         if ($collection->getOwner()->isPrivate() && $collection->getOwner() !== $user) {
-            return $this->json(['error' => 'This library is private.'], Response::HTTP_FORBIDDEN);
+            return $this->errors->response('This library is private.', Response::HTTP_FORBIDDEN);
         }
 
         try {
             $collectionRequest = $this->service->createBorrow($user, $collection, $input->bookIds);
         } catch (\DomainException $e) {
-            return $this->json(['error' => $e->getMessage()], Response::HTTP_CONFLICT);
+            return $this->errors->fromDomain($e, Response::HTTP_CONFLICT);
         }
         $this->em->flush();
 
@@ -154,7 +156,7 @@ class CollectionRequestRestController extends AbstractController
         if (is_string($raw) && trim($raw) !== '') {
             $dueDate = \DateTimeImmutable::createFromFormat('!Y-m-d', trim($raw)) ?: null;
             if ($dueDate === null) {
-                return $this->json(['error' => 'Invalid due date.'], Response::HTTP_BAD_REQUEST);
+                return $this->errors->response('Invalid due date.', Response::HTTP_BAD_REQUEST);
             }
         }
 
@@ -175,7 +177,7 @@ class CollectionRequestRestController extends AbstractController
             if ($message === '') {
                 $message = null;
             } elseif (mb_strlen($message) > 255) {
-                return $this->json(['error' => 'Message is too long (max 255 characters).'], Response::HTTP_UNPROCESSABLE_ENTITY);
+                return $this->errors->response('Message is too long (max 255 characters).', Response::HTTP_UNPROCESSABLE_ENTITY);
             }
         } else {
             $message = null;
@@ -198,7 +200,7 @@ class CollectionRequestRestController extends AbstractController
         try {
             $this->service->cancel($collectionRequest, $user);
         } catch (\DomainException $e) {
-            return $this->json(['error' => $e->getMessage()], Response::HTTP_CONFLICT);
+            return $this->errors->fromDomain($e, Response::HTTP_CONFLICT);
         }
         $this->em->flush();
 
@@ -239,7 +241,7 @@ class CollectionRequestRestController extends AbstractController
         try {
             $action();
         } catch (\DomainException $e) {
-            return $this->json(['error' => $e->getMessage()], Response::HTTP_CONFLICT);
+            return $this->errors->fromDomain($e, Response::HTTP_CONFLICT);
         }
         $this->em->flush();
 

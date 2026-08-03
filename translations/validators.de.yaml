@@ -1,0 +1,17 @@
+# Custom Assert messages from src/Dto/*. Symfony's own constraint messages
+# (NotBlank, Length, Url…) ship translated with the validator component.
+# {{ limit }} is the constraint's own placeholder — keep it verbatim.
+'A collection is required.': 'Eine Sammlung ist erforderlich.'
+'A collection name is required.': 'Ein Sammlungsname ist erforderlich.'
+'A colour is required.': 'Eine Farbe ist erforderlich.'
+'A loan can only be set through the borrow-request flow.': 'Der Status „verliehen“ kann nur über eine Leihanfrage gesetzt werden.'
+'Author is required.': 'Ein Autor ist erforderlich.'
+'Category name is required.': 'Ein Kategoriename ist erforderlich.'
+'Category name is too long.': 'Der Kategoriename ist zu lang.'
+'Pick at least {{ limit }} books.': 'Wähle mindestens {{ limit }} Bücher aus.'
+'Select at least {{ limit }} books to borrow.': 'Wähle mindestens {{ limit }} Bücher zum Ausleihen aus.'
+'The cover must be a valid URL.': 'Das Cover muss eine gültige URL sein.'
+'Title is required.': 'Ein Titel ist erforderlich.'
+'Unknown language.': 'Unbekannte Sprache.'
+'Unsupported colour.': 'Nicht unterstützte Farbe.'
+'Unsupported language.': 'Nicht unterstützte Sprache.'

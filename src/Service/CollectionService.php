@@ -5,13 +5,15 @@ namespace App\Service;
 use App\Dto\CollectionInput;
 use App\Entity\BookCollection;
 use App\Entity\User;
+use App\Exception\DomainRuleException;
 use App\Repository\BookRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
  * CRUD for book collections. Methods persist but never flush — the controller
- * flushes once per request. Business-rule violations throw \DomainException
- * (controller maps to 409).
+ * flushes once per request. Business-rule violations throw DomainRuleException,
+ * a \DomainException whose message is also its translation id (controller maps
+ * to 409).
  */
 class CollectionService
 {
@@ -63,7 +65,12 @@ class CollectionService
         $resolved = $this->books->findByIdsForOwner($input->bookIds, $owner);
 
         if (\count($resolved) < self::MIN_BOOKS) {
-            throw new \DomainException('A collection needs at least ' . self::MIN_BOOKS . ' of your books.');
+            // Parameterised rather than concatenated: the message doubles as its
+            // translation id, and a spliced-in constant would never match a key.
+            throw new DomainRuleException(
+                'A collection needs at least %count% of your books.',
+                ['%count%' => self::MIN_BOOKS],
+            );
         }
 
         $collection->clearBooks();

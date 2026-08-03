@@ -1,0 +1,16 @@
+# Custom Assert messages from src/Dto/*. {{ limit }} is the constraint's own
+# placeholder — keep it verbatim.
+'A collection is required.': 'Вкажіть збірку.'
+'A collection name is required.': 'Вкажіть назву збірки.'
+'A colour is required.': 'Виберіть колір.'
+'A loan can only be set through the borrow-request flow.': 'Статус «позичено» встановлюється лише через запит на позику.'
+'Author is required.': 'Вкажіть автора.'
+'Category name is required.': 'Вкажіть назву категорії.'
+'Category name is too long.': 'Назва категорії задовга.'
+'Pick at least {{ limit }} books.': 'Виберіть щонайменше {{ limit }} книг.'
+'Select at least {{ limit }} books to borrow.': 'Виберіть щонайменше {{ limit }} книг для позики.'
+'The cover must be a valid URL.': 'Обкладинка має бути коректним URL.'
+'Title is required.': 'Вкажіть назву.'
+'Unknown language.': 'Невідома мова.'
+'Unsupported colour.': 'Колір не підтримується.'
+'Unsupported language.': 'Мова не підтримується.'

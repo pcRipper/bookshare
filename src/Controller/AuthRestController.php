@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Api\ApiError;
 use App\Repository\UserRepository;
 use App\Service\GoogleAuthService;
 use App\Service\ImageLocalizer;
@@ -32,16 +33,17 @@ class AuthRestController extends AbstractController
         UserRepository $users,
         ImageLocalizer $images,
         JWTTokenManagerInterface $jwt,
+        ApiError $errors,
     ): JsonResponse {
         $code = $request->toArray()['code'] ?? null;
         if (!$code) {
-            return $this->json(['error' => 'Missing authorization code'], 400);
+            return $errors->response('Missing authorization code', 400);
         }
 
         try {
             $info = $google->fetchUserInfo($code);
         } catch (\Throwable $e) {
-            return $this->json(['error' => 'Google authentication failed'], 400);
+            return $errors->response('Google authentication failed', 400);
         }
 
         $user = $users->findOrCreateFromGoogle(

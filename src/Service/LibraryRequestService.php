@@ -10,6 +10,7 @@ use App\Enum\ActivityType;
 use App\Enum\BookStatus;
 use App\Enum\LibraryRequestEventType;
 use App\Enum\RequestStatus;
+use App\Exception\DomainRuleException;
 use App\Repository\LibraryRequestRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
@@ -18,7 +19,8 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
  * Borrow-request lifecycle. Methods persist/mutate but never flush —
  * the controller flushes once per request. Ownership violations throw
  * AccessDeniedException (kernel maps to 403); business-rule violations
- * throw \DomainException (controller maps to 409).
+ * throw DomainRuleException, a \DomainException whose message is also its
+ * translation id (controller maps to 409).
  */
 class LibraryRequestService
 {
@@ -37,20 +39,20 @@ class LibraryRequestService
     public function create(User $requester, Book $book, ?CollectionRequest $parent = null): LibraryRequest
     {
         if ($book->getOwner() === $requester) {
-            throw new \DomainException('You cannot request your own book.');
+            throw new DomainRuleException('You cannot request your own book.');
         }
         if ($book->getOwner()->isPrivate()) {
-            throw new \DomainException('This reader\'s library is private.');
+            throw new DomainRuleException('This reader\'s library is private.');
         }
         $ownerSettings = $book->getOwner()->getSettings();
         if ($ownerSettings !== null && !$ownerSettings->allowsRequests()) {
-            throw new \DomainException('This reader isn\'t accepting borrow requests right now.');
+            throw new DomainRuleException('This reader isn\'t accepting borrow requests right now.');
         }
         if ($book->getStatus() !== BookStatus::Own) {
-            throw new \DomainException('This book is not available to borrow right now.');
+            throw new DomainRuleException('This book is not available to borrow right now.');
         }
         if ($this->requests->findPendingForBookAndRequester((int) $book->getId(), $requester)) {
-            throw new \DomainException('You already have a pending request for this book.');
+            throw new DomainRuleException('You already have a pending request for this book.');
         }
 
         $request = (new LibraryRequest())
@@ -74,7 +76,7 @@ class LibraryRequestService
         // this a second approval would silently re-lend it and orphan the first loan.
         $book = $request->getBook();
         if ($book->getStatus() !== BookStatus::Own) {
-            throw new \DomainException('This book is no longer available to lend.');
+            throw new DomainRuleException('This book is no longer available to lend.');
         }
 
         $request
@@ -182,7 +184,7 @@ class LibraryRequestService
     private function assertStatusIn(LibraryRequest $request, array $allowed, string $message): void
     {
         if (!in_array($request->getStatus(), $allowed, true)) {
-            throw new \DomainException($message);
+            throw new DomainRuleException($message);
         }
     }
 }

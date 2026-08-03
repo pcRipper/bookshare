@@ -1,0 +1,16 @@
+# Custom Assert messages from src/Dto/*. {{ limit }} is the constraint's own
+# placeholder — keep it verbatim.
+'A collection is required.': 'La colección es obligatoria.'
+'A collection name is required.': 'El nombre de la colección es obligatorio.'
+'A colour is required.': 'El color es obligatorio.'
+'A loan can only be set through the borrow-request flow.': 'El estado «prestado» solo se puede asignar mediante una solicitud de préstamo.'
+'Author is required.': 'El autor es obligatorio.'
+'Category name is required.': 'El nombre de la categoría es obligatorio.'
+'Category name is too long.': 'El nombre de la categoría es demasiado largo.'
+'Pick at least {{ limit }} books.': 'Elige al menos {{ limit }} libros.'
+'Select at least {{ limit }} books to borrow.': 'Selecciona al menos {{ limit }} libros para pedir prestados.'
+'The cover must be a valid URL.': 'La portada debe ser una URL válida.'
+'Title is required.': 'El título es obligatorio.'
+'Unknown language.': 'Idioma desconocido.'
+'Unsupported colour.': 'Color no admitido.'
+'Unsupported language.': 'Idioma no admitido.'

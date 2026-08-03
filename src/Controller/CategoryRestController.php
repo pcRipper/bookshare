@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Api\ApiError;
 use App\Api\ResponseMapper;
 use App\Dto\CategoryInput;
 use App\Entity\Category;
@@ -21,6 +22,7 @@ class CategoryRestController extends AbstractController
         private readonly ResponseMapper $mapper,
         private readonly CategoryRepository $categories,
         private readonly EntityManagerInterface $em,
+        private readonly ApiError $errors,
     ) {}
 
     /**
@@ -48,12 +50,12 @@ class CategoryRestController extends AbstractController
     {
         $name = trim($input->name);
         if ($name === '') {
-            return $this->json(['error' => 'Category name is required.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->errors->response('Category name is required.', Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         // Categories are a shared, global vocabulary — names are unique.
         if ($this->categories->findOneByNameInsensitive($name)) {
-            return $this->json(['error' => 'A category with this name already exists.'], Response::HTTP_CONFLICT);
+            return $this->errors->response('A category with this name already exists.', Response::HTTP_CONFLICT);
         }
 
         $category = (new Category())

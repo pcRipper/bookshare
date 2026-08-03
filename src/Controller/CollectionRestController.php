@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Api\ApiError;
 use App\Api\ResponseMapper;
 use App\Dto\CollectionInput;
 use App\Dto\Pagination;
@@ -30,6 +31,7 @@ class CollectionRestController extends AbstractController
         private readonly ResponseMapper $mapper,
         private readonly CollectionService $service,
         private readonly EntityManagerInterface $em,
+        private readonly ApiError $errors,
     ) {}
 
     /**
@@ -51,10 +53,10 @@ class CollectionRestController extends AbstractController
         if ($raw = $request->query->get('owner')) {
             $owner = $users->find($raw);
             if (!$owner instanceof User) {
-                return $this->json(['error' => 'User not found.'], Response::HTTP_NOT_FOUND);
+                return $this->errors->response('User not found.', Response::HTTP_NOT_FOUND);
             }
             if ($owner !== $viewer && $owner->isPrivate()) {
-                return $this->json(['error' => 'This library is private.'], Response::HTTP_FORBIDDEN);
+                return $this->errors->response('This library is private.', Response::HTTP_FORBIDDEN);
             }
         }
 
@@ -81,7 +83,7 @@ class CollectionRestController extends AbstractController
 
         $owner = $collection->getOwner();
         if ($owner !== $viewer && $owner->isPrivate()) {
-            return $this->json(['error' => 'This library is private.'], Response::HTTP_FORBIDDEN);
+            return $this->errors->response('This library is private.', Response::HTTP_FORBIDDEN);
         }
 
         $pending = $owner !== $viewer ? array_flip($requests->findPendingBookIdsForRequester($viewer)) : [];
@@ -98,7 +100,7 @@ class CollectionRestController extends AbstractController
         try {
             $collection = $this->service->create($user, $input);
         } catch (\DomainException $e) {
-            return $this->json(['error' => $e->getMessage()], Response::HTTP_CONFLICT);
+            return $this->errors->fromDomain($e, Response::HTTP_CONFLICT);
         }
         $this->em->flush();
 
@@ -116,7 +118,7 @@ class CollectionRestController extends AbstractController
         try {
             $this->service->update($collection, $input, $user);
         } catch (\DomainException $e) {
-            return $this->json(['error' => $e->getMessage()], Response::HTTP_CONFLICT);
+            return $this->errors->fromDomain($e, Response::HTTP_CONFLICT);
         }
         $this->em->flush();
 

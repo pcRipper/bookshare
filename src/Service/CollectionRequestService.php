@@ -7,6 +7,7 @@ use App\Entity\CollectionRequest;
 use App\Entity\User;
 use App\Enum\BookStatus;
 use App\Enum\RequestStatus;
+use App\Exception\DomainRuleException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
@@ -19,8 +20,8 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
  *
  * Like its per-book sibling: methods mutate/persist but never flush (the
  * controller owns the transaction); ownership violations throw
- * AccessDeniedException (→403), business-rule violations throw \DomainException
- * (→409). No Mercure signal is published here — the controller publishes exactly
+ * AccessDeniedException (→403), business-rule violations throw
+ * DomainRuleException (→409). No Mercure signal is published here — the controller publishes exactly
  * one collection-level signal after flush, so a borrow never fans out into one
  * notification per book.
  */
@@ -42,7 +43,7 @@ class CollectionRequestService
     public function createBorrow(User $requester, BookCollection $collection, array $bookIds): CollectionRequest
     {
         if ($collection->getOwner() === $requester) {
-            throw new \DomainException('You cannot borrow your own collection.');
+            throw new DomainRuleException('You cannot borrow your own collection.');
         }
 
         // Resolve the selected ids against the collection's members, preserving
@@ -55,11 +56,16 @@ class CollectionRequestService
         }
 
         if (count($selected) < self::MIN_BOOKS) {
-            throw new \DomainException('Select at least ' . self::MIN_BOOKS . ' available books to borrow a collection.');
+            // Parameterised rather than concatenated: the message doubles as its
+            // translation id, and a spliced-in constant would never match a key.
+            throw new DomainRuleException(
+                'Select at least %count% available books to borrow a collection.',
+                ['%count%' => self::MIN_BOOKS],
+            );
         }
         foreach ($selected as $book) {
             if ($book->getStatus() !== BookStatus::Own) {
-                throw new \DomainException('One of the selected books is no longer available to borrow.');
+                throw new DomainRuleException('One of the selected books is no longer available to borrow.');
             }
         }
 
@@ -169,7 +175,7 @@ class CollectionRequestService
     private function assertStatusIn(CollectionRequest $request, array $allowed, string $message): void
     {
         if (!in_array($request->getStatus(), $allowed, true)) {
-            throw new \DomainException($message);
+            throw new DomainRuleException($message);
         }
     }
 }

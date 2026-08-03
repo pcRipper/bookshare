@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Api\ApiError;
 use App\Api\ResponseMapper;
 use App\Dto\Pagination;
 use App\Entity\Book;
@@ -34,6 +35,7 @@ class LibraryRequestRestController extends AbstractController
         private readonly LibraryRequestService $service,
         private readonly EntityManagerInterface $em,
         private readonly LoanEventPublisher $publisher,
+        private readonly ApiError $errors,
     ) {}
 
     /**
@@ -49,7 +51,7 @@ class LibraryRequestRestController extends AbstractController
         $keyword = $request->query->get('status', 'open');
         $statuses = $this->statusFilter($keyword);
         if ($statuses === null) {
-            return $this->json(['error' => 'Invalid status filter.'], Response::HTTP_BAD_REQUEST);
+            return $this->errors->response('Invalid status filter.', Response::HTTP_BAD_REQUEST);
         }
 
         // The full history can grow unbounded → paginate it; in-flight slices stay bare.
@@ -81,7 +83,7 @@ class LibraryRequestRestController extends AbstractController
         $keyword = $request->query->get('status', 'active');
         $statuses = $this->statusFilter($keyword);
         if ($statuses === null) {
-            return $this->json(['error' => 'Invalid status filter.'], Response::HTTP_BAD_REQUEST);
+            return $this->errors->response('Invalid status filter.', Response::HTTP_BAD_REQUEST);
         }
 
         // The full history can grow unbounded → paginate it; in-flight slices stay bare.
@@ -135,18 +137,18 @@ class LibraryRequestRestController extends AbstractController
 
         $bookId = $request->toArray()['bookId'] ?? null;
         if (!$bookId) {
-            return $this->json(['error' => 'Missing bookId.'], Response::HTTP_BAD_REQUEST);
+            return $this->errors->response('Missing bookId.', Response::HTTP_BAD_REQUEST);
         }
 
         $book = $books->find($bookId);
         if (!$book instanceof Book) {
-            return $this->json(['error' => 'Book not found.'], Response::HTTP_NOT_FOUND);
+            return $this->errors->response('Book not found.', Response::HTTP_NOT_FOUND);
         }
 
         try {
             $libraryRequest = $this->service->create($user, $book);
         } catch (\DomainException $e) {
-            return $this->json(['error' => $e->getMessage()], Response::HTTP_CONFLICT);
+            return $this->errors->fromDomain($e, Response::HTTP_CONFLICT);
         }
         $this->em->flush();
 
@@ -169,7 +171,7 @@ class LibraryRequestRestController extends AbstractController
         if (is_string($raw) && trim($raw) !== '') {
             $dueDate = \DateTimeImmutable::createFromFormat('!Y-m-d', trim($raw)) ?: null;
             if ($dueDate === null) {
-                return $this->json(['error' => 'Invalid due date.'], Response::HTTP_BAD_REQUEST);
+                return $this->errors->response('Invalid due date.', Response::HTTP_BAD_REQUEST);
             }
         }
 
@@ -191,7 +193,7 @@ class LibraryRequestRestController extends AbstractController
             if ($message === '') {
                 $message = null;
             } elseif (mb_strlen($message) > 255) {
-                return $this->json(['error' => 'Message is too long (max 255 characters).'], Response::HTTP_UNPROCESSABLE_ENTITY);
+                return $this->errors->response('Message is too long (max 255 characters).', Response::HTTP_UNPROCESSABLE_ENTITY);
             }
         } else {
             $message = null;
@@ -214,7 +216,7 @@ class LibraryRequestRestController extends AbstractController
         try {
             $this->service->cancel($libraryRequest, $user);
         } catch (\DomainException $e) {
-            return $this->json(['error' => $e->getMessage()], Response::HTTP_CONFLICT);
+            return $this->errors->fromDomain($e, Response::HTTP_CONFLICT);
         }
         $this->em->flush();
 
@@ -256,7 +258,7 @@ class LibraryRequestRestController extends AbstractController
         try {
             $action();
         } catch (\DomainException $e) {
-            return $this->json(['error' => $e->getMessage()], Response::HTTP_CONFLICT);
+            return $this->errors->fromDomain($e, Response::HTTP_CONFLICT);
         }
         $this->em->flush();
 

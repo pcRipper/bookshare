@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Api\ApiError;
 use App\Api\ResponseMapper;
 use App\Dto\Pagination;
 use App\Entity\Subscription;
@@ -30,6 +31,7 @@ class SubscriptionRestController extends AbstractController
         private readonly BookRepository $books,
         private readonly LibraryRequestRepository $requests,
         private readonly EntityManagerInterface $em,
+        private readonly ApiError $errors,
     ) {}
 
     /** The people the current user follows — powers the Library "Following" tab. */
@@ -91,7 +93,7 @@ class SubscriptionRestController extends AbstractController
         try {
             $subscription = $this->service->subscribe($user, $target);
         } catch (\DomainException $e) {
-            return $this->json(['error' => $e->getMessage()], Response::HTTP_CONFLICT);
+            return $this->errors->fromDomain($e, Response::HTTP_CONFLICT);
         }
         $this->em->flush();
 
