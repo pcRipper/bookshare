@@ -1,7 +1,10 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import RequestTimeline from '@/components/library/RequestTimeline.vue'
+
+const { t } = useI18n()
 
 const props = defineProps({
   // A resolved LibraryRequest payload, including its `events` array.
@@ -19,14 +22,17 @@ const counterpart = computed(() =>
 )
 
 // Human label for the current status badge (the raw enum has underscores).
-const STATUS_LABELS = {
-  pending: 'Pending',
-  approved: 'On loan',
-  return_pending: 'Return pending',
-  returned: 'Returned',
-  declined: 'Declined',
+const STATUS_KEYS = {
+  pending: 'pending',
+  approved: 'approved',
+  return_pending: 'returnPending',
+  returned: 'returned',
+  declined: 'declined',
 }
-const statusLabel = computed(() => STATUS_LABELS[props.request.status] ?? props.request.status)
+const statusLabel = computed(() => {
+  const key = STATUS_KEYS[props.request.status]
+  return key ? t(`requests.status.${key}`) : props.request.status
+})
 </script>
 
 <template>
@@ -38,14 +44,17 @@ const statusLabel = computed(() => STATUS_LABELS[props.request.status] ?? props.
         size="md"
       />
       <div class="history-card__text">
-        <p v-if="isBorrowing" class="history-card__main">
-          You requested <em>{{ request.book.title }}</em>
-          from <strong>{{ counterpart?.fullName }}</strong>
-        </p>
-        <p v-else class="history-card__main">
-          <strong>{{ counterpart?.fullName }}</strong> requested
-          <em>{{ request.book.title }}</em>
-        </p>
+        <!-- One translatable sentence each: word order round the book title and
+             the reader's name differs by language, so the emphasis markup has to
+             travel as slots rather than be spliced between fragments. -->
+        <i18n-t v-if="isBorrowing" keypath="requests.history.youRequested" tag="p" class="history-card__main">
+          <template #book><em>{{ request.book.title }}</em></template>
+          <template #owner><strong>{{ counterpart?.fullName }}</strong></template>
+        </i18n-t>
+        <i18n-t v-else keypath="requests.history.theyRequested" tag="p" class="history-card__main">
+          <template #reader><strong>{{ counterpart?.fullName }}</strong></template>
+          <template #book><em>{{ request.book.title }}</em></template>
+        </i18n-t>
         <span class="history-card__author">{{ request.book.author }}</span>
       </div>
       <span class="history-badge" :class="`history-badge--${request.status}`">{{ statusLabel }}</span>

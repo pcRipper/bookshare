@@ -1,28 +1,32 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { currentLocale } from '@/i18n'
 import { relativeTime } from '@/utils/time'
+
+const { t } = useI18n()
 
 const props = defineProps({
   // Ordered lifecycle events from the API: { id, type, createdAt, dueDate, actor }.
   events: { type: Array, default: () => [] },
 })
 
-// Presentation for each event type: icon, label, and a tone class.
+// Presentation for each event type: icon, catalog key, and a tone class.
 const META = {
-  requested:        { icon: 'bookmark_add',       label: 'Requested to borrow', tone: 'neutral' },
-  approved:         { icon: 'check_circle',        label: 'Approved',            tone: 'positive' },
-  declined:         { icon: 'cancel',              label: 'Declined',            tone: 'negative' },
-  return_requested: { icon: 'assignment_return',   label: 'Return requested',    tone: 'neutral' },
-  returned:         { icon: 'task_alt',            label: 'Returned',            tone: 'positive' },
+  requested:        { icon: 'bookmark_add',     key: 'requested',       tone: 'neutral' },
+  approved:         { icon: 'check_circle',      key: 'approved',        tone: 'positive' },
+  declined:         { icon: 'cancel',            key: 'declined',        tone: 'negative' },
+  return_requested: { icon: 'assignment_return', key: 'returnRequested', tone: 'neutral' },
+  returned:         { icon: 'task_alt',          key: 'returned',        tone: 'positive' },
 }
 
 function fmtDate(iso) {
-  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(iso).toLocaleDateString(currentLocale(), { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 // Full date + time of day, so each step shows exactly when it happened.
 function fmtDateTime(iso) {
-  return new Date(iso).toLocaleString(undefined, {
+  return new Date(iso).toLocaleString(currentLocale(), {
     day: 'numeric', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   })
@@ -30,13 +34,14 @@ function fmtDateTime(iso) {
 
 const steps = computed(() =>
   props.events.map(e => {
-    const meta = META[e.type] ?? { icon: 'circle', label: e.type, tone: 'neutral' }
+    const meta = META[e.type]
     return {
       id: e.id,
-      icon: meta.icon,
-      label: meta.label,
-      tone: meta.tone,
-      actor: e.actor?.fullName ?? 'Someone',
+      icon: meta?.icon ?? 'circle',
+      // An unmapped event type falls back to its raw name rather than a blank step.
+      label: meta ? t(`requests.timeline.${meta.key}`) : e.type,
+      tone: meta?.tone ?? 'neutral',
+      actor: e.actor?.fullName ?? t('requests.timeline.someone'),
       when: relativeTime(e.createdAt),
       at: fmtDateTime(e.createdAt),
       // Surfaced only on the approval step.
@@ -57,12 +62,12 @@ const steps = computed(() =>
       <div class="timeline__body">
         <p class="timeline__label">
           {{ step.label }}
-          <span class="timeline__actor">by {{ step.actor }}</span>
+          <span class="timeline__actor">{{ t('requests.timeline.by', { actor: step.actor }) }}</span>
         </p>
         <p class="timeline__meta">
           <time class="timeline__at">{{ step.at }}</time>
           <span class="timeline__rel">· {{ step.when }}</span>
-          <span v-if="step.due" class="timeline__due">· due {{ step.due }}</span>
+          <span v-if="step.due" class="timeline__due">{{ t('requests.timeline.dueOn', { date: step.due }) }}</span>
         </p>
         <p v-if="step.note" class="timeline__note">“{{ step.note }}”</p>
       </div>

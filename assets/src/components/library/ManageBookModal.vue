@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import CategorySelector from '@/components/library/CategorySelector.vue'
 import BookTemplateSearch from '@/components/library/BookTemplateSearch.vue'
 import LanguageSelect from '@/components/ui/LanguageSelect.vue'
@@ -8,6 +9,7 @@ import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 
 const { hasCover, onCoverError } = useCoverFallback()
+const { t } = useI18n()
 
 const props = defineProps({
   open:  { type: Boolean, default: false },
@@ -22,11 +24,11 @@ const emit = defineEmits(['save', 'delete', 'close'])
 // only by the lending lifecycle (approve), never chosen manually — doing so would
 // flag a book as on-loan while it still sits home. It's still shown (read-only)
 // when viewing a lent book, via `statusOptions` below.
-const SELECTABLE_STATUSES = [
-  { value: 'own',               label: 'Available' },
-  { value: 'currently_reading', label: 'Currently reading' },
-  { value: 'unavailable',       label: 'Unavailable' },
-]
+const selectableStatuses = computed(() => [
+  { value: 'own',               label: t('book.statusOption.own') },
+  { value: 'currently_reading', label: t('book.statusOption.currentlyReading') },
+  { value: 'unavailable',       label: t('book.statusOption.unavailable') },
+])
 
 // Matches BookInput's Assert\Length(max: 500) on description.
 const DESC_MAX = 500
@@ -48,8 +50,8 @@ const readOnly = computed(() => isEdit.value && props.book?.canEdit === false)
 // dropdown renders correctly without offering it as a manual choice elsewhere.
 const statusOptions = computed(() =>
   form.value.status === 'lent'
-    ? [{ value: 'lent', label: 'Lent out' }, ...SELECTABLE_STATUSES]
-    : SELECTABLE_STATUSES,
+    ? [{ value: 'lent', label: t('book.statusOption.lent') }, ...selectableStatuses.value]
+    : selectableStatuses.value,
 )
 
 const descRemaining = computed(() => DESC_MAX - form.value.description.length)
@@ -87,7 +89,7 @@ watch(
 function onSave() {
   if (readOnly.value) return
   if (!form.value.title.trim() || !form.value.author.trim()) {
-    errorMsg.value = 'Title and author are required.'
+    errorMsg.value = t('manageBook.requiredFields')
     return
   }
   errorMsg.value = null
@@ -137,8 +139,8 @@ function applyTemplate(t) {
     <div v-if="open" class="modal-overlay" @click.self="emit('close')">
       <div class="modal" role="dialog" aria-modal="true">
         <header class="modal__header">
-          <h2 class="modal__title">{{ isEdit ? 'Edit Book' : 'Add New Book' }}</h2>
-          <button class="modal__close" aria-label="Close" @click="emit('close')">
+          <h2 class="modal__title">{{ isEdit ? t('manageBook.editTitle') : t('manageBook.createTitle') }}</h2>
+          <button class="modal__close" :aria-label="t('common.close')" @click="emit('close')">
             <span class="material-symbols-outlined">close</span>
           </button>
         </header>
@@ -147,7 +149,7 @@ function applyTemplate(t) {
           <!-- On-loan notice: the book is locked until it's returned -->
           <p v-if="readOnly" class="modal__notice">
             <span class="material-symbols-outlined">lock</span>
-            This book is out on loan and can't be edited until it's returned.
+            {{ t('manageBook.lockedNotice') }}
           </p>
 
           <!-- Create mode: enter details by hand or fill from an existing book -->
@@ -160,7 +162,7 @@ function applyTemplate(t) {
               :aria-selected="activeTab === 'manual'"
               @click="activeTab = 'manual'"
             >
-              Create manually
+              {{ t('manageBook.tabManual') }}
             </button>
             <button
               type="button"
@@ -170,7 +172,7 @@ function applyTemplate(t) {
               :aria-selected="activeTab === 'template'"
               @click="activeTab = 'template'"
             >
-              Find a template
+              {{ t('manageBook.tabTemplate') }}
             </button>
           </div>
 
@@ -181,13 +183,13 @@ function applyTemplate(t) {
           <div v-show="activeTab === 'manual'" class="modal__form">
           <!-- Cover preview + URL -->
           <div class="field">
-            <label class="field__label" for="mb-cover">Cover image URL</label>
+            <label class="field__label" for="mb-cover">{{ t('manageBook.coverUrl') }}</label>
             <div class="cover-row">
               <div class="cover-preview">
                 <img
                   v-if="hasCover(form.coverPath)"
                   :src="form.coverPath"
-                  alt="Cover preview"
+                  :alt="t('book.coverPreview')"
                   @error="onCoverError(form.coverPath)"
                 />
                 <span v-else class="material-symbols-outlined cover-preview__icon">menu_book</span>
@@ -204,24 +206,38 @@ function applyTemplate(t) {
           </div>
 
           <div class="field">
-            <label class="field__label" for="mb-title">Title <span class="req">*</span></label>
-            <input id="mb-title" v-model="form.title" class="input" type="text" placeholder="Enter title" :disabled="readOnly" />
+            <label class="field__label" for="mb-title">{{ t('manageBook.title') }} <span class="req">*</span></label>
+            <input
+              id="mb-title"
+              v-model="form.title"
+              class="input"
+              type="text"
+              :placeholder="t('manageBook.titlePlaceholder')"
+              :disabled="readOnly"
+            />
           </div>
 
           <div class="field">
-            <label class="field__label" for="mb-author">Author <span class="req">*</span></label>
-            <input id="mb-author" v-model="form.author" class="input" type="text" placeholder="Enter author name" :disabled="readOnly" />
+            <label class="field__label" for="mb-author">{{ t('manageBook.author') }} <span class="req">*</span></label>
+            <input
+              id="mb-author"
+              v-model="form.author"
+              class="input"
+              type="text"
+              :placeholder="t('manageBook.authorPlaceholder')"
+              :disabled="readOnly"
+            />
           </div>
 
           <div class="field">
-            <label class="field__label" for="mb-description">Description</label>
+            <label class="field__label" for="mb-description">{{ t('manageBook.description') }}</label>
             <textarea
               id="mb-description"
               v-model="form.description"
               class="input textarea"
               rows="4"
               :maxlength="DESC_MAX"
-              placeholder="A short blurb or summary"
+              :placeholder="t('manageBook.descriptionPlaceholder')"
               :disabled="readOnly"
             ></textarea>
             <span v-if="!readOnly" class="field__counter">{{ descRemaining }}</span>
@@ -229,28 +245,40 @@ function applyTemplate(t) {
 
           <div class="field-row">
             <div class="field">
-              <label class="field__label" for="mb-isbn">ISBN</label>
-              <input id="mb-isbn" v-model="form.isbn" class="input" type="text" placeholder="e.g. 978-…" :disabled="readOnly" />
+              <label class="field__label" for="mb-isbn">{{ t('manageBook.isbn') }}</label>
+              <input
+                id="mb-isbn"
+                v-model="form.isbn"
+                class="input"
+                type="text"
+                :placeholder="t('manageBook.isbnPlaceholder')"
+                :disabled="readOnly"
+              />
             </div>
             <div class="field">
-              <label class="field__label" for="mb-status">Status</label>
+              <label class="field__label" for="mb-status">{{ t('manageBook.status') }}</label>
               <BaseSelect id="mb-status" v-model="form.status" :options="statusOptions" :disabled="readOnly" />
             </div>
           </div>
 
           <div class="field">
-            <label class="field__label" for="mb-language">Language</label>
-            <LanguageSelect id="mb-language" v-model="form.language" :disabled="readOnly" placeholder="No language set" />
+            <label class="field__label" for="mb-language">{{ t('manageBook.language') }}</label>
+            <LanguageSelect
+              id="mb-language"
+              v-model="form.language"
+              :disabled="readOnly"
+              :placeholder="t('manageBook.languagePlaceholder')"
+            />
           </div>
 
           <label class="checkbox-field">
             <input type="checkbox" v-model="form.isRead" :disabled="readOnly" />
             <span class="material-symbols-outlined">check_circle</span>
-            I've read this book
+            {{ t('manageBook.markRead') }}
           </label>
 
           <div class="field">
-            <label class="field__label">Categories</label>
+            <label class="field__label">{{ t('manageBook.categories') }}</label>
             <CategorySelector v-model="form.categories" :disabled="readOnly" />
           </div>
 
@@ -261,20 +289,22 @@ function applyTemplate(t) {
         <footer class="modal__footer">
           <template v-if="readOnly">
             <div class="modal__footer-actions">
-              <button class="btn-primary" type="button" @click="emit('close')">Close</button>
+              <button class="btn-primary" type="button" @click="emit('close')">{{ t('common.close') }}</button>
             </div>
           </template>
           <template v-else>
             <button v-if="isEdit" class="btn-delete" type="button" :disabled="busy" @click="onDelete">
               <BaseSpinner v-if="busy && pendingAction === 'delete'" size="sm" />
               <span v-else class="material-symbols-outlined">delete</span>
-              {{ busy && pendingAction === 'delete' ? 'Deleting…' : 'Delete' }}
+              {{ busy && pendingAction === 'delete' ? t('manageBook.deleting') : t('common.delete') }}
             </button>
             <div class="modal__footer-actions">
-              <button class="btn-secondary" type="button" :disabled="busy" @click="emit('close')">Cancel</button>
+              <button class="btn-secondary" type="button" :disabled="busy" @click="emit('close')">
+                {{ t('common.cancel') }}
+              </button>
               <button v-if="activeTab === 'manual'" class="btn-primary" type="button" :disabled="busy" @click="onSave">
                 <BaseSpinner v-if="busy && pendingAction === 'save'" size="sm" />
-                {{ busy && pendingAction === 'save' ? 'Saving…' : 'Save' }}
+                {{ busy && pendingAction === 'save' ? t('common.saving') : t('common.save') }}
               </button>
             </div>
           </template>

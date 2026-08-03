@@ -1,9 +1,11 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 
 const { hasCover, onCoverError } = useCoverFallback()
+const { t } = useI18n()
 
 const props = defineProps({
   book: {
@@ -18,9 +20,9 @@ defineEmits(['click'])
 // Mark non-"own" books in the Collection so a borrowed/unavailable title is
 // obvious at a glance — it stays in the grid, just flagged.
 const statusBadge = computed(() => {
-  if (props.book.status === 'lent') return { label: 'On Loan', icon: 'handshake', kind: 'lent' }
-  if (props.book.status === 'currently_reading') return { label: 'Reading', icon: 'auto_stories', kind: 'reading' }
-  if (props.book.status === 'unavailable') return { label: 'Unavailable', icon: 'block', kind: 'unavailable' }
+  if (props.book.status === 'lent') return { label: t('book.status.lent'), icon: 'handshake', kind: 'lent' }
+  if (props.book.status === 'currently_reading') return { label: t('book.status.reading'), icon: 'auto_stories', kind: 'reading' }
+  if (props.book.status === 'unavailable') return { label: t('book.status.unavailable'), icon: 'block', kind: 'unavailable' }
   return null
 })
 </script>
@@ -32,7 +34,7 @@ const statusBadge = computed(() => {
       <img
         v-if="hasCover(book)"
         :src="book.coverPath"
-        :alt="`Cover of ${book.title}`"
+        :alt="t('book.coverAlt', { title: book.title })"
         class="book-card__img"
         @error="onCoverError(book.id)"
       />
@@ -49,9 +51,9 @@ const statusBadge = computed(() => {
         {{ statusBadge.label }}
       </span>
 
-      <span v-if="book.isRead" class="book-card__read" title="You've read this book">
+      <span v-if="book.isRead" class="book-card__read" :title="t('book.readBadge')">
         <span class="material-symbols-outlined">check_circle</span>
-        Read
+        {{ t('book.read') }}
       </span>
     </div>
 

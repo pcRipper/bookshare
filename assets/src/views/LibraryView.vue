@@ -1,6 +1,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import { useLibraryStore } from '@/stores/library'
 import { useCollectionsStore } from '@/stores/collections'
 import { useSubscriptionsStore } from '@/stores/subscriptions'
@@ -33,6 +34,7 @@ const store = useLibraryStore()
 const collections = useCollectionsStore()
 const subscriptions = useSubscriptionsStore()
 const toast = useToastStore()
+const { t } = useI18n()
 const { profile, stats, collection, collectionMeta, collectionQuery, lending, requests, history, historyMeta, borrowing, pendingBorrowing, borrowingHistory, borrowingHistoryMeta, loading } = storeToRefs(store)
 const {
   mine: myCollections, mineMeta,
@@ -51,7 +53,7 @@ async function onToggleRead({ id, isRead }) {
   try {
     await store.setBookRead(id, isRead)
   } catch (e) {
-    toast.error(apiErrorMessage(e, 'Could not update the book.'))
+    toast.error(apiErrorMessage(e, t('library.errors.updateBook')))
   }
 }
 
@@ -59,19 +61,19 @@ async function onToggleRead({ id, isRead }) {
 const activeTab = ref('collection')
 
 const tabs = computed(() => [
-  { key: 'collection',  label: 'Books' },
-  { key: 'collections', label: 'Collections' },
-  { key: 'borrowing',   label: 'Borrowing', badge: (borrowing.value.length + cBorrowing.value.length) || null },
-  { key: 'lending',     label: 'Lending' },
-  { key: 'requests',    label: 'Requests', badge: (requests.value.length + pendingBorrowing.value.length + cIncoming.value.length + cPendingBorrowing.value.length) || null },
-  { key: 'following',   label: 'Following', badge: followingMeta.value.total || null },
-  { key: 'history',     label: 'History' },
+  { key: 'collection',  label: t('library.tabs.books') },
+  { key: 'collections', label: t('library.tabs.collections') },
+  { key: 'borrowing',   label: t('library.tabs.borrowing'), badge: (borrowing.value.length + cBorrowing.value.length) || null },
+  { key: 'lending',     label: t('library.tabs.lending') },
+  { key: 'requests',    label: t('library.tabs.requests'), badge: (requests.value.length + pendingBorrowing.value.length + cIncoming.value.length + cPendingBorrowing.value.length) || null },
+  { key: 'following',   label: t('library.tabs.following'), badge: followingMeta.value.total || null },
+  { key: 'history',     label: t('library.tabs.history') },
 ])
 
 const statCards = computed(() => [
-  { label: 'Total Books', value: stats.value.totalBooks },
-  { label: 'Shared',      value: stats.value.shared },
-  { label: 'Loaned',      value: stats.value.loaned },
+  { label: t('library.stats.totalBooks'), value: stats.value.totalBooks },
+  { label: t('library.stats.shared'),     value: stats.value.shared },
+  { label: t('library.stats.loaned'),     value: stats.value.loaned },
 ])
 
 /* ── History sub-views: lending (as owner) vs borrowing (as borrower) ──── */
@@ -202,7 +204,7 @@ async function handleCancel(id) {
   try {
     await store.cancelRequest(id)
   } catch (e) {
-    toast.error(apiErrorMessage(e, 'Could not cancel this request.'))
+    toast.error(apiErrorMessage(e, t('library.errors.cancelRequest')))
   } finally {
     cancelling.delete(id)
   }
@@ -216,7 +218,7 @@ async function handleUnfollow(userId) {
   try {
     await subscriptions.unsubscribe(userId)
   } catch (e) {
-    toast.error(apiErrorMessage(e, 'Could not unfollow this reader.'))
+    toast.error(apiErrorMessage(e, t('library.errors.unfollow')))
   } finally {
     unfollowing.delete(userId)
   }
@@ -248,7 +250,7 @@ async function onModalSave(payload) {
   } catch (e) {
     // Surface the failure as a toast instead of letting it bubble to the
     // app-wide error boundary (which would replace the whole page).
-    toast.error(apiErrorMessage(e, 'Could not save the book.'))
+    toast.error(apiErrorMessage(e, t('library.errors.saveBook')))
   } finally {
     modalBusy.value = false
   }
@@ -259,7 +261,7 @@ async function onModalDelete(id) {
     await store.deleteBook(id)
     modalOpen.value = false
   } catch (e) {
-    toast.error(apiErrorMessage(e, 'Could not delete the book.'))
+    toast.error(apiErrorMessage(e, t('library.errors.deleteBook')))
   } finally {
     modalBusy.value = false
   }
@@ -275,7 +277,7 @@ async function onExport() {
   try {
     await store.exportBooks()
   } catch (e) {
-    toast.error(apiErrorMessage(e, 'Could not export your books.'))
+    toast.error(apiErrorMessage(e, t('library.errors.export')))
   } finally {
     exporting.value = false
   }
@@ -284,7 +286,7 @@ async function onExport() {
 function onImported() {
   // A replace import may empty Lending; refresh it next time it's viewed.
   loaded.value.lending = false
-  toast.success('Your collection has been updated.')
+  toast.success(t('library.toasts.imported'))
 }
 
 /* ── Collections: CRUD ───────────────────────────────────────────────── */
@@ -310,7 +312,7 @@ async function onCollectionSave(payload) {
     }
     collectionModalOpen.value = false
   } catch (e) {
-    toast.error(apiErrorMessage(e, 'Could not save the collection.'))
+    toast.error(apiErrorMessage(e, t('library.errors.saveCollection')))
   } finally {
     collectionModalBusy.value = false
   }
@@ -321,7 +323,7 @@ async function onCollectionDelete(id) {
     await collections.deleteCollection(id)
     collectionModalOpen.value = false
   } catch (e) {
-    toast.error(apiErrorMessage(e, 'Could not delete the collection.'))
+    toast.error(apiErrorMessage(e, t('library.errors.deleteCollection')))
   } finally {
     collectionModalBusy.value = false
   }
@@ -332,19 +334,19 @@ const cProcessing = reactive({})
 async function handleCApprove(id, dueDate) {
   cProcessing[id] = 'approve'
   try { await collections.approve(id, dueDate); loaded.value.cLending = true }
-  catch (e) { toast.error(apiErrorMessage(e, 'Could not approve the request.')) }
+  catch (e) { toast.error(apiErrorMessage(e, t('library.errors.approve'))) }
   finally { delete cProcessing[id] }
 }
 async function handleCDecline(id, message = null) {
   cProcessing[id] = 'decline'
   try { await collections.decline(id, message) }
-  catch (e) { toast.error(apiErrorMessage(e, 'Could not decline the request.')) }
+  catch (e) { toast.error(apiErrorMessage(e, t('library.errors.decline'))) }
   finally { delete cProcessing[id] }
 }
 async function handleCConfirmReturn(id) {
   cProcessing[id] = 'confirm-return'
   try { await collections.confirmReturn(id); loaded.value.cLending = true }
-  catch (e) { toast.error(apiErrorMessage(e, 'Could not confirm the return.')) }
+  catch (e) { toast.error(apiErrorMessage(e, t('library.errors.confirmReturn'))) }
   finally { delete cProcessing[id] }
 }
 
@@ -354,7 +356,7 @@ async function handleCReturn(id) {
   if (cReturning.has(id)) return
   cReturning.add(id)
   try { await collections.returnCollection(id) }
-  catch (e) { toast.error(apiErrorMessage(e, 'Could not return the collection.')) }
+  catch (e) { toast.error(apiErrorMessage(e, t('library.errors.returnCollection'))) }
   finally { cReturning.delete(id) }
 }
 const cCancelling = reactive(new Set())
@@ -362,7 +364,7 @@ async function handleCCancel(id) {
   if (cCancelling.has(id)) return
   cCancelling.add(id)
   try { await collections.cancel(id) }
-  catch (e) { toast.error(apiErrorMessage(e, 'Could not cancel the request.')) }
+  catch (e) { toast.error(apiErrorMessage(e, t('library.errors.cancelRequest'))) }
   finally { cCancelling.delete(id) }
 }
 </script>
@@ -385,7 +387,7 @@ async function handleCCancel(id) {
             <div class="profile-header__text">
               <h1 class="profile-header__name">{{ profile.fullName }}</h1>
               <p v-if="profile.bio" class="profile-header__bio">{{ profile.bio }}</p>
-              <p v-else class="profile-header__bio profile-header__bio--muted">Add a short bio in settings.</p>
+              <p v-else class="profile-header__bio profile-header__bio--muted">{{ t('library.bioEmpty') }}</p>
             </div>
           </template>
 
@@ -403,7 +405,7 @@ async function handleCCancel(id) {
         <div class="profile-header__aside">
           <button class="btn-add-book" @click="openCreate">
             <span class="material-symbols-outlined">add</span>
-            Add New Book
+            {{ t('library.addNewBook') }}
           </button>
           <StatBar :stats="statCards" :loading="!profile" />
         </div>
@@ -434,7 +436,7 @@ async function handleCCancel(id) {
           <div class="collection-toolbar">
             <SearchInput
               class="collection-toolbar__search"
-              placeholder="Search by title, author or ISBN"
+              :placeholder="t('library.searchPlaceholder')"
               :loading="loading.collection"
               @search="store.setCollectionSearch"
             />
@@ -451,16 +453,16 @@ async function handleCCancel(id) {
                 @click="openCreate"
               >
                 <span class="material-symbols-outlined">add</span>
-                Add Book
+                {{ t('library.addBook') }}
               </button>
               <button class="toolbar-btn" type="button" @click="importOpen = true">
                 <span class="material-symbols-outlined">upload</span>
-                Import
+                {{ t('library.import') }}
               </button>
               <button class="toolbar-btn" type="button" :disabled="exporting || !collection.length" @click="onExport">
                 <BaseSpinner v-if="exporting" size="sm" />
                 <span v-else class="material-symbols-outlined">download</span>
-                Export
+                {{ t('library.export') }}
               </button>
             </div>
           </div>
@@ -472,7 +474,7 @@ async function handleCCancel(id) {
           <!-- No matches for an active search -->
           <div v-else-if="collectionQuery && !collection.length" class="empty-state">
             <span class="material-symbols-outlined empty-state__icon">search_off</span>
-            <p class="empty-state__text">No books match “{{ collectionQuery }}”.</p>
+            <p class="empty-state__text">{{ t('library.noMatches', { query: collectionQuery }) }}</p>
           </div>
           <BookTable
             v-else-if="bookView === 'table'"
@@ -486,8 +488,8 @@ async function handleCCancel(id) {
             <!-- "Add new book" placeholder card, leading the grid (first page, and not while searching) -->
             <div v-if="collectionMeta.page === 1 && !collectionQuery" class="add-book-card" @click="openCreate" role="button" tabindex="0">
               <span class="material-symbols-outlined add-book-card__icon">add_circle</span>
-              <h3 class="add-book-card__title">Catalog a New Book</h3>
-              <p class="add-book-card__hint">Add a title to your collection.</p>
+              <h3 class="add-book-card__title">{{ t('library.addCard.bookTitle') }}</h3>
+              <p class="add-book-card__hint">{{ t('library.addCard.bookHint') }}</p>
             </div>
             <BookCard
               v-for="book in collection"
@@ -512,8 +514,8 @@ async function handleCCancel(id) {
               <!-- "New collection" lead card (first page only) -->
               <div v-if="mineMeta.page === 1" class="add-book-card" role="button" tabindex="0" @click="openCreateCollection">
                 <span class="material-symbols-outlined add-book-card__icon">library_add</span>
-                <h3 class="add-book-card__title">New Collection</h3>
-                <p class="add-book-card__hint">Group two or more books to lend together.</p>
+                <h3 class="add-book-card__title">{{ t('library.addCard.collectionTitle') }}</h3>
+                <p class="add-book-card__hint">{{ t('library.addCard.collectionHint') }}</p>
               </div>
               <CollectionCard
                 v-for="c in myCollections"
@@ -537,7 +539,7 @@ async function handleCCancel(id) {
           <BookGridSkeleton v-if="loading.borrowing && !borrowing.length && !cBorrowing.length" :count="4" />
           <template v-else-if="borrowing.length || cBorrowing.length">
             <section v-if="cBorrowing.length" class="tab-section">
-              <h3 class="tab-section__title">Collections</h3>
+              <h3 class="tab-section__title">{{ t('library.sections.collections') }}</h3>
               <div class="request-grid">
                 <CollectionRequestCard
                   v-for="loan in cBorrowing"
@@ -550,7 +552,7 @@ async function handleCCancel(id) {
               </div>
             </section>
             <section v-if="borrowing.length" class="tab-section">
-              <h3 v-if="cBorrowing.length" class="tab-section__title">Individual books</h3>
+              <h3 v-if="cBorrowing.length" class="tab-section__title">{{ t('library.sections.individualBooks') }}</h3>
               <div class="book-grid">
                 <BorrowingCard
                   v-for="loan in borrowing"
@@ -564,8 +566,8 @@ async function handleCCancel(id) {
           </template>
           <div v-else class="empty-state">
             <span class="material-symbols-outlined empty-state__icon">auto_stories</span>
-            <p class="empty-state__text">You're not borrowing any books right now.</p>
-            <RouterLink to="/discover" class="empty-state__link">Discover books to borrow</RouterLink>
+            <p class="empty-state__text">{{ t('library.empty.borrowing') }}</p>
+            <RouterLink to="/discover" class="empty-state__link">{{ t('library.empty.borrowingLink') }}</RouterLink>
           </div>
         </div>
 
@@ -574,7 +576,7 @@ async function handleCCancel(id) {
           <BookGridSkeleton v-if="loading.lending && !lending.length && !cLending.length" :count="4" />
           <template v-else-if="lending.length || cLending.length">
             <section v-if="cLending.length" class="tab-section">
-              <h3 class="tab-section__title">Collections</h3>
+              <h3 class="tab-section__title">{{ t('library.sections.collections') }}</h3>
               <div class="request-grid">
                 <CollectionRequestCard
                   v-for="loan in cLending"
@@ -585,7 +587,7 @@ async function handleCCancel(id) {
               </div>
             </section>
             <section v-if="lending.length" class="tab-section">
-              <h3 v-if="cLending.length" class="tab-section__title">Individual books</h3>
+              <h3 v-if="cLending.length" class="tab-section__title">{{ t('library.sections.individualBooks') }}</h3>
               <div class="book-grid">
                 <BookCard v-for="book in lending" :key="book.id" :book="book" @click="openEdit" />
               </div>
@@ -593,7 +595,7 @@ async function handleCCancel(id) {
           </template>
           <div v-else class="empty-state">
             <span class="material-symbols-outlined empty-state__icon">local_library</span>
-            <p class="empty-state__text">No books currently lent out.</p>
+            <p class="empty-state__text">{{ t('library.empty.lending') }}</p>
           </div>
         </div>
 
@@ -618,7 +620,7 @@ async function handleCCancel(id) {
           <template v-else-if="requests.length || pendingBorrowing.length || cIncoming.length || cPendingBorrowing.length">
             <!-- Incoming collection requests. -->
             <section v-if="cIncoming.length" class="tab-section">
-              <h3 class="tab-section__title">Collection requests for you</h3>
+              <h3 class="tab-section__title">{{ t('library.sections.collectionRequestsForYou') }}</h3>
               <div class="request-grid">
                 <CollectionRequestCard
                   v-for="req in cIncoming"
@@ -635,7 +637,7 @@ async function handleCCancel(id) {
 
             <!-- Incoming: other readers asking to borrow your books. -->
             <section v-if="requests.length" class="tab-section">
-              <h3 class="tab-section__title">Requests for your books</h3>
+              <h3 class="tab-section__title">{{ t('library.sections.requestsForYourBooks') }}</h3>
               <div class="request-grid">
                 <RequestCard
                   v-for="req in requests"
@@ -651,7 +653,7 @@ async function handleCCancel(id) {
 
             <!-- Outgoing collection requests still awaiting a decision. -->
             <section v-if="cPendingBorrowing.length" class="tab-section">
-              <h3 class="tab-section__title">Your collection requests</h3>
+              <h3 class="tab-section__title">{{ t('library.sections.yourCollectionRequests') }}</h3>
               <div class="request-grid">
                 <CollectionRequestCard
                   v-for="req in cPendingBorrowing"
@@ -666,7 +668,7 @@ async function handleCCancel(id) {
 
             <!-- Outgoing: your own requests still awaiting the owner's decision. -->
             <section v-if="pendingBorrowing.length" class="tab-section">
-              <h3 class="tab-section__title">Your borrow requests</h3>
+              <h3 class="tab-section__title">{{ t('library.sections.yourBorrowRequests') }}</h3>
               <div class="book-grid">
                 <PendingRequestCard
                   v-for="req in pendingBorrowing"
@@ -678,7 +680,7 @@ async function handleCCancel(id) {
               </div>
             </section>
           </template>
-          <p v-else class="empty-requests">All caught up — no open requests.</p>
+          <p v-else class="empty-requests">{{ t('library.empty.requests') }}</p>
         </div>
 
         <!-- Following tab (people you subscribe to) -->
@@ -701,7 +703,7 @@ async function handleCCancel(id) {
                 @click="handleUnfollow(sub.user.id)"
               >
                 <BaseSpinner v-if="unfollowing.has(sub.user.id)" size="sm" />
-                <span v-else>Unfollow</span>
+                <span v-else>{{ t('library.unfollow') }}</span>
               </button>
             </li>
           </ul>
@@ -714,8 +716,8 @@ async function handleCCancel(id) {
           />
           <div v-else class="empty-state">
             <span class="material-symbols-outlined empty-state__icon">group</span>
-            <p class="empty-state__text">You're not following anyone yet.</p>
-            <RouterLink to="/discover" class="empty-state__link">Discover readers to follow</RouterLink>
+            <p class="empty-state__text">{{ t('library.empty.following') }}</p>
+            <RouterLink to="/discover" class="empty-state__link">{{ t('library.empty.followingLink') }}</RouterLink>
           </div>
         </div>
 
@@ -729,14 +731,14 @@ async function handleCCancel(id) {
               role="tab"
               :aria-selected="historySide === 'lending'"
               @click="historySide = 'lending'"
-            >Lent to others</button>
+            >{{ t('library.history.lentToOthers') }}</button>
             <button
               class="history-toggle__btn"
               :class="{ 'history-toggle__btn--active': historySide === 'borrowing' }"
               role="tab"
               :aria-selected="historySide === 'borrowing'"
               @click="historySide = 'borrowing'"
-            >Borrowed by me</button>
+            >{{ t('library.history.borrowedByMe') }}</button>
           </div>
 
           <ul v-if="historyLoading" class="history-list">
@@ -755,7 +757,7 @@ async function handleCCancel(id) {
           <template v-else-if="historyItems.length || cHistoryItems.length">
             <!-- Collection loan history -->
             <section v-if="cHistoryItems.length" class="tab-section">
-              <h3 class="tab-section__title">Collections</h3>
+              <h3 class="tab-section__title">{{ t('library.sections.collections') }}</h3>
               <div class="request-grid">
                 <CollectionRequestCard
                   v-for="item in cHistoryItems"
@@ -774,7 +776,7 @@ async function handleCCancel(id) {
 
             <!-- Per-book loan history -->
             <section v-if="historyItems.length" class="tab-section">
-              <h3 v-if="cHistoryItems.length" class="tab-section__title">Individual books</h3>
+              <h3 v-if="cHistoryItems.length" class="tab-section__title">{{ t('library.sections.individualBooks') }}</h3>
               <ul class="history-list">
                 <LoanHistoryCard
                   v-for="item in historyItems"
@@ -793,8 +795,8 @@ async function handleCCancel(id) {
           </template>
           <div v-else class="empty-state">
             <span class="material-symbols-outlined empty-state__icon">history</span>
-            <p v-if="historySide === 'lending'" class="empty-state__text">Your lending history will appear here.</p>
-            <p v-else class="empty-state__text">Your borrowing history will appear here.</p>
+            <p v-if="historySide === 'lending'" class="empty-state__text">{{ t('library.empty.historyLending') }}</p>
+            <p v-else class="empty-state__text">{{ t('library.empty.historyBorrowing') }}</p>
           </div>
         </div>
 
@@ -804,7 +806,7 @@ async function handleCCancel(id) {
     <!-- Mobile FAB (hidden on desktop) -->
     <button
       class="fab"
-      aria-label="Add new book"
+      :aria-label="t('library.addBookAria')"
       @click="openCreate"
     >
       <span class="material-symbols-outlined">add</span>

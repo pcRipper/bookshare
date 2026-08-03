@@ -1,10 +1,12 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 
 const { hasCover, onCoverError } = useCoverFallback()
+const { t } = useI18n()
 
 const props = defineProps({
   request: {
@@ -59,7 +61,7 @@ function approve() {
       <div>
         <h3 class="request-card__name">{{ request.requester.fullName }}</h3>
         <p class="request-card__date">
-          {{ isReturn ? 'Wants to return this book' : `Requested ${request.requestedAt}` }}
+          {{ isReturn ? t('requests.wantsToReturn') : t('requests.requestedAt', { when: request.requestedAt }) }}
         </p>
       </div>
     </div>
@@ -70,7 +72,7 @@ function approve() {
         <img
           v-if="hasCover(request.book)"
           :src="request.book.coverPath"
-          :alt="`Cover of ${request.book.title}`"
+          :alt="t('book.coverAlt', { title: request.book.title })"
           @error="onCoverError(request.book.id)"
         />
         <span v-else class="material-symbols-outlined">menu_book</span>
@@ -91,7 +93,7 @@ function approve() {
         >
           <BaseSpinner v-if="pending === 'confirm-return'" size="sm" />
           <span v-else class="material-symbols-outlined">inventory</span>
-          {{ pending === 'confirm-return' ? 'Confirming…' : 'Confirm received' }}
+          {{ pending === 'confirm-return' ? t('requests.confirming') : t('requests.confirmReceived') }}
         </button>
       </div>
     </template>
@@ -99,7 +101,7 @@ function approve() {
     <!-- Borrow request (pending): due-date picker + approve/decline -->
     <template v-else>
       <div class="request-card__due">
-        <label class="request-card__due-label" :for="`due-${request.id}`">Return by</label>
+        <label class="request-card__due-label" :for="`due-${request.id}`">{{ t('requests.returnBy') }}</label>
         <input
           :id="`due-${request.id}`"
           v-model="dueDate"
@@ -111,14 +113,14 @@ function approve() {
       </div>
 
       <div class="request-card__note">
-        <label class="request-card__note-label" :for="`note-${request.id}`">Reason (optional)</label>
+        <label class="request-card__note-label" :for="`note-${request.id}`">{{ t('requests.reasonLabel') }}</label>
         <input
           :id="`note-${request.id}`"
           v-model="declineMessage"
           class="request-card__note-input"
           type="text"
           maxlength="255"
-          placeholder="Shared with the borrower if you decline"
+          :placeholder="t('requests.reasonPlaceholder')"
           :disabled="!!pending"
         />
       </div>
@@ -126,11 +128,11 @@ function approve() {
       <div class="request-card__actions">
         <button class="btn-outline" :disabled="!!pending" @click="decline">
           <BaseSpinner v-if="pending === 'decline'" size="sm" />
-          {{ pending === 'decline' ? 'Declining…' : 'Decline' }}
+          {{ pending === 'decline' ? t('requests.declining') : t('requests.decline') }}
         </button>
         <button class="btn-primary" :disabled="!!pending" @click="approve">
           <BaseSpinner v-if="pending === 'approve'" size="sm" />
-          {{ pending === 'approve' ? 'Approving…' : 'Approve' }}
+          {{ pending === 'approve' ? t('requests.approving') : t('requests.approve') }}
         </button>
       </div>
     </template>

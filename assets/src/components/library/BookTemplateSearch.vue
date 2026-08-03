@@ -1,11 +1,14 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useLibraryStore } from '@/stores/library'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
+import { languageLabel } from '@/utils/languages'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 
 const { hasCover, onCoverError } = useCoverFallback()
+const { t } = useI18n()
 
 /**
  * "Find a template" panel for the Add New Book modal. A full-width search over
@@ -31,12 +34,12 @@ const minLenFor = src => MIN_QUERY_LEN[src] ?? 1
 
 // The search strategies the backend exposes (source keys mirror the API), with
 // the copy the brief asks for. The local catalogue is the default.
-const SOURCES = [
-  { key: 'site',       label: 'On this site',     hint: 'Search existing templates on the site' },
-  { key: 'external',   label: 'Open Library',     hint: 'Search Open Library' },
-  { key: 'bookfinder', label: 'Ukrainian stores', hint: 'Search bookfinder.com.ua' },
-]
-const sourceOptions = SOURCES.map(s => ({ value: s.key, label: s.label }))
+const SOURCES = computed(() => [
+  { key: 'site',       label: t('templateSearch.sources.siteLabel'),       hint: t('templateSearch.sources.siteHint') },
+  { key: 'external',   label: t('templateSearch.sources.externalLabel'),   hint: t('templateSearch.sources.externalHint') },
+  { key: 'bookfinder', label: t('templateSearch.sources.bookfinderLabel'), hint: t('templateSearch.sources.bookfinderHint') },
+])
+const sourceOptions = computed(() => SOURCES.value.map(s => ({ value: s.key, label: s.label })))
 
 const query = ref('')
 const source = ref('site')
@@ -58,7 +61,7 @@ const seen = new Set() // keys of rendered templates, to drop cross-page repeats
 let observer = null
 
 const trimmedQuery = computed(() => query.value.trim())
-const activeSource = computed(() => SOURCES.find(s => s.key === source.value))
+const activeSource = computed(() => SOURCES.value.find(s => s.key === source.value))
 const minLen = computed(() => minLenFor(source.value))
 // A non-empty query that hasn't reached the active source's minimum yet — we hold
 // off searching (and tell the user) rather than firing a broad upstream call.
@@ -133,7 +136,7 @@ async function runSearch(seq) {
   } catch (e) {
     if (seq !== searchSeq || e.code === 'ERR_CANCELED') return // superseded/aborted — ignore
     reset()
-    error.value = 'Could not search for templates. Try again.'
+    error.value = t('templateSearch.error')
   } finally {
     if (inFlight === controller) inFlight = null
     if (seq === searchSeq) searching.value = false
@@ -181,7 +184,7 @@ onMounted(() => searchInput.value?.focus())
 // The "nothing found" copy names the active source so an empty result reads as
 // "nothing here" rather than a dead end.
 const emptyMessage = computed(() =>
-  `No matching books found in ${activeSource.value.label}. Try a different title or ISBN.`,
+  t('templateSearch.empty', { source: activeSource.value.label }),
 )
 
 const showEmpty = computed(() =>
@@ -199,15 +202,15 @@ const showEmpty = computed(() =>
         v-model="query"
         class="tpl__search-input"
         type="text"
-        placeholder="Search by title or ISBN…"
-        aria-label="Search by title or ISBN"
+        :placeholder="t('templateSearch.searchPlaceholder')"
+        :aria-label="t('templateSearch.searchLabel')"
       />
       <BaseSpinner v-if="searching" size="sm" class="tpl__search-spinner" />
     </div>
 
     <!-- Source picker -->
     <div class="tpl__sources">
-      <label class="tpl__source-label" for="tpl-source">Search source</label>
+      <label class="tpl__source-label" for="tpl-source">{{ t('templateSearch.sourceLabel') }}</label>
       <BaseSelect id="tpl-source" v-model="source" :options="sourceOptions" />
       <p class="tpl__source-hint">{{ activeSource.hint }}</p>
     </div>
@@ -216,35 +219,39 @@ const showEmpty = computed(() =>
     <div class="tpl__body">
       <p v-if="error" class="tpl__msg tpl__msg--error">{{ error }}</p>
 
+      <!-- The source name keeps its own capitalisation: "Open Library" is a
+           proper noun, and lower-casing it per English style breaks elsewhere. -->
       <p v-else-if="trimmedQuery === ''" class="tpl__msg">
-        Search {{ activeSource.label.toLowerCase() }} to fill a new book from an existing one.
+        {{ t('templateSearch.prompt', { source: activeSource.label }) }}
       </p>
 
       <p v-else-if="tooShort" class="tpl__msg">
-        Type at least {{ minLen }} characters to search {{ activeSource.label.toLowerCase() }}.
+        {{ t('templateSearch.tooShort', { min: minLen, source: activeSource.label }) }}
       </p>
 
       <p v-else-if="showEmpty" class="tpl__msg">{{ emptyMessage }}</p>
 
       <ul v-else-if="results.length" ref="listEl" class="tpl__list">
-        <li v-for="(t, i) in results" :key="`${keyOf(t)}-${i}`">
-          <button type="button" class="tpl__option" @click="emit('select', t)">
+        <!-- `tpl`, not `t` — the loop variable must not shadow the translation
+             function this template also calls. -->
+        <li v-for="(tpl, i) in results" :key="`${keyOf(tpl)}-${i}`">
+          <button type="button" class="tpl__option" @click="emit('select', tpl)">
             <span class="tpl__cover">
               <img
-                v-if="hasCover(t.coverPath)"
-                :src="t.coverPath"
-                :alt="`Cover of ${t.title}`"
-                @error="onCoverError(t.coverPath)"
+                v-if="hasCover(tpl.coverPath)"
+                :src="tpl.coverPath"
+                :alt="t('book.coverAlt', { title: tpl.title })"
+                @error="onCoverError(tpl.coverPath)"
               />
               <span v-else class="material-symbols-outlined tpl__cover-icon">menu_book</span>
             </span>
             <span class="tpl__meta">
-              <span class="tpl__title">{{ t.title }}</span>
-              <span class="tpl__author">{{ t.author }}</span>
-              <span v-if="t.description" class="tpl__desc">{{ t.description }}</span>
+              <span class="tpl__title">{{ tpl.title }}</span>
+              <span class="tpl__author">{{ tpl.author }}</span>
+              <span v-if="tpl.description" class="tpl__desc">{{ tpl.description }}</span>
               <span class="tpl__tags">
-                <span v-if="t.languageName" class="tpl__tag">{{ t.languageName }}</span>
-                <span v-if="t.isbn" class="tpl__isbn">ISBN {{ t.isbn }}</span>
+                <span v-if="tpl.language" class="tpl__tag">{{ languageLabel(tpl.language, tpl.languageName) }}</span>
+                <span v-if="tpl.isbn" class="tpl__isbn">ISBN {{ tpl.isbn }}</span>
               </span>
             </span>
             <span class="material-symbols-outlined tpl__pick">arrow_forward</span>

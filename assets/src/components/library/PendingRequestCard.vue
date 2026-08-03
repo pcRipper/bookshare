@@ -1,10 +1,12 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 
 const { hasCover, onCoverError } = useCoverFallback()
+const { t } = useI18n()
 
 const props = defineProps({
   request: {
@@ -32,7 +34,7 @@ function onCancel() {
       <img
         v-if="hasCover(book)"
         :src="book.coverPath"
-        :alt="`Cover of ${book.title}`"
+        :alt="t('book.coverAlt', { title: book.title })"
         class="pending-card__img"
         loading="lazy"
         @error="onCoverError(book.id)"
@@ -41,7 +43,7 @@ function onCancel() {
         <span class="material-symbols-outlined">menu_book</span>
       </div>
       <span class="pending-card__badge">
-        <span class="material-symbols-outlined">hourglass_empty</span>Awaiting approval
+        <span class="material-symbols-outlined">hourglass_empty</span>{{ t('requests.awaitingApproval') }}
       </span>
     </div>
 
@@ -51,15 +53,15 @@ function onCancel() {
 
       <RouterLink v-if="owner" :to="`/profile/${owner.id}`" class="pending-card__owner">
         <BaseAvatar :src="owner.avatarUrl" :name="owner.fullName" size="sm" />
-        <span class="pending-card__owner-name">from {{ owner.fullName }}</span>
+        <span class="pending-card__owner-name">{{ t('requests.fromOwner', { name: owner.fullName }) }}</span>
       </RouterLink>
 
-      <p class="pending-card__meta">Requested {{ request.requestedAt }}</p>
+      <p class="pending-card__meta">{{ t('requests.requestedAt', { when: request.requestedAt }) }}</p>
 
       <button class="pending-card__action" :disabled="pending" @click="onCancel">
         <BaseSpinner v-if="pending" size="sm" />
         <span v-else class="material-symbols-outlined">close</span>
-        {{ pending ? 'Cancelling…' : 'Cancel request' }}
+        {{ pending ? t('requests.cancelling') : t('requests.cancelRequest') }}
       </button>
     </div>
   </article>

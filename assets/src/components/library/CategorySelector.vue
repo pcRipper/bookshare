@@ -1,7 +1,10 @@
 <script setup>
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useLibraryStore } from '@/stores/library'
 import { CATEGORY_PALETTE, resolveCategoryColors } from '@/utils/categoryColors'
+
+const { t } = useI18n()
 
 /**
  * "Search or create" category picker used in the Manage Book modal.
@@ -105,7 +108,7 @@ async function runSearch() {
   } catch {
     if (seq === searchSeq) {
       results.value = []
-      error.value = 'Could not search categories. Try again.'
+      error.value = t('categorySelector.searchFailed')
     }
   } finally {
     if (seq === searchSeq) searching.value = false
@@ -135,10 +138,10 @@ async function createCategory() {
   } catch (e) {
     if (e.response?.status === 409) {
       // Someone created it meanwhile — resurface it so the user can pick it.
-      error.value = 'That category already exists — pick it from the list.'
+      error.value = t('categorySelector.exists')
       runSearch()
     } else {
-      error.value = e.response?.data?.error ?? 'Could not create the category.'
+      error.value = e.response?.data?.error ?? t('categorySelector.createFailed')
     }
   } finally {
     creating.value = false
@@ -193,14 +196,14 @@ function chipStyle(colorHex) {
           v-if="!disabled"
           type="button"
           class="cat__chip-remove"
-          :aria-label="`Remove ${cat.name}`"
+          :aria-label="t('categorySelector.removeChip', { name: cat.name })"
           @click="removeCategory(cat.id)"
         >
           <span class="material-symbols-outlined">close</span>
         </button>
       </span>
     </div>
-    <p v-if="disabled && !modelValue.length" class="cat__hint">No categories.</p>
+    <p v-if="disabled && !modelValue.length" class="cat__hint">{{ t('categorySelector.none') }}</p>
 
     <!-- Search -->
     <template v-if="!disabled">
@@ -211,8 +214,8 @@ function chipStyle(colorHex) {
         class="cat__search-input"
         type="text"
         :maxlength="MAX_NAME + 10"
-        placeholder="Search or create category…"
-        aria-label="Search or create category"
+        :placeholder="t('categorySelector.searchPlaceholder')"
+        :aria-label="t('categorySelector.searchLabel')"
         @keydown.enter.prevent="onEnter"
         @keydown.down.prevent="move(1)"
         @keydown.up.prevent="move(-1)"
@@ -240,9 +243,9 @@ function chipStyle(colorHex) {
     <!-- Create panel (no existing match) -->
     <div v-else-if="canCreate" class="cat__create">
       <div class="cat__create-info">
-        <span class="cat__create-label">Create new category</span>
+        <span class="cat__create-label">{{ t('categorySelector.createNew') }}</span>
         <span class="cat__create-name">“{{ trimmedQuery }}”</span>
-        <div class="cat__swatches" role="radiogroup" aria-label="Category colour">
+        <div class="cat__swatches" role="radiogroup" :aria-label="t('categorySelector.colourLabel')">
           <button
             v-for="swatch in CATEGORY_PALETTE"
             :key="swatch.bg"
@@ -260,7 +263,7 @@ function chipStyle(colorHex) {
         type="button"
         class="cat__create-btn"
         :disabled="creating"
-        aria-label="Create category"
+        :aria-label="t('categorySelector.createLabel')"
         @click="createCategory"
       >
         <span class="material-symbols-outlined">{{ creating ? 'hourglass_empty' : 'add' }}</span>
@@ -269,7 +272,7 @@ function chipStyle(colorHex) {
 
     <!-- Hints / errors -->
     <p v-if="tooLong" class="cat__hint cat__hint--error">
-      Category names must be {{ MAX_NAME }} characters or fewer.
+      {{ t('categorySelector.tooLong', { max: MAX_NAME }) }}
     </p>
     <p v-else-if="error" class="cat__hint cat__hint--error">{{ error }}</p>
     <p

@@ -1,8 +1,11 @@
 <script setup>
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useLibraryStore } from '@/stores/library'
 import { apiErrorMessage } from '@/utils/apiError'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+
+const { t } = useI18n()
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -52,7 +55,7 @@ async function run() {
     if (e.response?.status === 422 && e.response.data?.aborted) {
       result.value = e.response.data
     } else {
-      errorMsg.value = apiErrorMessage(e, 'Could not import the file.')
+      errorMsg.value = apiErrorMessage(e, t('import.failed'))
     }
   } finally {
     busy.value = false
@@ -65,48 +68,50 @@ async function run() {
     <div v-if="open" class="modal-overlay" @click.self="emit('close')">
       <div class="modal" role="dialog" aria-modal="true">
         <header class="modal__header">
-          <h2 class="modal__title">Import Books</h2>
-          <button class="modal__close" aria-label="Close" @click="emit('close')">
+          <h2 class="modal__title">{{ t('import.title') }}</h2>
+          <button class="modal__close" :aria-label="t('common.close')" @click="emit('close')">
             <span class="material-symbols-outlined">close</span>
           </button>
         </header>
 
         <div class="modal__body">
-          <p class="modal__hint">
-            Upload a CSV with columns <code>title, author, isbn, cover, language, status, categories</code>.
-            Category names must already exist; unknown ones are ignored. Books that match one you
-            already have (same title &amp; author) are skipped, never duplicated.
-          </p>
+          <!-- The column list is code, not prose — it travels as a slot so no
+               translation can accidentally rename a CSV header. -->
+          <i18n-t keypath="import.hint" tag="p" class="modal__hint">
+            <template #columns>
+              <code>title, author, isbn, cover, language, status, categories</code>
+            </template>
+          </i18n-t>
 
           <!-- Mode -->
           <div class="field">
-            <span class="field__label">When importing</span>
+            <span class="field__label">{{ t('import.modeLabel') }}</span>
             <label class="radio">
               <input v-model="mode" type="radio" value="append" :disabled="busy" />
-              <span><strong>Add</strong> to my collection</span>
+              <span><strong>{{ t('import.modeAppendStrong') }}</strong> {{ t('import.modeAppend') }}</span>
             </label>
             <label class="radio">
               <input v-model="mode" type="radio" value="replace" :disabled="busy" />
-              <span><strong>Replace</strong> my collection (books on loan are kept)</span>
+              <span><strong>{{ t('import.modeReplaceStrong') }}</strong> {{ t('import.modeReplace') }}</span>
             </label>
           </div>
 
           <!-- On error -->
           <div class="field">
-            <span class="field__label">If a row is invalid</span>
+            <span class="field__label">{{ t('import.onErrorLabel') }}</span>
             <label class="radio">
               <input v-model="onError" type="radio" value="skip" :disabled="busy" />
-              <span>Skip it and import the rest</span>
+              <span>{{ t('import.onErrorSkip') }}</span>
             </label>
             <label class="radio">
               <input v-model="onError" type="radio" value="abort" :disabled="busy" />
-              <span>Cancel the whole import</span>
+              <span>{{ t('import.onErrorAbort') }}</span>
             </label>
           </div>
 
           <!-- File -->
           <div class="field">
-            <label class="field__label" for="import-file">CSV file</label>
+            <label class="field__label" for="import-file">{{ t('import.fileLabel') }}</label>
             <input id="import-file" type="file" accept=".csv,text/csv" :disabled="busy" @change="onFile" />
           </div>
 
@@ -114,15 +119,19 @@ async function run() {
           <div v-if="result" class="result" :class="{ 'result--aborted': result.aborted }">
             <p v-if="result.aborted" class="result__head">
               <span class="material-symbols-outlined">error</span>
-              Import cancelled — fix the rows below and try again.
+              {{ t('import.aborted') }}
             </p>
             <p v-else class="result__head">
               <span class="material-symbols-outlined">check_circle</span>
-              Imported {{ result.imported }} book{{ result.imported === 1 ? '' : 's' }}<template v-if="result.skipped">, skipped {{ result.skipped }}</template>.
+              <!-- Two counted messages rather than a sentence assembled from
+                   fragments: the plural form of "book" is the translator's call. -->
+              {{ result.skipped
+                ? t('import.importedWithSkips', result.imported, { named: { count: result.imported, skipped: result.skipped } })
+                : t('import.imported', result.imported, { named: { count: result.imported } }) }}
             </p>
             <ul v-if="result.errors?.length" class="result__errors">
               <li v-for="(row, i) in result.errors" :key="i">
-                Line {{ row.line }}: {{ row.errors.join('; ') }}
+                {{ t('import.line', { line: row.line, errors: row.errors.join('; ') }) }}
               </li>
             </ul>
           </div>
@@ -132,11 +141,11 @@ async function run() {
 
         <footer class="modal__footer">
           <button class="btn-secondary" type="button" :disabled="busy" @click="emit('close')">
-            {{ result && !result.aborted ? 'Done' : 'Cancel' }}
+            {{ result && !result.aborted ? t('import.done') : t('common.cancel') }}
           </button>
           <button class="btn-primary" type="button" :disabled="!file || busy" @click="run">
             <BaseSpinner v-if="busy" size="sm" />
-            {{ busy ? 'Importing…' : 'Import' }}
+            {{ busy ? t('import.importing') : t('import.submit') }}
           </button>
         </footer>
       </div>

@@ -1,10 +1,13 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import { currentLocale } from '@/i18n'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 
 const { hasCover, onCoverError } = useCoverFallback()
+const { t } = useI18n()
 
 const props = defineProps({
   loan: {
@@ -24,12 +27,14 @@ const returnRequested = computed(() => props.loan.status === 'return_pending')
 
 /* ── Due date ─────────────────────────────────────────────────────────── */
 const due = computed(() => {
-  if (!props.loan.dueDate) return { label: 'No due date', overdue: false }
+  if (!props.loan.dueDate) return { label: t('requests.noDueDate'), overdue: false }
   const date = new Date(props.loan.dueDate)
   const today = new Date()
   const overdue = date.setHours(23, 59, 59, 999) < today.getTime()
   return {
-    label: `Due ${new Date(props.loan.dueDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`,
+    label: t('requests.due', {
+      date: new Date(props.loan.dueDate).toLocaleDateString(currentLocale(), { day: 'numeric', month: 'short' }),
+    }),
     overdue,
   }
 })
@@ -45,7 +50,7 @@ function onReturn() {
       <img
         v-if="hasCover(book)"
         :src="book.coverPath"
-        :alt="`Cover of ${book.title}`"
+        :alt="t('book.coverAlt', { title: book.title })"
         class="borrowing-card__img"
         loading="lazy"
         @error="onCoverError(book.id)"
@@ -71,7 +76,7 @@ function onReturn() {
         class="borrowing-card__owner"
       >
         <BaseAvatar :src="owner.avatarUrl" :name="owner.fullName" size="sm" />
-        <span class="borrowing-card__owner-name">from {{ owner.fullName }}</span>
+        <span class="borrowing-card__owner-name">{{ t('requests.fromOwner', { name: owner.fullName }) }}</span>
       </RouterLink>
 
       <button
@@ -82,7 +87,7 @@ function onReturn() {
       >
         <BaseSpinner v-if="pending" size="sm" />
         <span v-else class="material-symbols-outlined">{{ returnRequested ? 'hourglass_top' : 'assignment_return' }}</span>
-        {{ returnRequested ? 'Awaiting owner' : pending ? 'Returning…' : 'Mark as Returned' }}
+        {{ returnRequested ? t('requests.awaitingOwner') : pending ? t('requests.returning') : t('requests.markReturned') }}
       </button>
     </div>
   </article>
