@@ -7,6 +7,17 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.17.0',
+    date: '2026-08-03',
+    notes: [
+      'FolioShare now speaks five languages: English, German, Spanish, French and Ukrainian. Pick yours under Settings → Language — the whole app changes straight away, and saving keeps the choice on your other devices.',
+      'Messages from the server are translated too, so a declined borrow or a private library explains itself in your language rather than falling back to English.',
+      'Dates, “3 days ago”-style timestamps and counted labels now follow your language’s own rules, including Ukrainian’s three plural forms.',
+      'Book languages are shown in your language as well — a Ukrainian book reads as “Ukrainian”, “Ukrainisch” or “ucraniano” depending on how you’re reading the site, and the language picker is sorted accordingly.',
+      'If you haven’t chosen a language yet, FolioShare starts in your browser’s language when we ship it, and English otherwise.',
+    ],
+  },
+  {
     version: '1.16.0',
     date: '2026-08-01',
     notes: [
