@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\I18n\LocaleCatalog;
 use App\Repository\UserSettingsRepository;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -47,6 +48,14 @@ class UserSettings
     #[ORM\Column(options: ['default' => false])]
     private bool $notifyNewsletter = false;
 
+    /**
+     * The UI language, as a `LocaleCatalog` code. Stored server-side purely so
+     * the choice follows the user to another device — the SPA reads it on load
+     * but drives each request's `Accept-Language` from its own local copy.
+     */
+    #[ORM\Column(length: 5, options: ['default' => LocaleCatalog::DEFAULT])]
+    private string $locale = LocaleCatalog::DEFAULT;
+
     public function getId(): ?int { return $this->id; }
 
     public function getUser(): User { return $this->user; }
@@ -69,4 +78,14 @@ class UserSettings
 
     public function notifiesNewsletter(): bool { return $this->notifyNewsletter; }
     public function setNotifyNewsletter(bool $value): static { $this->notifyNewsletter = $value; return $this; }
+
+    public function getLocale(): string { return $this->locale; }
+
+    /** Unsupported codes fall back to the default rather than persisting a locale we can't render. */
+    public function setLocale(?string $locale): static
+    {
+        $this->locale = LocaleCatalog::negotiate($locale) ?? LocaleCatalog::DEFAULT;
+
+        return $this;
+    }
 }

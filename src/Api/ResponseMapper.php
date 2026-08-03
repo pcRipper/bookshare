@@ -381,6 +381,7 @@ class ResponseMapper
             'notifyRequestUpdates' => $settings->notifiesRequestUpdates(),
             'notifyActivity'       => $settings->notifiesActivity(),
             'notifyNewsletter'     => $settings->notifiesNewsletter(),
+            'locale'               => $settings->getLocale(),
         ];
     }
 

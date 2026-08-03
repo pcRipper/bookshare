@@ -64,6 +64,11 @@ class UserSettingsRestController extends AbstractController
             }
         }
 
+        // The one non-boolean preference, so it sits outside the cast loop.
+        if (in_array('locale', $present, true)) {
+            $settings->setLocale($input->locale);
+        }
+
         $this->em->flush();
 
         return $this->json($this->mapper->settings($settings));

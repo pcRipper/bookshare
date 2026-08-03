@@ -277,7 +277,8 @@ class ResponseMapperTest extends TestCase
     {
         $settings = (new \App\Entity\UserSettings())
             ->setAllowRequests(false)
-            ->setNotifyActivity(true);
+            ->setNotifyActivity(true)
+            ->setLocale('uk');
 
         $data = $this->mapper()->settings($settings);
 
@@ -285,6 +286,7 @@ class ResponseMapperTest extends TestCase
         self::assertTrue($data['showLocation']);
         self::assertTrue($data['notifyActivity']);
         self::assertFalse($data['notifyNewsletter']);
+        self::assertSame('uk', $data['locale']);
     }
 
     public function testMeShapeIncludesEmailAndPrivacy(): void
