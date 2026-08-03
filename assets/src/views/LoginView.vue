@@ -2,7 +2,7 @@
   <div class="login-page">
     <div class="login-card">
       <h1 class="brand">FolioShare</h1>
-      <p class="subtitle">A quiet corner for your thoughts.</p>
+      <p class="subtitle">{{ t('auth.tagline') }}</p>
 
       <div class="divider" />
 
@@ -14,15 +14,17 @@
           <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
           <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
         </svg>
-        {{ loading ? 'Redirecting…' : 'Continue with Google' }}
+        {{ loading ? t('auth.redirecting') : t('auth.continueWithGoogle') }}
       </button>
 
       <p v-if="error" class="error">{{ error }}</p>
 
-      <p class="footer-note">
-        By continuing you agree to our
-        <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
-      </p>
+      <!-- i18n-t keeps the sentence one translatable unit while the two links
+           stay real anchors, instead of splitting it into fragments. -->
+      <i18n-t keypath="auth.legalNote" tag="p" class="footer-note">
+        <template #terms><a href="#">{{ t('auth.terms') }}</a></template>
+        <template #privacy><a href="#">{{ t('auth.privacy') }}</a></template>
+      </i18n-t>
     </div>
   </div>
 </template>
@@ -30,10 +32,12 @@
 <script setup>
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import api from '@/api'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 
 const route = useRoute()
+const { t } = useI18n()
 const loading = ref(false)
 // Surface a failure passed back from the Google callback (?error=…).
 const error = ref(typeof route.query.error === 'string' ? route.query.error : null)
@@ -45,7 +49,7 @@ async function loginWithGoogle() {
     const { data } = await api.get('/auth/google')
     window.location.href = data.url
   } catch {
-    error.value = 'Could not reach the server. Please try again.'
+    error.value = t('auth.unreachable')
     loading.value = false
   }
 }

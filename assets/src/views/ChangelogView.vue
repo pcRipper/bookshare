@@ -1,10 +1,14 @@
 <script setup>
+import { useI18n } from 'vue-i18n'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import { currentLocale } from '@/i18n'
 import { CHANGELOG } from '@/data/changelog'
+
+const { t } = useI18n()
 
 function formatDate(iso) {
   if (!iso) return ''
-  return new Date(iso).toLocaleDateString('en-US', {
+  return new Date(iso).toLocaleDateString(currentLocale(), {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -16,8 +20,8 @@ function formatDate(iso) {
   <AppLayout>
     <div class="changelog-page">
       <header class="changelog-page__header">
-        <h1 class="changelog-page__title">Release Notes</h1>
-        <p class="changelog-page__subtitle">A running log of what’s new in FolioShare.</p>
+        <h1 class="changelog-page__title">{{ t('changelog.title') }}</h1>
+        <p class="changelog-page__subtitle">{{ t('changelog.subtitle') }}</p>
       </header>
 
       <ol class="changelog-list">

@@ -1,6 +1,9 @@
 <script setup>
+import { useI18n } from 'vue-i18n'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import StatusScreen from '@/components/ui/StatusScreen.vue'
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -8,14 +11,14 @@ import StatusScreen from '@/components/ui/StatusScreen.vue'
     <StatusScreen
       icon="travel_explore"
       code="404"
-      title="This page wandered off the shelf"
-      message="The page you're looking for doesn't exist or may have been moved."
+      :title="t('errors.notFoundTitle')"
+      :message="t('errors.notFoundMessage')"
     >
       <RouterLink to="/library" class="btn-primary">
         <span class="material-symbols-outlined">book_2</span>
-        Back to My Library
+        {{ t('errors.backToLibrary') }}
       </RouterLink>
-      <RouterLink to="/discover" class="btn-outline">Explore Discover</RouterLink>
+      <RouterLink to="/discover" class="btn-outline">{{ t('errors.exploreDiscover') }}</RouterLink>
     </StatusScreen>
   </AppLayout>
 </template>

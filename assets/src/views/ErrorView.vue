@@ -1,13 +1,18 @@
 <script setup>
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import StatusScreen from '@/components/ui/StatusScreen.vue'
 
-defineProps({
-  message: {
-    type: String,
-    default: 'An unexpected error occurred while loading this page.',
-  },
+const { t } = useI18n()
+
+// Null rather than an English literal default: the fallback has to be resolved
+// against the active locale, which a prop default can't do.
+const props = defineProps({
+  message: { type: String, default: null },
 })
+
+const shownMessage = computed(() => props.message ?? t('errors.unexpected'))
 
 const emit = defineEmits(['retry'])
 
@@ -18,13 +23,13 @@ function reload() {
 
 <template>
   <AppLayout>
-    <StatusScreen icon="sentiment_stressed" title="Something went wrong" :message="message">
+    <StatusScreen icon="sentiment_stressed" :title="t('errors.title')" :message="shownMessage">
       <button class="btn-primary" type="button" @click="emit('retry')">
         <span class="material-symbols-outlined">refresh</span>
-        Try again
+        {{ t('common.retry') }}
       </button>
-      <button class="btn-outline" type="button" @click="reload">Reload page</button>
-      <RouterLink to="/library" class="btn-outline">Back to My Library</RouterLink>
+      <button class="btn-outline" type="button" @click="reload">{{ t('errors.reload') }}</button>
+      <RouterLink to="/library" class="btn-outline">{{ t('errors.backToLibrary') }}</RouterLink>
     </StatusScreen>
   </AppLayout>
 </template>

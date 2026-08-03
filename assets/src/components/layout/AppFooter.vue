@@ -1,4 +1,7 @@
 <script setup>
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 const year = new Date().getFullYear()
 </script>
 
@@ -8,10 +11,10 @@ const year = new Date().getFullYear()
       <span class="app-footer__brand">FolioShare</span>
 
       <nav class="app-footer__links">
-        <RouterLink to="/changelog">Release Notes</RouterLink>
+        <RouterLink to="/changelog">{{ t('nav.releaseNotes') }}</RouterLink>
       </nav>
 
-      <p class="app-footer__copy">© {{ year }} FolioShare. Curating stories for a thoughtful community.</p>
+      <p class="app-footer__copy">{{ t('nav.copyright', { year }) }}</p>
     </div>
   </footer>
 </template>

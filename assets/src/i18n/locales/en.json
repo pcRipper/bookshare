@@ -13,8 +13,45 @@
     "saving": "Saving…",
     "search": "Search"
   },
+  "auth": {
+    "tagline": "A quiet corner for your thoughts.",
+    "continueWithGoogle": "Continue with Google",
+    "redirecting": "Redirecting…",
+    "signingIn": "Signing you in…",
+    "backToLogin": "Back to login",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "legalNote": "By continuing you agree to our {terms} and {privacy}.",
+    "unreachable": "Could not reach the server. Please try again.",
+    "noCode": "No authorization code received from Google.",
+    "failed": "Authentication failed. Please try again."
+  },
+  "changelog": {
+    "title": "Release Notes",
+    "subtitle": "A running log of what’s new in FolioShare."
+  },
   "errors": {
-    "generic": "Something went wrong. Please try again."
+    "generic": "Something went wrong. Please try again.",
+    "unexpected": "An unexpected error occurred while loading this page.",
+    "title": "Something went wrong",
+    "reload": "Reload page",
+    "backToLibrary": "Back to My Library",
+    "notFoundTitle": "This page wandered off the shelf",
+    "notFoundMessage": "The page you're looking for doesn't exist or may have been moved.",
+    "exploreDiscover": "Explore Discover"
+  },
+  "nav": {
+    "myLibrary": "My Library",
+    "library": "Library",
+    "discover": "Discover",
+    "following": "Following",
+    "profile": "Profile",
+    "settings": "Settings",
+    "signOut": "Sign Out",
+    "accountMenu": "Account menu",
+    "main": "Main navigation",
+    "releaseNotes": "Release Notes",
+    "copyright": "© {year} FolioShare. Curating stories for a thoughtful community."
   },
   "settings": {
     "title": "Settings",

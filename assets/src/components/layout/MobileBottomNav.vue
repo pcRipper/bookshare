@@ -1,18 +1,20 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const auth = useAuthStore()
+const { t } = useI18n()
 
 const items = computed(() => [
-  { label: 'Library',   to: '/library',  icon: 'book_2' },
-  { label: 'Discover',  to: '/discover', icon: 'explore' },
+  { label: t('nav.library'),   to: '/library',  icon: 'book_2' },
+  { label: t('nav.discover'),  to: '/discover', icon: 'explore' },
   // The subscription feed replaces the retired Activity feed.
-  { label: 'Following', to: '/subscriptions', icon: 'group' },
-  { label: 'Profile',   to: auth.user?.id != null ? `/profile/${auth.user.id}` : '/library', icon: 'account_circle' },
-  { label: 'Settings',  to: '/settings', icon: 'settings' },
+  { label: t('nav.following'), to: '/subscriptions', icon: 'group' },
+  { label: t('nav.profile'),   to: auth.user?.id != null ? `/profile/${auth.user.id}` : '/library', icon: 'account_circle' },
+  { label: t('nav.settings'),  to: '/settings', icon: 'settings' },
 ])
 
 function isActive(to) {
@@ -21,7 +23,7 @@ function isActive(to) {
 </script>
 
 <template>
-  <nav class="mobile-bottom-nav" aria-label="Main navigation">
+  <nav class="mobile-bottom-nav" :aria-label="t('nav.main')">
     <RouterLink
       v-for="item in items"
       :key="item.to"

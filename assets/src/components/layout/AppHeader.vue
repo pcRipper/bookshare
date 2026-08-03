@@ -1,18 +1,20 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
+const { t } = useI18n()
 
-const navLinks = [
-  { label: 'My Library', to: '/library' },
-  { label: 'Discover',   to: '/discover' },
-  { label: 'Following',  to: '/subscriptions' },
-]
+const navLinks = computed(() => [
+  { label: t('nav.myLibrary'), to: '/library' },
+  { label: t('nav.discover'),  to: '/discover' },
+  { label: t('nav.following'), to: '/subscriptions' },
+])
 
 function isActive(to) {
   return route.path.startsWith(to)
@@ -64,7 +66,7 @@ function signOut() {
         <div ref="menuRef" class="account-menu">
           <button
             class="account-menu__trigger"
-            aria-label="Account menu"
+            :aria-label="t('nav.accountMenu')"
             :aria-expanded="menuOpen"
             @click="menuOpen = !menuOpen"
           >
@@ -82,13 +84,13 @@ function signOut() {
                 <p class="account-menu__email">{{ auth.user?.email }}</p>
               </div>
               <RouterLink :to="profileTo" class="account-menu__item" role="menuitem">
-                <span class="material-symbols-outlined">person</span> Profile
+                <span class="material-symbols-outlined">person</span> {{ t('nav.profile') }}
               </RouterLink>
               <RouterLink to="/settings" class="account-menu__item" role="menuitem">
-                <span class="material-symbols-outlined">settings</span> Settings
+                <span class="material-symbols-outlined">settings</span> {{ t('nav.settings') }}
               </RouterLink>
               <button class="account-menu__item account-menu__item--danger" role="menuitem" @click="signOut">
-                <span class="material-symbols-outlined">logout</span> Sign Out
+                <span class="material-symbols-outlined">logout</span> {{ t('nav.signOut') }}
               </button>
             </div>
           </transition>
