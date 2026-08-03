@@ -1,4 +1,9 @@
 <script setup>
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 /**
  * Segmented control switching a book list between the card grid and the compact
  * table. `v-model` carries 'cards' | 'table'.
@@ -8,20 +13,24 @@
  * the full record. It's part of the same cluster so the two related layout
  * choices read as one control.
  */
-defineProps({
+const props = defineProps({
   modelValue: { type: String, default: 'cards' }, // 'cards' | 'table'
   detailed: { type: Boolean, default: false },
 })
 const emit = defineEmits(['update:modelValue', 'update:detailed'])
 
-const options = [
-  { value: 'cards', icon: 'grid_view', label: 'Card view' },
-  { value: 'table', icon: 'view_list', label: 'Table view' },
-]
+const options = computed(() => [
+  { value: 'cards', icon: 'grid_view', label: t('ui.cardView') },
+  { value: 'table', icon: 'view_list', label: t('ui.tableView') },
+])
+
+const columnsLabel = computed(() =>
+  props.detailed ? t('ui.essentialColumns') : t('ui.allColumns'),
+)
 </script>
 
 <template>
-  <div class="view-toggle" role="group" aria-label="Choose list layout">
+  <div class="view-toggle" role="group" :aria-label="t('ui.chooseLayout')">
     <button
       v-for="opt in options"
       :key="opt.value"
@@ -43,8 +52,8 @@ const options = [
       class="view-toggle__btn view-toggle__btn--divided"
       :class="{ 'view-toggle__btn--active': detailed }"
       :aria-pressed="detailed"
-      :title="detailed ? 'Show essential columns only' : 'Show all columns'"
-      :aria-label="detailed ? 'Show essential columns only' : 'Show all columns'"
+      :title="columnsLabel"
+      :aria-label="columnsLabel"
       @click="emit('update:detailed', !detailed)"
     >
       <span class="material-symbols-outlined">view_column</span>

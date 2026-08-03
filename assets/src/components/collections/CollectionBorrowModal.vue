@@ -1,10 +1,12 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 
 const { hasCover, onCoverError } = useCoverFallback()
+const { t } = useI18n()
 
 /**
  * Read-only collection preview that doubles as the borrow dialog — the collection
@@ -55,11 +57,11 @@ function toggle(book) {
 }
 
 function lockLabel(book) {
-  if (book.requested) return 'Requested'
-  if (book.status === 'lent') return 'On loan'
-  if (book.status === 'currently_reading') return 'Being read'
-  if (book.status === 'unavailable') return 'Unavailable'
-  return 'Available'
+  if (book.requested) return t('collections.status.requested')
+  if (book.status === 'lent') return t('collections.status.lent')
+  if (book.status === 'currently_reading') return t('collections.status.reading')
+  if (book.status === 'unavailable') return t('collections.status.unavailable')
+  return t('collections.status.available')
 }
 
 function close() {
@@ -79,8 +81,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 <template>
   <Teleport to="body">
     <div v-if="open && collection" class="modal-overlay" @click.self="close">
-      <div class="modal" role="dialog" aria-modal="true" :aria-label="`Collection ${collection.name}`">
-        <button class="modal__close" type="button" aria-label="Close" :disabled="busy" @click="close">
+      <div class="modal" role="dialog" aria-modal="true" :aria-label="t('collections.aria', { name: collection.name })">
+        <button class="modal__close" type="button" :aria-label="t('common.close')" :disabled="busy" @click="close">
           <span class="material-symbols-outlined">close</span>
         </button>
 
@@ -90,7 +92,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             <img
               v-if="hasCover(collection)"
               :src="collection.coverUrl"
-              :alt="`Cover of ${collection.name}`"
+              :alt="t('collections.coverAlt', { name: collection.name })"
               class="modal__cover-img"
               @error="onCoverError(collection.id)"
             />
@@ -102,7 +104,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
           <!-- Info -->
           <div class="modal__info">
             <span class="detail-eyebrow">
-              <span class="material-symbols-outlined">library_books</span> Collection
+              <span class="material-symbols-outlined">library_books</span> {{ t('collections.badge') }}
             </span>
 
             <h2 class="detail-title">{{ collection.name }}</h2>
@@ -118,7 +120,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             </RouterLink>
 
             <p class="detail-meta">
-              {{ books.length }} {{ books.length === 1 ? 'book' : 'books' }} · {{ availableCount }} available
+              {{ t('collections.bookCount', books.length, { named: { count: books.length } }) }}
+              · {{ t('collections.availableCount', { count: availableCount }) }}
             </p>
 
             <section v-if="collection.description" class="detail-about">
@@ -127,9 +130,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
             <!-- Books -->
             <h3 class="detail-heading">
-              {{ isSelf ? 'Books' : 'Choose books to borrow' }}
+              {{ isSelf ? t('collections.books') : t('collections.chooseBooks') }}
             </h3>
-            <p v-if="!isSelf" class="detail-sub">Pick at least {{ MIN }} — unavailable books are locked.</p>
+            <p v-if="!isSelf" class="detail-sub">{{ t('collections.pickAtLeast', { min: MIN }) }}</p>
 
             <ul class="book-list">
               <li
@@ -153,7 +156,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                   <img
                     v-if="hasCover(book)"
                     :src="book.coverPath"
-                    :alt="`Cover of ${book.title}`"
+                    :alt="t('book.coverAlt', { title: book.title })"
                     @error="onCoverError(book.id)"
                   />
                   <span v-else class="material-symbols-outlined">menu_book</span>
@@ -178,13 +181,19 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             v-if="!isSelf"
             class="modal__count"
             :class="{ 'modal__count--warn': notEnoughAvailable }"
-          >{{ notEnoughAvailable ? `Needs ${MIN}+ available books` : `${selected.size} selected` }}</span>
+          >{{ notEnoughAvailable
+            ? t('collections.needsAvailable', { min: MIN })
+            : t('collections.selectedCount', { count: selected.size }) }}</span>
           <div class="modal__footer-actions">
-            <button class="btn-secondary" type="button" :disabled="busy" @click="close">Close</button>
+            <button class="btn-secondary" type="button" :disabled="busy" @click="close">
+              {{ t('common.close') }}
+            </button>
             <button v-if="!isSelf" class="btn-primary" type="button" :disabled="!canBorrow || busy" @click="onBorrow">
               <BaseSpinner v-if="busy" size="sm" />
               <span v-else class="material-symbols-outlined">handshake</span>
-              {{ busy ? 'Requesting…' : `Borrow ${selected.size} ${selected.size === 1 ? 'book' : 'books'}` }}
+              {{ busy
+                ? t('profile.requesting')
+                : t('collections.borrowCount', selected.size, { named: { count: selected.size } }) }}
             </button>
           </div>
         </footer>

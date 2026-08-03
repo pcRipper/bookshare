@@ -1,6 +1,10 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
-import { loadLanguages } from '@/utils/languages'
+import { useI18n } from 'vue-i18n'
+import { currentLocale } from '@/i18n'
+import { loadLanguages, languageLabel } from '@/utils/languages'
+
+const { t } = useI18n()
 
 /**
  * Searchable language picker (combobox). The trigger shows the current
@@ -11,9 +15,11 @@ import { loadLanguages } from '@/utils/languages'
 const props = defineProps({
   modelValue: { type: String, default: null }, // ISO 639-1 code | null
   disabled: { type: Boolean, default: false },
-  placeholder: { type: String, default: 'Select language' },
+  // Null, not English literals: a prop default can't be resolved against the
+  // active locale, so both fall back through the catalog below.
+  placeholder: { type: String, default: null },
   // Label for the "no selection" row at the top of the list.
-  anyLabel: { type: String, default: 'Any language' },
+  anyLabel: { type: String, default: null },
   id: { type: String, default: undefined },
 })
 const emit = defineEmits(['update:modelValue'])
@@ -33,19 +39,29 @@ onMounted(async () => {
   }
 })
 
+// The API's names are English (LanguageCatalog is the validation source of
+// truth), so labels are re-derived per locale and re-sorted — alphabetical order
+// is language-specific, and the server's ordering no longer holds once renamed.
+const localized = computed(() =>
+  languages.value
+    .map(l => ({ code: l.code, name: languageLabel(l.code, l.name) }))
+    .sort((a, b) => a.name.localeCompare(b.name, currentLocale())),
+)
+
+const anyRowLabel = computed(() => props.anyLabel ?? t('ui.anyLanguage'))
+
 const selectedName = computed(() => {
   if (!props.modelValue) return null
-  const found = languages.value.find(l => l.code === props.modelValue)
-  return found ? found.name : props.modelValue
+  return languageLabel(props.modelValue)
 })
 
 // "Any" pseudo-row + the filtered vocabulary; index 0 is always "Any".
 const filtered = computed(() => {
   const q = query.value.trim().toLowerCase()
   const matches = q
-    ? languages.value.filter(l => l.name.toLowerCase().includes(q) || l.code.includes(q))
-    : languages.value
-  return [{ code: null, name: props.anyLabel }, ...matches]
+    ? localized.value.filter(l => l.name.toLowerCase().includes(q) || l.code.includes(q))
+    : localized.value
+  return [{ code: null, name: anyRowLabel.value }, ...matches]
 })
 
 watch(query, () => { highlight.value = 0 })
@@ -97,7 +113,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onClickOutside))
       aria-haspopup="listbox"
       @click="toggle"
     >
-      <span class="lang__trigger-text">{{ selectedName ?? placeholder }}</span>
+      <span class="lang__trigger-text">{{ selectedName ?? placeholder ?? t('ui.selectLanguage') }}</span>
       <span class="material-symbols-outlined lang__caret">{{ open ? 'expand_less' : 'expand_more' }}</span>
     </button>
 
@@ -109,8 +125,8 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onClickOutside))
           v-model="query"
           class="lang__search-input"
           type="text"
-          placeholder="Search languages…"
-          aria-label="Search languages"
+          :placeholder="t('ui.searchLanguages')"
+          :aria-label="t('ui.searchLanguagesLabel')"
           @keydown.enter.prevent="onEnter"
           @keydown.down.prevent="move(1)"
           @keydown.up.prevent="move(-1)"
@@ -135,7 +151,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onClickOutside))
             <span v-if="lang.code === modelValue" class="material-symbols-outlined lang__check">check</span>
           </button>
         </li>
-        <li v-if="filtered.length === 1" class="lang__empty">No languages match.</li>
+        <li v-if="filtered.length === 1" class="lang__empty">{{ t('ui.noLanguages') }}</li>
       </ul>
     </div>
   </div>

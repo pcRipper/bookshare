@@ -1,5 +1,8 @@
 <script setup>
+import { useI18n } from 'vue-i18n'
 import BookCardSkeleton from '@/components/ui/BookCardSkeleton.vue'
+
+const { t } = useI18n()
 
 defineProps({
   count: { type: Number, default: 8 },
@@ -7,7 +10,7 @@ defineProps({
 </script>
 
 <template>
-  <div class="grid-skeleton" role="status" aria-label="Loading books">
+  <div class="grid-skeleton" role="status" :aria-label="t('ui.loadingBooks')">
     <BookCardSkeleton v-for="n in count" :key="n" />
   </div>
 </template>

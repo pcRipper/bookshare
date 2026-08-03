@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import api from '@/api'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
@@ -8,6 +9,7 @@ import { apiErrorMessage } from '@/utils/apiError'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 
 const { hasCover, onCoverError } = useCoverFallback()
+const { t } = useI18n()
 
 /**
  * Create or edit a collection: cover, name, description, and a two-pane book
@@ -67,7 +69,7 @@ async function loadBooks() {
     }
     books.value = [...byId.values()]
   } catch (e) {
-    toast.error(apiErrorMessage(e, 'Could not load your books.'))
+    toast.error(apiErrorMessage(e, t('collections.loadBooksFailed')))
   } finally {
     loadingBooks.value = false
   }
@@ -75,13 +77,14 @@ async function loadBooks() {
 
 // A short badge for members that can't currently be borrowed, so the owner
 // knows what state each book is in when building the collection.
-const STATUS_LABELS = {
-  lent: 'On loan',
-  unavailable: 'Unavailable',
-  currently_reading: 'Reading',
+const STATUS_KEYS = {
+  lent: 'collections.status.lent',
+  unavailable: 'collections.status.unavailable',
+  currently_reading: 'book.status.reading',
 }
 function statusLabel(book) {
-  return STATUS_LABELS[book.status] ?? null
+  const key = STATUS_KEYS[book.status]
+  return key ? t(key) : null
 }
 
 watch(
@@ -145,11 +148,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
         <header class="modal__header">
           <div>
             <span class="modal__eyebrow">
-              <span class="material-symbols-outlined">library_books</span> Collection
+              <span class="material-symbols-outlined">library_books</span> {{ t('collections.badge') }}
             </span>
-            <h2 class="modal__title">{{ isEdit ? 'Edit collection' : 'New collection' }}</h2>
+            <h2 class="modal__title">{{ isEdit ? t('collections.editTitle') : t('collections.createTitle') }}</h2>
           </div>
-          <button class="modal__close" type="button" aria-label="Close" :disabled="busy" @click="close">
+          <button class="modal__close" type="button" :aria-label="t('common.close')" :disabled="busy" @click="close">
             <span class="material-symbols-outlined">close</span>
           </button>
         </header>
@@ -157,18 +160,20 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
         <div class="modal__body">
           <p v-if="readOnly" class="modal__notice">
             <span class="material-symbols-outlined">lock</span>
-            This collection is out on loan and can't be edited until it's returned.
+            {{ t('collections.lockedNotice') }}
           </p>
 
           <!-- Cover preview + URL (matches the book create/edit modal) -->
           <div class="field">
-            <span class="field__label">Cover image URL <span class="field__opt">(optional)</span></span>
+            <span class="field__label">
+              {{ t('collections.coverUrl') }} <span class="field__opt">{{ t('collections.optional') }}</span>
+            </span>
             <div class="cover-row">
               <div class="cover-preview">
                 <img
                   v-if="hasCover(coverUrl)"
                   :src="coverUrl"
-                  alt="Cover preview"
+                  :alt="t('book.coverPreview')"
                   @error="onCoverError(coverUrl)"
                 />
                 <span v-else class="material-symbols-outlined cover-preview__icon">library_books</span>
@@ -178,19 +183,35 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
           </div>
 
           <label class="field">
-            <span class="field__label">Name</span>
-            <input v-model="name" class="field__input" type="text" maxlength="255" placeholder="e.g. The Expanse" :disabled="busy || readOnly" />
+            <span class="field__label">{{ t('collections.name') }}</span>
+            <input
+              v-model="name"
+              class="field__input"
+              type="text"
+              maxlength="255"
+              :placeholder="t('collections.namePlaceholder')"
+              :disabled="busy || readOnly"
+            />
           </label>
 
           <label class="field">
-            <span class="field__label">Description <span class="field__opt">(optional)</span></span>
-            <textarea v-model="description" class="field__input field__textarea" maxlength="500" rows="2" placeholder="What ties these books together?" :disabled="busy || readOnly" />
+            <span class="field__label">
+              {{ t('collections.description') }} <span class="field__opt">{{ t('collections.optional') }}</span>
+            </span>
+            <textarea
+              v-model="description"
+              class="field__input field__textarea"
+              maxlength="500"
+              rows="2"
+              :placeholder="t('collections.descriptionPlaceholder')"
+              :disabled="busy || readOnly"
+            />
           </label>
 
           <!-- Selected books -->
           <div class="field">
-            <span class="field__label">In this collection ({{ selected.size }})</span>
-            <p v-if="!selectedBooks.length" class="picker__empty">Pick at least {{ MIN }} books below.</p>
+            <span class="field__label">{{ t('collections.inCollection', { count: selected.size }) }}</span>
+            <p v-if="!selectedBooks.length" class="picker__empty">{{ t('collections.pickBelow', { min: MIN }) }}</p>
             <ul v-else class="picker">
               <li
                 v-for="book in selectedBooks"
@@ -206,7 +227,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                   <img
                     v-if="hasCover(book)"
                     :src="book.coverPath"
-                    :alt="`Cover of ${book.title}`"
+                    :alt="t('book.coverAlt', { title: book.title })"
                     @error="onCoverError(book.id)"
                   />
                   <span v-else class="material-symbols-outlined">menu_book</span>
@@ -222,21 +243,21 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
           <!-- Books to add -->
           <div v-if="!readOnly" class="field">
-            <span class="field__label">Add books</span>
+            <span class="field__label">{{ t('collections.addBooks') }}</span>
             <SearchInput
-              placeholder="Search your books by title, author or ISBN"
+              :placeholder="t('collections.searchPlaceholder')"
               :debounce="150"
               @search="bookQuery = $event"
             />
 
             <div v-if="loadingBooks" class="picker__loading">
-              <BaseSpinner size="sm" /> Loading your books…
+              <BaseSpinner size="sm" /> {{ t('collections.loadingBooks') }}
             </div>
             <p v-else-if="!books.length" class="picker__empty">
-              You need at least {{ MIN }} books in your library to make a collection.
+              {{ t('collections.needMoreBooks', { min: MIN }) }}
             </p>
             <p v-else-if="!availableBooks.length" class="picker__empty">
-              {{ bookQuery ? 'No books match your search.' : 'Every book is already in this collection.' }}
+              {{ bookQuery ? t('collections.noBookMatches') : t('collections.allAdded') }}
             </p>
             <ul v-else class="picker">
               <li
@@ -252,7 +273,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                   <img
                     v-if="hasCover(book)"
                     :src="book.coverPath"
-                    :alt="`Cover of ${book.title}`"
+                    :alt="t('book.coverAlt', { title: book.title })"
                     @error="onCoverError(book.id)"
                   />
                   <span v-else class="material-symbols-outlined">menu_book</span>
@@ -270,20 +291,24 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
         <footer class="modal__footer">
           <template v-if="readOnly">
             <div class="modal__footer-actions">
-              <button class="btn-secondary" type="button" @click="close">Close</button>
+              <button class="btn-secondary" type="button" @click="close">{{ t('common.close') }}</button>
             </div>
           </template>
           <template v-else>
             <button v-if="isEdit" class="btn-delete" type="button" :disabled="busy" @click="onDelete">
               <BaseSpinner v-if="busy && pendingAction === 'delete'" size="sm" />
               <span v-else class="material-symbols-outlined">delete</span>
-              {{ busy && pendingAction === 'delete' ? 'Deleting…' : 'Delete' }}
+              {{ busy && pendingAction === 'delete' ? t('manageBook.deleting') : t('common.delete') }}
             </button>
             <div class="modal__footer-actions">
-              <button class="btn-secondary" type="button" :disabled="busy" @click="close">Cancel</button>
+              <button class="btn-secondary" type="button" :disabled="busy" @click="close">
+                {{ t('common.cancel') }}
+              </button>
               <button class="btn-primary" type="button" :disabled="!canSave || busy" @click="onSave">
                 <BaseSpinner v-if="busy && pendingAction === 'save'" size="sm" />
-                {{ busy && pendingAction === 'save' ? 'Saving…' : isEdit ? 'Save changes' : 'Create collection' }}
+                {{ busy && pendingAction === 'save'
+                  ? t('common.saving')
+                  : isEdit ? t('collections.saveChanges') : t('collections.createSubmit') }}
               </button>
             </div>
           </template>

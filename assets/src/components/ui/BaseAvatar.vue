@@ -1,5 +1,8 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   src:  { type: String, default: null },
@@ -22,7 +25,7 @@ const initials = computed(() => {
     .join('')
 })
 
-const altText = computed(() => props.alt ?? props.name ?? 'User avatar')
+const altText = computed(() => props.alt ?? props.name ?? t('ui.userAvatar'))
 
 const sizeMap = { sm: '32px', md: '40px', lg: '80px', xl: '96px' }
 const fontSize = { sm: '12px', md: '14px', lg: '24px', xl: '28px' }

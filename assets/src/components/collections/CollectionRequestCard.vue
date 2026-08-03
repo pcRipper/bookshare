@@ -1,11 +1,14 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import RequestTimeline from '@/components/library/RequestTimeline.vue'
+import { currentLocale } from '@/i18n'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 
 const { hasCover, onCoverError } = useCoverFallback()
+const { t } = useI18n()
 
 /**
  * A grouped collection-borrow request, badged "Collection" so it never reads as
@@ -40,7 +43,12 @@ const due = computed(() => {
   if (!req.value.dueDate) return null
   const date = new Date(req.value.dueDate)
   const overdue = new Date(req.value.dueDate).setHours(23, 59, 59, 999) < Date.now()
-  return { label: `Due ${date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`, overdue }
+  return {
+    label: t('requests.due', {
+      date: date.toLocaleDateString(currentLocale(), { day: 'numeric', month: 'short' }),
+    }),
+    overdue,
+  }
 })
 
 /* ── Owner controls (incoming pending) ────────────────────────────────── */
@@ -57,11 +65,14 @@ function approve() { emit('approve', req.value.id, dueDate.value || null) }
 function decline() { emit('decline', req.value.id, declineMessage.value.trim() || null) }
 
 /* ── History status badge ─────────────────────────────────────────────── */
-const STATUS_LABELS = {
-  pending: 'Pending', approved: 'On loan', return_pending: 'Return pending',
-  returned: 'Returned', declined: 'Declined',
+const STATUS_KEYS = {
+  pending: 'pending', approved: 'approved', return_pending: 'returnPending',
+  returned: 'returned', declined: 'declined',
 }
-const statusLabel = computed(() => STATUS_LABELS[req.value.status] ?? req.value.status)
+const statusLabel = computed(() => {
+  const key = STATUS_KEYS[req.value.status]
+  return key ? t(`requests.status.${key}`) : req.value.status
+})
 </script>
 
 <template>
@@ -69,7 +80,7 @@ const statusLabel = computed(() => STATUS_LABELS[req.value.status] ?? req.value.
     <!-- Header: collection identity + counterpart -->
     <div class="cr-card__head">
       <span class="cr-card__badge">
-        <span class="material-symbols-outlined">library_books</span>Collection
+        <span class="material-symbols-outlined">library_books</span>{{ t('collections.badge') }}
       </span>
       <span v-if="variant === 'history'" class="cr-card__status" :class="`cr-card__status--${req.status}`">
         {{ statusLabel }}
@@ -82,23 +93,26 @@ const statusLabel = computed(() => STATUS_LABELS[req.value.status] ?? req.value.
       <BaseAvatar :src="counterpart?.avatarUrl" :name="counterpart?.fullName" size="sm" />
       <span class="cr-card__person-text">
         <template v-if="variant === 'incoming'">
-          <strong>{{ counterpart?.fullName }}</strong> · {{ isReturn ? 'wants to return' : `requested ${req.requestedAt ?? ''}` }}
+          <strong>{{ counterpart?.fullName }}</strong> ·
+          {{ isReturn
+            ? t('requests.wantsToReturnShort')
+            : t('requests.requestedShort', { when: req.requestedAt ?? '' }) }}
         </template>
-        <template v-else>
-          from <strong>{{ counterpart?.fullName }}</strong>
-        </template>
+        <i18n-t v-else keypath="requests.fromOwner" tag="span">
+          <template #name><strong>{{ counterpart?.fullName }}</strong></template>
+        </i18n-t>
       </span>
     </div>
 
     <!-- Member books — a titled list (covers are optional, titles always show) -->
-    <p class="cr-card__count">{{ books.length }} {{ books.length === 1 ? 'book' : 'books' }}</p>
+    <p class="cr-card__count">{{ t('collections.bookCount', books.length, { named: { count: books.length } }) }}</p>
     <ul class="cr-card__book-list">
       <li v-for="book in books" :key="book.id" class="cr-card__book">
         <span class="cr-card__book-cover" aria-hidden="true">
           <img
             v-if="hasCover(book)"
             :src="book.coverPath"
-            :alt="`Cover of ${book.title}`"
+            :alt="t('book.coverAlt', { title: book.title })"
             loading="lazy"
             @error="onCoverError(book.id)"
           />
@@ -131,7 +145,7 @@ const statusLabel = computed(() => STATUS_LABELS[req.value.status] ?? req.value.
         <button class="btn-primary" :disabled="!!pending" @click="emit('confirm-return', req.id)">
           <BaseSpinner v-if="pending === 'confirm-return'" size="sm" />
           <span v-else class="material-symbols-outlined">inventory</span>
-          {{ pending === 'confirm-return' ? 'Confirming…' : 'Confirm received' }}
+          {{ pending === 'confirm-return' ? t('requests.confirming') : t('requests.confirmReceived') }}
         </button>
       </div>
     </template>
@@ -139,33 +153,43 @@ const statusLabel = computed(() => STATUS_LABELS[req.value.status] ?? req.value.
     <!-- Incoming: approve / decline (pending) -->
     <template v-else-if="variant === 'incoming'">
       <div class="cr-card__due-field">
-        <label class="cr-card__field-label" :for="`cdue-${req.id}`">Return by</label>
+        <label class="cr-card__field-label" :for="`cdue-${req.id}`">{{ t('requests.returnBy') }}</label>
         <input :id="`cdue-${req.id}`" v-model="dueDate" class="cr-card__input" type="date" :min="todayISO" :disabled="!!pending" />
       </div>
       <div class="cr-card__note">
-        <label class="cr-card__field-label" :for="`cnote-${req.id}`">Reason (optional)</label>
-        <input :id="`cnote-${req.id}`" v-model="declineMessage" class="cr-card__input" type="text" maxlength="255" placeholder="Shared if you decline" :disabled="!!pending" />
+        <label class="cr-card__field-label" :for="`cnote-${req.id}`">{{ t('requests.reasonLabel') }}</label>
+        <input
+          :id="`cnote-${req.id}`"
+          v-model="declineMessage"
+          class="cr-card__input"
+          type="text"
+          maxlength="255"
+          :placeholder="t('requests.reasonShortPlaceholder')"
+          :disabled="!!pending"
+        />
       </div>
       <div class="cr-card__actions">
         <button class="btn-outline" :disabled="!!pending" @click="decline">
           <BaseSpinner v-if="pending === 'decline'" size="sm" />
-          {{ pending === 'decline' ? 'Declining…' : 'Decline' }}
+          {{ pending === 'decline' ? t('requests.declining') : t('requests.decline') }}
         </button>
         <button class="btn-primary" :disabled="!!pending" @click="approve">
           <BaseSpinner v-if="pending === 'approve'" size="sm" />
-          {{ pending === 'approve' ? 'Approving…' : 'Approve' }}
+          {{ pending === 'approve' ? t('requests.approving') : t('requests.approve') }}
         </button>
       </div>
     </template>
 
     <!-- Outgoing pending: cancel -->
     <template v-else-if="variant === 'outgoing-pending'">
-      <span class="cr-card__await"><span class="material-symbols-outlined">hourglass_empty</span> Awaiting approval</span>
+      <span class="cr-card__await">
+        <span class="material-symbols-outlined">hourglass_empty</span> {{ t('requests.awaitingApproval') }}
+      </span>
       <div class="cr-card__actions">
         <button class="btn-danger" :disabled="!!pending" @click="emit('cancel', req.id)">
           <BaseSpinner v-if="pending" size="sm" />
           <span v-else class="material-symbols-outlined">close</span>
-          {{ pending ? 'Cancelling…' : 'Cancel request' }}
+          {{ pending ? t('requests.cancelling') : t('requests.cancelRequest') }}
         </button>
       </div>
     </template>
@@ -174,7 +198,7 @@ const statusLabel = computed(() => STATUS_LABELS[req.value.status] ?? req.value.
     <template v-else-if="variant === 'lending'">
       <span class="cr-card__await">
         <span class="material-symbols-outlined">{{ isReturn ? 'assignment_returned' : 'local_library' }}</span>
-        {{ isReturn ? 'Return requested — confirm from Requests' : 'On loan' }}
+        {{ isReturn ? t('collections.returnRequested') : t('collections.onLoan') }}
       </span>
     </template>
 
@@ -189,7 +213,7 @@ const statusLabel = computed(() => STATUS_LABELS[req.value.status] ?? req.value.
         >
           <BaseSpinner v-if="pending" size="sm" />
           <span v-else class="material-symbols-outlined">{{ isReturn ? 'hourglass_top' : 'assignment_return' }}</span>
-          {{ isReturn ? 'Awaiting owner' : pending ? 'Returning…' : 'Return collection' }}
+          {{ isReturn ? t('requests.awaitingOwner') : pending ? t('requests.returning') : t('collections.returnCollection') }}
         </button>
       </div>
     </template>

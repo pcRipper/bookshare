@@ -17,18 +17,27 @@
  * A row click opens the same modal the card does (borrow/edit live there);
  * clicking the read checkbox or the owner link never opens it.
  */
+import { useI18n } from 'vue-i18n'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
+import { currentLocale } from '@/i18n'
 import { useCoverFallback } from '@/composables/useCoverFallback'
+import { languageLabel } from '@/utils/languages'
 import { relativeTime } from '@/utils/time'
 
 const { hasCover, onCoverError } = useCoverFallback()
+const { t } = useI18n()
 
-const STATUS_LABELS = {
-  own: 'Available',
-  lent: 'On Loan',
-  currently_reading: 'Reading',
-  unavailable: 'Unavailable',
+const STATUS_KEYS = {
+  own: 'book.statusOption.own',
+  lent: 'book.status.lent',
+  currently_reading: 'book.status.reading',
+  unavailable: 'book.status.unavailable',
+}
+
+function statusLabel(status) {
+  const key = STATUS_KEYS[status]
+  return key ? t(key) : status
 }
 
 defineProps({
@@ -49,7 +58,7 @@ function onToggle(book, e) {
 
 function absoluteDate(iso) {
   if (!iso) return ''
-  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })
+  return new Date(iso).toLocaleDateString(currentLocale(), { day: 'numeric', month: 'long', year: 'numeric' })
 }
 </script>
 
@@ -60,19 +69,19 @@ function absoluteDate(iso) {
     <table class="book-table" :class="{ 'book-table--detailed': detailed }">
       <thead>
         <tr>
-          <th class="book-table__col-read" scope="col">Read</th>
-          <th class="book-table__col-cover" scope="col"><span class="sr-only">Cover</span></th>
-          <th class="book-table__col-title" scope="col">Title</th>
+          <th class="book-table__col-read" scope="col">{{ t('table.read') }}</th>
+          <th class="book-table__col-cover" scope="col"><span class="sr-only">{{ t('table.cover') }}</span></th>
+          <th class="book-table__col-title" scope="col">{{ t('table.title') }}</th>
           <template v-if="detailed">
-            <th class="book-table__col-categories" scope="col">Categories</th>
-            <th class="book-table__col-desc" scope="col">Description</th>
-            <th class="book-table__col-isbn" scope="col">ISBN</th>
+            <th class="book-table__col-categories" scope="col">{{ t('table.categories') }}</th>
+            <th class="book-table__col-desc" scope="col">{{ t('table.description') }}</th>
+            <th class="book-table__col-isbn" scope="col">{{ t('table.isbn') }}</th>
           </template>
-          <th class="book-table__col-lang" scope="col">Language</th>
-          <th class="book-table__col-status" scope="col">Status</th>
-          <th v-if="detailed" class="book-table__col-person" scope="col">Holder</th>
-          <th v-if="showOwner" class="book-table__col-person" scope="col">Owner</th>
-          <th v-if="detailed" class="book-table__col-added" scope="col">Added</th>
+          <th class="book-table__col-lang" scope="col">{{ t('table.language') }}</th>
+          <th class="book-table__col-status" scope="col">{{ t('table.status') }}</th>
+          <th v-if="detailed" class="book-table__col-person" scope="col">{{ t('table.holder') }}</th>
+          <th v-if="showOwner" class="book-table__col-person" scope="col">{{ t('table.owner') }}</th>
+          <th v-if="detailed" class="book-table__col-added" scope="col">{{ t('table.added') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -90,15 +99,15 @@ function absoluteDate(iso) {
               type="checkbox"
               class="book-table__check"
               :checked="book.isRead"
-              :title="book.isRead ? 'Read — click to mark unread' : 'Not read yet — click to mark read'"
-              :aria-label="`Mark “${book.title}” as read`"
+              :title="book.isRead ? t('table.toggleToUnread') : t('table.toggleToRead')"
+              :aria-label="t('table.markRead', { title: book.title })"
               @change="onToggle(book, $event)"
             />
             <span
               v-else
               class="material-symbols-outlined book-table__read-icon"
               :class="{ 'book-table__read-icon--on': book.isRead }"
-              :title="book.isRead ? 'Read' : 'Not read yet'"
+              :title="book.isRead ? t('table.isRead') : t('table.notRead')"
             >{{ book.isRead ? 'check_circle' : 'radio_button_unchecked' }}</span>
           </td>
 
@@ -106,7 +115,7 @@ function absoluteDate(iso) {
             <img
               v-if="hasCover(book)"
               :src="book.coverPath"
-              :alt="`Cover of ${book.title}`"
+              :alt="t('book.coverAlt', { title: book.title })"
               class="book-table__cover"
               loading="lazy"
               @error="onCoverError(book.id)"
@@ -148,13 +157,13 @@ function absoluteDate(iso) {
           </template>
 
           <td class="book-table__col-lang">
-            <span v-if="book.languageName" class="book-table__lang">{{ book.languageName }}</span>
+            <span v-if="book.language" class="book-table__lang">{{ languageLabel(book.language, book.languageName) }}</span>
             <span v-else class="book-table__muted">—</span>
           </td>
 
           <td class="book-table__col-status">
             <span class="book-table__status" :class="`book-table__status--${book.status}`">
-              {{ STATUS_LABELS[book.status] ?? book.status }}
+              {{ statusLabel(book.status) }}
             </span>
           </td>
 

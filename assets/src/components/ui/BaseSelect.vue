@@ -1,5 +1,8 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 /**
  * Plain dropdown (listbox) styled to match `ui/LanguageSelect.vue` so simple
@@ -12,7 +15,9 @@ const props = defineProps({
   // Array of { value, label }.
   options: { type: Array, default: () => [] },
   disabled: { type: Boolean, default: false },
-  placeholder: { type: String, default: 'Select…' },
+  // Null, not an English literal: a prop default can't be resolved against the
+  // active locale, so the fallback is computed below.
+  placeholder: { type: String, default: null },
   id: { type: String, default: undefined },
 })
 const emit = defineEmits(['update:modelValue'])
@@ -76,7 +81,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onClickOutside))
       @keydown.enter.prevent="open ? onEnter() : (open = true)"
       @keydown.esc.prevent="open = false"
     >
-      <span class="sel__trigger-text">{{ selectedLabel ?? placeholder }}</span>
+      <span class="sel__trigger-text">{{ selectedLabel ?? placeholder ?? t('ui.select') }}</span>
       <span class="material-symbols-outlined sel__caret">{{ open ? 'expand_less' : 'expand_more' }}</span>
     </button>
 

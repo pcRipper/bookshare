@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+
+const { t } = useI18n()
 
 /**
  * Minimal reusable text-search box (search icon + native type="search"), owning
@@ -11,7 +14,9 @@ import BaseSpinner from '@/components/ui/BaseSpinner.vue'
  * by the library and profile book lists.
  */
 const props = defineProps({
-  placeholder: { type: String, default: 'Search…' },
+  // Null, not an English literal: a prop default can't be resolved against the
+  // active locale, so the fallback is applied in the template.
+  placeholder: { type: String, default: null },
   debounce: { type: Number, default: 300 },
   // Parent-controlled: true while the search request is in flight.
   loading: { type: Boolean, default: false },
@@ -57,15 +62,15 @@ onBeforeUnmount(() => clearTimeout(timer))
       v-model="value"
       class="search-input__field"
       type="search"
-      :placeholder="placeholder"
-      aria-label="Search books"
+      :placeholder="placeholder ?? t('ui.searchPlaceholder')"
+      :aria-label="t('ui.searchBooks')"
     />
     <BaseSpinner v-if="showSpinner" size="sm" class="search-input__spinner" />
     <button
       v-else-if="value"
       class="search-input__clear"
       type="button"
-      aria-label="Clear search"
+      :aria-label="t('ui.clearSearch')"
       @click="clear"
     >
       <span class="material-symbols-outlined">close</span>

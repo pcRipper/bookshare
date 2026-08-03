@@ -1,8 +1,12 @@
 <script setup>
+import { useI18n } from 'vue-i18n'
+
 /**
  * Inline loading spinner that inherits the current text colour (`currentColor`),
  * so it sits naturally inside buttons of any variant. Sizes: sm | md | lg.
  */
+const { t } = useI18n()
+
 defineProps({
   size: {
     type: String,
@@ -13,7 +17,7 @@ defineProps({
 </script>
 
 <template>
-  <span class="spinner" :class="`spinner--${size}`" role="status" aria-label="Loading" />
+  <span class="spinner" :class="`spinner--${size}`" role="status" :aria-label="t('ui.loading')" />
 </template>
 
 <style scoped>

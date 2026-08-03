@@ -6,7 +6,10 @@
  * card grid to a table when the data lands. `detailed` matches the wider set of
  * columns the detailed table renders.
  */
+import { useI18n } from 'vue-i18n'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
+
+const { t } = useI18n()
 
 defineProps({
   count: { type: Number, default: 8 },
@@ -15,7 +18,7 @@ defineProps({
 </script>
 
 <template>
-  <div class="table-skeleton" role="status" aria-label="Loading books">
+  <div class="table-skeleton" role="status" :aria-label="t('ui.loadingBooks')">
     <div class="table-skeleton__head">
       <BaseSkeleton width="100%" height="12px" />
     </div>

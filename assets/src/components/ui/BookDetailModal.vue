@@ -1,9 +1,13 @@
 <script setup>
 import { computed, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
+import { languageLabel } from '@/utils/languages'
 import { useCoverFallback } from '@/composables/useCoverFallback'
+
+const { t } = useI18n()
 
 /**
  * Read-only book overview. Opens from browse surfaces (Discover, the Following
@@ -32,21 +36,21 @@ const hasDescription = computed(() => !!props.book?.description?.trim())
 // Status pill — a compact read of the book's availability.
 const statusPill = computed(() => {
   switch (props.book?.status) {
-    case 'own':               return { label: 'Available', tone: 'available' }
-    case 'lent':              return { label: 'On loan', tone: 'muted' }
-    case 'currently_reading': return { label: 'Being read', tone: 'muted' }
-    case 'unavailable':       return { label: 'Unavailable', tone: 'muted' }
+    case 'own':               return { label: t('bookDetail.status.own'), tone: 'available' }
+    case 'lent':              return { label: t('bookDetail.status.lent'), tone: 'muted' }
+    case 'currently_reading': return { label: t('bookDetail.status.reading'), tone: 'muted' }
+    case 'unavailable':       return { label: t('bookDetail.status.unavailable'), tone: 'muted' }
     default:                  return null
   }
 })
 
 // Footer action — mirrors the card button states (see DiscoverBookCard).
 const action = computed(() => {
-  if (props.book?.requested) return { label: 'Requested', state: 'requested' }
-  if (props.book?.status === 'own') return { label: 'Request to Borrow', state: 'available' }
-  const label = props.book?.status === 'lent' ? 'Currently Lent'
-    : props.book?.status === 'currently_reading' ? 'Reading'
-    : 'Unavailable'
+  if (props.book?.requested) return { label: t('profile.requested'), state: 'requested' }
+  if (props.book?.status === 'own') return { label: t('profile.requestToBorrow'), state: 'available' }
+  const label = props.book?.status === 'lent' ? t('profile.currentlyLent')
+    : props.book?.status === 'currently_reading' ? t('book.status.reading')
+    : t('book.status.unavailable')
   return { label, state: 'disabled' }
 })
 
@@ -68,8 +72,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 <template>
   <Teleport to="body">
     <div v-if="open && book" class="modal-overlay" @click.self="close">
-      <div class="modal" role="dialog" aria-modal="true" :aria-label="`Details for ${book.title}`">
-        <button class="modal__close" type="button" aria-label="Close" @click="close">
+      <div class="modal" role="dialog" aria-modal="true" :aria-label="t('bookDetail.aria', { title: book.title })">
+        <button class="modal__close" type="button" :aria-label="t('common.close')" @click="close">
           <span class="material-symbols-outlined">close</span>
         </button>
 
@@ -79,7 +83,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             <img
               v-if="hasCover(book)"
               :src="book.coverPath"
-              :alt="`Cover of ${book.title}`"
+              :alt="t('book.coverAlt', { title: book.title })"
               class="modal__cover-img"
               @error="onCoverError(book.id)"
             />
@@ -96,12 +100,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
               </span>
               <span v-if="book.isRead" class="detail-status detail-status--read">
                 <span class="material-symbols-outlined">check_circle</span>
-                Read
+                {{ t('book.read') }}
               </span>
             </div>
 
             <h2 class="detail-title">{{ book.title }}</h2>
-            <p class="detail-author">by {{ book.author }}</p>
+            <p class="detail-author">{{ t('bookDetail.byAuthor', { author: book.author }) }}</p>
 
             <RouterLink
               v-if="book.owner"
@@ -113,13 +117,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
               <span class="detail-owner__name">{{ book.owner.fullName }}</span>
             </RouterLink>
 
-            <dl v-if="book.languageName || book.isbn" class="detail-meta">
-              <div v-if="book.languageName" class="detail-meta__row">
-                <dt><span class="material-symbols-outlined">language</span> Language</dt>
-                <dd>{{ book.languageName }}</dd>
+            <dl v-if="book.language || book.isbn" class="detail-meta">
+              <div v-if="book.language" class="detail-meta__row">
+                <dt><span class="material-symbols-outlined">language</span> {{ t('table.language') }}</dt>
+                <dd>{{ languageLabel(book.language, book.languageName) }}</dd>
               </div>
               <div v-if="book.isbn" class="detail-meta__row">
-                <dt><span class="material-symbols-outlined">qr_code_2</span> ISBN</dt>
+                <dt><span class="material-symbols-outlined">qr_code_2</span> {{ t('table.isbn') }}</dt>
                 <dd>{{ book.isbn }}</dd>
               </div>
             </dl>
@@ -131,15 +135,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             </ul>
 
             <section class="detail-about">
-              <h3 class="detail-about__heading">About this book</h3>
+              <h3 class="detail-about__heading">{{ t('bookDetail.about') }}</h3>
               <p v-if="hasDescription" class="detail-about__text">{{ book.description }}</p>
-              <p v-else class="detail-about__empty">No description has been added for this book.</p>
+              <p v-else class="detail-about__empty">{{ t('bookDetail.noDescription') }}</p>
             </section>
           </div>
         </div>
 
         <footer class="modal__footer">
-          <button class="btn-secondary" type="button" @click="close">Close</button>
+          <button class="btn-secondary" type="button" @click="close">{{ t('common.close') }}</button>
           <button
             v-if="!isSelf"
             class="btn-request"
@@ -151,7 +155,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             <BaseSpinner v-if="pending" size="sm" />
             <span v-else-if="action.state === 'available'" class="material-symbols-outlined">handshake</span>
             <span v-else-if="action.state === 'requested'" class="material-symbols-outlined">check</span>
-            {{ pending ? 'Requesting…' : action.label }}
+            {{ pending ? t('profile.requesting') : action.label }}
           </button>
         </footer>
       </div>

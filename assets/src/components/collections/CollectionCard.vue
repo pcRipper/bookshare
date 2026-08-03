@@ -1,9 +1,11 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 
 const { hasCover, onCoverError } = useCoverFallback()
+const { t } = useI18n()
 
 /**
  * A book collection card. Two variants:
@@ -55,7 +57,7 @@ function onCardClick() {
       <img
         v-if="hasCover(collection)"
         :src="collection.coverUrl"
-        :alt="`Cover of ${collection.name}`"
+        :alt="t('collections.coverAlt', { name: collection.name })"
         class="collection-card__img"
         loading="lazy"
         @error="onCoverError(collection.id)"
@@ -78,12 +80,12 @@ function onCardClick() {
            icon carries the meaning — see the badge styles for why. -->
       <span class="collection-card__badge">
         <span class="material-symbols-outlined">library_books</span>
-        <span class="collection-card__badge-label">Collection</span>
+        <span class="collection-card__badge-label">{{ t('collections.badge') }}</span>
       </span>
 
       <!-- Owner: frozen while out on loan. -->
       <span v-if="isOwner && !collection.canEdit" class="collection-card__status">
-        <span class="material-symbols-outlined">handshake</span>On loan
+        <span class="material-symbols-outlined">handshake</span>{{ t('collections.onLoan') }}
       </span>
     </div>
 
@@ -92,9 +94,9 @@ function onCardClick() {
       <p v-if="collection.description" class="collection-card__desc">{{ collection.description }}</p>
 
       <p class="collection-card__meta">
-        <span>{{ collection.bookCount }} {{ collection.bookCount === 1 ? 'book' : 'books' }}</span>
+        <span>{{ t('collections.bookCount', collection.bookCount, { named: { count: collection.bookCount } }) }}</span>
         <span class="collection-card__dot">·</span>
-        <span>{{ collection.availableCount }} available</span>
+        <span>{{ t('collections.availableCount', { count: collection.availableCount }) }}</span>
       </p>
 
       <!-- Browse action (someone else's collection) -->
@@ -106,7 +108,7 @@ function onCardClick() {
       >
         <BaseSpinner v-if="pending" size="sm" />
         <span v-else class="material-symbols-outlined">handshake</span>
-        {{ borrowable ? 'Borrow collection' : 'Not enough available' }}
+        {{ borrowable ? t('collections.borrow') : t('collections.notEnough') }}
       </button>
     </div>
   </article>

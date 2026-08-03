@@ -1,5 +1,8 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 /**
  * Numbered pagination control: prev/next arrows plus page-number buttons with
@@ -41,12 +44,12 @@ function go(page) {
 </script>
 
 <template>
-  <nav v-if="totalPages > 1" class="pagination" role="navigation" aria-label="Pagination">
+  <nav v-if="totalPages > 1" class="pagination" role="navigation" :aria-label="t('ui.pagination')">
     <button
       type="button"
       class="pagination__arrow"
       :disabled="disabled || page <= 1"
-      aria-label="Previous page"
+      :aria-label="t('ui.previousPage')"
       @click="go(page - 1)"
     >
       <span class="material-symbols-outlined">chevron_left</span>
@@ -71,7 +74,7 @@ function go(page) {
       type="button"
       class="pagination__arrow"
       :disabled="disabled || page >= totalPages"
-      aria-label="Next page"
+      :aria-label="t('ui.nextPage')"
       @click="go(page + 1)"
     >
       <span class="material-symbols-outlined">chevron_right</span>

@@ -1,7 +1,9 @@
 <script setup>
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import { useToastStore } from '@/stores/toast'
 
+const { t } = useI18n()
 const store = useToastStore()
 const { toasts } = storeToRefs(store)
 
@@ -14,18 +16,20 @@ const ICONS = {
 
 <template>
   <Teleport to="body">
-    <div class="toast-host" role="region" aria-live="polite" aria-label="Notifications">
+    <div class="toast-host" role="region" aria-live="polite" :aria-label="t('ui.notifications')">
       <TransitionGroup name="toast">
+        <!-- `item`, not `t` — the loop variable must not shadow the translation
+             function this template also calls. -->
         <div
-          v-for="t in toasts"
-          :key="t.id"
+          v-for="item in toasts"
+          :key="item.id"
           class="toast"
-          :class="`toast--${t.type}`"
+          :class="`toast--${item.type}`"
           role="alert"
         >
-          <span class="material-symbols-outlined toast__icon">{{ ICONS[t.type] ?? 'info' }}</span>
-          <p class="toast__msg">{{ t.message }}</p>
-          <button class="toast__close" aria-label="Dismiss" @click="store.dismiss(t.id)">
+          <span class="material-symbols-outlined toast__icon">{{ ICONS[item.type] ?? 'info' }}</span>
+          <p class="toast__msg">{{ item.message }}</p>
+          <button class="toast__close" :aria-label="t('ui.dismiss')" @click="store.dismiss(item.id)">
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
