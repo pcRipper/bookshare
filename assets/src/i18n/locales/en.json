@@ -1,0 +1,26 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading…",
+    "remove": "Remove",
+    "retry": "Try Again",
+    "save": "Save",
+    "saveChanges": "Save Changes",
+    "saved": "Saved",
+    "saving": "Saving…",
+    "search": "Search"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again."
+  },
+  "time": {
+    "today": "today",
+    "yesterday": "yesterday",
+    "daysAgo": "{count} day ago | {count} days ago",
+    "lastWeek": "last week",
+    "weeksAgo": "{count} week ago | {count} weeks ago"
+  }
+}

@@ -7,6 +7,13 @@ api.interceptors.request.use(config => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+  // The API translates its error messages off `Accept-Language`. Reading the
+  // persisted locale (written by `i18n/index.js`'s `setLocale`) keeps this
+  // interceptor free of an import cycle: `i18n` pulls in nothing from here.
+  const locale = localStorage.getItem('locale')
+  if (locale) {
+    config.headers['Accept-Language'] = locale
+  }
   return config
 })
 
