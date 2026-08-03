@@ -22,7 +22,7 @@ Bookshare is a **monorepo** where the Symfony project is the repo root. The fron
 ```
 bookshare/
 ├── assets/src/          # Vue 3 SPA source (Composition API, JS)
-│   ├── main.js          # App bootstrap — registers router + pinia, mounts #app
+│   ├── main.js          # App bootstrap — registers router + pinia + i18n, mounts #app
 │   ├── App.vue          # Root: <AppErrorBoundary> → <RouterView /> + <ToastHost />
 │   ├── api/index.js     # axios instance (baseURL '/api', Bearer + 401 interceptors)
 │   ├── router/          # vue-router (history mode) + auth guard
@@ -30,6 +30,7 @@ bookshare/
 │   ├── views/           # Route-level pages
 │   ├── components/      # layout/, library/, discover/, profile/, ui/
 │   ├── composables/     # useMercure (real-time SSE subscription)
+│   ├── i18n/            # vue-i18n instance + setLocale; locales/{en,de,es,fr,uk}.json
 │   └── utils/           # categoryColors, languages, apiError, time
 ├── src/                 # Symfony PHP source (autowired, autoconfigured)
 │   ├── Controller/      # API controllers — *RestController, #[Route] attributes
@@ -38,11 +39,13 @@ bookshare/
 │   ├── Repository/      # Doctrine repositories (read queries; persist, never flush)
 │   ├── Service/         # Domain logic (BookService, LibraryRequestService, …)
 │   ├── Dto/             # Request payload objects (#[MapRequestPayload]) + Assert
-│   ├── Api/             # ResponseMapper — entity → JSON shaping
+│   ├── Api/             # ResponseMapper (entity → JSON), ApiError (translated failures)
 │   ├── Category/        # CategoryPalette (colour allow-list, single source of truth)
 │   ├── Language/        # LanguageCatalog (book-language vocabulary, single source of truth)
+│   ├── I18n/            # LocaleCatalog (UI-language allow-list, mirrored in the SPA)
+│   ├── Exception/       # DomainRuleException — translatable business-rule violations
 │   ├── Security/Voter/  # BookVoter — edit/delete authorization
-│   ├── EventSubscriber/ # RateLimitSubscriber (kernel.request)
+│   ├── EventSubscriber/ # RateLimit / Locale / ApiException (kernel.request, .exception)
 │   └── DataFixtures/    # Dev seed data (AppFixtures)
 ├── config/
 │   ├── packages/        # Bundle config (doctrine, security, nelmio_cors, lexik_jwt,
@@ -50,6 +53,7 @@ bookshare/
 │   ├── routes.yaml      # Imports src/Controller/ under the shared `/api` prefix
 │   └── jwt/             # RSA keypair — gitignored, generated once
 ├── migrations/          # Doctrine migrations (incl. *_audit tables)
+├── translations/        # API message + validator catalogs (de/es/fr/uk; en needs none)
 ├── tests/               # PHPUnit suite (unit-level: Entity/Service/Dto/Api/Security…)
 ├── public/
 │   ├── index.php        # Symfony front controller
@@ -85,6 +89,7 @@ bookshare/
 | Concern | Package |
 |---|---|
 | Core | `vue` ^3.5, `vue-router` ^4.5 (history mode), `pinia` ^3 |
+| i18n | `vue-i18n` ^11 (Composition mode; bundled catalogs — see _Internationalization_) |
 | HTTP | `axios` ^1.16 (single instance in `assets/src/api/index.js`) |
 | Build/tooling | `vite` ^6.3, `@vitejs/plugin-vue` ^5.2, `eslint` ^10, `eslint-plugin-vue`, `prettier` |
 
@@ -106,7 +111,7 @@ Sign-in is **Google OAuth only** (the original email/password + register screens
 | `/discover` | `DiscoverView` | Browse the community in two modes — **books** (search, category filter pills, **language filter**, card/table view) and **readers** (`/users/discover`, follow/unfollow inline). **Neither mode needs a query**: an empty box browses — books newest-first, readers newest-member-first — and typing filters (books by title/author, readers by name, alphabetically) |
 | `/profile/:id` | `ProfileView` | Public profile. Avatar, bio, stats; tabs for the **read-only** book shelves (Available to Borrow / All Books, with a **text search**) and a **Collections** tab (read-only, each with a "Borrow collection" modal — see _Book collections_), all with "Request to Borrow" (own profile is a preview — book/collection CRUD lives in `/library`, not here) |
 | `/subscriptions` | `SubscriptionsView` | **Following** — recent books from the readers you follow (paginated feed; empty state links to Discover). Reached from the header/bottom nav |
-| `/settings` | `SettingsView` | Account profile (avatar, name, bio 300-char, location), **privacy toggle**, sign out |
+| `/settings` | `SettingsView` | Account profile (avatar, name, bio 300-char, location), **privacy toggle**, **notification opt-ins**, **UI language picker** (applies immediately, committed with the page-wide Save — see _Internationalization_), sign out |
 | `/changelog` | `ChangelogView` | Static **Release Notes** — a flat list of versions (label + date + change notes). Data lives in `assets/src/data/changelog.js` (no API); reached via the footer's "Release Notes" link (the old dead-end footer links were removed) |
 | `/` | — | Redirects to `/library` |
 | `/:pathMatch(.*)*` | `NotFoundView` | Catch-all 404 |
@@ -118,6 +123,8 @@ Sign-in is **Google OAuth only** (the original email/password + register screens
 ### Domain Model (`src/Entity/`, implemented)
 
 **User** — `email`, `password_hash` (unused for Google users), `full_name`, `bio` (≤300), `location`, `avatar_url`, `is_private` (hides profile + collection from others), `roles`. Derived stats (total books / shared / loaned) come from `UserStatsProvider`, not stored.
+
+**UserSettings** — per-user preferences, deliberately split off `User` (knobs, not identity) and served from `/api/me/settings`: `allow_requests`, `show_location`, the four `notify_*` opt-ins, and **`locale`** (the UI language, see _Internationalization_). A user with no row yet behaves as if every setting is at its default.
 
 **Book** — `title`*, `author`*, `description` (nullable free-text, ≤500), `isbn`, `cover_path`, `status` (`own | lent | unavailable | currently_reading` — `currently_reading` behaves like `unavailable` for borrowing but stays visible in Discover and counts as shared), `language` (nullable ISO 639-1 code, see _Languages_), **`is_read`** (owner's personal "already read" flag, boolean; orthogonal to `status` — emitted as `isRead`, shown as a "Read" badge on every book card/detail surface); `owner → User` **and `current_holder → User`**; `categories → Category[]` (many-to-many). `isHome()` ⇔ `currentHolder === owner` (the book is physically with its owner); this gates editability.
 
@@ -305,11 +312,29 @@ Design is **signal-and-refetch, not state-push**: after a transition commits, `A
   - A row click opens the same modal the card does (`@open`). Because the grid's leading "Catalog a New Book" cell has no table equivalent, the Library toolbar grows an **Add Book** button in table mode. Scope is deliberate: Library = Books tab only (not Lending/Borrowing), Discover = books mode only, Collections untouched.
 - **Consistency by default.** Styles and interaction patterns must stay consistent across the app — reuse the existing shared component/token rather than hand-rolling a one-off. Diverge only for a real reason (a genuinely different affordance or requirement), not convenience. Dropdowns are the shared combobox look: `ui/LanguageSelect.vue` (searchable) and `ui/BaseSelect.vue` (plain option list) — never a bare native `<select>`. Text-search boxes are `ui/SearchInput.vue` (search icon + native `type="search"`, self-owned debounce, emits `search`; a right-side `BaseSpinner` while a search is pending/`loading` — matching `BookTemplateSearch` — else a clear button once there's text); it drives the `?q=` filter (title/author/ISBN) on the library collection and profile shelves, taking the list's loading flag via the `loading` prop. It's **uncontrolled** (owns its own text) — reset it by remounting via `:key` (ProfileView keys on profile id + shelf so a filter never leaks across them).
 
+### Internationalization
+The UI ships in **five languages** — `en · de · es · fr · uk` — and the API's error text follows the same choice.
+
+**The locale allow-list is duplicated front+back and must stay in sync** (same convention as _Categories_' palette): backend `App\I18n\LocaleCatalog::LOCALES` (code ⇒ endonym, `DEFAULT = 'en'`, plus `negotiate()` for regional tags like `uk-UA`), frontend `SUPPORTED` in `assets/src/i18n/index.js` alongside one JSON catalog per locale under `i18n/locales/`. There is deliberately **no `/api/locales` endpoint** — unlike book languages, the SPA has to bundle a message catalog per locale anyway, so the list is inherently frontend-owned. Adding a language means touching both halves plus a new catalog file.
+
+**Frontend** — `vue-i18n` v11 in Composition mode (`legacy: false`), `fallbackLocale: 'en'`, catalogs **bundled** (a language switch must be instant). Keys are namespaced by area (`common.*`, `nav.*`, `library.*`, `discover.*`, `profile.*`, `settings.*`, `collections.*`, `requests.*`, `book.*`, `table.*`, `ui.*`, `auth.*`, `errors.*`) — never sentence-as-key. **`setLocale(code)` in `i18n/index.js` is the single entry point**: it moves the i18n locale, sets `<html lang>`, and persists to `localStorage.locale`. Conventions worth knowing:
+- **Ukrainian needs three plural forms** (one/few/many) — a custom `pluralRules.uk` provides them; every counted message carries 3 forms in `uk.json` and 2 elsewhere.
+- **Sentences that wrap markup** (a book title in `<em>`, a name in `<strong>`, the CSV column list in `<code>`) use `<i18n-t>` with named slots, so word order round the inserted value stays the translator's choice instead of being spliced from fragments.
+- **A prop default can't be resolved against the active locale**, so components whose defaults were English literals (`SearchInput`/`BaseSelect`/`LanguageSelect` placeholders, `ErrorView`'s message) default to `null` and fall back through the catalog in the component.
+- **Never name a `v-for` variable `t`** — it shadows the translation function in the same template (this bit `BookTemplateSearch` and `ToastHost`; they use `tpl`/`item`).
+- Dates/relative times go through `utils/time.js`'s `relativeTime()` and `currentLocale()`, never `undefined`-locale `toLocale*String`.
+- **Book language names** are re-derived from the ISO code per locale by `utils/languages.js`'s `languageLabel(code, fallback)` (`Intl.DisplayNames`), falling back to the server's English `languageName`. `LanguageSelect` also **re-sorts** the vocabulary, since alphabetical order changes with the names.
+- The **Release Notes prose** in `assets/src/data/changelog.js` stays English by design (historical technical record); only the page chrome is translated.
+
+**Backend** — the request locale comes from **`Accept-Language`**, negotiated against `LocaleCatalog` by `App\EventSubscriber\LocaleSubscriber` (`kernel.request`, priority 20). The SPA's axios interceptor sends the locale it renders in (read from `localStorage`), so this costs no DB query and never fights an unsaved switch. `UserSettings.locale` exists **only** so the choice follows a user to another device: it's read once when `/api/me/settings` loads and written by the Language section of `/settings`.
+
+**The English sentence is its own translation id.** `App\Api\ApiError` (injected into every controller that emits a message) builds the `{ error: … }` body through the translator, so an untranslated locale renders the English text and `en` needs no catalog — only `translations/messages.{de,es,fr,uk}.yaml` and `validators.{de,es,fr,uk}.yaml` (the 10 custom `Assert` messages; Symfony's own constraint messages translate for free). Business-rule violations throw **`App\Exception\DomainRuleException`** — a `\DomainException` (so the existing `catch` blocks are untouched) that keeps its *parameterised* id and params next to the rendered English `getMessage()`; the two "at least N books" rules could never match a catalog key as concatenated strings. `App\EventSubscriber\ApiExceptionSubscriber` gives voter/ownership denials the same translated `{ error }` 403 shape (previously an untranslated problem-details `detail`), matching both `AccessDeniedException` and the firewall's `AccessDeniedHttpException` wrapper and running late enough (-64) to leave 401 challenges alone.
+
 ### CORS
 `nelmio/cors-bundle`. `CORS_ALLOW_ORIGIN` in `.env` defaults to a regex matching any `localhost` port (covers the Vite dev server). Adjust for production in `.env.local` / deployment config.
 
 ### Testing
-PHPUnit suite under `tests/`, run with `php bin/phpunit`. It is **mostly unit-level** (mirrors `src/`: `Entity/`, `Service/`, `Dto/`, `Api/`, `Security/Voter/`, `EventSubscriber/`, `Category/`, `Language/`) — no kernel boot or DB, so it runs fast and doesn't need the audit tables. `phpunit.dist.xml` sets `failOnDeprecation` / `failOnNotice` / `failOnWarning` = **true**, so under PHPUnit 13: use `createStub()` (not `createMock()`) when you only need a return value, and pair `->with(...)` with an explicit `->expects(...)`. There is no HTTP/`WebTestCase` layer (the test env disables the firewall: `when@test: security: ~`).
+PHPUnit suite under `tests/`, run with `php bin/phpunit`. It is **mostly unit-level** (mirrors `src/`: `Entity/`, `Service/`, `Dto/`, `Api/`, `Security/Voter/`, `EventSubscriber/`, `Category/`, `Language/`, `I18n/`, `Exception/`) — no kernel boot or DB, so it runs fast and doesn't need the audit tables. `phpunit.dist.xml` sets `failOnDeprecation` / `failOnNotice` / `failOnWarning` = **true**, so under PHPUnit 13: use `createStub()` (not `createMock()`) when you only need a return value, and pair `->with(...)` with an explicit `->expects(...)`. There is no HTTP/`WebTestCase` layer (the test env disables the firewall: `when@test: security: ~`).
 
 The one exception is **`tests/Repository/`** — DB-backed integration tests (extend `RepositoryTestCase`, a `KernelTestCase`) that exercise the actual DQL, since repository query bugs (e.g. an unbound `:statuses` param, or the `parentRequest IS NULL` child-exclusion) can't surface in unit tests. Each test runs inside a transaction that's rolled back, so no schema re-creation; if the test DB isn't reachable the test **skips** (not fails), keeping the default run green on machines that never provisioned it. Auditing is **off under test** (`when@test: dh_auditor: enabled: false`) so its flush listeners don't fight the rollback isolation. Provision the test DB once:
 ```bash
