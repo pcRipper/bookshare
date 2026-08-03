@@ -1,9 +1,12 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import { languageLabel } from '@/utils/languages'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 
 const { hasCover, onCoverError } = useCoverFallback()
+const { t } = useI18n()
 
 const props = defineProps({
   book: {
@@ -30,18 +33,18 @@ const available = computed(() => props.book.status === 'own')
 
 // Corner badge for non-available books in the full collection view.
 const statusBadge = computed(() => {
-  if (props.book.status === 'lent') return 'On Loan'
-  if (props.book.status === 'currently_reading') return 'Reading'
-  if (props.book.status === 'unavailable') return 'Unavailable'
+  if (props.book.status === 'lent') return t('book.status.lent')
+  if (props.book.status === 'currently_reading') return t('book.status.reading')
+  if (props.book.status === 'unavailable') return t('book.status.unavailable')
   return null
 })
 
 const action = computed(() => {
-  if (props.book.requested) return { label: 'Requested', state: 'requested' }
-  if (available.value) return { label: 'Request to Borrow', state: 'available' }
-  const label = props.book.status === 'lent' ? 'Currently Lent'
-    : props.book.status === 'currently_reading' ? 'Reading'
-    : 'Unavailable'
+  if (props.book.requested) return { label: t('profile.requested'), state: 'requested' }
+  if (available.value) return { label: t('profile.requestToBorrow'), state: 'available' }
+  const label = props.book.status === 'lent' ? t('profile.currentlyLent')
+    : props.book.status === 'currently_reading' ? t('book.status.reading')
+    : t('book.status.unavailable')
   return { label, state: 'disabled' }
 })
 
@@ -56,7 +59,7 @@ function onAction() {
       <img
         v-if="hasCover(book)"
         :src="book.coverPath"
-        :alt="`Cover of ${book.title}`"
+        :alt="t('book.coverAlt', { title: book.title })"
         class="borrow-card__img"
         @error="onCoverError(book.id)"
       />
@@ -64,9 +67,9 @@ function onAction() {
         <span class="material-symbols-outlined">menu_book</span>
       </div>
       <span v-if="statusBadge" class="borrow-card__badge">{{ statusBadge }}</span>
-      <span v-if="book.isRead" class="borrow-card__read" title="This reader has read this book">
+      <span v-if="book.isRead" class="borrow-card__read" :title="t('profile.readBadge')">
         <span class="material-symbols-outlined">check_circle</span>
-        Read
+        {{ t('book.read') }}
       </span>
     </div>
 
@@ -74,9 +77,9 @@ function onAction() {
       <h3 class="borrow-card__title">{{ book.title }}</h3>
       <p class="borrow-card__author">{{ book.author }}</p>
 
-      <p v-if="book.languageName" class="borrow-card__lang">
+      <p v-if="book.language" class="borrow-card__lang">
         <span class="material-symbols-outlined">language</span>
-        {{ book.languageName }}
+        {{ languageLabel(book.language, book.languageName) }}
       </p>
 
       <!-- Own-profile cards are a preview only — no borrow affordance. -->
@@ -90,7 +93,7 @@ function onAction() {
         <BaseSpinner v-if="pending" size="sm" />
         <span v-else-if="action.state === 'available'" class="material-symbols-outlined">handshake</span>
         <span v-else-if="action.state === 'requested'" class="material-symbols-outlined">check</span>
-        {{ pending ? 'Requesting…' : action.label }}
+        {{ pending ? t('profile.requesting') : action.label }}
       </button>
     </div>
   </article>

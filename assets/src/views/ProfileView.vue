@@ -2,6 +2,7 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import { useProfileStore } from '@/stores/profile'
 import { useCollectionsStore } from '@/stores/collections'
 import { useSubscriptionsStore } from '@/stores/subscriptions'
@@ -26,6 +27,7 @@ import BookTableSkeleton from '@/components/ui/BookTableSkeleton.vue'
 import { useBookView } from '@/composables/useBookView'
 
 const route = useRoute()
+const { t } = useI18n()
 const store = useProfileStore()
 const collections = useCollectionsStore()
 const subscriptions = useSubscriptionsStore()
@@ -54,10 +56,10 @@ async function toggleSubscription() {
     } else {
       await subscriptions.subscribe(id)
       subscribed.value = true
-      toast.success(`Following ${profile.value.fullName}`)
+      toast.success(t('profile.followed', { name: profile.value.fullName }))
     }
   } catch (e) {
-    toast.error(apiErrorMessage(e, wasSubscribed ? 'Could not unfollow.' : 'Could not follow this reader.'))
+    toast.error(apiErrorMessage(e, wasSubscribed ? t('profile.errors.unfollow') : t('profile.errors.follow')))
   } finally {
     subscribeBusy.value = false
   }
@@ -70,9 +72,9 @@ const section = ref('books') // 'books' | 'collections'
 const collectionsLoaded = ref(false)
 
 const tabs = computed(() => [
-  { key: 'available',   label: 'Available to Borrow', count: availableCount.value },
-  { key: 'full',        label: 'All Books',           count: profile.value?.stats?.totalBooks ?? 0 },
-  { key: 'collections', label: 'Collections',         count: profile.value?.stats?.collections ?? 0, collections: true },
+  { key: 'available',   label: t('profile.tabs.available'),   count: availableCount.value },
+  { key: 'full',        label: t('profile.tabs.full'),        count: profile.value?.stats?.totalBooks ?? 0 },
+  { key: 'collections', label: t('profile.tabs.collections'), count: profile.value?.stats?.collections ?? 0, collections: true },
 ])
 
 function isTabActive(tab) {
@@ -94,7 +96,7 @@ function selectTab(tab) {
 
 function loadProfileCollections(page = 1) {
   collections.fetchProfileCollections(route.params.id, page)
-    .catch(e => toast.error(apiErrorMessage(e, 'Could not load collections.')))
+    .catch(e => toast.error(apiErrorMessage(e, t('profile.errors.collections'))))
 }
 
 /* ── Stats ────────────────────────────────────────────────────────────── */
@@ -122,9 +124,9 @@ const stateIcon = computed(() => ({
 }[error.value] ?? 'error'))
 
 const stateMessage = computed(() => ({
-  'not-found': 'This reader could not be found.',
-  private: 'This reader keeps their library private.',
-}[error.value] ?? 'Something went wrong loading this profile.'))
+  'not-found': t('profile.state.notFound'),
+  private: t('profile.state.private'),
+}[error.value] ?? t('profile.state.generic')))
 
 /* ── Loading ──────────────────────────────────────────────────────────── */
 function load() {
@@ -171,12 +173,12 @@ async function onBorrowCollection(bookIds) {
   borrowBusy.value = true
   try {
     await collections.borrowCollection(borrowCollection.value.id, bookIds)
-    toast.success('Collection borrow request sent.')
+    toast.success(t('profile.collectionRequested'))
     borrowOpen.value = false
     // Reflect the new pending state on the cards.
     loadProfileCollections(profileMeta.value.page)
   } catch (e) {
-    toast.error(apiErrorMessage(e, 'Could not borrow this collection.'))
+    toast.error(apiErrorMessage(e, t('profile.errors.borrowCollection')))
   } finally {
     borrowBusy.value = false
   }
@@ -219,7 +221,7 @@ async function onProfileSave(payload) {
       <div v-else-if="error" class="profile-state">
         <span class="material-symbols-outlined profile-state__icon">{{ stateIcon }}</span>
         <p>{{ stateMessage }}</p>
-        <RouterLink to="/discover" class="profile-state__link">Back to Discover</RouterLink>
+        <RouterLink to="/discover" class="profile-state__link">{{ t('profile.backToDiscover') }}</RouterLink>
       </div>
 
       <template v-else-if="profile">
@@ -236,7 +238,7 @@ async function onProfileSave(payload) {
             <div class="profile-header__top">
               <h1 class="profile-header__name">{{ profile.fullName }}</h1>
               <button v-if="profile.isSelf" class="profile-header__edit" @click="editProfileOpen = true">
-                <span class="material-symbols-outlined">edit</span> Edit Profile
+                <span class="material-symbols-outlined">edit</span> {{ t('profile.editTitle') }}
               </button>
               <button
                 v-else
@@ -247,7 +249,7 @@ async function onProfileSave(payload) {
               >
                 <BaseSpinner v-if="subscribeBusy" size="sm" />
                 <span v-else class="material-symbols-outlined">{{ subscribed ? 'how_to_reg' : 'person_add' }}</span>
-                {{ subscribed ? 'Following' : 'Follow' }}
+                {{ subscribed ? t('profile.following') : t('profile.follow') }}
               </button>
             </div>
 
@@ -256,7 +258,7 @@ async function onProfileSave(payload) {
             </p>
 
             <p v-if="profile.bio" class="profile-header__bio">{{ profile.bio }}</p>
-            <p v-else class="profile-header__bio profile-header__bio--muted">No bio yet.</p>
+            <p v-else class="profile-header__bio profile-header__bio--muted">{{ t('profile.noBio') }}</p>
 
             <!-- Tags (desktop: full list + book count chip) -->
             <div class="profile-header__tags profile-header__tags--desktop">
@@ -305,7 +307,7 @@ async function onProfileSave(payload) {
             <SearchInput
               :key="`${profile.id}-${shelf}`"
               class="profile-search"
-              placeholder="Search by title, author or ISBN"
+              :placeholder="t('library.searchPlaceholder')"
               :loading="booksLoading"
               @search="store.setBooksSearch"
             />
@@ -336,8 +338,8 @@ async function onProfileSave(payload) {
           </div>
           <div v-else class="empty-state">
             <span class="material-symbols-outlined empty-state__icon">{{ booksQuery ? 'search_off' : 'auto_stories' }}</span>
-            <p v-if="booksQuery">No books match “{{ booksQuery }}”.</p>
-            <p v-else>{{ shelf === 'available' ? 'No books available to borrow right now.' : 'This collection is empty.' }}</p>
+            <p v-if="booksQuery">{{ t('library.noMatches', { query: booksQuery }) }}</p>
+            <p v-else>{{ shelf === 'available' ? t('profile.empty.available') : t('profile.empty.full') }}</p>
           </div>
 
           <Pagination
@@ -365,7 +367,7 @@ async function onProfileSave(payload) {
           </div>
           <div v-else class="empty-state">
             <span class="material-symbols-outlined empty-state__icon">library_books</span>
-            <p>{{ profile.isSelf ? 'You haven’t created any collections yet.' : 'This reader has no collections yet.' }}</p>
+            <p>{{ profile.isSelf ? t('profile.empty.ownCollections') : t('profile.empty.collections') }}</p>
           </div>
 
           <Pagination

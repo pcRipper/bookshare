@@ -1,7 +1,10 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+
+const { t } = useI18n()
 
 const props = defineProps({
   user: {
@@ -30,8 +33,8 @@ function onToggle() {
       <h3 class="user-card__name">{{ user.fullName }}</h3>
       <p v-if="user.bio" class="user-card__bio">{{ user.bio }}</p>
       <p class="user-card__stats">
-        {{ stats.totalBooks }} {{ stats.totalBooks === 1 ? 'book' : 'books' }}
-        · {{ stats.shared }} shared
+        {{ t('discover.bookCount', stats.totalBooks, { named: { count: stats.totalBooks } }) }}
+        · {{ t('discover.sharedCount', { count: stats.shared }) }}
       </p>
     </RouterLink>
 
@@ -45,7 +48,7 @@ function onToggle() {
       <span v-else class="material-symbols-outlined">
         {{ user.isSubscribed ? 'check' : 'person_add' }}
       </span>
-      {{ user.isSubscribed ? 'Following' : 'Follow' }}
+      {{ user.isSubscribed ? t('profile.following') : t('profile.follow') }}
     </button>
   </article>
 </template>

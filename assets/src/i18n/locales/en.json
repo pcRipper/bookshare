@@ -121,6 +121,33 @@
     "title": "Release Notes",
     "subtitle": "A running log of what’s new in FolioShare."
   },
+  "discover": {
+    "title": "Discover",
+    "subtitle": "Explore the community's shelves, uncover hidden gems, and borrow your next read.",
+    "books": "Books",
+    "accounts": "Accounts",
+    "searchFor": "Search for",
+    "searchBooksPlaceholder": "Search titles or authors…",
+    "searchReadersPlaceholder": "Search readers by name…",
+    "searchBooksLabel": "Search the community's books",
+    "searchReadersLabel": "Search the community's readers",
+    "filterBooks": "Filter books",
+    "browseByCategory": "Browse by category",
+    "allCategories": "All",
+    "clearFilters": "Clear filters",
+    "language": "Language",
+    "loadingReaders": "Loading readers",
+    "results": "Results",
+    "newReaders": "New Readers",
+    "recommended": "Recommended for You",
+    "loadFailed": "Something went wrong loading Discover.",
+    "noReaderMatches": "No readers match your search just yet.",
+    "noReaders": "No other readers here yet.",
+    "bookCount": "{count} book | {count} books",
+    "sharedCount": "{count} shared",
+    "noBookMatches": "No books match your search just yet.",
+    "noBooks": "No books are being shared by the community right now. Check back soon."
+  },
   "errors": {
     "generic": "Something went wrong. Please try again.",
     "unexpected": "An unexpected error occurred while loading this page.",
@@ -213,6 +240,49 @@
     "main": "Main navigation",
     "releaseNotes": "Release Notes",
     "copyright": "© {year} FolioShare. Curating stories for a thoughtful community."
+  },
+  "profile": {
+    "follow": "Follow",
+    "following": "Following",
+    "followed": "Following {name}",
+    "noBio": "No bio yet.",
+    "backToDiscover": "Back to Discover",
+    "tabs": {
+      "available": "Available to Borrow",
+      "full": "All Books",
+      "collections": "Collections"
+    },
+    "empty": {
+      "available": "No books available to borrow right now.",
+      "full": "This collection is empty.",
+      "ownCollections": "You haven’t created any collections yet.",
+      "collections": "This reader has no collections yet."
+    },
+    "state": {
+      "notFound": "This reader could not be found.",
+      "private": "This reader keeps their library private.",
+      "generic": "Something went wrong loading this profile."
+    },
+    "readBadge": "This reader has read this book",
+    "requestToBorrow": "Request to Borrow",
+    "requested": "Requested",
+    "requesting": "Requesting…",
+    "currentlyLent": "Currently Lent",
+    "errors": {
+      "follow": "Could not follow this reader.",
+      "unfollow": "Could not unfollow.",
+      "collections": "Could not load collections.",
+      "borrowCollection": "Could not borrow this collection.",
+      "borrowRequest": "Could not send your borrow request."
+    },
+    "collectionRequested": "Collection borrow request sent.",
+    "editTitle": "Edit Profile",
+    "shortenFields": "Please shorten the highlighted fields.",
+    "bio": "Bio",
+    "bioPlaceholder": "Tell the community what you love to read…",
+    "charsLeft": "{count} character left | {count} characters left",
+    "location": "Location",
+    "locationPlaceholder": "e.g. Berlin, Germany"
   },
   "requests": {
     "status": {
@@ -309,6 +379,13 @@
       "emptyName": "Name cannot be empty.",
       "save": "Could not save your changes."
     }
+  },
+  "subscriptions": {
+    "title": "Following",
+    "subtitle": "Recent books from readers you follow.",
+    "loadFailed": "Something went wrong loading your feed.",
+    "empty": "You're not following anyone with books to show yet.",
+    "emptyLink": "Discover readers to follow"
   },
   "time": {
     "today": "today",

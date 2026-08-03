@@ -1,6 +1,9 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+
+const { t } = useI18n()
 
 const props = defineProps({
   open:    { type: Boolean, default: false },
@@ -34,7 +37,7 @@ const bioRemaining = computed(() => BIO_MAX - form.value.bio.length)
 
 function onSave() {
   if (form.value.bio.length > BIO_MAX || form.value.location.length > LOCATION_MAX) {
-    errorMsg.value = 'Please shorten the highlighted fields.'
+    errorMsg.value = t('profile.shortenFields')
     return
   }
   errorMsg.value = null
@@ -51,37 +54,37 @@ function onSave() {
     <div v-if="open" class="modal-overlay" @click.self="emit('close')">
       <div class="modal" role="dialog" aria-modal="true">
         <header class="modal__header">
-          <h2 class="modal__title">Edit Profile</h2>
-          <button class="modal__close" aria-label="Close" @click="emit('close')">
+          <h2 class="modal__title">{{ t('profile.editTitle') }}</h2>
+          <button class="modal__close" :aria-label="t('common.close')" @click="emit('close')">
             <span class="material-symbols-outlined">close</span>
           </button>
         </header>
 
         <div class="modal__body">
           <div class="field">
-            <label class="field__label" for="ep-location">Location</label>
+            <label class="field__label" for="ep-location">{{ t('profile.location') }}</label>
             <input
               id="ep-location"
               v-model="form.location"
               class="input"
               type="text"
               :maxlength="LOCATION_MAX"
-              placeholder="e.g. Berlin, Germany"
+              :placeholder="t('profile.locationPlaceholder')"
             />
           </div>
 
           <div class="field">
-            <label class="field__label" for="ep-bio">Bio</label>
+            <label class="field__label" for="ep-bio">{{ t('profile.bio') }}</label>
             <textarea
               id="ep-bio"
               v-model="form.bio"
               class="input textarea"
               rows="4"
               :maxlength="BIO_MAX"
-              placeholder="Tell the community what you love to read…"
+              :placeholder="t('profile.bioPlaceholder')"
             />
             <span class="field__hint" :class="{ 'field__hint--warn': bioRemaining < 0 }">
-              {{ bioRemaining }} characters left
+              {{ t('profile.charsLeft', bioRemaining, { named: { count: bioRemaining } }) }}
             </span>
           </div>
 
@@ -89,10 +92,12 @@ function onSave() {
         </div>
 
         <footer class="modal__footer">
-          <button class="btn-secondary" type="button" :disabled="busy" @click="emit('close')">Cancel</button>
+          <button class="btn-secondary" type="button" :disabled="busy" @click="emit('close')">
+            {{ t('common.cancel') }}
+          </button>
           <button class="btn-primary" type="button" :disabled="busy" @click="onSave">
             <BaseSpinner v-if="busy" size="sm" />
-            {{ busy ? 'Saving…' : 'Save Changes' }}
+            {{ busy ? t('common.saving') : t('common.saveChanges') }}
           </button>
         </footer>
       </div>

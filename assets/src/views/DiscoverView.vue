@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import { useDiscoverStore } from '@/stores/discover'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import DiscoverBookCard from '@/components/discover/DiscoverBookCard.vue'
@@ -17,6 +18,7 @@ import { useBookView } from '@/composables/useBookView'
 import { resolveCategoryColors } from '@/utils/categoryColors'
 
 const store = useDiscoverStore()
+const { t } = useI18n()
 const { mode, books, booksMeta, accounts, accountsMeta, categories, loading, error, query, activeCategory, activeLanguage } = storeToRefs(store)
 const { bookView, tableDetailed } = useBookView()
 
@@ -25,7 +27,7 @@ onMounted(store.init)
 /* ── Search mode (books ↔ accounts) ───────────────────────────────────── */
 const isAccounts = computed(() => mode.value === 'accounts')
 const searchPlaceholder = computed(() =>
-  isAccounts.value ? 'Search readers by name…' : 'Search titles or authors…',
+  isAccounts.value ? t('discover.searchReadersPlaceholder') : t('discover.searchBooksPlaceholder'),
 )
 
 /* ── Search (debounced) ───────────────────────────────────────────────── */
@@ -56,8 +58,8 @@ const hasFilters = computed(() =>
 )
 
 const resultsHeading = computed(() => {
-  if (isAccounts.value) return hasQuery.value ? 'Results' : 'New Readers'
-  return hasFilters.value ? 'Results' : 'Recommended for You'
+  if (isAccounts.value) return hasQuery.value ? t('discover.results') : t('discover.newReaders')
+  return hasFilters.value ? t('discover.results') : t('discover.recommended')
 })
 
 /* ── Borrow requests (per-book in-flight tracking for button loaders) ──── */
@@ -94,12 +96,10 @@ async function onToggleFollow(action, id) {
     <div class="discover-page">
       <!-- ── Hero + search ──────────────────────────────────────────────── -->
       <section class="discover-hero">
-        <h1 class="discover-hero__title">Discover</h1>
-        <p class="discover-hero__subtitle">
-          Explore the community's shelves, uncover hidden gems, and borrow your next read.
-        </p>
+        <h1 class="discover-hero__title">{{ t('discover.title') }}</h1>
+        <p class="discover-hero__subtitle">{{ t('discover.subtitle') }}</p>
         <div class="discover-controls">
-          <div class="discover-toggle" role="tablist" aria-label="Search for">
+          <div class="discover-toggle" role="tablist" :aria-label="t('discover.searchFor')">
             <span
               class="discover-toggle__thumb"
               :class="{ 'discover-toggle__thumb--right': isAccounts }"
@@ -113,7 +113,7 @@ async function onToggleFollow(action, id) {
               @click="store.setMode('books')"
             >
               <span class="material-symbols-outlined">menu_book</span>
-              Books
+              {{ t('discover.books') }}
             </button>
             <button
               class="discover-toggle__btn"
@@ -123,7 +123,7 @@ async function onToggleFollow(action, id) {
               @click="store.setMode('accounts')"
             >
               <span class="material-symbols-outlined">group</span>
-              Accounts
+              {{ t('discover.accounts') }}
             </button>
           </div>
 
@@ -134,7 +134,7 @@ async function onToggleFollow(action, id) {
               class="discover-search__input"
               type="search"
               :placeholder="searchPlaceholder"
-              :aria-label="isAccounts ? 'Search the community\'s readers' : 'Search the community\'s books'"
+              :aria-label="isAccounts ? t('discover.searchReadersLabel') : t('discover.searchBooksLabel')"
               @input="onSearchInput"
             />
           </form>
@@ -142,16 +142,16 @@ async function onToggleFollow(action, id) {
       </section>
 
       <!-- ── Filters (books mode only): category pills + language ───────── -->
-      <section v-if="!isAccounts" class="discover-filters" aria-label="Filter books">
+      <section v-if="!isAccounts" class="discover-filters" :aria-label="t('discover.filterBooks')">
         <div v-if="categories.length" class="discover-filters__group">
-          <h2 class="discover-filters__label">Browse by category</h2>
+          <h2 class="discover-filters__label">{{ t('discover.browseByCategory') }}</h2>
           <div v-hscroll class="discover-filters__pills hide-scrollbar">
             <button
               class="pill"
               :class="{ 'pill--active': activeCategory == null }"
               @click="store.setCategory(null)"
             >
-              All
+              {{ t('discover.allCategories') }}
             </button>
             <button
               v-for="cat in categories"
@@ -166,7 +166,7 @@ async function onToggleFollow(action, id) {
         </div>
 
         <div class="discover-filters__group discover-filters__group--language">
-          <h2 class="discover-filters__label">Language</h2>
+          <h2 class="discover-filters__label">{{ t('discover.language') }}</h2>
           <LanguageSelect
             :model-value="activeLanguage"
             class="discover-filters__lang"
@@ -181,7 +181,7 @@ async function onToggleFollow(action, id) {
           <h2 class="discover-results__heading">{{ resultsHeading }}</h2>
           <div class="discover-results__actions">
             <button v-if="hasFilters" class="discover-results__clear" @click="store.clearFilters()">
-              Clear filters
+              {{ t('discover.clearFilters') }}
             </button>
             <ViewToggle v-if="!isAccounts" v-model="bookView" v-model:detailed="tableDetailed" />
           </div>
@@ -189,7 +189,7 @@ async function onToggleFollow(action, id) {
 
         <!-- Loading — matches the layout that's about to render. -->
         <template v-if="loading">
-          <div v-if="isAccounts" class="book-grid" role="status" aria-label="Loading readers">
+          <div v-if="isAccounts" class="book-grid" role="status" :aria-label="t('discover.loadingReaders')">
             <UserCardSkeleton v-for="n in 8" :key="n" />
           </div>
           <BookTableSkeleton
@@ -203,8 +203,8 @@ async function onToggleFollow(action, id) {
         <!-- Error -->
         <div v-else-if="error" class="discover-state">
           <span class="material-symbols-outlined discover-state__icon">error</span>
-          <p>Something went wrong loading Discover.</p>
-          <button class="discover-results__clear" @click="store.fetchActive()">Try again</button>
+          <p>{{ t('discover.loadFailed') }}</p>
+          <button class="discover-results__clear" @click="store.fetchActive()">{{ t('common.retry') }}</button>
         </div>
 
         <!-- ── Accounts mode ──────────────────────────────────────────── -->
@@ -234,8 +234,8 @@ async function onToggleFollow(action, id) {
             <span class="material-symbols-outlined discover-state__icon">
               {{ hasQuery ? 'search_off' : 'person_search' }}
             </span>
-            <p v-if="hasQuery">No readers match your search just yet.</p>
-            <p v-else>No other readers here yet.</p>
+            <p v-if="hasQuery">{{ t('discover.noReaderMatches') }}</p>
+            <p v-else>{{ t('discover.noReaders') }}</p>
           </div>
         </template>
 
@@ -271,10 +271,10 @@ async function onToggleFollow(action, id) {
           <!-- Empty / no results -->
           <div v-else class="discover-state">
             <span class="material-symbols-outlined discover-state__icon">{{ hasFilters ? 'search_off' : 'travel_explore' }}</span>
-            <p v-if="hasFilters">No books match your search just yet.</p>
-            <p v-else>No books are being shared by the community right now. Check back soon.</p>
+            <p v-if="hasFilters">{{ t('discover.noBookMatches') }}</p>
+            <p v-else>{{ t('discover.noBooks') }}</p>
             <button v-if="hasFilters" class="discover-results__clear" @click="store.clearFilters()">
-              Clear filters
+              {{ t('discover.clearFilters') }}
             </button>
           </div>
         </template>

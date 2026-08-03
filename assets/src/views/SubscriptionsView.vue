@@ -1,6 +1,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import { useSubscriptionsStore } from '@/stores/subscriptions'
 import { useToastStore } from '@/stores/toast'
 import { apiErrorMessage } from '@/utils/apiError'
@@ -12,6 +13,7 @@ import BookDetailModal from '@/components/ui/BookDetailModal.vue'
 
 const store = useSubscriptionsStore()
 const toast = useToastStore()
+const { t } = useI18n()
 const { feed, loadingFeed, error } = storeToRefs(store)
 
 onMounted(() => store.fetchFeed())
@@ -24,7 +26,7 @@ async function onRequest(bookId) {
   try {
     await store.requestBorrow(bookId)
   } catch (e) {
-    toast.error(apiErrorMessage(e, 'Could not send your borrow request.'))
+    toast.error(apiErrorMessage(e, t('profile.errors.borrowRequest')))
   } finally {
     requesting.delete(bookId)
   }
@@ -39,8 +41,8 @@ function openDetail(book) { detailBook.value = book }
   <AppLayout>
     <div class="subscriptions-page">
       <header class="subscriptions-header">
-        <h1 class="subscriptions-header__title">Following</h1>
-        <p class="subscriptions-header__subtitle">Recent books from readers you follow.</p>
+        <h1 class="subscriptions-header__title">{{ t('subscriptions.title') }}</h1>
+        <p class="subscriptions-header__subtitle">{{ t('subscriptions.subtitle') }}</p>
       </header>
 
       <!-- Loading -->
@@ -65,15 +67,15 @@ function openDetail(book) { detailBook.value = book }
       <!-- Error -->
       <div v-else-if="error" class="feed-state">
         <span class="material-symbols-outlined feed-state__icon">error</span>
-        <p>Something went wrong loading your feed.</p>
-        <button class="feed-state__link" @click="store.fetchFeed()">Try again</button>
+        <p>{{ t('subscriptions.loadFailed') }}</p>
+        <button class="feed-state__link" @click="store.fetchFeed()">{{ t('common.retry') }}</button>
       </div>
 
       <!-- Empty: not following anyone (or none of them have books) -->
       <div v-else-if="!feed.length" class="feed-state">
         <span class="material-symbols-outlined feed-state__icon">group</span>
-        <p>You're not following anyone with books to show yet.</p>
-        <RouterLink to="/discover" class="feed-state__link">Discover readers to follow</RouterLink>
+        <p>{{ t('subscriptions.empty') }}</p>
+        <RouterLink to="/discover" class="feed-state__link">{{ t('subscriptions.emptyLink') }}</RouterLink>
       </div>
 
       <!-- Feed: one row per followed reader -->

@@ -1,11 +1,14 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
+import { languageLabel } from '@/utils/languages'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 
 const { hasCover, onCoverError } = useCoverFallback()
+const { t } = useI18n()
 
 const props = defineProps({
   book: {
@@ -23,11 +26,11 @@ const primaryCategory = computed(() => props.book.categories?.[0] ?? null)
 const available = computed(() => props.book.status === 'own')
 
 const action = computed(() => {
-  if (props.book.requested) return { label: 'Requested', state: 'requested' }
-  if (available.value) return { label: 'Request to Borrow', state: 'available' }
-  const label = props.book.status === 'lent' ? 'Currently Lent'
-    : props.book.status === 'currently_reading' ? 'Reading'
-    : 'Unavailable'
+  if (props.book.requested) return { label: t('profile.requested'), state: 'requested' }
+  if (available.value) return { label: t('profile.requestToBorrow'), state: 'available' }
+  const label = props.book.status === 'lent' ? t('profile.currentlyLent')
+    : props.book.status === 'currently_reading' ? t('book.status.reading')
+    : t('book.status.unavailable')
   return { label, state: 'disabled' }
 })
 
@@ -42,7 +45,7 @@ function onAction() {
       <img
         v-if="hasCover(book)"
         :src="book.coverPath"
-        :alt="`Cover of ${book.title}`"
+        :alt="t('book.coverAlt', { title: book.title })"
         class="discover-card__img"
         loading="lazy"
         @error="onCoverError(book.id)"
@@ -56,9 +59,9 @@ function onAction() {
         :color="primaryCategory.colorHex"
         class="discover-card__chip"
       />
-      <span v-if="book.isRead" class="discover-card__read" title="This reader has read this book">
+      <span v-if="book.isRead" class="discover-card__read" :title="t('profile.readBadge')">
         <span class="material-symbols-outlined">check_circle</span>
-        Read
+        {{ t('book.read') }}
       </span>
     </div>
 
@@ -66,9 +69,9 @@ function onAction() {
       <h3 class="discover-card__title">{{ book.title }}</h3>
       <p class="discover-card__author">{{ book.author }}</p>
 
-      <p v-if="book.languageName" class="discover-card__lang">
+      <p v-if="book.language" class="discover-card__lang">
         <span class="material-symbols-outlined">language</span>
-        {{ book.languageName }}
+        {{ languageLabel(book.language, book.languageName) }}
       </p>
 
       <RouterLink
@@ -90,7 +93,7 @@ function onAction() {
         <BaseSpinner v-if="pending" size="sm" />
         <span v-else-if="action.state === 'available'" class="material-symbols-outlined">handshake</span>
         <span v-else-if="action.state === 'requested'" class="material-symbols-outlined">check</span>
-        {{ pending ? 'Requesting…' : action.label }}
+        {{ pending ? t('profile.requesting') : action.label }}
       </button>
     </div>
   </article>
