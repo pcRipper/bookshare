@@ -1,23 +1,32 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import api from '@/api'
+import { SUPPORTED, setLocale, currentLocale } from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
+import BaseSelect from '@/components/ui/BaseSelect.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
+const { t } = useI18n()
 
 /* ── Section nav ──────────────────────────────────────────────────────── */
 const section = ref('account')
-const sections = [
-  { key: 'account',       label: 'Account Profile',    icon: 'person' },
-  { key: 'privacy',       label: 'Privacy & Security',  icon: 'lock' },
-  { key: 'notifications', label: 'Notifications',       icon: 'notifications' },
-]
+const sections = computed(() => [
+  { key: 'account',       label: t('settings.nav.account'),       icon: 'person' },
+  { key: 'privacy',       label: t('settings.nav.privacy'),       icon: 'lock' },
+  { key: 'notifications', label: t('settings.nav.notifications'), icon: 'notifications' },
+  { key: 'language',      label: t('settings.nav.language'),      icon: 'translate' },
+])
+
+// Each language is named in itself — the point is to be recognisable to
+// someone who can't read the language currently on screen.
+const localeOptions = SUPPORTED.map(l => ({ value: l.code, label: l.label }))
 
 /*
  * The whole page is edited locally and committed by one Save button that spans
@@ -52,7 +61,7 @@ onMounted(async () => {
     hydrate(me.data)
     hydratePrefs(settings.data)
   } catch {
-    error.value = 'Could not load your settings.'
+    error.value = t('settings.errors.load')
   } finally {
     loading.value = false
   }
@@ -60,7 +69,7 @@ onMounted(async () => {
 
 async function save() {
   if (!form.fullName.trim()) {
-    error.value = 'Name cannot be empty.'
+    error.value = t('settings.errors.emptyName')
     return
   }
   saving.value = true
@@ -95,7 +104,7 @@ async function save() {
     saved.value = true
     setTimeout(() => { saved.value = false }, 2500)
   } catch (e) {
-    error.value = e.response?.data?.error ?? 'Could not save your changes.'
+    error.value = e.response?.data?.error ?? t('settings.errors.save')
   } finally {
     saving.value = false
   }
@@ -104,6 +113,9 @@ async function save() {
 function cancel() {
   Object.assign(form, original)
   Object.assign(prefs, originalPrefs)
+  // The UI language is applied on selection rather than on save, so discarding
+  // has to put the screen back into the language the user arrived in.
+  setLocale(prefs.locale)
   error.value = null
 }
 
@@ -111,7 +123,7 @@ function removeAvatar() {
   form.avatarUrl = ''
 }
 
-/* ── Privacy & Notification preferences (server-backed: /api/me/settings) ── */
+/* ── Privacy, notification and language preferences (/api/me/settings) ───── */
 const prefs = reactive({
   allowRequests: true,
   showLocation: true,
@@ -119,6 +131,9 @@ const prefs = reactive({
   notifyRequestUpdates: true,
   notifyActivity: false,
   notifyNewsletter: false,
+  // Seeded from the locale actually on screen, so an unsaved switch made before
+  // this page loaded doesn't read as a pending change.
+  locale: currentLocale(),
 })
 let originalPrefs = {}
 
@@ -129,18 +144,30 @@ const dirty = computed(() => profileDirty.value || prefsDirty.value)
 function hydratePrefs(data) {
   Object.assign(prefs, data)
   originalPrefs = { ...prefs }
+  // The stored locale is what makes the choice follow the user across devices:
+  // adopt it here, on the one load that knows about it.
+  setLocale(prefs.locale)
 }
 
-const privacyOptions = [
-  { key: 'allowRequests', label: 'Allow borrow requests', hint: 'Members can ask to borrow your available books.' },
-  { key: 'showLocation',  label: 'Show location', hint: 'Display your location on your public profile.' },
-]
-const notificationOptions = [
-  { key: 'notifyBorrowRequests', label: 'New borrow requests', hint: 'When someone requests one of your books.' },
-  { key: 'notifyRequestUpdates', label: 'Request updates', hint: 'When a request you made is approved or declined.' },
-  { key: 'notifyActivity',       label: 'Community activity', hint: 'Follows, comments and new books from people you follow.' },
-  { key: 'notifyNewsletter',     label: 'FolioShare newsletter', hint: 'Occasional curated reading highlights.' },
-]
+/**
+ * Applied immediately rather than on save — a language you can't read is a poor
+ * place to hunt for the Save button — while still committing with everything
+ * else, and reverting on Cancel.
+ */
+function onLocaleChange(code) {
+  prefs.locale = setLocale(code)
+}
+
+const privacyOptions = computed(() => [
+  { key: 'allowRequests', label: t('settings.privacy.allowRequests'), hint: t('settings.privacy.allowRequestsHint') },
+  { key: 'showLocation',  label: t('settings.privacy.showLocation'),  hint: t('settings.privacy.showLocationHint') },
+])
+const notificationOptions = computed(() => [
+  { key: 'notifyBorrowRequests', label: t('settings.notifications.borrowRequests'), hint: t('settings.notifications.borrowRequestsHint') },
+  { key: 'notifyRequestUpdates', label: t('settings.notifications.requestUpdates'), hint: t('settings.notifications.requestUpdatesHint') },
+  { key: 'notifyActivity',       label: t('settings.notifications.activity'),       hint: t('settings.notifications.activityHint') },
+  { key: 'notifyNewsletter',     label: t('settings.notifications.newsletter'),     hint: t('settings.notifications.newsletterHint') },
+])
 
 /* ── Sign out ─────────────────────────────────────────────────────────── */
 function signOut() {
@@ -153,8 +180,8 @@ function signOut() {
   <AppLayout>
     <div class="settings-page">
       <header class="settings-page__intro">
-        <h1 class="settings-page__title">Settings</h1>
-        <p class="settings-page__subtitle">Manage your account preferences and library presence.</p>
+        <h1 class="settings-page__title">{{ t('settings.title') }}</h1>
+        <p class="settings-page__subtitle">{{ t('settings.subtitle') }}</p>
       </header>
 
       <div class="settings-layout">
@@ -173,7 +200,7 @@ function signOut() {
           </button>
           <button class="settings-nav__item settings-nav__item--danger" @click="signOut">
             <span class="material-symbols-outlined">logout</span>
-            <span class="settings-nav__label">Sign Out</span>
+            <span class="settings-nav__label">{{ t('settings.signOut') }}</span>
           </button>
         </aside>
 
@@ -181,7 +208,7 @@ function signOut() {
         <div class="settings-panel">
           <!-- ── Account Profile ──────────────────────────────────────── -->
           <template v-if="section === 'account'">
-            <h2 class="settings-panel__heading">Public Profile</h2>
+            <h2 class="settings-panel__heading">{{ t('settings.account.heading') }}</h2>
 
             <div v-if="loading" class="settings-skeleton">
               <section class="card photo-card">
@@ -207,13 +234,19 @@ function signOut() {
               <section class="card photo-card">
                 <BaseAvatar :src="form.avatarUrl" :name="form.fullName" size="xl" class="photo-card__avatar" />
                 <div class="photo-card__body">
-                  <h3 class="photo-card__title">Profile Photo</h3>
-                  <p class="photo-card__hint">Paste an image URL — a square picture ≥256px looks best.</p>
+                  <h3 class="photo-card__title">{{ t('settings.account.photoTitle') }}</h3>
+                  <p class="photo-card__hint">{{ t('settings.account.photoHint') }}</p>
                   <div class="field photo-card__field">
-                    <input v-model="form.avatarUrl" class="input" type="url" placeholder="https://…" aria-label="Avatar image URL" />
+                    <input
+                      v-model="form.avatarUrl"
+                      class="input"
+                      type="url"
+                      placeholder="https://…"
+                      :aria-label="t('settings.account.photoUrlLabel')"
+                    />
                   </div>
                   <button class="btn-outline photo-card__remove" type="button" :disabled="!form.avatarUrl" @click="removeAvatar">
-                    Remove
+                    {{ t('common.remove') }}
                   </button>
                 </div>
               </section>
@@ -221,19 +254,25 @@ function signOut() {
               <!-- Personal info -->
               <section class="card">
                 <div class="field">
-                  <label class="field__label" for="set-name">Full Name</label>
-                  <input id="set-name" v-model="form.fullName" class="input" type="text" placeholder="Your name" />
+                  <label class="field__label" for="set-name">{{ t('settings.account.fullName') }}</label>
+                  <input
+                    id="set-name"
+                    v-model="form.fullName"
+                    class="input"
+                    type="text"
+                    :placeholder="t('settings.account.fullNamePlaceholder')"
+                  />
                 </div>
 
                 <div class="field">
-                  <label class="field__label" for="set-bio">Biography</label>
+                  <label class="field__label" for="set-bio">{{ t('settings.account.bio') }}</label>
                   <textarea
                     id="set-bio"
                     v-model="form.bio"
                     class="input textarea"
                     rows="4"
                     :maxlength="BIO_MAX"
-                    placeholder="Tell the community what you love to read…"
+                    :placeholder="t('settings.account.bioPlaceholder')"
                   />
                   <span class="field__counter" :class="{ 'field__counter--warn': bioRemaining < 0 }">
                     {{ form.bio.length }} / {{ BIO_MAX }}
@@ -241,10 +280,15 @@ function signOut() {
                 </div>
 
                 <div class="field">
-                  <label class="field__label" for="set-location">Location</label>
+                  <label class="field__label" for="set-location">{{ t('settings.account.location') }}</label>
                   <div class="input input--with-icon">
                     <span class="material-symbols-outlined">location_on</span>
-                    <input id="set-location" v-model="form.location" type="text" placeholder="e.g. Seattle, WA" />
+                    <input
+                      id="set-location"
+                      v-model="form.location"
+                      type="text"
+                      :placeholder="t('settings.account.locationPlaceholder')"
+                    />
                   </div>
                 </div>
               </section>
@@ -253,16 +297,14 @@ function signOut() {
 
           <!-- ── Privacy & Security ───────────────────────────────────── -->
           <template v-else-if="section === 'privacy'">
-            <h2 class="settings-panel__heading">Privacy &amp; Security</h2>
+            <h2 class="settings-panel__heading">{{ t('settings.privacy.heading') }}</h2>
 
             <!-- Profile visibility -->
             <section class="card toggle-card">
               <label class="toggle-row">
                 <span class="toggle-row__text">
-                  <span class="toggle-row__label">Private profile</span>
-                  <span class="toggle-row__hint">
-                    Hide your library from Discover and stop other readers from viewing your collection.
-                  </span>
+                  <span class="toggle-row__label">{{ t('settings.privacy.privateProfile') }}</span>
+                  <span class="toggle-row__hint">{{ t('settings.privacy.privateProfileHint') }}</span>
                 </span>
                 <input v-model="form.isPrivate" type="checkbox" class="switch" :disabled="loading" />
               </label>
@@ -281,8 +323,8 @@ function signOut() {
           </template>
 
           <!-- ── Notifications ────────────────────────────────────────── -->
-          <template v-else>
-            <h2 class="settings-panel__heading">Notifications</h2>
+          <template v-else-if="section === 'notifications'">
+            <h2 class="settings-panel__heading">{{ t('settings.notifications.heading') }}</h2>
             <section class="card toggle-card">
               <label v-for="opt in notificationOptions" :key="opt.key" class="toggle-row">
                 <span class="toggle-row__text">
@@ -294,16 +336,38 @@ function signOut() {
             </section>
           </template>
 
+          <!-- ── Language ─────────────────────────────────────────────── -->
+          <template v-else>
+            <h2 class="settings-panel__heading">{{ t('settings.language.heading') }}</h2>
+            <section class="card">
+              <div class="field">
+                <label class="field__label" for="set-locale">{{ t('settings.language.label') }}</label>
+                <BaseSelect
+                  id="set-locale"
+                  :model-value="prefs.locale"
+                  :options="localeOptions"
+                  :disabled="loading"
+                  @update:model-value="onLocaleChange"
+                />
+                <p class="panel-note">{{ t('settings.language.hint') }}</p>
+              </div>
+            </section>
+          </template>
+
           <!-- Page-wide save bar: one Save commits edits across all three tabs. -->
           <footer v-if="!loading" class="settings-actions">
             <p v-if="error" class="form-error settings-actions__error">{{ error }}</p>
             <transition name="fade">
-              <span v-if="saved" class="save-flash"><span class="material-symbols-outlined">check_circle</span> Saved</span>
+              <span v-if="saved" class="save-flash">
+                <span class="material-symbols-outlined">check_circle</span> {{ t('common.saved') }}
+              </span>
             </transition>
-            <button class="btn-text" type="button" :disabled="!dirty || saving" @click="cancel">Cancel</button>
+            <button class="btn-text" type="button" :disabled="!dirty || saving" @click="cancel">
+              {{ t('common.cancel') }}
+            </button>
             <button class="btn-primary" type="button" :disabled="!dirty || saving" @click="save">
               <BaseSpinner v-if="saving" size="sm" />
-              {{ saving ? 'Saving…' : 'Save Changes' }}
+              {{ saving ? t('common.saving') : t('common.saveChanges') }}
             </button>
           </footer>
         </div>

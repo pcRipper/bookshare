@@ -16,6 +16,59 @@
   "errors": {
     "generic": "Something went wrong. Please try again."
   },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account preferences and library presence.",
+    "signOut": "Sign Out",
+    "nav": {
+      "account": "Account Profile",
+      "privacy": "Privacy & Security",
+      "notifications": "Notifications",
+      "language": "Language"
+    },
+    "account": {
+      "heading": "Public Profile",
+      "photoTitle": "Profile Photo",
+      "photoHint": "Paste an image URL — a square picture ≥256px looks best.",
+      "photoUrlLabel": "Avatar image URL",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "Your name",
+      "bio": "Biography",
+      "bioPlaceholder": "Tell the community what you love to read…",
+      "location": "Location",
+      "locationPlaceholder": "e.g. Seattle, WA"
+    },
+    "privacy": {
+      "heading": "Privacy & Security",
+      "privateProfile": "Private profile",
+      "privateProfileHint": "Hide your library from Discover and stop other readers from viewing your collection.",
+      "allowRequests": "Allow borrow requests",
+      "allowRequestsHint": "Members can ask to borrow your available books.",
+      "showLocation": "Show location",
+      "showLocationHint": "Display your location on your public profile."
+    },
+    "notifications": {
+      "heading": "Notifications",
+      "borrowRequests": "New borrow requests",
+      "borrowRequestsHint": "When someone requests one of your books.",
+      "requestUpdates": "Request updates",
+      "requestUpdatesHint": "When a request you made is approved or declined.",
+      "activity": "Community activity",
+      "activityHint": "Follows, comments and new books from people you follow.",
+      "newsletter": "FolioShare newsletter",
+      "newsletterHint": "Occasional curated reading highlights."
+    },
+    "language": {
+      "heading": "Language",
+      "label": "Interface language",
+      "hint": "Changes the whole app straight away. Save to keep it on your other devices."
+    },
+    "errors": {
+      "load": "Could not load your settings.",
+      "emptyName": "Name cannot be empty.",
+      "save": "Could not save your changes."
+    }
+  },
   "time": {
     "today": "today",
     "yesterday": "yesterday",
