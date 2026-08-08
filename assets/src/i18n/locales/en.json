@@ -283,7 +283,8 @@
       "decline": "Could not decline the request.",
       "confirmReturn": "Could not confirm the return.",
       "returnCollection": "Could not return the collection."
-    }
+    },
+    "share": "Share"
   },
   "nav": {
     "myLibrary": "My Library",
@@ -507,5 +508,16 @@
       "title": "Something went wrong",
       "message": "We couldn't load this library. Please try again."
     }
+  },
+  "share": {
+    "title": "Share your library",
+    "hint": "Anyone with this link can browse your books and collections — no account needed.",
+    "copy": "Copy link",
+    "copied": "Copied",
+    "copyFailed": "Couldn't copy automatically. Select the link and copy it manually.",
+    "qrAlt": "QR code linking to your public library",
+    "downloadQr": "Download QR code",
+    "privateNotice": "Your profile is private, so your library link won't open for anyone else. Make your profile public to share it.",
+    "goToSettings": "Open settings"
   }
 }

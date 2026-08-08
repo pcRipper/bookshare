@@ -20,6 +20,7 @@ import RequestCard from '@/components/library/RequestCard.vue'
 import LoanHistoryCard from '@/components/library/LoanHistoryCard.vue'
 import ManageBookModal from '@/components/library/ManageBookModal.vue'
 import ImportBooksModal from '@/components/library/ImportBooksModal.vue'
+import SharePublicLinkModal from '@/components/library/SharePublicLinkModal.vue'
 import CollectionCard from '@/components/collections/CollectionCard.vue'
 import CollectionEditModal from '@/components/collections/CollectionEditModal.vue'
 import CollectionRequestCard from '@/components/collections/CollectionRequestCard.vue'
@@ -223,6 +224,9 @@ async function handleUnfollow(userId) {
     unfollowing.delete(userId)
   }
 }
+
+/* ── Share modal ─────────────────────────────────────────────────────── */
+const shareOpen = ref(false)
 
 /* ── Manage Book modal ───────────────────────────────────────────────── */
 const modalOpen = ref(false)
@@ -454,6 +458,10 @@ async function handleCCancel(id) {
               >
                 <span class="material-symbols-outlined">add</span>
                 {{ t('library.addBook') }}
+              </button>
+              <button class="toolbar-btn" type="button" @click="shareOpen = true">
+                <span class="material-symbols-outlined">share</span>
+                {{ t('library.share') }}
               </button>
               <button class="toolbar-btn" type="button" @click="importOpen = true">
                 <span class="material-symbols-outlined">upload</span>
@@ -820,6 +828,13 @@ async function handleCCancel(id) {
       @save="onModalSave"
       @delete="onModalDelete"
       @close="modalOpen = false"
+    />
+
+    <!-- Public share link + QR -->
+    <SharePublicLinkModal
+      :open="shareOpen"
+      :profile="profile"
+      @close="shareOpen = false"
     />
 
     <!-- Import books modal -->

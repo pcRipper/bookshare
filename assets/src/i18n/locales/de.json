@@ -283,7 +283,8 @@
       "decline": "Die Anfrage konnte nicht abgelehnt werden.",
       "confirmReturn": "Die Rückgabe konnte nicht bestätigt werden.",
       "returnCollection": "Die Sammlung konnte nicht zurückgegeben werden."
-    }
+    },
+    "share": "Teilen"
   },
   "nav": {
     "myLibrary": "Meine Bibliothek",
@@ -507,5 +508,16 @@
       "title": "Etwas ist schiefgelaufen",
       "message": "Diese Bibliothek konnte nicht geladen werden. Bitte versuch es erneut."
     }
+  },
+  "share": {
+    "title": "Bibliothek teilen",
+    "hint": "Wer diesen Link hat, kann deine Bücher und Sammlungen ansehen — ganz ohne Konto.",
+    "copy": "Link kopieren",
+    "copied": "Kopiert",
+    "copyFailed": "Automatisches Kopieren hat nicht geklappt. Markiere den Link und kopiere ihn manuell.",
+    "qrAlt": "QR-Code zu deiner öffentlichen Bibliothek",
+    "downloadQr": "QR-Code herunterladen",
+    "privateNotice": "Dein Profil ist privat, dein Bibliothekslink lässt sich also von niemandem öffnen. Stell dein Profil öffentlich, um es zu teilen.",
+    "goToSettings": "Einstellungen öffnen"
   }
 }

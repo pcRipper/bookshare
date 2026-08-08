@@ -283,7 +283,8 @@
       "decline": "La demande n’a pas pu être refusée.",
       "confirmReturn": "Le retour n’a pas pu être confirmé.",
       "returnCollection": "La collection n’a pas pu être rendue."
-    }
+    },
+    "share": "Partager"
   },
   "nav": {
     "myLibrary": "Ma bibliothèque",
@@ -507,5 +508,16 @@
       "title": "Une erreur est survenue",
       "message": "Impossible de charger cette bibliothèque. Réessaie."
     }
+  },
+  "share": {
+    "title": "Partager ta bibliothèque",
+    "hint": "Toute personne disposant de ce lien peut parcourir tes livres et collections, sans compte.",
+    "copy": "Copier le lien",
+    "copied": "Copié",
+    "copyFailed": "La copie automatique a échoué. Sélectionne le lien et copie-le manuellement.",
+    "qrAlt": "QR code menant à ta bibliothèque publique",
+    "downloadQr": "Télécharger le QR code",
+    "privateNotice": "Ton profil est privé : personne ne pourra ouvrir le lien de ta bibliothèque. Rends ton profil public pour le partager.",
+    "goToSettings": "Ouvrir les réglages"
   }
 }
