@@ -295,6 +295,8 @@
     "settings": "Réglages",
     "signOut": "Se déconnecter",
     "accountMenu": "Menu du compte",
+    "language": "Langue",
+    "chooseLanguage": "Choisir la langue de l’interface",
     "main": "Navigation principale",
     "releaseNotes": "Notes de version",
     "copyright": "© {year} FolioShare. Des histoires pour une communauté attentive."
@@ -419,8 +421,7 @@
     "nav": {
       "account": "Profil du compte",
       "privacy": "Confidentialité et sécurité",
-      "notifications": "Notifications",
-      "language": "Langue"
+      "notifications": "Notifications"
     },
     "account": {
       "heading": "Profil public",
@@ -453,11 +454,6 @@
       "activityHint": "Abonnements, commentaires et nouveaux livres des personnes que vous suivez.",
       "newsletter": "Lettre d’information FolioShare",
       "newsletterHint": "Quelques suggestions de lecture de temps en temps."
-    },
-    "language": {
-      "heading": "Langue",
-      "label": "Langue de l’interface",
-      "hint": "Change toute l’application immédiatement. Enregistrez pour la conserver sur vos autres appareils."
     },
     "errors": {
       "load": "Vos réglages n’ont pas pu être chargés.",

@@ -3,7 +3,9 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
+import api from '@/api'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
+import LocaleSwitcher from '@/components/ui/LocaleSwitcher.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,6 +20,16 @@ const navLinks = computed(() => [
 
 function isActive(to) {
   return route.path.startsWith(to)
+}
+
+/*
+ * The switcher has already applied the language locally; storing it on the
+ * account is what carries the choice to the reader's other devices. Deliberately
+ * fire-and-forget: the UI has switched either way, so a failed save is not worth
+ * a toast that would itself arrive in the new language.
+ */
+function persistLocale(code) {
+  api.patch('/me/settings', { locale: code }).catch(() => {})
 }
 
 /* ── Account dropdown ─────────────────────────────────────────────────── */
@@ -63,6 +75,8 @@ function signOut() {
 
       <!-- Actions + avatar -->
       <div class="app-header__actions">
+        <LocaleSwitcher @change="persistLocale" />
+
         <div ref="menuRef" class="account-menu">
           <button
             class="account-menu__trigger"

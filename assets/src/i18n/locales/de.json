@@ -295,6 +295,8 @@
     "settings": "Einstellungen",
     "signOut": "Abmelden",
     "accountMenu": "Kontomenü",
+    "language": "Sprache",
+    "chooseLanguage": "Sprache der Oberfläche wählen",
     "main": "Hauptnavigation",
     "releaseNotes": "Versionshinweise",
     "copyright": "© {year} FolioShare. Geschichten für eine aufmerksame Community."
@@ -419,8 +421,7 @@
     "nav": {
       "account": "Kontoprofil",
       "privacy": "Datenschutz & Sicherheit",
-      "notifications": "Benachrichtigungen",
-      "language": "Sprache"
+      "notifications": "Benachrichtigungen"
     },
     "account": {
       "heading": "Öffentliches Profil",
@@ -453,11 +454,6 @@
       "activityHint": "Neue Follower, Kommentare und Bücher von Leuten, denen du folgst.",
       "newsletter": "FolioShare-Newsletter",
       "newsletterHint": "Gelegentliche Leseempfehlungen."
-    },
-    "language": {
-      "heading": "Sprache",
-      "label": "Sprache der Oberfläche",
-      "hint": "Ändert die App sofort. Speichern, damit die Wahl auch auf deinen anderen Geräten gilt."
     },
     "errors": {
       "load": "Deine Einstellungen konnten nicht geladen werden.",

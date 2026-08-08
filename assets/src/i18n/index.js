@@ -26,6 +26,7 @@ export const SUPPORTED = [
 export const DEFAULT_LOCALE = 'en'
 
 const STORAGE_KEY = 'locale'
+const PENDING_KEY = 'pendingLocale'
 
 function isSupported(code) {
   return SUPPORTED.some(l => l.code === code)
@@ -92,6 +93,27 @@ export function setLocale(code) {
   document.documentElement.setAttribute('lang', next)
   localStorage.setItem(STORAGE_KEY, next)
   return next
+}
+
+/*
+ * A language picked while signed out (login page, public share page) can't be
+ * saved to the account — there's no token yet. It's parked here so the Google
+ * callback can commit it the moment one exists, which is what makes the choice
+ * made on the login screen stick to the account rather than to this browser.
+ *
+ * `sessionStorage`, not `localStorage`: the intent belongs to this sign-in
+ * attempt. A stale flag from days ago must not silently rewrite the account's
+ * language on the next login.
+ */
+export function markPendingLocale(code) {
+  sessionStorage.setItem(PENDING_KEY, code)
+}
+
+/** Reads and consumes the pending choice — null when there wasn't one. */
+export function takePendingLocale() {
+  const code = negotiate(sessionStorage.getItem(PENDING_KEY))
+  sessionStorage.removeItem(PENDING_KEY)
+  return code
 }
 
 /** The active locale, for non-component code (`utils/time.js`, `utils/languages.js`). */

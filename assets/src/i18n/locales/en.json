@@ -295,6 +295,8 @@
     "settings": "Settings",
     "signOut": "Sign Out",
     "accountMenu": "Account menu",
+    "language": "Language",
+    "chooseLanguage": "Choose interface language",
     "main": "Main navigation",
     "releaseNotes": "Release Notes",
     "copyright": "© {year} FolioShare. Curating stories for a thoughtful community."
@@ -419,8 +421,7 @@
     "nav": {
       "account": "Account Profile",
       "privacy": "Privacy & Security",
-      "notifications": "Notifications",
-      "language": "Language"
+      "notifications": "Notifications"
     },
     "account": {
       "heading": "Public Profile",
@@ -453,11 +454,6 @@
       "activityHint": "Follows, comments and new books from people you follow.",
       "newsletter": "FolioShare newsletter",
       "newsletterHint": "Occasional curated reading highlights."
-    },
-    "language": {
-      "heading": "Language",
-      "label": "Interface language",
-      "hint": "Changes the whole app straight away. Save to keep it on your other devices."
     },
     "errors": {
       "load": "Could not load your settings.",

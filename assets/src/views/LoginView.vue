@@ -1,5 +1,11 @@
 <template>
   <div class="login-page">
+    <!-- Outside the card, so a reader who can't read the tagline can still find
+         the language control before committing to signing in. -->
+    <div class="login-page__locale">
+      <LocaleSwitcher @change="markPendingLocale" />
+    </div>
+
     <div class="login-card">
       <h1 class="brand">FolioShare</h1>
       <p class="subtitle">{{ t('auth.tagline') }}</p>
@@ -34,7 +40,9 @@ import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import api from '@/api'
+import { markPendingLocale } from '@/i18n'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import LocaleSwitcher from '@/components/ui/LocaleSwitcher.vue'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -57,12 +65,21 @@ async function loginWithGoogle() {
 
 <style scoped>
 .login-page {
+  position: relative;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: var(--color-background);
   padding: 16px;
+}
+
+/* Pinned to the corner instead of sitting in the flow, so it doesn't shift the
+   card off the vertical centre it's designed around. */
+.login-page__locale {
+  position: absolute;
+  top: 16px;
+  right: 16px;
 }
 
 .login-card {

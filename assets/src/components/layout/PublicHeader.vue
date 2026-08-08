@@ -1,5 +1,7 @@
 <script setup>
 import { useI18n } from 'vue-i18n'
+import { markPendingLocale } from '@/i18n'
+import LocaleSwitcher from '@/components/ui/LocaleSwitcher.vue'
 
 /*
  * Chrome for the signed-out share page. AppHeader can't be reused: its nav,
@@ -16,9 +18,15 @@ const { t } = useI18n()
     <div class="public-header__inner">
       <span class="public-header__brand">FolioShare</span>
 
-      <RouterLink to="/login" class="public-header__signin">
-        {{ t('public.signIn') }}
-      </RouterLink>
+      <div class="public-header__actions">
+        <!-- Anonymous, so there's nothing to save to: park the choice in case
+             this visit ends in a sign-in. -->
+        <LocaleSwitcher @change="markPendingLocale" />
+
+        <RouterLink to="/login" class="public-header__signin">
+          {{ t('public.signIn') }}
+        </RouterLink>
+      </div>
     </div>
   </header>
 </template>
@@ -48,6 +56,12 @@ const { t } = useI18n()
   font-weight: 700;
   color: var(--color-primary);
   white-space: nowrap;
+}
+
+.public-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
 }
 
 .public-header__signin {

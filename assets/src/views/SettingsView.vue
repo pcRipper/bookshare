@@ -3,11 +3,9 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import api from '@/api'
-import { SUPPORTED, setLocale, currentLocale } from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
-import BaseSelect from '@/components/ui/BaseSelect.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 
@@ -21,12 +19,7 @@ const sections = computed(() => [
   { key: 'account',       label: t('settings.nav.account'),       icon: 'person' },
   { key: 'privacy',       label: t('settings.nav.privacy'),       icon: 'lock' },
   { key: 'notifications', label: t('settings.nav.notifications'), icon: 'notifications' },
-  { key: 'language',      label: t('settings.nav.language'),      icon: 'translate' },
 ])
-
-// Each language is named in itself — the point is to be recognisable to
-// someone who can't read the language currently on screen.
-const localeOptions = SUPPORTED.map(l => ({ value: l.code, label: l.label }))
 
 /*
  * The whole page is edited locally and committed by one Save button that spans
@@ -113,9 +106,6 @@ async function save() {
 function cancel() {
   Object.assign(form, original)
   Object.assign(prefs, originalPrefs)
-  // The UI language is applied on selection rather than on save, so discarding
-  // has to put the screen back into the language the user arrived in.
-  setLocale(prefs.locale)
   error.value = null
 }
 
@@ -123,7 +113,13 @@ function removeAvatar() {
   form.avatarUrl = ''
 }
 
-/* ── Privacy, notification and language preferences (/api/me/settings) ───── */
+/*
+ * Privacy and notification preferences (/api/me/settings). The `locale` this
+ * resource also carries is deliberately absent: the header's LocaleSwitcher owns
+ * the UI language end to end — it applies and saves it on the spot — so mirroring
+ * it here would give one setting two sources of truth and let a stale Cancel
+ * throw the language back.
+ */
 const prefs = reactive({
   allowRequests: true,
   showLocation: true,
@@ -131,9 +127,6 @@ const prefs = reactive({
   notifyRequestUpdates: true,
   notifyActivity: false,
   notifyNewsletter: false,
-  // Seeded from the locale actually on screen, so an unsaved switch made before
-  // this page loaded doesn't read as a pending change.
-  locale: currentLocale(),
 })
 let originalPrefs = {}
 
@@ -142,23 +135,14 @@ const prefsDirty = computed(() => JSON.stringify(prefs) !== JSON.stringify(origi
 const dirty = computed(() => profileDirty.value || prefsDirty.value)
 
 function hydratePrefs(data) {
-  Object.assign(prefs, data)
-  // The stored locale is what makes the choice follow the user across devices:
-  // adopt it here, on the one load that knows about it. A null one means the
-  // reader has never picked a language, so the locale their browser negotiated
-  // stands — adopting a server-side default here would silently overrule it.
-  if (data.locale) setLocale(data.locale)
-  prefs.locale = currentLocale()
+  // Key by key rather than Object.assign(prefs, data): the response also carries
+  // `locale`, and copying it in would both resurrect it in this form's payload
+  // and let a Save commit whatever language was current when the page loaded,
+  // silently undoing a switch made in the header since.
+  for (const key of Object.keys(prefs)) {
+    if (key in data) prefs[key] = data[key]
+  }
   originalPrefs = { ...prefs }
-}
-
-/**
- * Applied immediately rather than on save — a language you can't read is a poor
- * place to hunt for the Save button — while still committing with everything
- * else, and reverting on Cancel.
- */
-function onLocaleChange(code) {
-  prefs.locale = setLocale(code)
 }
 
 const privacyOptions = computed(() => [
@@ -326,7 +310,7 @@ function signOut() {
           </template>
 
           <!-- ── Notifications ────────────────────────────────────────── -->
-          <template v-else-if="section === 'notifications'">
+          <template v-else>
             <h2 class="settings-panel__heading">{{ t('settings.notifications.heading') }}</h2>
             <section class="card toggle-card">
               <label v-for="opt in notificationOptions" :key="opt.key" class="toggle-row">
@@ -336,24 +320,6 @@ function signOut() {
                 </span>
                 <input v-model="prefs[opt.key]" type="checkbox" class="switch" :disabled="loading" />
               </label>
-            </section>
-          </template>
-
-          <!-- ── Language ─────────────────────────────────────────────── -->
-          <template v-else>
-            <h2 class="settings-panel__heading">{{ t('settings.language.heading') }}</h2>
-            <section class="card">
-              <div class="field">
-                <label class="field__label" for="set-locale">{{ t('settings.language.label') }}</label>
-                <BaseSelect
-                  id="set-locale"
-                  :model-value="prefs.locale"
-                  :options="localeOptions"
-                  :disabled="loading"
-                  @update:model-value="onLocaleChange"
-                />
-                <p class="panel-note">{{ t('settings.language.hint') }}</p>
-              </div>
             </section>
           </template>
 
@@ -593,7 +559,6 @@ function signOut() {
 .switch:checked { background: var(--color-primary); }
 .switch:checked::after { transform: translateX(18px); }
 
-.panel-note { font-size: var(--text-label-sm); color: var(--color-secondary); margin: 0; }
 
 /* transitions */
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
