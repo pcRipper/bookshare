@@ -2,8 +2,10 @@
 
 namespace App\Tests\EventSubscriber;
 
+use App\Api\ApiError;
 use App\EventSubscriber\RateLimitSubscriber;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Translation\IdentityTranslator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
@@ -62,8 +64,9 @@ class RateLimitSubscriberTest extends TestCase
         $apiUser = $this->fixedWindow('api_user', 1);
         $apiIpUser = $this->fixedWindow('api_ip_user', 1000);
 
-        $alice = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $this->tokenStorage('alice'));
-        $bob = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $this->tokenStorage('bob'));
+        $errors = new ApiError(new IdentityTranslator());
+        $alice = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $this->tokenStorage('alice'), $errors);
+        $bob = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $this->tokenStorage('bob'), $errors);
 
         $alice->onKernelRequest($this->event('/api/books'));
         // Bob is a different key — unaffected by Alice exhausting hers.
@@ -133,6 +136,9 @@ class RateLimitSubscriberTest extends TestCase
             $this->fixedWindow('api_user', $apiUser),
             $this->fixedWindow('api_ip_user', $apiIpUser),
             $tokenStorage,
+            // IdentityTranslator renders the id itself, so the 429 message the
+            // assertions read is the English one.
+            new ApiError(new IdentityTranslator()),
         );
     }
 

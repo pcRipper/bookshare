@@ -2,6 +2,7 @@
 
 namespace App\EventSubscriber;
 
+use App\Api\ApiError;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -33,6 +34,7 @@ class RateLimitSubscriber implements EventSubscriberInterface
         #[Autowire(service: 'limiter.api_ip_user')]
         private readonly RateLimiterFactoryInterface $apiIpUserLimiter,
         private readonly TokenStorageInterface $tokenStorage,
+        private readonly ApiError $errors,
     ) {}
 
     public static function getSubscribedEvents(): array
@@ -77,9 +79,12 @@ class RateLimitSubscriber implements EventSubscriberInterface
 
         $retryAfter = max(0, $limit->getRetryAfter()->getTimestamp() - time());
 
+        // Translated here rather than left to the kernel: the 429 body is the one
+        // failure the SPA renders straight from `detail`, so it has to follow the
+        // caller's language like every other API message.
         throw new TooManyRequestsHttpException(
             $retryAfter,
-            'API rate limit exceeded. Please slow down and try again later.',
+            $this->errors->translate('API rate limit exceeded. Please slow down and try again later.'),
         );
     }
 }

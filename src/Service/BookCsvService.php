@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Api\ApiError;
 use App\Dto\BookInput;
 use App\Entity\Book;
 use App\Entity\User;
@@ -55,6 +56,7 @@ class BookCsvService
         private readonly EntityManagerInterface $em,
         private readonly ValidatorInterface $validator,
         private readonly UrlHelper $urls,
+        private readonly ApiError $errors,
     ) {}
 
     /**
@@ -123,7 +125,7 @@ class BookCsvService
             if (!isset($index[$required])) {
                 fclose($handle);
 
-                return $this->fatal(sprintf('Missing required column "%s".', $required));
+                return $this->fatal('Missing required column "%column%".', ['%column%' => $required]);
             }
         }
 
@@ -140,7 +142,7 @@ class BookCsvService
             if ($line - 1 > self::MAX_ROWS) {
                 fclose($handle);
 
-                return $this->fatal(sprintf('Too many rows — the limit is %d.', self::MAX_ROWS));
+                return $this->fatal('Too many rows — the limit is %limit%.', ['%limit%' => self::MAX_ROWS]);
             }
 
             [$input, $rowErrors] = $this->buildRow($index, $row);
@@ -175,7 +177,9 @@ class BookCsvService
         foreach ($valid as ['line' => $rowLine, 'input' => $input]) {
             $key = $this->dedupeKey($input->title, $input->author);
             if (isset($seen[$key])) {
-                $duplicates[] = ['line' => $rowLine, 'errors' => ['Duplicate of an existing book — skipped.']];
+                $duplicates[] = ['line' => $rowLine, 'errors' => [
+                    $this->errors->translate('Duplicate of an existing book — skipped.'),
+                ]];
                 continue;
             }
             $seen[$key] = true;
@@ -253,7 +257,7 @@ class BookCsvService
         if (in_array($statusRaw, self::IMPORTABLE_STATUSES, true)) {
             $input->status = BookStatus::from($statusRaw);
         } else {
-            $errors[] = sprintf('Unsupported status "%s".', $statusRaw);
+            $errors[] = $this->errors->translate('Unsupported status "%status%".', ['%status%' => $statusRaw]);
         }
 
         // Match category names against the existing vocabulary only; ignore unknowns.
@@ -270,9 +274,17 @@ class BookCsvService
     }
 
     /** @return array{imported:int, skipped:int, aborted:bool, errors:list<array{line:int, errors:string[]}>} */
-    private function fatal(string $message): array
+    /**
+     * A whole-file failure, shaped like a row error on line 1 so the modal can
+     * render it with everything else.
+     *
+     * @param array<string, string|int> $params translation placeholders
+     */
+    private function fatal(string $message, array $params = []): array
     {
-        return ['imported' => 0, 'skipped' => 0, 'aborted' => true, 'errors' => [['line' => 1, 'errors' => [$message]]]];
+        $translated = $this->errors->translate($message, $params);
+
+        return ['imported' => 0, 'skipped' => 0, 'aborted' => true, 'errors' => [['line' => 1, 'errors' => [$translated]]]];
     }
 
     private function stripBom(string $value): string

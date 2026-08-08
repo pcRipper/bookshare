@@ -2,6 +2,7 @@
 
 namespace App\Tests\Service;
 
+use App\Api\ApiError;
 use App\Entity\ActivityItem;
 use App\Entity\Book;
 use App\Entity\Category;
@@ -17,6 +18,7 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\UrlHelper;
+use Symfony\Component\Translation\IdentityTranslator;
 use Symfony\Component\Validator\Validation;
 
 class BookCsvServiceTest extends TestCase
@@ -40,7 +42,11 @@ class BookCsvServiceTest extends TestCase
         $books = new BookService($em, $categories, $recorder);
         $validator = Validation::createValidatorBuilder()->enableAttributeMapping()->getValidator();
 
-        return new BookCsvService($books, $bookRepo, $categories, $em, $validator, $this->urlHelper());
+        // IdentityTranslator renders the id itself with its placeholders filled,
+        // so assertions read as the English the user would see.
+        $errors = new ApiError(new IdentityTranslator());
+
+        return new BookCsvService($books, $bookRepo, $categories, $em, $validator, $this->urlHelper(), $errors);
     }
 
     /** UrlHelper is final, so it's built for real over a request instead of stubbed. */
