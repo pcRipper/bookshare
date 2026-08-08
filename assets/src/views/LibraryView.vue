@@ -448,29 +448,35 @@ async function handleCCancel(id) {
               <ViewToggle v-model="bookView" v-model:detailed="tableDetailed" />
               <!-- The grid leads with an "add" placeholder card; the table has no
                    such cell, so the affordance moves into the toolbar (desktop
-                   only — mobile already has the FAB, and a fourth control here
-                   pushes Export off-screen). -->
+                   only — mobile already has the FAB). -->
               <button
                 v-if="bookView === 'table'"
                 class="toolbar-btn toolbar-btn--add"
                 type="button"
+                :aria-label="t('library.addBook')"
                 @click="openCreate"
               >
                 <span class="material-symbols-outlined">add</span>
-                {{ t('library.addBook') }}
+                <span class="toolbar-btn__label">{{ t('library.addBook') }}</span>
               </button>
-              <button class="toolbar-btn" type="button" @click="shareOpen = true">
+              <button class="toolbar-btn" type="button" :aria-label="t('library.share')" @click="shareOpen = true">
                 <span class="material-symbols-outlined">share</span>
-                {{ t('library.share') }}
+                <span class="toolbar-btn__label">{{ t('library.share') }}</span>
               </button>
-              <button class="toolbar-btn" type="button" @click="importOpen = true">
+              <button class="toolbar-btn" type="button" :aria-label="t('library.import')" @click="importOpen = true">
                 <span class="material-symbols-outlined">upload</span>
-                {{ t('library.import') }}
+                <span class="toolbar-btn__label">{{ t('library.import') }}</span>
               </button>
-              <button class="toolbar-btn" type="button" :disabled="exporting || !collection.length" @click="onExport">
+              <button
+                class="toolbar-btn"
+                type="button"
+                :aria-label="t('library.export')"
+                :disabled="exporting || !collection.length"
+                @click="onExport"
+              >
                 <BaseSpinner v-if="exporting" size="sm" />
                 <span v-else class="material-symbols-outlined">download</span>
-                {{ t('library.export') }}
+                <span class="toolbar-btn__label">{{ t('library.export') }}</span>
               </button>
             </div>
           </div>
@@ -1063,7 +1069,10 @@ async function handleCCancel(id) {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-sm);
-  flex-shrink: 0;
+  /* Shrinkable on purpose: with flex-shrink:0 this row keeps its max-content
+     width, so its own flex-wrap never engages and extra buttons overflow the
+     viewport instead of wrapping. */
+  min-width: 0;
 }
 .toolbar-btn {
   display: inline-flex;
@@ -1086,9 +1095,20 @@ async function handleCCancel(id) {
 .toolbar-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .toolbar-btn .material-symbols-outlined { font-size: 18px; }
 /* Mobile uses the floating action button instead, so hide the toolbar one —
-   same rule as .btn-add-book, and it keeps Export inside the viewport.
-   Must come after the .toolbar-btn base rule: same specificity, later wins. */
+   same rule as .btn-add-book. Must come after the .toolbar-btn base rule:
+   same specificity, later wins. */
 @media (max-width: 767px) { .toolbar-btn--add { display: none; } }
+/* Phones: icons only. Four labelled buttons don't fit a narrow viewport, and
+   wrapping them onto a second row costs more vertical space above the grid
+   than the labels are worth. Each button keeps an aria-label, so the icon is
+   never the only thing naming the action. */
+@media (max-width: 767px) {
+  .toolbar-btn__label { display: none; }
+  .toolbar-btn {
+    padding: 8px 12px;
+    gap: 0;
+  }
+}
 
 /* ── Book grid ────────────────────────────────────────────────────────── */
 .book-grid {
