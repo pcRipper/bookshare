@@ -65,8 +65,9 @@ class RateLimitSubscriberTest extends TestCase
         $apiIpUser = $this->fixedWindow('api_ip_user', 1000);
 
         $errors = new ApiError(new IdentityTranslator());
-        $alice = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $this->tokenStorage('alice'), $errors);
-        $bob = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $this->tokenStorage('bob'), $errors);
+        $publicIp = $this->fixedWindow('public_ip', 1000);
+        $alice = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $publicIp, $this->tokenStorage('alice'), $errors);
+        $bob = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $publicIp, $this->tokenStorage('bob'), $errors);
 
         $alice->onKernelRequest($this->event('/api/books'));
         // Bob is a different key — unaffected by Alice exhausting hers.
@@ -112,6 +113,46 @@ class RateLimitSubscriberTest extends TestCase
         $this->expectNotToPerformAssertions();
     }
 
+    public function testPublicPagesAreThrottledByIpAlone(): void
+    {
+        $sub = $this->subscriber($this->tokenStorage('alice'), publicIp: 1);
+
+        $sub->onKernelRequest($this->event('/api/public/users/7', '10.0.0.1'));
+        $sub->onKernelRequest($this->event('/api/public/users/7', '10.0.0.2')); // other IP, fresh bucket
+
+        $this->expectException(TooManyRequestsHttpException::class);
+        $sub->onKernelRequest($this->event('/api/public/users/7', '10.0.0.1'));
+    }
+
+    /**
+     * The subscriber must return before touching token storage on a public
+     * path. On a lazy firewall, *reading* the token forces the deferred
+     * authentication — which would undo the `security: false` exemption and
+     * make a stale Bearer 401 the page instead of rendering it.
+     */
+    public function testPublicPagesNeverResolveTheViewer(): void
+    {
+        $tokenStorage = $this->createMock(TokenStorageInterface::class);
+        $tokenStorage->expects($this->never())->method('getToken');
+
+        $sub = $this->subscriber($tokenStorage);
+
+        $sub->onKernelRequest($this->event('/api/public/users/7'));
+        $sub->onKernelRequest($this->event('/api/public/users/7/books'));
+        $sub->onKernelRequest($this->event('/api/public/users/7/collections'));
+    }
+
+    /** The prefix must not spill onto a future /api/publications. */
+    public function testAdjacentPathsAreNotTreatedAsPublic(): void
+    {
+        $sub = $this->subscriber($this->tokenStorage('alice'), apiUser: 1, publicIp: 1000);
+
+        $sub->onKernelRequest($this->event('/api/publications'));
+
+        $this->expectException(TooManyRequestsHttpException::class);
+        $sub->onKernelRequest($this->event('/api/publications'));
+    }
+
     public function testSubscribesToRequestAfterTheFirewall(): void
     {
         $events = RateLimitSubscriber::getSubscribedEvents();
@@ -130,11 +171,13 @@ class RateLimitSubscriberTest extends TestCase
         int $authIp = 1000,
         int $apiUser = 1000,
         int $apiIpUser = 1000,
+        int $publicIp = 1000,
     ): RateLimitSubscriber {
         return new RateLimitSubscriber(
             $this->fixedWindow('auth_ip', $authIp),
             $this->fixedWindow('api_user', $apiUser),
             $this->fixedWindow('api_ip_user', $apiIpUser),
+            $this->fixedWindow('public_ip', $publicIp),
             $tokenStorage,
             // IdentityTranslator renders the id itself, so the 429 message the
             // assertions read is the English one.

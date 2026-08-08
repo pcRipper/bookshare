@@ -33,6 +33,8 @@ class RateLimitSubscriber implements EventSubscriberInterface
         private readonly RateLimiterFactoryInterface $apiUserLimiter,
         #[Autowire(service: 'limiter.api_ip_user')]
         private readonly RateLimiterFactoryInterface $apiIpUserLimiter,
+        #[Autowire(service: 'limiter.public_ip')]
+        private readonly RateLimiterFactoryInterface $publicIpLimiter,
         private readonly TokenStorageInterface $tokenStorage,
         private readonly ApiError $errors,
     ) {}
@@ -61,6 +63,17 @@ class RateLimitSubscriber implements EventSubscriberInterface
         // Unauthenticated auth endpoints: throttle purely by IP.
         if (str_starts_with($path, '/api/auth')) {
             $this->ensureAccepted($this->authIpLimiter->create($ip)->consume());
+
+            return;
+        }
+
+        // The signed-out share pages: keyed by IP, and returning *before* the
+        // token storage is touched below. On a lazy firewall, merely reading
+        // the token forces the deferred authentication to run — which would
+        // both defeat the point of the `security: false` firewall and make a
+        // stale Bearer header fail the request the SPA is trying to render.
+        if (str_starts_with($path, '/api/public/') || $path === '/api/public') {
+            $this->ensureAccepted($this->publicIpLimiter->create($ip)->consume());
 
             return;
         }

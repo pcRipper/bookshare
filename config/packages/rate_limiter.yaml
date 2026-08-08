@@ -7,6 +7,10 @@
 #                  across every other /api call.
 #   api_ip_user  → keyed by IP + user, a tighter combined bucket that also reins
 #                  in a single client behind one address.
+#   public_ip    → keyed by client IP, guards the unauthenticated /api/public
+#                  share pages. Deliberately far tighter than api_user: there is
+#                  no account to hold responsible, and the id space is
+#                  sequential, so this is the endpoint a scraper walks.
 #
 # Storage uses the cache pool (cache.rate_limiter); swap to a Redis/Lock-backed
 # pool for multi-node deployments so counters are shared.
@@ -26,6 +30,10 @@ framework:
             rate:
                 interval: '1 second'
                 amount: 5       # sustained refill: 5 req/s
+        public_ip:
+            policy: 'sliding_window'
+            limit: 60
+            interval: '1 minute'
 
 when@test:
     # Keep tests deterministic: very high ceilings so the limiter never trips
@@ -40,3 +48,5 @@ when@test:
                 limit: 100000
                 rate:
                     amount: 100000
+            public_ip:
+                limit: 100000
