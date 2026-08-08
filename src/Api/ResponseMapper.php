@@ -91,6 +91,37 @@ class ResponseMapper
     }
 
     /**
+     * Book shape for the signed-out share page — a strict subset of book(),
+     * built as its own literal rather than by unsetting keys so that a field
+     * added to book() is never published here by accident.
+     *
+     * Dropped on purpose: `currentHolder` (while a book is lent that is the
+     * *borrower*, a third party who never agreed to appear on someone else's
+     * public page), `isHome` (same lending state, one step removed), `canEdit`
+     * and `requested` (viewer-relative, and there is no viewer).
+     */
+    public function publicBook(Book $book): array
+    {
+        return [
+            'id'           => $book->getId(),
+            'title'        => $book->getTitle(),
+            'author'       => $book->getAuthor(),
+            'description'  => $book->getDescription(),
+            'isbn'         => $book->getIsbn(),
+            'coverPath'    => $book->getCoverPath(),
+            'status'       => $book->getStatus()->value,
+            'language'     => $book->getLanguage(),
+            'languageName' => \App\Language\LanguageCatalog::name($book->getLanguage()),
+            'isRead'       => $book->isRead(),
+            'createdAt'    => $book->getCreatedAt()->format(\DateTimeInterface::ATOM),
+            'categories'   => array_map(
+                fn ($c) => ['id' => $c->getId(), 'name' => $c->getName(), 'colorHex' => $c->getColorHex()],
+                $book->getCategories()->toArray(),
+            ),
+        ];
+    }
+
+    /**
      * Book shape for Discover: the standard book plus its owner, since browsing
      * the community is fundamentally about *whose* book you could borrow.
      */
@@ -201,6 +232,46 @@ class ResponseMapper
                 fn (Book $b) => $this->book($b) + ['requested' => isset($pendingBookIds[$b->getId()])],
                 $books,
             ),
+        ];
+    }
+
+    /**
+     * Collection shape for the signed-out share page.
+     *
+     * The member books go through publicBook() — mapping them through book()
+     * would republish `currentHolder` one level down, where the top-level shape
+     * still looks clean. Also drops `owner` (the page already names them once)
+     * and `canEdit`.
+     */
+    public function publicCollection(BookCollection $collection): array
+    {
+        $books = $collection->getBooks()->toArray();
+        $available = array_filter($books, static fn (Book $b) => $b->getStatus() === BookStatus::Own);
+
+        return [
+            'id'             => $collection->getId(),
+            'name'           => $collection->getName(),
+            'description'    => $collection->getDescription(),
+            'coverUrl'       => $collection->getCoverUrl(),
+            'bookCount'      => \count($books),
+            'availableCount' => \count($available),
+            'createdAt'      => $collection->getCreatedAt()->format(\DateTimeInterface::ATOM),
+            'books'          => array_values(array_map(fn (Book $b) => $this->publicBook($b), $books)),
+        ];
+    }
+
+    /**
+     * Owner identity for the share page: enough to know whose library this is,
+     * and nothing more. No email, no location (even when `show_location` allows
+     * it to members), no stats, no `isSelf`/`isSubscribed` — there is no viewer.
+     */
+    public function publicProfile(User $user): array
+    {
+        return [
+            'id'        => $user->getId(),
+            'fullName'  => $user->getFullName(),
+            'avatarUrl' => $user->getAvatarUrl(),
+            'bio'       => $user->getBio(),
         ];
     }
 

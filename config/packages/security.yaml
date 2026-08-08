@@ -9,6 +9,17 @@ security:
         dev:
             pattern: ^/(_profiler|_wdt|assets|build)/
             security: false
+        # The signed-out share page. `security: false` rather than a
+        # PUBLIC_ACCESS access_control rule alone: with the firewall active the
+        # JWT authenticator still runs whenever an Authorization header is
+        # present and *throws* on an expired token, so a member whose session
+        # went stale would get a 401 on a public link — and the SPA's 401
+        # interceptor would wipe their credentials. No firewall, no
+        # authenticator: a stale Bearer is simply ignored.
+        # The (/|$) anchor keeps this from also matching e.g. /api/publications.
+        public_api:
+            pattern: ^/api/public(/|$)
+            security: false
         main:
             lazy: true
             stateless: true
@@ -16,8 +27,11 @@ security:
             jwt: ~
 
     access_control:
-        - { path: ^/api/auth, roles: PUBLIC_ACCESS }
-        - { path: ^/api,      roles: IS_AUTHENTICATED_FULLY }
+        # Ordered: first match wins. The public entry is documentation as much
+        # as enforcement — the firewall above already exempts that path.
+        - { path: ^/api/public(/|$), roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth,        roles: PUBLIC_ACCESS }
+        - { path: ^/api,             roles: IS_AUTHENTICATED_FULLY }
 
 when@test:
     security: ~
