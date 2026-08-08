@@ -32,6 +32,7 @@
 'This reader isn''t accepting borrow requests right now.': 'Dieser Leser nimmt derzeit keine Leihanfragen an.'
 'This reader keeps their library private.': 'Dieser Leser hält seine Bibliothek privat.'
 'This reader''s library is private.': 'Die Bibliothek dieses Lesers ist privat.'
+'This request can no longer be withdrawn — it has already been answered.': 'Diese Anfrage kann nicht mehr zurückgezogen werden — sie wurde bereits beantwortet.'
 'This request has already been resolved.': 'Diese Anfrage wurde bereits bearbeitet.'
 'Unknown template source.': 'Unbekannte Vorlagenquelle.'
 'User not found.': 'Benutzer nicht gefunden.'

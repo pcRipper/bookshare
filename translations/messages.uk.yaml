@@ -31,6 +31,7 @@
 'This reader isn''t accepting borrow requests right now.': 'Цей читач зараз не приймає запитів на позику.'
 'This reader keeps their library private.': 'Цей читач тримає свою бібліотеку приватною.'
 'This reader''s library is private.': 'Бібліотека цього читача приватна.'
+'This request can no longer be withdrawn — it has already been answered.': 'Цей запит більше не можна відкликати — на нього вже відповіли.'
 'This request has already been resolved.': 'Цей запит уже опрацьовано.'
 'Unknown template source.': 'Невідоме джерело шаблонів.'
 'User not found.': 'Користувача не знайдено.'
