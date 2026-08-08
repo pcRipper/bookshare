@@ -115,6 +115,36 @@ Pulls the latest branch, rebuilds the images, restarts the stack, and auto-appli
 migrations (`RUN_MIGRATIONS=1`). Docker layer caching makes rebuilds fast when dependencies are
 unchanged. To run migrations manually instead, set `RUN_MIGRATIONS=0` and use `make prod-migrate`.
 
+## Post-deploy smoke check: the public share pages
+
+Run this after any deploy that touched `config/packages/security.yaml`, the nginx
+configs, or `PublicRestController`.
+
+The test suite **cannot** cover these: `when@test: security: ~` disables the security
+bundle, so nothing in PHPUnit exercises the firewall. Four curls close that gap.
+Substitute a real non-private user id, and one that is private.
+
+```bash
+BASE=https://your-host
+
+# 1. The rest of the API is still gated.
+curl -s -o /dev/null -w '%{http_code}\n' $BASE/api/books                      # ⇒ 401
+
+# 2. A shared library is readable with no credentials.
+curl -s -o /dev/null -w '%{http_code}\n' $BASE/api/public/users/{id}          # ⇒ 200
+
+# 3. …and stays readable when the caller offers a stale token. This is the
+#    regression that matters: if /api/public ever falls back under the
+#    authenticating firewall, this returns 401 and every member with an expired
+#    session gets bounced to /login when they open a shared link.
+curl -s -o /dev/null -w '%{http_code}\n' \
+     -H 'Authorization: Bearer garbage' $BASE/api/public/users/{id}           # ⇒ 200
+
+# 4. A private member is indistinguishable from one who doesn't exist.
+curl -s -o /dev/null -w '%{http_code}\n' $BASE/api/public/users/{private-id}  # ⇒ 404
+curl -s -o /dev/null -w '%{http_code}\n' $BASE/api/public/users/99999999      # ⇒ 404
+```
+
 ## Make targets
 
 | Target | Purpose |

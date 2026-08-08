@@ -51,7 +51,7 @@
 - [x] checkbox for alread read books
 - [ skip for now ] list of "want to read" + notify when some of the following accounts have this book available(cron or event)
 - [x] multi-languag ui: english, german, french, spanish, ukrainian. Setup on configuraton page. API error/validation messages are translated too (English sentence as translation id); release-note prose stays English; book language names localized via Intl.DisplayNames
-- [ ] public access to the library(without authorization): by link or qr code(just encode link here), button on library page or profile page.
+- [x] public access to the library(without authorization): by link or qr code(just encode link here), button on library page or profile page. Share button on the library toolbar opens a link + server-rendered QR; /public/library/:id serves books and collections read-only, gated by the existing privacy toggle
 
 # Deployment
 - [x] add script to install all needed dependenices on droplet(like docker to start up, git to pull a branch etc)
