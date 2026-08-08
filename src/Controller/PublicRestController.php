@@ -12,6 +12,10 @@ use App\Enum\BookStatus;
 use App\Repository\BookRepository;
 use App\Repository\CollectionRepository;
 use App\Repository\UserRepository;
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Color\Color;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\Writer\SvgWriter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -107,6 +111,58 @@ class PublicRestController extends AbstractController
             $pagination,
             fn (BookCollection $c) => $this->mapper->publicCollection($c),
         ));
+    }
+
+    /**
+     * The share QR, as SVG.
+     *
+     * SVG rather than PNG on purpose: endroid's PngWriter needs ext-gd, which
+     * isn't among the extensions this project documents as enabled, while the
+     * SVG writer is pure PHP.
+     *
+     * Public so the Share modal can point an <img> straight at it — an <img>
+     * can't carry a Bearer header, and the code encodes nothing but a URL that
+     * is already public. The payload is a pure function of the id, so it is
+     * cacheable; a private owner still 404s rather than emitting a code that
+     * leads to a dead page.
+     */
+    #[Route('/users/{id}/qr.svg', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function qr(string $id, Request $request, UserRepository $users): Response
+    {
+        $owner = $this->findShared($id, $users);
+        if (!$owner instanceof User) {
+            return $owner;
+        }
+
+        $result = (new Builder(
+            writer: new SvgWriter(),
+            data: $this->shareUrl($request, $owner),
+            errorCorrectionLevel: ErrorCorrectionLevel::Medium,
+            size: 320,
+            margin: 8,
+            // The brand green, so a printed code matches the rest of the app.
+            foregroundColor: new Color(0x27, 0x47, 0x38),
+        ))->build();
+
+        $response = new Response($result->getString(), Response::HTTP_OK, [
+            'Content-Type' => $result->getMimeType(),
+        ]);
+        $response->setPublic();
+        $response->setMaxAge(3600);
+
+        return $response;
+    }
+
+    /**
+     * The page the QR points at, absolute.
+     *
+     * Derived from the incoming request rather than DEFAULT_URI, which is
+     * `http://localhost` in both .env and the hand-maintained .env.local.php —
+     * a code built from it would be unscannable anywhere but the dev box.
+     */
+    private function shareUrl(Request $request, User $owner): string
+    {
+        return $request->getSchemeAndHttpHost() . '/public/library/' . $owner->getId();
     }
 
     /**
