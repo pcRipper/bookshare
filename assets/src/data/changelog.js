@@ -7,6 +7,16 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.18.0',
+    date: '2026-08-08',
+    notes: [
+      'You can now share your library with people who don’t have a FolioShare account. “Share” in your library’s toolbar gives you a link and a QR code — print it, put it on a shelf, or send it to a friend.',
+      'The shared page shows your name, photo and bio alongside your books and collections, read-only. Searching, paging and the card/table views all work exactly as they do for members.',
+      'Nothing is shared until you allow it: the link follows your existing privacy setting. Keep your profile private and the link simply won’t open — the Share dialog tells you so and points you at the setting.',
+      'Details that aren’t yours to publish stay private. Anyone currently borrowing one of your books is never named on the shared page, and neither is your email or location.',
+    ],
+  },
+  {
     version: '1.17.0',
     date: '2026-08-03',
     notes: [
