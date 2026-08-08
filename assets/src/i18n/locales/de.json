@@ -495,5 +495,17 @@
     "daysAgo": "vor {count} Tag | vor {count} Tagen",
     "lastWeek": "letzte Woche",
     "weeksAgo": "vor {count} Woche | vor {count} Wochen"
+  },
+  "public": {
+    "signIn": "Anmelden",
+    "eyebrow": "Geteilte Bibliothek",
+    "notShared": {
+      "title": "Diese Bibliothek wird nicht geteilt",
+      "message": "Der Link könnte falsch sein, oder der Leser hat seine Bibliothek privat gestellt."
+    },
+    "error": {
+      "title": "Etwas ist schiefgelaufen",
+      "message": "Diese Bibliothek konnte nicht geladen werden. Bitte versuch es erneut."
+    }
   }
 }

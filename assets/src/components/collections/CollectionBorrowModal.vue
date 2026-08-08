@@ -13,19 +13,25 @@ const { t } = useI18n()
  * equivalent of BookDetailModal. Shows the cover, owner, description and member
  * books; when the viewer isn't the owner it lets them pick a whole/partial set
  * (unavailable or already-requested books are locked) and needs at least two.
- * On the owner's own profile (`isSelf`) it's a pure preview.
+ * On the owner's own profile (`isSelf`) it's a pure preview, and so is the
+ * signed-out share page (`readonly`) — same rendering, different reasons:
+ * one viewer can't borrow from themselves, the other has no account to borrow
+ * with. `preview` is what the template actually gates on.
  */
 const props = defineProps({
   open: { type: Boolean, default: false },
   collection: { type: Object, default: null }, // { id, name, description, coverUrl, owner, books[] }
   busy: { type: Boolean, default: false },
   isSelf: { type: Boolean, default: false },
+  // No viewer at all — suppress every borrow affordance.
+  readonly: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['borrow', 'close'])
 
 const MIN = 2
 const selected = ref(new Set())
+const preview = computed(() => props.readonly || props.isSelf)
 
 function isAvailable(book) {
   return book.status === 'own' && !book.requested
@@ -34,9 +40,9 @@ function isAvailable(book) {
 const books = computed(() => props.collection?.books ?? [])
 const availableBooks = computed(() => books.value.filter(isAvailable))
 const availableCount = computed(() => availableBooks.value.length)
-const canBorrow = computed(() => !props.isSelf && selected.value.size >= MIN)
+const canBorrow = computed(() => !preview.value && selected.value.size >= MIN)
 // Too few available to ever meet the ≥2 rule — explain why borrowing is blocked.
-const notEnoughAvailable = computed(() => !props.isSelf && availableCount.value < MIN)
+const notEnoughAvailable = computed(() => !preview.value && availableCount.value < MIN)
 
 // (Re)seed the selection with every available book each time the modal opens.
 watch(
@@ -50,7 +56,7 @@ watch(
 )
 
 function toggle(book) {
-  if (props.isSelf || !isAvailable(book)) return
+  if (preview.value || !isAvailable(book)) return
   const next = new Set(selected.value)
   next.has(book.id) ? next.delete(book.id) : next.add(book.id)
   selected.value = next
@@ -130,9 +136,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
             <!-- Books -->
             <h3 class="detail-heading">
-              {{ isSelf ? t('collections.books') : t('collections.chooseBooks') }}
+              {{ preview ? t('collections.books') : t('collections.chooseBooks') }}
             </h3>
-            <p v-if="!isSelf" class="detail-sub">{{ t('collections.pickAtLeast', { min: MIN }) }}</p>
+            <p v-if="!preview" class="detail-sub">{{ t('collections.pickAtLeast', { min: MIN }) }}</p>
 
             <ul class="book-list">
               <li
@@ -141,12 +147,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                 class="book-row"
                 :class="{
                   'book-row--locked': !isAvailable(book),
-                  'book-row--selected': !isSelf && selected.has(book.id),
-                  'book-row--static': isSelf,
+                  'book-row--selected': !preview && selected.has(book.id),
+                  'book-row--static': preview,
                 }"
                 @click="toggle(book)"
               >
-                <span v-if="!isSelf" class="book-row__check" aria-hidden="true">
+                <span v-if="!preview" class="book-row__check" aria-hidden="true">
                   <span v-if="selected.has(book.id)" class="material-symbols-outlined">check_box</span>
                   <span v-else-if="isAvailable(book)" class="material-symbols-outlined">check_box_outline_blank</span>
                   <span v-else class="material-symbols-outlined">lock</span>
@@ -178,7 +184,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
         <footer class="modal__footer">
           <span
-            v-if="!isSelf"
+            v-if="!preview"
             class="modal__count"
             :class="{ 'modal__count--warn': notEnoughAvailable }"
           >{{ notEnoughAvailable
@@ -188,7 +194,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             <button class="btn-secondary" type="button" :disabled="busy" @click="close">
               {{ t('common.close') }}
             </button>
-            <button v-if="!isSelf" class="btn-primary" type="button" :disabled="!canBorrow || busy" @click="onBorrow">
+            <button v-if="!preview" class="btn-primary" type="button" :disabled="!canBorrow || busy" @click="onBorrow">
               <BaseSpinner v-if="busy" size="sm" />
               <span v-else class="material-symbols-outlined">handshake</span>
               {{ busy

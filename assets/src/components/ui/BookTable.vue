@@ -46,6 +46,9 @@ defineProps({
   detailed: { type: Boolean, default: false },
   // Discover only: whose book is this?
   showOwner: { type: Boolean, default: false },
+  // Off where the payload carries no holder (the public share page), so
+  // "all columns" doesn't offer a column that can only ever read "—".
+  showHolder: { type: Boolean, default: true },
   // Allow ticking "read" inline (owner's own library; still gated on canEdit).
   readEditable: { type: Boolean, default: false },
 })
@@ -79,7 +82,7 @@ function absoluteDate(iso) {
           </template>
           <th class="book-table__col-lang" scope="col">{{ t('table.language') }}</th>
           <th class="book-table__col-status" scope="col">{{ t('table.status') }}</th>
-          <th v-if="detailed" class="book-table__col-person" scope="col">{{ t('table.holder') }}</th>
+          <th v-if="detailed && showHolder" class="book-table__col-person" scope="col">{{ t('table.holder') }}</th>
           <th v-if="showOwner" class="book-table__col-person" scope="col">{{ t('table.owner') }}</th>
           <th v-if="detailed" class="book-table__col-added" scope="col">{{ t('table.added') }}</th>
         </tr>
@@ -168,7 +171,7 @@ function absoluteDate(iso) {
           </td>
 
           <!-- Holder: only interesting once the book has left its shelf. -->
-          <td v-if="detailed" class="book-table__col-person">
+          <td v-if="detailed && showHolder" class="book-table__col-person">
             <RouterLink
               v-if="!book.isHome && book.currentHolder"
               :to="`/profile/${book.currentHolder.id}`"

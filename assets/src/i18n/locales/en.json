@@ -495,5 +495,17 @@
     "daysAgo": "{count} day ago | {count} days ago",
     "lastWeek": "last week",
     "weeksAgo": "{count} week ago | {count} weeks ago"
+  },
+  "public": {
+    "signIn": "Sign in",
+    "eyebrow": "Shared library",
+    "notShared": {
+      "title": "This library isn't shared",
+      "message": "The link may be wrong, or the reader has made their library private."
+    },
+    "error": {
+      "title": "Something went wrong",
+      "message": "We couldn't load this library. Please try again."
+    }
   }
 }

@@ -17,6 +17,13 @@ const router = createRouter({
       component: () => import('@/views/GoogleCallbackView.vue'),
       meta: { public: true },
     },
+    {
+      // The share link. Public by design — the API behind it is too.
+      path: '/public/library/:id',
+      name: 'public-library',
+      component: () => import('@/views/PublicLibraryView.vue'),
+      meta: { public: true },
+    },
     // Protected routes — add pages here as they are built
     {
       path: '/library',
@@ -44,19 +51,25 @@ const router = createRouter({
       component: () => import('@/views/SettingsView.vue'),
     },
     {
+      // Public: it renders a static file, needs no API, and it is the footer's
+      // only link — so on the share page it would otherwise dead-end an
+      // anonymous visitor at /login.
       path: '/changelog',
       name: 'changelog',
       component: () => import('@/views/ChangelogView.vue'),
+      meta: { public: true },
     },
     {
       path: '/',
       redirect: '/library',
     },
-    // Catch-all → 404. Keep last so real routes match first.
+    // Catch-all → 404. Keep last so real routes match first. Public so a
+    // mistyped share link 404s honestly instead of redirecting to /login.
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: () => import('@/views/NotFoundView.vue'),
+      meta: { public: true },
     },
   ],
 })

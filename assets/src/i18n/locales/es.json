@@ -495,5 +495,17 @@
     "daysAgo": "hace {count} día | hace {count} días",
     "lastWeek": "la semana pasada",
     "weeksAgo": "hace {count} semana | hace {count} semanas"
+  },
+  "public": {
+    "signIn": "Iniciar sesión",
+    "eyebrow": "Biblioteca compartida",
+    "notShared": {
+      "title": "Esta biblioteca no se comparte",
+      "message": "Puede que el enlace sea incorrecto o que el lector haya hecho privada su biblioteca."
+    },
+    "error": {
+      "title": "Algo ha ido mal",
+      "message": "No hemos podido cargar esta biblioteca. Inténtalo de nuevo."
+    }
   }
 }
