@@ -50,7 +50,7 @@
 - [x] allow to add into book collections books with all types
 - [x] checkbox for alread read books
 - [ skip for now ] list of "want to read" + notify when some of the following accounts have this book available(cron or event)
-- [x] multi-languag ui: english, german, french, spanish, ukrainian. Setup on configuraton page. API error/validation messages are translated too (English sentence as translation id); release-note prose stays English; book language names localized via Intl.DisplayNames
+- [x] multi-languag ui: english, german, french, spanish, ukrainian. Switched from a popover in the header (and on the login page, where the pick is applied to the account on successful sign-in) — not the settings page. API error/validation messages are translated too (English sentence as translation id); release-note prose stays English; book language names localized via Intl.DisplayNames
 - [x] public access to the library(without authorization): by link or qr code(just encode link here), button on library page or profile page. Share button on the library toolbar opens a link + server-rendered QR; /public/library/:id serves books and collections read-only, gated by the existing privacy toggle
 
 # Deployment
