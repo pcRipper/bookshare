@@ -110,7 +110,7 @@ class CollectionRestController extends AbstractController
     #[Route('/{id}', methods: ['PATCH'], requirements: ['id' => '\d+'])]
     public function update(BookCollection $collection, #[MapRequestPayload] CollectionInput $input): JsonResponse
     {
-        $this->denyAccessUnlessGranted(CollectionVoter::EDIT, $collection, 'This collection is out on loan and can\'t be edited.');
+        $this->denyAccessUnlessGranted(CollectionVoter::EDIT, $collection, $this->lockedMessage($collection, 'edited'));
 
         /** @var User $user */
         $user = $this->getUser();
@@ -128,11 +128,27 @@ class CollectionRestController extends AbstractController
     #[Route('/{id}', methods: ['DELETE'], requirements: ['id' => '\d+'])]
     public function delete(BookCollection $collection): Response
     {
-        $this->denyAccessUnlessGranted(CollectionVoter::DELETE, $collection, 'This collection is out on loan and can\'t be deleted.');
+        $this->denyAccessUnlessGranted(CollectionVoter::DELETE, $collection, $this->lockedMessage($collection, 'deleted'));
 
         $this->service->delete($collection);
         $this->em->flush();
 
         return new Response(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * Picks the access-denied reason, mirroring BookRestController: the voter
+     * refuses both a non-owner and an owner whose collection is out on loan, so
+     * telling everyone "it's on loan" misinforms the former.
+     */
+    private function lockedMessage(BookCollection $collection, string $action): string
+    {
+        if ($collection->getOwner() !== $this->getUser()) {
+            return 'You do not own this collection.';
+        }
+
+        return $action === 'deleted'
+            ? 'This collection is out on loan and can\'t be deleted.'
+            : 'This collection is out on loan and can\'t be edited.';
     }
 }
