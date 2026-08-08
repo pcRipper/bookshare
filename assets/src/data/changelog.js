@@ -7,6 +7,16 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.19.0',
+    date: '2026-08-08',
+    notes: [
+      'Changing language no longer means a trip to Settings. The globe button in the header switches FolioShare between English, German, Spanish, French and Ukrainian from wherever you are, on desktop and on your phone.',
+      'The same picker sits on the sign-in page, so you can put the site into your language before you sign in — and once you do, that choice is saved to your account.',
+      'Your language still follows you: pick it on one device and FolioShare opens in it on the next one you sign in on.',
+      'Settings no longer has a Language section — the header button replaces it.',
+    ],
+  },
+  {
     version: '1.18.0',
     date: '2026-08-08',
     notes: [
