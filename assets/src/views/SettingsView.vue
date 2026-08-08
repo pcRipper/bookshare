@@ -143,10 +143,13 @@ const dirty = computed(() => profileDirty.value || prefsDirty.value)
 
 function hydratePrefs(data) {
   Object.assign(prefs, data)
-  originalPrefs = { ...prefs }
   // The stored locale is what makes the choice follow the user across devices:
-  // adopt it here, on the one load that knows about it.
-  setLocale(prefs.locale)
+  // adopt it here, on the one load that knows about it. A null one means the
+  // reader has never picked a language, so the locale their browser negotiated
+  // stands — adopting a server-side default here would silently overrule it.
+  if (data.locale) setLocale(data.locale)
+  prefs.locale = currentLocale()
+  originalPrefs = { ...prefs }
 }
 
 /**

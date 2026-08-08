@@ -52,9 +52,13 @@ class UserSettings
      * The UI language, as a `LocaleCatalog` code. Stored server-side purely so
      * the choice follows the user to another device — the SPA reads it on load
      * but drives each request's `Accept-Language` from its own local copy.
+     *
+     * Null means "never chose one", which is distinct from an explicit 'en':
+     * a stored default would otherwise override the language the reader's
+     * browser asked for the first time they opened Settings.
      */
-    #[ORM\Column(length: 5, options: ['default' => LocaleCatalog::DEFAULT])]
-    private string $locale = LocaleCatalog::DEFAULT;
+    #[ORM\Column(length: 5, nullable: true)]
+    private ?string $locale = null;
 
     public function getId(): ?int { return $this->id; }
 
@@ -79,12 +83,15 @@ class UserSettings
     public function notifiesNewsletter(): bool { return $this->notifyNewsletter; }
     public function setNotifyNewsletter(bool $value): static { $this->notifyNewsletter = $value; return $this; }
 
-    public function getLocale(): string { return $this->locale; }
+    public function getLocale(): ?string { return $this->locale; }
 
-    /** Unsupported codes fall back to the default rather than persisting a locale we can't render. */
+    /**
+     * Unsupported codes are discarded rather than persisted — we can't render
+     * them — and so are read back as "no choice made", not as the default.
+     */
     public function setLocale(?string $locale): static
     {
-        $this->locale = LocaleCatalog::negotiate($locale) ?? LocaleCatalog::DEFAULT;
+        $this->locale = LocaleCatalog::negotiate($locale);
 
         return $this;
     }

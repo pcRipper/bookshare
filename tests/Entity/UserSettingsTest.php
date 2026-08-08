@@ -17,7 +17,9 @@ class UserSettingsTest extends TestCase
         self::assertTrue($settings->notifiesRequestUpdates());
         self::assertFalse($settings->notifiesActivity());
         self::assertFalse($settings->notifiesNewsletter());
-        self::assertSame('en', $settings->getLocale());
+        // No language chosen yet — distinct from having chosen English, so the
+        // SPA keeps whatever the browser negotiated.
+        self::assertNull($settings->getLocale());
     }
 
     public function testLocaleAcceptsAShippedLanguage(): void
@@ -30,10 +32,18 @@ class UserSettingsTest extends TestCase
         self::assertSame('de', (new UserSettings())->setLocale('de-AT')->getLocale());
     }
 
-    public function testAnUnsupportedOrNullLocaleFallsBackToTheDefaultRatherThanPersisting(): void
+    public function testAnUnsupportedOrNullLocaleIsDiscardedRatherThanPersisted(): void
     {
-        // The DB column is never allowed to hold a locale we can't render.
-        self::assertSame('en', (new UserSettings())->setLocale('pl')->getLocale());
-        self::assertSame('en', (new UserSettings())->setLocale(null)->getLocale());
+        // The column is never allowed to hold a locale we can't render, and a
+        // rejected one reads back as "no choice", not as the default.
+        self::assertNull((new UserSettings())->setLocale('pl')->getLocale());
+        self::assertNull((new UserSettings())->setLocale(null)->getLocale());
+    }
+
+    public function testAChosenLocaleCanBeClearedBackToNoChoice(): void
+    {
+        $settings = (new UserSettings())->setLocale('uk');
+
+        self::assertNull($settings->setLocale(null)->getLocale());
     }
 }
