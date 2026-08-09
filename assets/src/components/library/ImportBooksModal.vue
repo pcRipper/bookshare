@@ -161,7 +161,7 @@ async function run() {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-md);
+  padding: var(--modal-gutter);
   z-index: 100;
 }
 .modal {
@@ -169,7 +169,7 @@ async function run() {
   border-radius: var(--radius-lg);
   box-shadow: 0 10px 30px rgba(35, 44, 51, 0.08);
   width: 100%;
-  max-width: 480px;
+  max-width: var(--modal-w-md);
   max-height: 90vh;
   display: flex;
   flex-direction: column;

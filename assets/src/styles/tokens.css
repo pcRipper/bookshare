@@ -100,6 +100,26 @@
   --radius-default: 4px;
   --radius-lg:      8px;
   --radius-full:    9999px;
+
+  /* ── Modal sizing ─────────────────────────────────────────────────────── */
+  /* One scale for every dialog, so a modal's width says what kind of surface
+     it is instead of being a per-component magic number. Pick by content:
+       sm — one short form (share a link)
+       md — a compact single-column form (import, edit profile)
+       lg — a two-column form (manage a book, edit a collection)
+       xl — a cover-plus-detail reading surface (book/collection preview) */
+  --modal-w-sm: 520px;
+  --modal-w-md: 640px;
+  --modal-w-lg: 800px;
+  --modal-w-xl: 900px;
+
+  /* Overlay inset. Tighter on phones — at 24px a side, a 390px screen loses
+     an eighth of its width to backdrop the user can't read anything through. */
+  --modal-gutter: var(--space-sm);
+}
+
+@media (min-width: 768px) {
+  :root { --modal-gutter: var(--space-md); }
 }
 
 /* ── Global base ──────────────────────────────────────────────────────── */

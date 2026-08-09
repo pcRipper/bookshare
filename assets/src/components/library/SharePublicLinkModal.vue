@@ -144,7 +144,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-md);
+  padding: var(--modal-gutter);
   z-index: 100;
 }
 
@@ -152,7 +152,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   width: 100%;
-  max-width: 420px;
+  max-width: var(--modal-w-sm);
   max-height: 90vh;
   display: flex;
   flex-direction: column;
