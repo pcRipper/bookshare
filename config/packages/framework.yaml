@@ -17,8 +17,9 @@ framework:
         scoped_clients:
             openlibrary.client:
                 base_uri: 'https://openlibrary.org'
-                headers:
-                    User-Agent: '%env(OPENLIBRARY_USER_AGENT)%'
+                # No User-Agent here on purpose: Open Library answers a blank one
+                # with 403, and `default:` can't cover a set-but-empty env var.
+                # ExternalBookTemplateProvider sends it per request with a fallback.
                 timeout: 5
                 max_duration: 12
                 retry_failed:

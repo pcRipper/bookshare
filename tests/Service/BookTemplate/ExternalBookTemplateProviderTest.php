@@ -30,10 +30,45 @@ class ExternalBookTemplateProviderTest extends TestCase
         return $this->json(['docs' => $docs]);
     }
 
-    private function provider(MockHttpClient $client): ExternalBookTemplateProvider
+    private function provider(MockHttpClient $client, string $userAgent = ''): ExternalBookTemplateProvider
     {
         // Fresh in-memory cache per provider so tests are isolated.
-        return new ExternalBookTemplateProvider($client, new NullLogger(), new ArrayAdapter(), 604800);
+        return new ExternalBookTemplateProvider($client, new NullLogger(), new ArrayAdapter(), 604800, $userAgent);
+    }
+
+    /** Captures the User-Agent the provider actually put on the wire. */
+    private function capturedUserAgent(string $configured): string
+    {
+        $sent = [];
+        $client = new MockHttpClient(function (string $method, string $url, array $options) use (&$sent) {
+            foreach ($options['headers'] ?? [] as $header) {
+                if (stripos($header, 'user-agent:') === 0) {
+                    $sent[] = trim(substr($header, \strlen('user-agent:')));
+                }
+            }
+
+            return $this->json(['docs' => []]);
+        });
+
+        $this->provider($client, $configured)->search('dune', 12);
+
+        return $sent[0] ?? '';
+    }
+
+    public function testConfiguredUserAgentIsSent(): void
+    {
+        self::assertSame('FolioShare (me@example.com)', $this->capturedUserAgent('FolioShare (me@example.com)'));
+    }
+
+    /**
+     * Open Library answers a blank User-Agent with 403, and the best-effort catch
+     * turns that into an empty result — so an unset env var silently disabled the
+     * whole source. A blank value must cost the higher rate limit, nothing more.
+     */
+    public function testBlankUserAgentFallsBackToADefaultRatherThanSendingNothing(): void
+    {
+        self::assertNotSame('', $this->capturedUserAgent(''));
+        self::assertNotSame('', $this->capturedUserAgent('   '));
     }
 
     public function testKeyIsExternal(): void

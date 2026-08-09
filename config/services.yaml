@@ -42,6 +42,9 @@ services:
             $client: '@openlibrary.client'
             $cache: '@cache.openlibrary'
             $cacheTtl: '%env(int:OPENLIBRARY_CACHE_TTL)%'
+            # Passed to the provider (not set as a client header) so a blank value
+            # falls back to a built-in UA — Open Library 403s a blank one.
+            $userAgent: '%env(OPENLIBRARY_USER_AGENT)%'
 
     # Same wiring for the bookfinder.com.ua source (the "Ukrainian stores" strategy).
     App\Service\BookTemplate\BookFinderBookTemplateProvider:

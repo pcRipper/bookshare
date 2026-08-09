@@ -17,8 +17,15 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  *
  * Best-effort by design: any transport error, non-200 response or malformed
  * payload is logged and yields an empty list, so a slow or down upstream never
- * breaks the "Add New Book" search. Identification (the User-Agent header, set
- * in framework.yaml from OPENLIBRARY_USER_AGENT) earns the higher rate limit.
+ * breaks the "Add New Book" search. Identification (the User-Agent header, from
+ * OPENLIBRARY_USER_AGENT) earns the higher rate limit.
+ *
+ * The User-Agent is sent per request rather than configured on the scoped client,
+ * because Open Library answers a *blank* one with 403 — and a 403 lands in the
+ * best-effort catch, so a missing env value silently turned the whole source into
+ * "no results" forever. The header can't be left to configuration for that reason:
+ * DEFAULT_USER_AGENT keeps an unidentified install working (at the lower 1 req/s
+ * limit), which is what a blank value is supposed to cost.
  */
 final class ExternalBookTemplateProvider implements BookTemplateProvider
 {
@@ -28,6 +35,8 @@ final class ExternalBookTemplateProvider implements BookTemplateProvider
     private const FIELDS = 'title,author_name,isbn,cover_i,language,first_sentence';
     /** Empty results self-heal quickly (a near-miss during indexing), unlike hits. */
     private const EMPTY_TTL = 600;
+    /** Fallback identification when OPENLIBRARY_USER_AGENT is unset or blank. */
+    private const DEFAULT_USER_AGENT = 'FolioShare/1.0 (book-sharing app; +https://github.com/pcRipper/bookshare)';
 
     /**
      * Open Library returns MARC 21 language codes (3-letter); our catalogue uses
@@ -56,6 +65,7 @@ final class ExternalBookTemplateProvider implements BookTemplateProvider
         private readonly LoggerInterface $logger,
         private readonly CacheInterface $cache,
         private readonly int $cacheTtl,
+        private readonly string $userAgent = '',
     ) {}
 
     public function key(): string
@@ -140,6 +150,7 @@ final class ExternalBookTemplateProvider implements BookTemplateProvider
     private function fetchDocs(string $param, string $query, int $limit, int $page): array
     {
         $response = $this->client->request('GET', self::SEARCH_PATH, [
+            'headers' => ['User-Agent' => trim($this->userAgent) ?: self::DEFAULT_USER_AGENT],
             'query' => [
                 $param   => $query,
                 'fields' => self::FIELDS,
