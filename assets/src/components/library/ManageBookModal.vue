@@ -56,6 +56,11 @@ const statusOptions = computed(() =>
 
 const descRemaining = computed(() => DESC_MAX - form.value.description.length)
 
+// Which required field the error is about. Derived rather than stored, so it
+// clears itself the moment the user types instead of needing a second Save.
+const titleInvalid = computed(() => !!errorMsg.value && !form.value.title.trim())
+const authorInvalid = computed(() => !!errorMsg.value && !form.value.author.trim())
+
 function blank() {
   // categories: array of { id, name, colorHex }
   return { title: '', author: '', description: '', isbn: '', status: 'own', language: null, coverPath: '', isRead: false, categories: [] }
@@ -215,6 +220,8 @@ function applyTemplate(t) {
               id="mb-title"
               v-model="form.title"
               class="input"
+              :class="{ 'input--invalid': titleInvalid }"
+              :aria-invalid="titleInvalid || null"
               type="text"
               :placeholder="t('manageBook.titlePlaceholder')"
               :disabled="readOnly"
@@ -227,6 +234,8 @@ function applyTemplate(t) {
               id="mb-author"
               v-model="form.author"
               class="input"
+              :class="{ 'input--invalid': authorInvalid }"
+              :aria-invalid="authorInvalid || null"
               type="text"
               :placeholder="t('manageBook.authorPlaceholder')"
               :disabled="readOnly"
@@ -286,10 +295,16 @@ function applyTemplate(t) {
             <CategorySelector v-model="form.categories" :disabled="readOnly" />
           </div>
 
-          <p v-if="errorMsg" class="modal__error">{{ errorMsg }}</p>
           </div>
           </div>
         </div>
+
+        <!-- Outside modal__body on purpose: as the last element of a scrolling
+             form it rendered below the fold, so Save looked like it did nothing. -->
+        <p v-if="errorMsg" class="modal__error" role="alert">
+          <span class="material-symbols-outlined">error</span>
+          {{ errorMsg }}
+        </p>
 
         <footer class="modal__footer">
           <template v-if="readOnly">
@@ -474,10 +489,20 @@ function applyTemplate(t) {
 .cover-preview img { width: 100%; height: 100%; object-fit: cover; }
 
 .modal__error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
   color: var(--color-error);
   font-size: var(--text-label-md);
   margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  border-top: 1px solid var(--color-surface-container-highest);
+  background: color-mix(in srgb, var(--color-error) 8%, transparent);
 }
+.modal__error .material-symbols-outlined { font-size: 18px; }
+
+.input--invalid { border-color: var(--color-error); }
+.input--invalid:focus { border-color: var(--color-error); }
 
 /* On-loan lock notice */
 .modal__notice {
