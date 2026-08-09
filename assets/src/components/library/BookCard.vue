@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
 import { useCoverFallback } from '@/composables/useCoverFallback'
+import { languageLabel } from '@/utils/languages'
 
 const { hasCover, onCoverError } = useCoverFallback()
 const { t } = useI18n()
@@ -62,9 +63,11 @@ const statusBadge = computed(() => {
       <h3 class="book-card__title">{{ book.title }}</h3>
       <p class="book-card__author">{{ book.author }}</p>
 
-      <p v-if="book.languageName" class="book-card__lang">
+      <!-- Keyed on the code, not the server's English name: the label is
+           re-derived in the active UI locale, with languageName as fallback. -->
+      <p v-if="book.language" class="book-card__lang">
         <span class="material-symbols-outlined">language</span>
-        {{ book.languageName }}
+        {{ languageLabel(book.language, book.languageName) }}
       </p>
 
       <div class="book-card__tags">
