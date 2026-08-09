@@ -7,6 +7,19 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.20.1',
+    date: '2026-08-09',
+    notes: [
+      'Searching your library no longer forgets itself. Filter your books, visit another tab and come back, and the search box still shows what you typed instead of leaving you with a filtered list and no explanation.',
+      'The "Find a template" search can reach Open Library again — it had been returning no results for every search, whatever you looked for.',
+      'Adding a book without a title or author now tells you so where you can see it, right above the buttons, and marks the fields it means.',
+      'Book language names on your library shelf are shown in the language you are reading the site in, like everywhere else.',
+      'The release notes page now greets signed-out visitors properly, with a way to sign in instead of links they cannot follow.',
+      'Building a collection keeps reminding you that two books are needed until you have picked them.',
+      'Settings stops offering to save changes you have already saved.',
+    ],
+  },
+  {
     version: '1.20.0',
     date: '2026-08-09',
     notes: [
