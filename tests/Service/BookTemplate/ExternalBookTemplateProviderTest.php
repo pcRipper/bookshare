@@ -250,6 +250,31 @@ class ExternalBookTemplateProviderTest extends TestCase
         self::assertEquals($first, $second);
     }
 
+    /**
+     * An empty page is the same shape a degraded upstream produces, and the index
+     * gains titles over time — caching it would serve "no matches" for a query that
+     * has since started matching.
+     */
+    public function testEmptyResultsAreNotCached(): void
+    {
+        $calls = 0;
+        $client = new MockHttpClient(function () use (&$calls) {
+            $calls++;
+
+            // Empty first, then a hit — the second search must reach the API.
+            return $calls === 1
+                ? $this->json(['docs' => []])
+                : $this->json(['docs' => [['title' => 'Dune', 'author_name' => ['Frank Herbert']]]]);
+        });
+        $provider = $this->provider($client);
+
+        self::assertSame([], $provider->search('dune', 12)->items);
+        $second = $provider->search('dune', 12);
+
+        self::assertSame(2, $calls, 'An empty page must not be cached.');
+        self::assertCount(1, $second->items, 'The retry should see the now-populated upstream.');
+    }
+
     public function testDifferentPagesAreFetchedAndCachedSeparately(): void
     {
         $calls = 0;

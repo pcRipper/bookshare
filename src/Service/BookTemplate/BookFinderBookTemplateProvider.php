@@ -29,8 +29,6 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 final class BookFinderBookTemplateProvider implements BookTemplateProvider
 {
     private const SEARCH_PATH = '/api/books';
-    /** Empty results self-heal quickly (a near-miss during indexing), unlike hits. */
-    private const EMPTY_TTL = 600;
 
     public function __construct(
         private readonly HttpClientInterface $client,
@@ -79,9 +77,11 @@ final class BookFinderBookTemplateProvider implements BookTemplateProvider
     }
 
     /**
-     * Cached raw items for a normalised query. Only successful fetches are stored
-     * (the callback throws on failure, so nothing is cached and we degrade to []);
-     * empty results get a short TTL, hits the configured long one.
+     * Cached raw items for a normalised query. Only successful, *non-empty* fetches
+     * are stored: the callback throws on failure (nothing cached, degrade to []) and
+     * clears $save when the search comes back empty, so "no matches" is never what a
+     * later search reads back. Since one entry backs every page of this query, a
+     * cached empty would also freeze the whole infinite scroll, not just one page.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -91,9 +91,14 @@ final class BookFinderBookTemplateProvider implements BookTemplateProvider
         $key = sprintf('bf.%s', sha1($normalized));
 
         try {
-            return $this->cache->get($key, function (ItemInterface $item) use ($normalized): array {
+            return $this->cache->get($key, function (ItemInterface $item, bool &$save) use ($normalized): array {
                 $items = $this->fetchItems($normalized);
-                $item->expiresAfter($items === [] ? min(self::EMPTY_TTL, $this->cacheTtl) : $this->cacheTtl);
+                if ($items === []) {
+                    $save = false;
+
+                    return [];
+                }
+                $item->expiresAfter($this->cacheTtl);
 
                 return $items;
             });

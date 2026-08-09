@@ -33,8 +33,6 @@ final class ExternalBookTemplateProvider implements BookTemplateProvider
     private const COVER_URL = 'https://covers.openlibrary.org/b/id/%d-M.jpg';
     /** Only the fields we map — keeps the response small. */
     private const FIELDS = 'title,author_name,isbn,cover_i,language,first_sentence';
-    /** Empty results self-heal quickly (a near-miss during indexing), unlike hits. */
-    private const EMPTY_TTL = 600;
     /** Fallback identification when OPENLIBRARY_USER_AGENT is unset or blank. */
     private const DEFAULT_USER_AGENT = 'FolioShare/1.0 (book-sharing app; +https://github.com/pcRipper/bookshare)';
 
@@ -113,10 +111,12 @@ final class ExternalBookTemplateProvider implements BookTemplateProvider
     }
 
     /**
-     * Cached raw docs for a normalised query + page. Only successful fetches are
-     * stored (the callback throws on failure, so nothing is cached and we degrade
-     * to []); empty results get a short TTL, hits the configured long one. Each
-     * page is its own entry, so scrolling back over a page is a cache hit.
+     * Cached raw docs for a normalised query + page. Only successful, *non-empty*
+     * fetches are stored: the callback throws on failure (nothing cached, degrade
+     * to []) and clears $save when a page comes back empty, so "no matches" is
+     * never what a later search reads back. An empty page is the same shape a
+     * degraded upstream produces, and upstream indexes gain titles — neither is
+     * worth pinning. Each page is its own entry, so scrolling back is a cache hit.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -126,9 +126,14 @@ final class ExternalBookTemplateProvider implements BookTemplateProvider
         $key = sprintf('ol.%s.%d.%d.%s', $param, $limit, $page, sha1($normalized));
 
         try {
-            return $this->cache->get($key, function (ItemInterface $item) use ($param, $normalized, $limit, $page): array {
+            return $this->cache->get($key, function (ItemInterface $item, bool &$save) use ($param, $normalized, $limit, $page): array {
                 $docs = $this->fetchDocs($param, $normalized, $limit, $page);
-                $item->expiresAfter($docs === [] ? min(self::EMPTY_TTL, $this->cacheTtl) : $this->cacheTtl);
+                if ($docs === []) {
+                    $save = false;
+
+                    return [];
+                }
+                $item->expiresAfter($this->cacheTtl);
 
                 return $docs;
             });

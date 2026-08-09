@@ -201,6 +201,29 @@ class BookFinderBookTemplateProviderTest extends TestCase
         self::assertEquals($first, $second);
     }
 
+    /**
+     * One entry backs every page of a query here, so a cached empty wouldn't just
+     * pin one page as "no matches" — it would freeze the whole scroll for the TTL.
+     */
+    public function testEmptyResultsAreNotCached(): void
+    {
+        $calls = 0;
+        $client = new MockHttpClient(function () use (&$calls) {
+            $calls++;
+
+            return $calls === 1
+                ? $this->json([])
+                : $this->json([['title' => 'Dune', 'authors' => [['fullName' => 'Frank Herbert']]]]);
+        });
+        $provider = $this->provider($client);
+
+        self::assertSame([], $provider->search('dune', 12)->items);
+        $second = $provider->search('dune', 12);
+
+        self::assertSame(2, $calls, 'An empty search must not be cached.');
+        self::assertCount(1, $second->items, 'The retry should see the now-populated upstream.');
+    }
+
     public function testEquivalentQueriesShareOneCacheEntry(): void
     {
         $calls = 0;
