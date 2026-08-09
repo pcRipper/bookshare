@@ -20,11 +20,19 @@ const props = defineProps({
   debounce: { type: Number, default: 300 },
   // Parent-controlled: true while the search request is in flight.
   loading: { type: Boolean, default: false },
+  // Seeds the box on mount only — this stays an uncontrolled input, so later
+  // changes to the bound value don't fight the user's typing. Pass the filter
+  // the parent already holds when this component can be unmounted and remounted
+  // while that filter survives (a `v-if`-ed tab panel), otherwise the list comes
+  // back filtered behind an empty box.
+  initial: { type: String, default: '' },
 })
 
 const emit = defineEmits(['search'])
 
-const value = ref('')
+// Seeded, not bound: the watcher below only fires on change, so restoring a
+// value here never emits a spurious `search`.
+const value = ref(props.initial)
 const pending = ref(false) // between a keystroke and its debounced emit
 let timer = null
 

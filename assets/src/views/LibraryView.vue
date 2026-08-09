@@ -438,10 +438,15 @@ async function handleCCancel(id) {
         <div v-if="activeTab === 'collection'" role="tabpanel">
           <!-- Search + import / export toolbar -->
           <div class="collection-toolbar">
+            <!-- This panel is `v-if`-ed, so leaving the tab unmounts the search
+                 box while the store keeps the filter (and the filtered page).
+                 Seed it back on remount, or the list returns filtered behind an
+                 empty box. -->
             <SearchInput
               class="collection-toolbar__search"
               :placeholder="t('library.searchPlaceholder')"
               :loading="loading.collection"
+              :initial="collectionQuery"
               @search="store.setCollectionSearch"
             />
             <div class="collection-toolbar__actions">
