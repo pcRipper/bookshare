@@ -163,6 +163,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             {{ t('collections.lockedNotice') }}
           </p>
 
+          <!-- Details: cover column beside name/description from 768px up
+               (matches the book create/edit modal). -->
+          <div class="edit-grid">
+          <div class="form__aside">
           <!-- Cover preview + URL (matches the book create/edit modal) -->
           <div class="field">
             <span class="field__label">
@@ -182,6 +186,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             </div>
           </div>
 
+          </div>
+
+          <div class="form__main">
           <label class="field">
             <span class="field__label">{{ t('collections.name') }}</span>
             <input
@@ -207,7 +214,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
               :disabled="busy || readOnly"
             />
           </label>
+          </div>
+          </div>
 
+          <!-- The two picker panes sit side by side on desktop; auto-fit lets the
+               selected list span the full width when the add pane is hidden. -->
+          <div class="picker-panes">
           <!-- Selected books -->
           <div class="field">
             <span class="field__label">{{ t('collections.inCollection', { count: selected.size }) }}</span>
@@ -286,6 +298,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
               </li>
             </ul>
           </div>
+          </div>
         </div>
 
         <footer class="modal__footer">
@@ -326,7 +339,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-md);
+  padding: var(--modal-gutter);
   z-index: 100;
 }
 .modal {
@@ -335,7 +348,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   border-radius: var(--radius-lg);
   box-shadow: 0 10px 30px rgba(35, 44, 51, 0.12);
   width: 100%;
-  max-width: 520px;
+  max-width: var(--modal-w-lg);
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -425,6 +438,35 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 .field__textarea { resize: vertical; }
 
 /* Cover preview + URL row (consistent with the book create/edit modal). */
+/* Desktop layout: details as cover column + fields, pickers as two panes. Below
+   768px both wrappers are plain flex columns, i.e. the original single stack. */
+.edit-grid,
+.form__aside,
+.form__main,
+.picker-panes { display: flex; flex-direction: column; gap: var(--space-md); }
+
+@media (min-width: 768px) {
+  .edit-grid {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: var(--space-md);
+    align-items: start;
+  }
+  .form__aside .cover-row { flex-direction: column; align-items: stretch; }
+  .form__aside .cover-preview { width: 100%; height: auto; aspect-ratio: 2 / 3; }
+  .form__aside .cover-preview__icon { font-size: 48px; }
+  /* auto-fit, not 1fr 1fr: read-only mode renders only the selected pane and it
+     should then span the full width rather than leave a dead column. */
+  .picker-panes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-md);
+    align-items: start;
+  }
+  /* Taller lists now that they're side by side and no longer stacked. */
+  .picker { max-height: 320px; }
+}
+
 .cover-row { display: flex; gap: var(--space-sm); align-items: center; }
 .cover-preview {
   width: 56px;

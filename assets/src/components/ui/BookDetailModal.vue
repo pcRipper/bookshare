@@ -171,7 +171,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-md);
+  padding: var(--modal-gutter);
   z-index: 100;
 }
 
@@ -181,7 +181,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   border-radius: var(--radius-lg);
   box-shadow: 0 10px 30px rgba(35, 44, 51, 0.12);
   width: 100%;
-  max-width: 640px;
+  max-width: var(--modal-w-xl);
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -228,6 +228,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 }
 @media (min-width: 640px) {
   .modal__cover { width: 220px; aspect-ratio: auto; }
+}
+/* The wider modal would otherwise leave the cover looking like a thumbnail
+   pinned to a large sheet — grow it in step so the proportion holds. */
+@media (min-width: 768px) {
+  .modal__cover { width: 300px; }
 }
 .modal__cover-img { width: 100%; height: 100%; object-fit: cover; }
 .modal__cover-placeholder {

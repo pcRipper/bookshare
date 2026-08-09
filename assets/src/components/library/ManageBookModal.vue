@@ -179,32 +179,36 @@ function applyTemplate(t) {
           <!-- Template search (create mode only) -->
           <BookTemplateSearch v-if="!isEdit && activeTab === 'template'" @select="applyTemplate" />
 
-          <!-- Manual entry form -->
+          <!-- Manual entry form. Two columns from 768px up: the cover stands as a
+               real preview beside the fields instead of a thumbnail above them. -->
           <div v-show="activeTab === 'manual'" class="modal__form">
           <!-- Cover preview + URL -->
-          <div class="field">
-            <label class="field__label" for="mb-cover">{{ t('manageBook.coverUrl') }}</label>
-            <div class="cover-row">
-              <div class="cover-preview">
-                <img
-                  v-if="hasCover(form.coverPath)"
-                  :src="form.coverPath"
-                  :alt="t('book.coverPreview')"
-                  @error="onCoverError(form.coverPath)"
+          <div class="form__aside">
+            <div class="field">
+              <label class="field__label" for="mb-cover">{{ t('manageBook.coverUrl') }}</label>
+              <div class="cover-row">
+                <div class="cover-preview">
+                  <img
+                    v-if="hasCover(form.coverPath)"
+                    :src="form.coverPath"
+                    :alt="t('book.coverPreview')"
+                    @error="onCoverError(form.coverPath)"
+                  />
+                  <span v-else class="material-symbols-outlined cover-preview__icon">menu_book</span>
+                </div>
+                <input
+                  id="mb-cover"
+                  v-model="form.coverPath"
+                  class="input"
+                  type="url"
+                  placeholder="https://…"
+                  :disabled="readOnly"
                 />
-                <span v-else class="material-symbols-outlined cover-preview__icon">menu_book</span>
               </div>
-              <input
-                id="mb-cover"
-                v-model="form.coverPath"
-                class="input"
-                type="url"
-                placeholder="https://…"
-                :disabled="readOnly"
-              />
             </div>
           </div>
 
+          <div class="form__main">
           <div class="field">
             <label class="field__label" for="mb-title">{{ t('manageBook.title') }} <span class="req">*</span></label>
             <input
@@ -284,6 +288,7 @@ function applyTemplate(t) {
 
           <p v-if="errorMsg" class="modal__error">{{ errorMsg }}</p>
           </div>
+          </div>
         </div>
 
         <footer class="modal__footer">
@@ -322,7 +327,7 @@ function applyTemplate(t) {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-md);
+  padding: var(--modal-gutter);
   z-index: 100;
 }
 
@@ -331,7 +336,7 @@ function applyTemplate(t) {
   border-radius: var(--radius-lg);
   box-shadow: 0 10px 30px rgba(35, 44, 51, 0.08);
   width: 100%;
-  max-width: 480px;
+  max-width: var(--modal-w-lg);
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -367,6 +372,22 @@ function applyTemplate(t) {
 
 /* Manual-entry form: preserve the body's field spacing now that fields are wrapped */
 .modal__form { display: flex; flex-direction: column; gap: var(--space-md); }
+.form__main { display: flex; flex-direction: column; gap: var(--space-md); }
+
+/* Desktop: cover column beside the fields. Below this the two wrappers are plain
+   flex children, so the layout is the original single stack. */
+@media (min-width: 768px) {
+  .modal__form {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: var(--space-md);
+    align-items: start;
+  }
+  /* The preview becomes a full book-shaped cover with the URL field beneath it. */
+  .form__aside .cover-row { flex-direction: column; align-items: stretch; }
+  .form__aside .cover-preview { width: 100%; height: auto; aspect-ratio: 2 / 3; }
+  .form__aside .cover-preview__icon { font-size: 48px; }
+}
 
 /* Create-mode tabs */
 .modal__tabs {
