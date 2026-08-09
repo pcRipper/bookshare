@@ -1,10 +1,18 @@
 <script setup>
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import { useAuthStore } from '@/stores/auth'
 import { currentLocale } from '@/i18n'
 import { CHANGELOG } from '@/data/changelog'
 
 const { t } = useI18n()
+const auth = useAuthStore()
+
+// This route is public and the footer links to it from every public page, so a
+// signed-out reader can land here. The app header's links all target gated
+// routes — give them the public chrome instead (same rule as NotFoundView).
+const signedIn = computed(() => auth.isAuthenticated)
 
 function formatDate(iso) {
   if (!iso) return ''
@@ -17,7 +25,7 @@ function formatDate(iso) {
 </script>
 
 <template>
-  <AppLayout>
+  <AppLayout :variant="signedIn ? 'app' : 'public'">
     <div class="changelog-page">
       <header class="changelog-page__header">
         <h1 class="changelog-page__title">{{ t('changelog.title') }}</h1>
