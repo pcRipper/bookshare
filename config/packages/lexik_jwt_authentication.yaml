@@ -2,3 +2,6 @@ lexik_jwt_authentication:
     secret_key: '%env(resolve:JWT_SECRET_KEY)%'
     public_key: '%env(resolve:JWT_PUBLIC_KEY)%'
     pass_phrase: '%env(JWT_PASSPHRASE)%'
+    # 24 hours. There is no refresh-token flow, so the bundle default of one hour
+    # meant the SPA bounced people to /login mid-session via the axios 401 interceptor.
+    token_ttl: 86400
