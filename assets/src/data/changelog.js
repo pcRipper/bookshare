@@ -7,6 +7,16 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.20.0',
+    date: '2026-08-09',
+    notes: [
+      'Signing in now lasts a full day. FolioShare used to quietly log you out after an hour and drop you back on the sign-in page, sometimes in the middle of what you were doing.',
+      'Dialogs make proper use of a desktop screen. Adding or editing a book puts the cover preview beside the details instead of stacking everything into one narrow column, and building a collection shows the books you have picked next to the ones you can still add.',
+      'Book and collection previews are wider, with a larger cover.',
+      'On a phone, every dialog gained a little width back from the margins around it.',
+    ],
+  },
+  {
     version: '1.19.0',
     date: '2026-08-08',
     notes: [
