@@ -101,7 +101,7 @@ bookshare/
 FolioShare is a community book-sharing platform. Readers catalog their physical books, lend them to other community members, track borrow requests through a full lifecycle, and discover each other's collections. The UI brand name is **FolioShare**; the repo/project name is **Bookshare**.
 
 ### Authentication & access
-Sign-in is **Google OAuth only** (the original email/password + register screens were not built). Flow: `LoginView` → `GET /api/auth/google` returns an authorization URL → Google → `POST /api/auth/google/callback` mints a **JWT** (lexik). The SPA stores `token` + `user` in `localStorage` (Pinia `auth` store); axios attaches `Authorization: Bearer <token>` and, on a `401`, drops the stale credentials and bounces to `/login`. The router guard gates every non-public route on `isAuthenticated`.
+Sign-in is **Google OAuth only** (the original email/password + register screens were not built). Flow: `LoginView` → `GET /api/auth/google` returns an authorization URL → Google → `POST /api/auth/google/callback` mints a **JWT** (lexik). The SPA stores `token` + `user` in `localStorage` (Pinia `auth` store); axios attaches `Authorization: Bearer <token>` and, on a `401`, drops the stale credentials and bounces to `/login`. The token is good for **24 h** (`token_ttl` in `lexik_jwt_authentication.yaml`, a literal rather than an env var so it can't trip the `.env.local.php` gotcha below). It's set deliberately long because there is **no refresh-token or revocation path**: the bundle default of one hour expired tokens mid-session and that 401 interceptor was the only thing catching it. The trade-off is that a leaked token stays valid for a day. The router guard gates every non-public route on `isAuthenticated`.
 
 ### Screens & Routes (SPA, vue-router)
 
@@ -177,6 +177,10 @@ Full token spec: `references/design/literary_commons/DESIGN.md`
 | Border radius — tags | 9999px (pill) | Category chips |
 | Spacing base | 8px | All spacing is multiples of 8 |
 | Section separator | 80px (`xl`) | Between major page sections |
+| Modal width | `--modal-w-sm/md/lg/xl` = 520/640/800/900px | Every dialog's `max-width` — pick by content, never a per-component number |
+| Modal overlay inset | `--modal-gutter` = 12px, 24px from 768px up | Overlay padding; the phone value buys back width the backdrop was eating |
+
+**Modals are sized from the scale, not by hand.** `sm` = one short form (share a link), `md` = a compact single-column form (import, edit profile), `lg` = a two-column form (manage a book, edit a collection), `xl` = a cover-plus-detail reading surface (book/collection preview). From **768px** the two `lg` forms split into a cover column beside the fields (`.form__aside` / `.form__main` wrappers, plus `.picker-panes` for `CollectionEditModal`'s two book lists, which uses `auto-fit` so the selected pane spans full width in read-only mode); below it every modal is the original single stack. The `xl` covers grow at the same breakpoint so they stay in proportion with the wider sheet.
 
 Category chips use a curated **10-tone muted palette** (see _Categories_). The footer year is rendered dynamically (`new Date().getFullYear()`).
 
