@@ -29,7 +29,10 @@ const sections = computed(() => [
  */
 const BIO_MAX = 300
 const form = reactive({ fullName: '', avatarUrl: '', bio: '', location: '', isPrivate: false })
-let original = {}
+// A ref, not a plain object: `profileDirty` reads it, so re-hydrating after a
+// save has to invalidate that computed. As a bare `let` it never did, and the
+// Save/Cancel buttons stayed enabled with nothing left to save.
+const original = ref({})
 
 const loading = ref(true)
 const saving = ref(false)
@@ -37,7 +40,7 @@ const error = ref(null)
 const saved = ref(false)
 
 const bioRemaining = computed(() => BIO_MAX - form.bio.length)
-const profileDirty = computed(() => JSON.stringify(form) !== JSON.stringify(original))
+const profileDirty = computed(() => JSON.stringify(form) !== JSON.stringify(original.value))
 
 function hydrate(data) {
   form.fullName = data.fullName ?? ''
@@ -45,7 +48,7 @@ function hydrate(data) {
   form.bio = data.bio ?? ''
   form.location = data.location ?? ''
   form.isPrivate = !!data.isPrivate
-  original = { ...form }
+  original.value = { ...form }
 }
 
 onMounted(async () => {
@@ -104,8 +107,8 @@ async function save() {
 }
 
 function cancel() {
-  Object.assign(form, original)
-  Object.assign(prefs, originalPrefs)
+  Object.assign(form, original.value)
+  Object.assign(prefs, originalPrefs.value)
   error.value = null
 }
 
@@ -128,9 +131,9 @@ const prefs = reactive({
   notifyActivity: false,
   notifyNewsletter: false,
 })
-let originalPrefs = {}
+const originalPrefs = ref({})   // see `original` above — same reactivity reason
 
-const prefsDirty = computed(() => JSON.stringify(prefs) !== JSON.stringify(originalPrefs))
+const prefsDirty = computed(() => JSON.stringify(prefs) !== JSON.stringify(originalPrefs.value))
 // Either slice being edited enables the page-wide Save button.
 const dirty = computed(() => profileDirty.value || prefsDirty.value)
 
@@ -142,7 +145,7 @@ function hydratePrefs(data) {
   for (const key of Object.keys(prefs)) {
     if (key in data) prefs[key] = data[key]
   }
-  originalPrefs = { ...prefs }
+  originalPrefs.value = { ...prefs }
 }
 
 const privacyOptions = computed(() => [
