@@ -223,8 +223,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
           <!-- Selected books -->
           <div class="field">
             <span class="field__label">{{ t('collections.inCollection', { count: selected.size }) }}</span>
-            <p v-if="!selectedBooks.length" class="picker__empty">{{ t('collections.pickBelow', { min: MIN }) }}</p>
-            <ul v-else class="picker">
+            <!-- Shown until the rule is met, not just when empty: at one book the
+                 Save button is still disabled and the hint is the only thing
+                 explaining why. -->
+            <p v-if="selectedBooks.length < MIN" class="picker__empty">{{ t('collections.pickBelow', { min: MIN }) }}</p>
+            <ul v-if="selectedBooks.length" class="picker">
               <li
                 v-for="book in selectedBooks"
                 :key="book.id"
