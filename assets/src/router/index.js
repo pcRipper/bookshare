@@ -91,4 +91,31 @@ router.beforeEach(to => {
   }
 })
 
+/*
+ * Every route is a dynamic import, so a browser holding a stale index.html asks
+ * for chunk hashes that no longer exist after a release. The import rejects, the
+ * navigation dies, and the user is left on a blank page with only a console
+ * error — the worst failure mode we have, because it looks like the app is gone.
+ *
+ * Reload once to pick up the current entry. The sessionStorage flag is what makes
+ * it safe: if the fresh bundle still can't load the chunk, the cause isn't
+ * staleness and a second reload would loop forever, so we let the error surface.
+ */
+const RELOADED_KEY = 'chunkReloadAttempted'
+
+router.onError(error => {
+  const isChunkLoadFailure = /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i
+    .test(error?.message ?? '')
+
+  if (!isChunkLoadFailure) return
+
+  if (sessionStorage.getItem(RELOADED_KEY)) return
+  sessionStorage.setItem(RELOADED_KEY, '1')
+  window.location.reload()
+})
+
+// A navigation that completes proves the current bundle is intact, so the next
+// genuine staleness gets its own single retry.
+router.afterEach(() => sessionStorage.removeItem(RELOADED_KEY))
+
 export default router
