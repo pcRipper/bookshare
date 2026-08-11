@@ -30,10 +30,16 @@ class ExternalBookTemplateProviderTest extends TestCase
         return $this->json(['docs' => $docs]);
     }
 
-    private function provider(MockHttpClient $client, string $userAgent = ''): ExternalBookTemplateProvider
+    /**
+     * The cooldown is off by default here so each test exercises one behaviour: with
+     * it on, any test whose first response fails would then be asserting the cooldown
+     * rather than the caching rule it was written for. The tests that *are* about the
+     * cooldown pass a TTL explicitly.
+     */
+    private function provider(MockHttpClient $client, string $userAgent = '', int $cooldownTtl = 0): ExternalBookTemplateProvider
     {
         // Fresh in-memory cache per provider so tests are isolated.
-        return new ExternalBookTemplateProvider($client, new NullLogger(), new ArrayAdapter(), 604800, $userAgent);
+        return new ExternalBookTemplateProvider($client, new NullLogger(), new ArrayAdapter(), 604800, $userAgent, $cooldownTtl);
     }
 
     /** Captures the User-Agent the provider actually put on the wire. */
@@ -161,12 +167,46 @@ class ExternalBookTemplateProviderTest extends TestCase
         self::assertCount(2, $this->provider($client)->search('x', 2)->items);
     }
 
-    public function testHasMoreWhenAFullPageOfRawDocsComesBack(): void
+    /** The fallback rule, for a response that carries no numFound. */
+    public function testHasMoreFallsBackToAFullPageOfRawDocs(): void
     {
         // A full limit of raw docs implies another page exists upstream.
         self::assertTrue($this->provider(new MockHttpClient($this->docs(12)))->search('x', 12)->hasMore);
         // A short page is the last one.
         self::assertFalse($this->provider(new MockHttpClient($this->docs(5)))->search('x', 12)->hasMore);
+    }
+
+    /**
+     * Open Library reports an exact numFound even under ?fields=, so paging follows
+     * the real total rather than guessing from the page size.
+     */
+    public function testHasMoreComesFromNumFoundWhenPresent(): void
+    {
+        $page1 = $this->json(['numFound' => 30, 'docs' => [['title' => 'One']]]);
+        self::assertTrue($this->provider(new MockHttpClient($page1))->search('x', 12)->hasMore);
+
+        // A full page that is nonetheless the last one: numFound says so, the
+        // page-size heuristic would have promised another.
+        $last = $this->json(['numFound' => 12, 'docs' => array_fill(0, 12, ['title' => 'Book'])]);
+        self::assertFalse($this->provider(new MockHttpClient($last))->search('x', 12)->hasMore);
+    }
+
+    /**
+     * The old rule promised another page whenever a full limit of raw docs came
+     * back — even when every one of them failed to map, which handed the scroll an
+     * empty page and a standing promise of more.
+     */
+    public function testAFullPageOfUnmappableDocsDoesNotPromiseMore(): void
+    {
+        $client = new MockHttpClient($this->json([
+            'numFound' => 12,
+            'docs'     => array_fill(0, 12, ['author_name' => ['No Title']]),
+        ]));
+
+        $result = $this->provider($client)->search('x', 12);
+
+        self::assertSame([], $result->items);
+        self::assertFalse($result->hasMore);
     }
 
     public function testOffsetMapsToThePageParam(): void
@@ -199,7 +239,12 @@ class ExternalBookTemplateProviderTest extends TestCase
         self::assertStringNotContainsString('title=', $urls[0]);
     }
 
-    public function testFreeTextQueryHitsTheTitleIndex(): void
+    /**
+     * Free text goes to the general `q` index, not `title`. The title index only
+     * matches the title field, so searching an author — which the UI invites —
+     * returned nothing, or unrelated omnibus editions with the name in their title.
+     */
+    public function testFreeTextQueryHitsTheGeneralIndex(): void
     {
         $urls = [];
         $client = new MockHttpClient(function (string $method, string $url) use (&$urls) {
@@ -208,9 +253,10 @@ class ExternalBookTemplateProviderTest extends TestCase
             return $this->json(['docs' => []]);
         });
 
-        $this->provider($client)->search('dune', 12);
+        $this->provider($client)->search('sapkowski', 12);
 
-        self::assertStringContainsString('title=', $urls[0]);
+        self::assertStringContainsString('q=sapkowski', $urls[0]);
+        self::assertStringNotContainsString('title=', $urls[0]);
         self::assertStringNotContainsString('isbn=', $urls[0]);
     }
 
@@ -328,7 +374,8 @@ class ExternalBookTemplateProviderTest extends TestCase
     public function testUpstreamFailureIsNotCached(): void
     {
         // First request fails, second succeeds — same query. A cached error would
-        // make the second call return [] too; it must instead refetch.
+        // make the second call return [] too; it must instead refetch. (Cooldown off:
+        // it would legitimately suppress that refetch — see the cooldown tests.)
         $client = new MockHttpClient([
             new MockResponse('down', ['http_code' => 503]),
             $this->json(['docs' => [['title' => 'Dune']]]),
@@ -339,5 +386,119 @@ class ExternalBookTemplateProviderTest extends TestCase
         $second = $provider->search('dune', 12);
         self::assertCount(1, $second->items);
         self::assertSame('Dune', $second->items[0]->title);
+    }
+
+    /**
+     * After a failure the source is parked for a short while: every attempt holds a
+     * PHP-FPM worker for the whole timeout, so continued typing against a dead
+     * upstream must not keep dialling it.
+     */
+    public function testAFailureParksTheSourceForTheCooldown(): void
+    {
+        $calls = 0;
+        $client = new MockHttpClient(function () use (&$calls) {
+            $calls++;
+
+            return new MockResponse('down', ['http_code' => 503]);
+        });
+        $provider = $this->provider($client, '', 45);
+
+        self::assertSame([], $provider->search('dune', 12)->items);
+        // A different query too — the failure modes here (upstream down, timeouts
+        // under load, a 403 on identification) are properties of the source, not of
+        // one query.
+        self::assertSame([], $provider->search('other', 12)->items);
+
+        self::assertSame(1, $calls, 'Only the first search should reach the upstream.');
+    }
+
+    public function testCooldownIsSkippedEntirelyWhenDisabled(): void
+    {
+        $calls = 0;
+        $client = new MockHttpClient(function () use (&$calls) {
+            $calls++;
+
+            return new MockResponse('down', ['http_code' => 503]);
+        });
+        $provider = $this->provider($client, '', 0);
+
+        $provider->search('dune', 12);
+        $provider->search('other', 12);
+
+        self::assertSame(2, $calls);
+    }
+
+    /** A doc with no cover_i still gets a cover, via the cover-by-ISBN endpoint. */
+    public function testCoverFallsBackToTheIsbnEndpoint(): void
+    {
+        $client = new MockHttpClient($this->json(['docs' => [
+            ['title' => 'Dune', 'author_name' => ['Frank Herbert'], 'isbn' => ['9780441013593']],
+        ]]));
+
+        $result = $this->provider($client)->search('dune', 12);
+
+        self::assertSame('https://covers.openlibrary.org/b/isbn/9780441013593-M.jpg', $result->items[0]->coverPath);
+    }
+
+    /** A malformed ISBN would 404 that endpoint, so it earns no cover URL at all. */
+    public function testMalformedIsbnEarnsNoCoverUrl(): void
+    {
+        $client = new MockHttpClient($this->json(['docs' => [
+            ['title' => 'Dune', 'author_name' => ['A'], 'isbn' => ['not-an-isbn']],
+        ]]));
+
+        self::assertNull($this->provider($client)->search('dune', 12)->items[0]->coverPath);
+    }
+
+    public function testCoverIdWinsOverTheIsbnFallback(): void
+    {
+        $client = new MockHttpClient($this->json(['docs' => [
+            ['title' => 'Dune', 'author_name' => ['A'], 'isbn' => ['9780441013593'], 'cover_i' => 42],
+        ]]));
+
+        self::assertSame(
+            'https://covers.openlibrary.org/b/id/42-M.jpg',
+            $this->provider($client)->search('dune', 12)->items[0]->coverPath,
+        );
+    }
+
+    /**
+     * Docs are pruned before caching (a work can carry 100+ edition ISBNs and we map
+     * one), so the cached read must still produce the same template as the live one.
+     */
+    public function testPrunedCacheEntryStillMapsEveryField(): void
+    {
+        $client = new MockHttpClient($this->json(['docs' => [
+            [
+                'title'          => 'Dune',
+                'author_name'    => ['Frank Herbert', 'B', 'C', 'D', 'E'],
+                'isbn'           => array_fill(0, 40, '9780441013593'),
+                'cover_i'        => 12345,
+                'language'       => ['eng', 'fre'],
+                'first_sentence' => ['A beginning is a delicate time.'],
+                'ebook_access'   => 'borrowable', // a field we never map — dropped
+            ],
+        ]]));
+        $provider = $this->provider($client);
+
+        $live = $provider->search('dune', 12);
+        $cached = $provider->search('dune', 12);
+
+        self::assertEquals($live->items, $cached->items);
+        self::assertSame('Frank Herbert', $cached->items[0]->author);
+        self::assertSame('9780441013593', $cached->items[0]->isbn);
+        self::assertSame('en', $cached->items[0]->language);
+        self::assertSame('A beginning is a delicate time.', $cached->items[0]->description);
+    }
+
+    /**
+     * A shape surprise must degrade, not 500: before the guards, a non-array `docs`
+     * or a scalar among the docs reached the mapper's array parameter as a TypeError.
+     */
+    public function testMalformedPayloadShapesDegradeToEmpty(): void
+    {
+        self::assertSame([], $this->provider(new MockHttpClient($this->json(['docs' => 'nope'])))->search('x', 12)->items);
+        self::assertSame([], $this->provider(new MockHttpClient($this->json(['docs' => ['a string', 42]])))->search('x', 12)->items);
+        self::assertSame([], $this->provider(new MockHttpClient($this->json(['unexpected' => true])))->search('x', 12)->items);
     }
 }
