@@ -36,12 +36,15 @@ services:
             $redirectUri: '%env(GOOGLE_REDIRECT_URI)%'
 
     # Inject the scoped Open Library client (see framework.yaml http_client) and
-    # its dedicated cache pool + hit TTL (see cache.yaml, .env).
+    # its dedicated cache pool + hit TTL (see cache.yaml, .env). The logger is the
+    # dedicated `book_template` channel (monolog.yaml): one record per search, kept
+    # out of the application log and, in prod, out of the fingers_crossed gate.
     App\Service\BookTemplate\ExternalBookTemplateProvider:
         arguments:
             $client: '@openlibrary.client'
             $cache: '@cache.openlibrary'
             $cacheTtl: '%env(int:OPENLIBRARY_CACHE_TTL)%'
+            $logger: '@monolog.logger.book_template'
             # Passed to the provider (not set as a client header) so a blank value
             # falls back to a built-in UA — Open Library 403s a blank one.
             $userAgent: '%env(OPENLIBRARY_USER_AGENT)%'
@@ -52,3 +55,4 @@ services:
             $client: '@bookfinder.client'
             $cache: '@cache.bookfinder'
             $cacheTtl: '%env(int:BOOKFINDER_CACHE_TTL)%'
+            $logger: '@monolog.logger.book_template'
