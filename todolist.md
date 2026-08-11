@@ -53,6 +53,7 @@
 - [ skip for now ] list of "want to read" + notify when some of the following accounts have this book available(cron or event)
 - [x] multi-languag ui: english, german, french, spanish, ukrainian. Switched from a popover in the header (and on the login page, where the pick is applied to the account on successful sign-in) — not the settings page. API error/validation messages are translated too (English sentence as translation id); release-note prose stays English; book language names localized via Intl.DisplayNames
 - [x] public access to the library(without authorization): by link or qr code(just encode link here), button on library page or profile page. Share button on the library toolbar opens a link + server-rendered QR; /public/library/:id serves books and collections read-only, gated by the existing privacy toggle
+- [x] lightweight statistics & site analytics: user activity, books created, pages visited etc. Self-hosted, no third-party tracker — admin-only dashboard at /admin/stats over one endpoint, covering growth, engagement (incl. the previously unread ActivityItem log), traffic and library health across a 7/30/90-day window. Page views are stored as aggregate counters keyed on the SPA route *name* (never the path, which carries ids) plus one row per distinct visitor per day, hashed with a salt that rotates daily. ROLE_ADMIN is a new roles column granted with `app:grant-admin`
 
 # Deployment
 - [x] add script to install all needed dependenices on droplet(like docker to start up, git to pull a branch etc)

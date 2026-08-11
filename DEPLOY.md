@@ -145,6 +145,51 @@ curl -s -o /dev/null -w '%{http_code}\n' $BASE/api/public/users/{private-id}  # 
 curl -s -o /dev/null -w '%{http_code}\n' $BASE/api/public/users/99999999      # ⇒ 404
 ```
 
+## Post-deploy smoke check: the admin gate
+
+Run this after any deploy that touched `config/packages/security.yaml`, `User`,
+or a controller under `/api/admin`.
+
+Same blind spot, same reason: `when@test: security: ~` means no test in the suite
+can make an authenticated request, so `AdminAccessConfigTest` can only assert
+that the rule is present, anchored and correctly ordered — never that it fires.
+This is exactly how a stale container cache once turned the dashboard into a 500
+that the whole green suite had no way to see.
+
+Mint the two tokens with `php bin/console lexik:jwt:generate-token <email>`
+(pass `--no-ansi` and strip whitespace, or the colour codes corrupt the header).
+
+```bash
+BASE=https://your-host
+
+# 1. Gated against anonymous callers.
+curl -s -o /dev/null -w '%{http_code}\n' $BASE/api/admin/stats                # ⇒ 401
+
+# 2. An ordinary member is refused — the rule fires, rather than merely existing.
+curl -s -o /dev/null -w '%{http_code}\n' \
+     -H "Authorization: Bearer $MEMBER_JWT" $BASE/api/admin/stats             # ⇒ 403
+
+# 3. …with a translated body, not Symfony's untranslated "Access Denied.".
+curl -s -H "Authorization: Bearer $MEMBER_JWT" \
+     -H 'Accept-Language: de' $BASE/api/admin/stats   # ⇒ {"error":"Administratorzugriff ist erforderlich."}
+
+# 4. An administrator gets the dashboard.
+curl -s -o /dev/null -w '%{http_code}\n' \
+     -H "Authorization: Bearer $ADMIN_JWT" $BASE/api/admin/stats              # ⇒ 200
+
+# 5. The traffic beacon accepts a known page and rejects anything else.
+curl -s -o /dev/null -w '%{http_code}\n' -X POST -H 'Content-Type: application/json' \
+     -d '{"route":"public-library"}' $BASE/api/public/pageviews               # ⇒ 204
+curl -s -o /dev/null -w '%{http_code}\n' -X POST -H 'Content-Type: application/json' \
+     -d '{"route":"../../etc"}' $BASE/api/public/pageviews                    # ⇒ 422
+```
+
+Grant the first administrator on the droplet with:
+
+```bash
+docker compose exec phpfpm php bin/console app:grant-admin you@example.com
+```
+
 ## Make targets
 
 | Target | Purpose |
