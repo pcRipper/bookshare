@@ -32,11 +32,15 @@ framework:
             # its own cache is warm). Symfony's `timeout` is the *inactivity*
             # timeout, which covers that wait — so at 5s every cold query was
             # aborted client-side, and the source only worked because retry_failed
-            # re-issued it against an upstream the aborted attempt had meanwhile
-            # warmed. That cost ~5.3s and a wasted request per new query. 12s clears
-            # the real figure with margin, so the first attempt succeeds; a single
-            # retry still covers a genuine blip, and the providers' failure cooldown
-            # keeps a hanging upstream from tying up the FPM workers.
+            # eventually re-issued it against an upstream the aborted attempts had
+            # meanwhile warmed. Measured, three cold queries per arm: at 5s ALL
+            # three attempts (initial + 2 retries) aborted before one succeeded —
+            # 13-26s wall, mean 17.7s, three upstream requests each. At 12s the
+            # first attempt succeeds — 7.3-9.3s, mean 8.0s, zero retries, one
+            # request. The one remaining retry still covers a genuine blip, and the
+            # providers' failure cooldown keeps a hanging upstream from tying up the
+            # FPM workers. (The retry storm is visible as `Try #N` lines on
+            # monolog's http_client channel — that's how this was measured.)
             bookfinder.client:
                 base_uri: 'https://www.bookfinder.com.ua'
                 headers:
