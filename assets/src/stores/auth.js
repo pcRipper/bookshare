@@ -7,6 +7,17 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => !!token.value)
 
+  /**
+   * Whether to offer the operator dashboard. A UI hint only — /api/admin is
+   * gated on ROLE_ADMIN server-side regardless of what this says.
+   *
+   * Strict equality on purpose: the flag is absent from every session created
+   * before this shipped, and === true reads those as false rather than
+   * coercing. Those sessions regain the link when their 24h token expires and
+   * they sign in again, or as soon as anything refetches /me.
+   */
+  const isAdmin = computed(() => user.value?.isAdmin === true)
+
   function setAuth(newToken, newUser) {
     token.value = newToken
     user.value = newUser
@@ -21,5 +32,5 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('user')
   }
 
-  return { token, user, isAuthenticated, setAuth, logout }
+  return { token, user, isAuthenticated, isAdmin, setAuth, logout }
 })

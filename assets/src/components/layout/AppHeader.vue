@@ -103,6 +103,14 @@ function signOut() {
               <RouterLink to="/settings" class="account-menu__item" role="menuitem">
                 <span class="material-symbols-outlined">settings</span> {{ t('nav.settings') }}
               </RouterLink>
+              <!-- The operator dashboard lives here rather than in the nav strip
+                   above: that strip is the product nav, identical for everyone,
+                   and an admin-only fourth item would make the header's shape
+                   depend on who is looking. This dropdown already varies with
+                   the account. -->
+              <RouterLink v-if="auth.isAdmin" to="/admin/stats" class="account-menu__item" role="menuitem">
+                <span class="material-symbols-outlined">monitoring</span> {{ t('nav.analytics') }}
+              </RouterLink>
               <button class="account-menu__item account-menu__item--danger" role="menuitem" @click="signOut">
                 <span class="material-symbols-outlined">logout</span> {{ t('nav.signOut') }}
               </button>

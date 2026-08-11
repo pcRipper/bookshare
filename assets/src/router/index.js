@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { loadLanguages } from '@/utils/languages'
+import { trackPageview } from '@/utils/analytics'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -60,6 +61,15 @@ const router = createRouter({
       meta: { public: true },
     },
     {
+      // The operator dashboard. `meta.admin` is a client-side hint only — the
+      // API gates /api/admin on ROLE_ADMIN independently, and the store handles
+      // the 403 if the two ever disagree.
+      path: '/admin/stats',
+      name: 'admin-stats',
+      component: () => import('@/views/AdminStatsView.vue'),
+      meta: { admin: true },
+    },
+    {
       path: '/',
       redirect: '/library',
     },
@@ -81,6 +91,19 @@ router.beforeEach(to => {
   }
   if (to.name === 'login' && auth.isAuthenticated) {
     return { name: 'library' }
+  }
+  // After the authentication check above, so a bookmarked admin URL opened with
+  // an expired session goes to /login rather than looking like the page has
+  // vanished. Renders the 404 in place, keeping the URL the reader typed:
+  // redirecting to /library would read as "this exists but you can't have it",
+  // which tells a non-admin more than they need to know.
+  if (to.meta.admin && !auth.isAdmin) {
+    return {
+      name: 'not-found',
+      params: { pathMatch: to.path.slice(1).split('/') },
+      query: to.query,
+      hash: to.hash,
+    }
   }
   // Warm the language vocabulary the moment the viewer is known to be
   // authenticated — on first load if already logged in, or right after the
@@ -117,5 +140,21 @@ router.onError(error => {
 // A navigation that completes proves the current bundle is intact, so the next
 // genuine staleness gets its own single retry.
 router.afterEach(() => sessionStorage.removeItem(RELOADED_KEY))
+
+/*
+ * Traffic counting. A second hook rather than an extension of the one above:
+ * that one is entirely about chunk-reload semantics, and folding an unrelated
+ * network call into it would make both harder to read. vue-router runs multiple
+ * afterEach hooks in registration order at no cost.
+ */
+router.afterEach((to, from, failure) => {
+  // vue-router reports aborted and redirected navigations here too, and neither
+  // is a page anyone saw.
+  if (failure) return
+  // A query- or hash-only change is the same page.
+  if (to.name === from.name && to.path === from.path) return
+
+  trackPageview(to.name)
+})
 
 export default router
