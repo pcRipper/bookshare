@@ -7,6 +7,14 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.22.0',
+    date: '2026-08-12',
+    notes: [
+      'FolioShare now counts page visits, on our own servers. We record how many times each page was opened and roughly how many different people visited each day — there is no third-party tracker, nothing is stored about individual visits, and the identifier used to tell one visitor from another is scrambled fresh every day, so it cannot be used to follow anyone from one day to the next. Pages are counted by name: opening someone\'s profile records "a profile was viewed", never whose.',
+      'The site owner has a new private dashboard showing how the community is growing, how much borrowing is happening, which pages people actually visit, and how the shared shelves look overall. It is visible only to an administrator, and nothing about it changes what anyone else sees.',
+    ],
+  },
+  {
     version: '1.21.0',
     date: '2026-08-11',
     notes: [
