@@ -66,8 +66,9 @@ class RateLimitSubscriberTest extends TestCase
 
         $errors = new ApiError(new IdentityTranslator());
         $publicIp = $this->fixedWindow('public_ip', 1000);
-        $alice = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $publicIp, $this->tokenStorage('alice'), $errors);
-        $bob = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $publicIp, $this->tokenStorage('bob'), $errors);
+        $pageView = $this->fixedWindow('pageview_ip_user', 1000);
+        $alice = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $publicIp, $pageView, $this->tokenStorage('alice'), $errors);
+        $bob = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $publicIp, $pageView, $this->tokenStorage('bob'), $errors);
 
         $alice->onKernelRequest($this->event('/api/books'));
         // Bob is a different key — unaffected by Alice exhausting hers.
@@ -153,6 +154,53 @@ class RateLimitSubscriberTest extends TestCase
         $sub->onKernelRequest($this->event('/api/publications'));
     }
 
+    /**
+     * The beacon fires once per SPA navigation, so it must not spend the generous
+     * api_user budget a page of real work needs.
+     */
+    public function testPageviewsGetTheirOwnTighterBucket(): void
+    {
+        $sub = $this->subscriber($this->tokenStorage('alice'), apiUser: 1000, pageView: 2);
+        $event = $this->event('/api/pageviews');
+
+        $sub->onKernelRequest($event);
+        $sub->onKernelRequest($event);
+
+        $this->expectException(TooManyRequestsHttpException::class);
+        $sub->onKernelRequest($event);
+    }
+
+    /** Exhausting the beacon budget must not lock the member out of the app. */
+    public function testExhaustingThePageviewBucketLeavesTheApiUsable(): void
+    {
+        $sub = $this->subscriber($this->tokenStorage('alice'), apiUser: 1000, pageView: 1);
+
+        $sub->onKernelRequest($this->event('/api/pageviews'));
+
+        try {
+            $sub->onKernelRequest($this->event('/api/pageviews'));
+            self::fail('The pageview bucket should have been exhausted.');
+        } catch (TooManyRequestsHttpException) {
+            // Expected — that is the point of the tighter bucket.
+        }
+
+        $sub->onKernelRequest($this->event('/api/books'));
+
+        $this->expectNotToPerformAssertions();
+    }
+
+    /**
+     * The public twin must be limited as public traffic, and must still return
+     * before the token read — the /api/public branch has to win over this one.
+     */
+    public function testThePublicPageviewTwinNeverResolvesTheViewer(): void
+    {
+        $tokenStorage = $this->createMock(TokenStorageInterface::class);
+        $tokenStorage->expects($this->never())->method('getToken');
+
+        $this->subscriber($tokenStorage)->onKernelRequest($this->event('/api/public/pageviews'));
+    }
+
     public function testSubscribesToRequestAfterTheFirewall(): void
     {
         $events = RateLimitSubscriber::getSubscribedEvents();
@@ -172,12 +220,14 @@ class RateLimitSubscriberTest extends TestCase
         int $apiUser = 1000,
         int $apiIpUser = 1000,
         int $publicIp = 1000,
+        int $pageView = 1000,
     ): RateLimitSubscriber {
         return new RateLimitSubscriber(
             $this->fixedWindow('auth_ip', $authIp),
             $this->fixedWindow('api_user', $apiUser),
             $this->fixedWindow('api_ip_user', $apiIpUser),
             $this->fixedWindow('public_ip', $publicIp),
+            $this->fixedWindow('pageview_ip_user', $pageView),
             $tokenStorage,
             // IdentityTranslator renders the id itself, so the 429 message the
             // assertions read is the English one.

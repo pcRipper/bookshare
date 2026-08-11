@@ -35,6 +35,8 @@ class RateLimitSubscriber implements EventSubscriberInterface
         private readonly RateLimiterFactoryInterface $apiIpUserLimiter,
         #[Autowire(service: 'limiter.public_ip')]
         private readonly RateLimiterFactoryInterface $publicIpLimiter,
+        #[Autowire(service: 'limiter.pageview_ip_user')]
+        private readonly RateLimiterFactoryInterface $pageViewLimiter,
         private readonly TokenStorageInterface $tokenStorage,
         private readonly ApiError $errors,
     ) {}
@@ -74,6 +76,18 @@ class RateLimitSubscriber implements EventSubscriberInterface
         // stale Bearer header fail the request the SPA is trying to render.
         if (str_starts_with($path, '/api/public/') || $path === '/api/public') {
             $this->ensureAccepted($this->publicIpLimiter->create($ip)->consume());
+
+            return;
+        }
+
+        // The traffic beacon fires once per SPA navigation, so it gets its own,
+        // much tighter bucket rather than eating the generous api_user budget a
+        // real page of work needs. Placed after the two early returns above:
+        // /api/public/pageviews must be limited as public traffic, without the
+        // token read below waking the lazy firewall.
+        if ($path === '/api/pageviews') {
+            $userId = $this->tokenStorage->getToken()?->getUserIdentifier() ?? 'anonymous';
+            $this->ensureAccepted($this->pageViewLimiter->create($ip . '|' . $userId)->consume());
 
             return;
         }

@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Api\ApiError;
 use App\Api\ResponseMapper;
 use App\Dto\Pagination;
+use App\Dto\PageViewInput;
 use App\Entity\Book;
 use App\Entity\BookCollection;
 use App\Entity\User;
@@ -12,6 +13,7 @@ use App\Enum\BookStatus;
 use App\Repository\BookRepository;
 use App\Repository\CollectionRepository;
 use App\Repository\UserRepository;
+use App\Service\Analytics\PageViewRecorder;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Color\Color;
 use Endroid\QrCode\ErrorCorrectionLevel;
@@ -20,6 +22,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
@@ -185,6 +188,32 @@ class PublicRestController extends AbstractController
         }
 
         return $owner;
+    }
+
+    /**
+     * Traffic ingest for anyone without a session — share-page visitors, the
+     * changelog, the login screen, and members whose token has expired.
+     *
+     * It has to live here rather than on PageViewRestController because that one
+     * sits behind the `main` firewall, where the JWT authenticator runs on any
+     * Authorization header and throws on an expired token. A 401 on a
+     * fire-and-forget beacon would trip the SPA's interceptor and sign people out
+     * for the crime of opening a page. Under this firewall a stale Bearer is
+     * simply ignored.
+     *
+     * Consistent with the rest of this class, it never asks who the caller is:
+     * PageViewRecorder is handed a null user id and falls back to hashing the
+     * IP and user agent.
+     */
+    #[Route('/pageviews', methods: ['POST'])]
+    public function pageview(
+        #[MapRequestPayload] PageViewInput $input,
+        Request $request,
+        PageViewRecorder $recorder,
+    ): Response {
+        $recorder->record($input->route, $request, null);
+
+        return new Response(null, Response::HTTP_NO_CONTENT);
     }
 
     /**

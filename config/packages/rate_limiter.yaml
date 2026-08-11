@@ -11,6 +11,10 @@
 #                  share pages. Deliberately far tighter than api_user: there is
 #                  no account to hold responsible, and the id space is
 #                  sequential, so this is the endpoint a scraper walks.
+#   pageview_ip_user → keyed by IP + user, guards the traffic beacon. Tighter
+#                  than api_user (300/min) because a valid token could otherwise
+#                  burn 300 increments a minute into the counters, and nobody
+#                  navigates a SPA six times a second.
 #
 # Storage uses the cache pool (cache.rate_limiter); swap to a Redis/Lock-backed
 # pool for multi-node deployments so counters are shared.
@@ -34,6 +38,12 @@ framework:
             policy: 'sliding_window'
             limit: 60
             interval: '1 minute'
+        pageview_ip_user:
+            policy: 'token_bucket'
+            limit: 30           # burst: a fast tab-flicking session
+            rate:
+                interval: '10 seconds'
+                amount: 1       # sustained 6/min
 
 when@test:
     # Keep tests deterministic: very high ceilings so the limiter never trips
@@ -50,3 +60,7 @@ when@test:
                     amount: 100000
             public_ip:
                 limit: 100000
+            pageview_ip_user:
+                limit: 100000
+                rate:
+                    amount: 100000
