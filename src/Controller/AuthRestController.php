@@ -77,6 +77,9 @@ class AuthRestController extends AbstractController
                 'email'     => $user->getEmail(),
                 'fullName'  => $user->getFullName(),
                 'avatarUrl' => $user->getAvatarUrl(),
+                // A UI hint for the operator dashboard's nav entry, not a
+                // permission: /api/admin is gated server-side either way.
+                'isAdmin'   => $user->isAdmin(),
             ],
         ]);
     }

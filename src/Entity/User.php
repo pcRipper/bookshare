@@ -10,6 +10,8 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[ORM\Table(name: '`user`')]
 class User implements UserInterface
 {
+    public const ROLE_ADMIN = 'ROLE_ADMIN';
+
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'IDENTITY')]
     #[ORM\Column]
@@ -57,6 +59,17 @@ class User implements UserInterface
     #[ORM\OneToOne(mappedBy: 'user', targetEntity: UserSettings::class, cascade: ['persist'])]
     private ?UserSettings $settings = null;
 
+    /**
+     * Roles granted on top of the baseline — today only ROLE_ADMIN, held by the
+     * site operator. ROLE_USER is implied by getRoles() and never stored, so an
+     * ordinary member's column stays `[]`: "no extra grants" and "ordinary" are
+     * the same state, and no backfill can get the two out of step.
+     *
+     * @var string[]
+     */
+    #[ORM\Column(type: 'json', options: ['default' => '[]'])]
+    private array $roles = [];
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
@@ -103,8 +116,23 @@ class User implements UserInterface
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
 
+    /** @param string[] $roles */
+    public function setRoles(array $roles): static { $this->roles = array_values(array_unique($roles)); return $this; }
+
+    public function isAdmin(): bool { return \in_array(self::ROLE_ADMIN, $this->getRoles(), true); }
+
     // UserInterface
     public function getUserIdentifier(): string { return $this->email; }
-    public function getRoles(): array { return ['ROLE_USER']; }
+
+    public function getRoles(): array
+    {
+        // ROLE_USER is the floor every authenticated member stands on; merging it
+        // here rather than storing it keeps the column meaning "extra grants".
+        $roles = $this->roles;
+        $roles[] = 'ROLE_USER';
+
+        return array_values(array_unique($roles));
+    }
+
     public function eraseCredentials(): void {}
 }

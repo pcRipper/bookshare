@@ -396,6 +396,12 @@ class ResponseMapper
             'bio'       => $user->getBio(),
             'location'  => $user->getLocation(),
             'isPrivate' => $user->isPrivate(),
+            // Deliberately here and in the login payload only — never on
+            // profile()/userCard()/userSummary()/public*(). Who the operator is
+            // is not community-visible. This is also the *only* way a grant made
+            // after login reaches an existing session, since the SPA persists
+            // the login payload in localStorage.
+            'isAdmin'   => $user->isAdmin(),
             'stats'     => $stats,
         ];
     }

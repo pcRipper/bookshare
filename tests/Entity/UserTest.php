@@ -21,6 +21,32 @@ class UserTest extends TestCase
         self::assertFalse($user->isPrivate());
         self::assertInstanceOf(\DateTimeImmutable::class, $user->getCreatedAt());
         self::assertSame(['ROLE_USER'], $user->getRoles());
+        self::assertFalse($user->isAdmin());
+    }
+
+    public function testGrantedRolesAlwaysIncludeRoleUser(): void
+    {
+        $user = (new User())->setRoles([User::ROLE_ADMIN]);
+
+        self::assertContains('ROLE_USER', $user->getRoles());
+        self::assertContains(User::ROLE_ADMIN, $user->getRoles());
+        self::assertTrue($user->isAdmin());
+    }
+
+    public function testRoleUserIsNotDuplicatedWhenStoredExplicitly(): void
+    {
+        // ROLE_USER is implied, so storing it too must not produce it twice.
+        $user = (new User())->setRoles(['ROLE_USER', User::ROLE_ADMIN, 'ROLE_USER']);
+
+        self::assertSame(['ROLE_USER', User::ROLE_ADMIN], $user->getRoles());
+    }
+
+    public function testRolesCanBeRevoked(): void
+    {
+        $user = (new User())->setRoles([User::ROLE_ADMIN])->setRoles([]);
+
+        self::assertSame(['ROLE_USER'], $user->getRoles());
+        self::assertFalse($user->isAdmin());
     }
 
     public function testUserIdentifierIsEmail(): void
