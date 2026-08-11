@@ -31,6 +31,14 @@ security:
         # as enforcement — the firewall above already exempts that path.
         - { path: ^/api/public(/|$), roles: PUBLIC_ACCESS }
         - { path: ^/api/auth,        roles: PUBLIC_ACCESS }
+        # The operator dashboard. This is the app's first and only role-based
+        # rule; ROLE_ADMIN is granted with `app:grant-admin`. It is duplicated by
+        # an #[IsGranted] attribute on the controller — the rule is the coarse
+        # net that also covers admin controllers added later, the attribute is
+        # what produces a translatable denial message instead of Symfony's
+        # untranslated "Access Denied.".
+        # Segment-anchored for the same reason as /api/public above.
+        - { path: ^/api/admin(/|$),  roles: ROLE_ADMIN }
         - { path: ^/api,             roles: IS_AUTHENTICATED_FULLY }
 
 when@test:

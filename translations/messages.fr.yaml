@@ -4,6 +4,7 @@
 'A collection needs at least %count% of your books.': 'Une collection doit contenir au moins %count% de vos livres.'
 'API rate limit exceeded. Please slow down and try again later.': 'Limite de requêtes de l''API dépassée. Ralentis et réessaie plus tard.'
 'Access denied.': 'Accès refusé.'
+'Administrator access is required.': 'Un accès administrateur est requis.'
 'Book not found.': 'Livre introuvable.'
 'Category name is required.': 'Le nom de la catégorie est obligatoire.'
 'Category not found.': 'Catégorie introuvable.'

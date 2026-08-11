@@ -4,6 +4,7 @@
 'A collection needs at least %count% of your books.': 'Збірка має містити щонайменше %count% ваших книг.'
 'API rate limit exceeded. Please slow down and try again later.': 'Перевищено ліміт запитів до API. Зменш темп і спробуй пізніше.'
 'Access denied.': 'Доступ заборонено.'
+'Administrator access is required.': 'Потрібен доступ адміністратора.'
 'Book not found.': 'Книгу не знайдено.'
 'Category name is required.': 'Вкажіть назву категорії.'
 'Category not found.': 'Категорію не знайдено.'
