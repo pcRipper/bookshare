@@ -12,6 +12,7 @@
 - [x] integrate Open Library API as the "external" book-template source (search by ISBN/title, best-effort, identified User-Agent)
 - [x] improve external api rates usage for book creation search (per-source debounce + abort in-flight request on new input)
 - [x] cache Open Library template-search responses (dedicated pool, 7-day TTL, map-on-read, errors never cached, normalized keys)
+- [x] improve the external template sources' requests + observability — Open Library on the general `q=` index (author searches work) with exact `numFound` paging and a cover-by-ISBN fallback; bookfinder timeouts matched to its measured ~7s cold time-to-first-byte (every cold query was being aborted and silently rescued by the retry); cached payloads pruned to the mapped fields; shop duplicates merged instead of dropped; a per-source failure cooldown; payload-shape guards; and one structured record per search on a dedicated `book_template` monolog channel
 - [x] add book description field (creation + template + Open Library first_sentence; shown in the book detail modal; CSV round-trip)
 - [x] cache images of book covers, maybe add local s3, do it on each change of corresponding fields, use caching key by hash of the file (hash of content + name + type) — ImageLocalizer downloads covers to our origin on create/update, content-hash keyed; swappable ImageStorage backend; `app:localize-images` backfills existing rows
 
