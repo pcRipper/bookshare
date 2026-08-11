@@ -26,14 +26,25 @@ framework:
                     max_retries: 2
                     delay: 200
             # Scoped client for bookfinder.com.ua (the "Ukrainian stores" source).
+            # The timeouts here are much longer than Open Library's, for a measured
+            # reason: this API computes a query server-side before sending anything,
+            # taking ~7s to first byte on a query it hasn't seen (then ~0.08s once
+            # its own cache is warm). Symfony's `timeout` is the *inactivity*
+            # timeout, which covers that wait — so at 5s every cold query was
+            # aborted client-side, and the source only worked because retry_failed
+            # re-issued it against an upstream the aborted attempt had meanwhile
+            # warmed. That cost ~5.3s and a wasted request per new query. 12s clears
+            # the real figure with margin, so the first attempt succeeds; a single
+            # retry still covers a genuine blip, and the providers' failure cooldown
+            # keeps a hanging upstream from tying up the FPM workers.
             bookfinder.client:
                 base_uri: 'https://www.bookfinder.com.ua'
                 headers:
                     User-Agent: '%env(BOOKFINDER_USER_AGENT)%'
-                timeout: 5
-                max_duration: 12
+                timeout: 12
+                max_duration: 25
                 retry_failed:
-                    max_retries: 2
+                    max_retries: 1
                     delay: 200
 
     #esi: true
