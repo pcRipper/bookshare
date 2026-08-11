@@ -299,7 +299,8 @@
     "chooseLanguage": "Sprache der Oberfläche wählen",
     "main": "Hauptnavigation",
     "releaseNotes": "Versionshinweise",
-    "copyright": "© {year} FolioShare. Geschichten für eine aufmerksame Community."
+    "copyright": "© {year} FolioShare. Geschichten für eine aufmerksame Community.",
+    "analytics": "Statistiken"
   },
   "profile": {
     "follow": "Folgen",
@@ -515,5 +516,84 @@
     "downloadQr": "QR-Code herunterladen",
     "privateNotice": "Dein Profil ist privat, dein Bibliothekslink lässt sich also von niemandem öffnen. Stell dein Profil öffentlich, um es zu teilen.",
     "goToSettings": "Einstellungen öffnen"
+  },
+  "admin": {
+    "title": "Statistiken",
+    "subtitle": "Wie FolioShare wächst und wie es genutzt wird.",
+    "refresh": "Aktualisieren",
+    "range": "{from} bis {to}",
+    "loadFailed": "Das Dashboard konnte nicht geladen werden.",
+    "forbidden": "Du hast keinen Zugriff auf dieses Dashboard.",
+    "window": {
+      "d7": "Letzte 7 Tage",
+      "d30": "Letzte 30 Tage",
+      "d90": "Letzte 90 Tage"
+    },
+    "growth": {
+      "title": "Wachstum & Inhalte",
+      "users": "Mitglieder",
+      "books": "Bücher",
+      "collections": "Sammlungen",
+      "categories": "Kategorien",
+      "chartTitle": "Neu pro Tag",
+      "newUsers": "Neue Mitglieder",
+      "newBooks": "Neue Bücher",
+      "newCollections": "Neue Sammlungen",
+      "empty": "In diesem Zeitraum nichts Neues."
+    },
+    "engagement": {
+      "title": "Aktivität",
+      "activeToday": "Heute aktiv",
+      "dau": "Aktive Mitglieder",
+      "dauChart": "Aktive Mitglieder pro Tag",
+      "requested": "Angefragt",
+      "approved": "Bestätigt",
+      "returned": "Zurückgegeben",
+      "loansChart": "Ausleihaktivität pro Tag",
+      "recent": "Letzte Aktivität",
+      "recentEmpty": "Noch keine Aktivität erfasst."
+    },
+    "activity": {
+      "borrowed": "{actor} hat {book} ausgeliehen",
+      "returned": "{actor} hat {book} zurückgegeben",
+      "added": "{actor} hat {book} hinzugefügt",
+      "followed": "{actor} folgt jetzt {target}",
+      "commented": "{actor} hat {book} kommentiert"
+    },
+    "traffic": {
+      "title": "Zugriffe",
+      "views": "Seitenaufrufe",
+      "uniques": "Besucher",
+      "viewsChart": "Aufrufe und Besucher pro Tag",
+      "topRoutes": "Meistbesuchte Seiten",
+      "page": "Seite",
+      "empty": "Noch keine Seitenaufrufe erfasst — sie sammeln sich, sobald gestöbert wird."
+    },
+    "routes": {
+      "login": "Anmelden",
+      "library": "Meine Bibliothek",
+      "discover": "Entdecken",
+      "subscriptions": "Folge ich",
+      "profile": "Profil",
+      "settings": "Einstellungen",
+      "changelog": "Versionshinweise",
+      "public-library": "Geteilte Bibliothek",
+      "not-found": "Nicht gefunden"
+    },
+    "library": {
+      "title": "Zustand der Bibliothek",
+      "byStatus": "Bücher nach Status",
+      "topCategories": "Meistgenutzte Kategorien",
+      "topLanguages": "Häufigste Sprachen",
+      "topBooks": "Meistausgeliehene Bücher",
+      "topLenders": "Aktivste Verleiher",
+      "language": "Sprache",
+      "books": "Bücher",
+      "bookTitle": "Titel",
+      "author": "Autor",
+      "member": "Mitglied",
+      "loans": "Ausleihen",
+      "empty": "Noch keine Bücher erfasst."
+    }
   }
 }

@@ -299,7 +299,8 @@
     "chooseLanguage": "Elegir idioma de la interfaz",
     "main": "Navegación principal",
     "releaseNotes": "Notas de la versión",
-    "copyright": "© {year} FolioShare. Historias para una comunidad atenta."
+    "copyright": "© {year} FolioShare. Historias para una comunidad atenta.",
+    "analytics": "Analíticas"
   },
   "profile": {
     "follow": "Seguir",
@@ -515,5 +516,84 @@
     "downloadQr": "Descargar código QR",
     "privateNotice": "Tu perfil es privado, así que nadie podrá abrir el enlace de tu biblioteca. Haz público tu perfil para compartirla.",
     "goToSettings": "Abrir ajustes"
+  },
+  "admin": {
+    "title": "Analíticas",
+    "subtitle": "Cómo crece FolioShare y cómo se usa.",
+    "refresh": "Actualizar",
+    "range": "Del {from} al {to}",
+    "loadFailed": "No se pudo cargar el panel.",
+    "forbidden": "No tienes acceso a este panel.",
+    "window": {
+      "d7": "Últimos 7 días",
+      "d30": "Últimos 30 días",
+      "d90": "Últimos 90 días"
+    },
+    "growth": {
+      "title": "Crecimiento y contenido",
+      "users": "Miembros",
+      "books": "Libros",
+      "collections": "Colecciones",
+      "categories": "Categorías",
+      "chartTitle": "Nuevos por día",
+      "newUsers": "Nuevos miembros",
+      "newBooks": "Nuevos libros",
+      "newCollections": "Nuevas colecciones",
+      "empty": "Nada nuevo en este periodo."
+    },
+    "engagement": {
+      "title": "Participación",
+      "activeToday": "Activos hoy",
+      "dau": "Miembros activos",
+      "dauChart": "Miembros activos por día",
+      "requested": "Solicitados",
+      "approved": "Aprobados",
+      "returned": "Devueltos",
+      "loansChart": "Actividad de préstamos por día",
+      "recent": "Actividad reciente",
+      "recentEmpty": "Todavía no hay actividad registrada."
+    },
+    "activity": {
+      "borrowed": "{actor} tomó prestado {book}",
+      "returned": "{actor} devolvió {book}",
+      "added": "{actor} añadió {book}",
+      "followed": "{actor} empezó a seguir a {target}",
+      "commented": "{actor} comentó sobre {book}"
+    },
+    "traffic": {
+      "title": "Tráfico",
+      "views": "Visitas",
+      "uniques": "Visitantes",
+      "viewsChart": "Visitas y visitantes por día",
+      "topRoutes": "Páginas más visitadas",
+      "page": "Página",
+      "empty": "Todavía no hay visitas registradas — se acumularán a medida que la gente navegue."
+    },
+    "routes": {
+      "login": "Iniciar sesión",
+      "library": "Mi biblioteca",
+      "discover": "Descubrir",
+      "subscriptions": "Siguiendo",
+      "profile": "Perfil",
+      "settings": "Ajustes",
+      "changelog": "Notas de la versión",
+      "public-library": "Biblioteca compartida",
+      "not-found": "No encontrada"
+    },
+    "library": {
+      "title": "Estado de la biblioteca",
+      "byStatus": "Libros por estado",
+      "topCategories": "Categorías más usadas",
+      "topLanguages": "Idiomas más catalogados",
+      "topBooks": "Libros más prestados",
+      "topLenders": "Prestadores más activos",
+      "language": "Idioma",
+      "books": "Libros",
+      "bookTitle": "Título",
+      "author": "Autor",
+      "member": "Miembro",
+      "loans": "Préstamos",
+      "empty": "Todavía no hay libros catalogados."
+    }
   }
 }

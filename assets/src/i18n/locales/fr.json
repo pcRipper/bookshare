@@ -299,7 +299,8 @@
     "chooseLanguage": "Choisir la langue de l’interface",
     "main": "Navigation principale",
     "releaseNotes": "Notes de version",
-    "copyright": "© {year} FolioShare. Des histoires pour une communauté attentive."
+    "copyright": "© {year} FolioShare. Des histoires pour une communauté attentive.",
+    "analytics": "Statistiques"
   },
   "profile": {
     "follow": "Suivre",
@@ -515,5 +516,84 @@
     "downloadQr": "Télécharger le QR code",
     "privateNotice": "Ton profil est privé : personne ne pourra ouvrir le lien de ta bibliothèque. Rends ton profil public pour le partager.",
     "goToSettings": "Ouvrir les réglages"
+  },
+  "admin": {
+    "title": "Statistiques",
+    "subtitle": "Comment FolioShare grandit, et comment il est utilisé.",
+    "refresh": "Actualiser",
+    "range": "Du {from} au {to}",
+    "loadFailed": "Impossible de charger le tableau de bord.",
+    "forbidden": "Vous n'avez pas accès à ce tableau de bord.",
+    "window": {
+      "d7": "7 derniers jours",
+      "d30": "30 derniers jours",
+      "d90": "90 derniers jours"
+    },
+    "growth": {
+      "title": "Croissance et contenu",
+      "users": "Membres",
+      "books": "Livres",
+      "collections": "Collections",
+      "categories": "Catégories",
+      "chartTitle": "Nouveautés par jour",
+      "newUsers": "Nouveaux membres",
+      "newBooks": "Nouveaux livres",
+      "newCollections": "Nouvelles collections",
+      "empty": "Rien de nouveau sur cette période."
+    },
+    "engagement": {
+      "title": "Activité",
+      "activeToday": "Actifs aujourd'hui",
+      "dau": "Membres actifs",
+      "dauChart": "Membres actifs par jour",
+      "requested": "Demandés",
+      "approved": "Acceptés",
+      "returned": "Rendus",
+      "loansChart": "Activité d'emprunt par jour",
+      "recent": "Activité récente",
+      "recentEmpty": "Aucune activité enregistrée pour l'instant."
+    },
+    "activity": {
+      "borrowed": "{actor} a emprunté {book}",
+      "returned": "{actor} a rendu {book}",
+      "added": "{actor} a ajouté {book}",
+      "followed": "{actor} suit désormais {target}",
+      "commented": "{actor} a commenté {book}"
+    },
+    "traffic": {
+      "title": "Fréquentation",
+      "views": "Pages vues",
+      "uniques": "Visiteurs",
+      "viewsChart": "Pages vues et visiteurs par jour",
+      "topRoutes": "Pages les plus visitées",
+      "page": "Page",
+      "empty": "Aucune page vue enregistrée — le compte démarre dès que les lecteurs naviguent."
+    },
+    "routes": {
+      "login": "Connexion",
+      "library": "Ma bibliothèque",
+      "discover": "Découvrir",
+      "subscriptions": "Abonnements",
+      "profile": "Profil",
+      "settings": "Paramètres",
+      "changelog": "Notes de version",
+      "public-library": "Bibliothèque partagée",
+      "not-found": "Introuvable"
+    },
+    "library": {
+      "title": "Santé de la bibliothèque",
+      "byStatus": "Livres par statut",
+      "topCategories": "Catégories les plus utilisées",
+      "topLanguages": "Langues les plus cataloguées",
+      "topBooks": "Livres les plus empruntés",
+      "topLenders": "Prêteurs les plus actifs",
+      "language": "Langue",
+      "books": "Livres",
+      "bookTitle": "Titre",
+      "author": "Auteur",
+      "member": "Membre",
+      "loans": "Emprunts",
+      "empty": "Aucun livre catalogué pour l'instant."
+    }
   }
 }

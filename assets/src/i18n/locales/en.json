@@ -299,7 +299,8 @@
     "chooseLanguage": "Choose interface language",
     "main": "Main navigation",
     "releaseNotes": "Release Notes",
-    "copyright": "© {year} FolioShare. Curating stories for a thoughtful community."
+    "copyright": "© {year} FolioShare. Curating stories for a thoughtful community.",
+    "analytics": "Analytics"
   },
   "profile": {
     "follow": "Follow",
@@ -515,5 +516,84 @@
     "downloadQr": "Download QR code",
     "privateNotice": "Your profile is private, so your library link won't open for anyone else. Make your profile public to share it.",
     "goToSettings": "Open settings"
+  },
+  "admin": {
+    "title": "Analytics",
+    "subtitle": "How FolioShare is growing, and how it is being used.",
+    "refresh": "Refresh",
+    "range": "{from} to {to}",
+    "loadFailed": "Could not load the dashboard.",
+    "forbidden": "You do not have access to this dashboard.",
+    "window": {
+      "d7": "Last 7 days",
+      "d30": "Last 30 days",
+      "d90": "Last 90 days"
+    },
+    "growth": {
+      "title": "Growth & content",
+      "users": "Members",
+      "books": "Books",
+      "collections": "Collections",
+      "categories": "Categories",
+      "chartTitle": "New each day",
+      "newUsers": "New members",
+      "newBooks": "New books",
+      "newCollections": "New collections",
+      "empty": "Nothing new in this period."
+    },
+    "engagement": {
+      "title": "Engagement",
+      "activeToday": "Active today",
+      "dau": "Active members",
+      "dauChart": "Active members per day",
+      "requested": "Requested",
+      "approved": "Approved",
+      "returned": "Returned",
+      "loansChart": "Borrowing activity per day",
+      "recent": "Recent activity",
+      "recentEmpty": "No activity recorded yet."
+    },
+    "activity": {
+      "borrowed": "{actor} borrowed {book}",
+      "returned": "{actor} returned {book}",
+      "added": "{actor} added {book}",
+      "followed": "{actor} started following {target}",
+      "commented": "{actor} commented on {book}"
+    },
+    "traffic": {
+      "title": "Traffic",
+      "views": "Page views",
+      "uniques": "Visitors",
+      "viewsChart": "Views and visitors per day",
+      "topRoutes": "Most visited pages",
+      "page": "Page",
+      "empty": "No page views recorded yet — they start accumulating as people browse."
+    },
+    "routes": {
+      "login": "Sign in",
+      "library": "My Library",
+      "discover": "Discover",
+      "subscriptions": "Following",
+      "profile": "Profile",
+      "settings": "Settings",
+      "changelog": "Release Notes",
+      "public-library": "Shared library",
+      "not-found": "Not found"
+    },
+    "library": {
+      "title": "Library health",
+      "byStatus": "Books by status",
+      "topCategories": "Most used categories",
+      "topLanguages": "Most catalogued languages",
+      "topBooks": "Most borrowed books",
+      "topLenders": "Most active lenders",
+      "language": "Language",
+      "books": "Books",
+      "bookTitle": "Title",
+      "author": "Author",
+      "member": "Member",
+      "loans": "Loans",
+      "empty": "No books catalogued yet."
+    }
   }
 }
