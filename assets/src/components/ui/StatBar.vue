@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 
 /**
@@ -9,16 +10,31 @@ import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
  * uses it — the public Profile drops stats entirely since its tabs already
  * surface the same counts.
  */
-defineProps({
+const props = defineProps({
   stats: { type: Array, default: () => [] }, // [{ label, value }]
   loading: { type: Boolean, default: false },
+  /**
+   * 'panel' is the original: a card on mobile, frameless vertical rows on
+   * desktop so it fills the Library's action panel. 'grid' keeps the cells
+   * framed and side by side at every width, which is what a full-width
+   * dashboard KPI row needs — a genuinely different affordance rather than a
+   * second component that would drift from this one.
+   */
+  variant: {
+    type: String,
+    default: 'panel',
+    validator: value => ['panel', 'grid'].includes(value),
+  },
 })
+
+/** Hold the real number of cells while loading so the layout doesn't jump. */
+const skeletonCount = computed(() => props.stats.length || 3)
 </script>
 
 <template>
-  <section class="stat-bar">
+  <section class="stat-bar" :class="`stat-bar--${variant}`">
     <template v-if="loading">
-      <BaseSkeleton v-for="n in 3" :key="n" width="56px" height="40px" />
+      <BaseSkeleton v-for="n in skeletonCount" :key="n" width="56px" height="40px" />
     </template>
     <template v-else>
       <div v-for="stat in stats" :key="stat.label" class="stat">
@@ -97,4 +113,33 @@ defineProps({
   text-align: center;
 }
 @media (min-width: 768px) { .stat__label { text-align: left; } }
+
+/* ── grid variant ──────────────────────────────────────────────────────────
+   A dashboard KPI row: framed cells side by side at every width, wrapping to
+   2x2 on a phone. Overrides come last and are scoped to the modifier, so the
+   panel variant above is untouched. */
+.stat-bar--grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-sm);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+@media (min-width: 768px) {
+  .stat-bar--grid { flex-direction: row; }
+}
+.stat-bar--grid .stat {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: var(--space-md);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-container-lowest);
+}
+.stat-bar--grid .stat + .stat { border-left: 1px solid var(--color-outline-variant); border-top: none; }
+.stat-bar--grid .stat__value { min-width: 0; text-align: left; }
+.stat-bar--grid .stat__label { text-align: left; }
 </style>
