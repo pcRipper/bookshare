@@ -7,6 +7,17 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.21.0',
+    date: '2026-08-11',
+    notes: [
+      'You can now find a book template by its author. Searching Open Library only ever looked at book titles, so an author\'s name found either nothing or a handful of odd box sets that happened to mention them — it now searches properly, and a name like "Sapkowski" brings back their books.',
+      'Searching the Ukrainian stores is no longer slow the first time. Every search for something new was quietly abandoned partway through and started over, adding several seconds before any result appeared.',
+      'More template results arrive with a cover instead of the placeholder icon, and a Ukrainian result now takes the cover and description from whichever shop listing has them rather than only the first one.',
+      'Scrolling template results no longer promises more results and then hands you an empty page at the end of the list.',
+      'When an external catalogue is down, the search now says so quickly instead of making every keystroke wait for it.',
+    ],
+  },
+  {
     version: '1.20.1',
     date: '2026-08-09',
     notes: [
