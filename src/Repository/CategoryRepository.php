@@ -13,6 +13,18 @@ class CategoryRepository extends ServiceEntityRepository
         parent::__construct($registry, Category::class);
     }
 
+    /**
+     * Total categories, for the dashboard's growth tile.
+     *
+     * There is deliberately no per-day series to go with it: Category has no
+     * createdAt, and backfilling one would fabricate history for every existing
+     * row. Adding the column is a separate, conscious decision.
+     */
+    public function countAll(): int
+    {
+        return $this->count([]);
+    }
+
     /** @return Category[] */
     public function findAllOrdered(): array
     {

@@ -11,9 +11,17 @@ use Doctrine\Persistence\ManagerRegistry;
 
 class UserRepository extends ServiceEntityRepository
 {
+    use CountsCreatedByDay;
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, User::class);
+    }
+
+    /** Total members, for the dashboard's growth tile. */
+    public function countAll(): int
+    {
+        return $this->count([]);
     }
 
     public function findOrCreateFromGoogle(

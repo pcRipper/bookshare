@@ -15,6 +15,13 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class CollectionRepository extends ServiceEntityRepository
 {
+    use CountsCreatedByDay;
+
+    public function countAll(): int
+    {
+        return $this->count([]);
+    }
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, BookCollection::class);

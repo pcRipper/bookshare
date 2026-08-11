@@ -17,9 +17,105 @@ use Doctrine\Persistence\ManagerRegistry;
 
 class BookRepository extends ServiceEntityRepository
 {
+    use CountsCreatedByDay;
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Book::class);
+    }
+
+    public function countAll(): int
+    {
+        return $this->count([]);
+    }
+
+    /**
+     * How the whole community's shelves are distributed across statuses.
+     *
+     * Returns every case, zero-filled: a status nobody currently holds should
+     * read as 0 rather than vanish from the chart, which would silently change
+     * what the segments mean.
+     *
+     * @return array<string, int> keyed by BookStatus value
+     */
+    public function countByStatus(): array
+    {
+        $counts = [];
+        foreach (BookStatus::cases() as $case) {
+            $counts[$case->value] = 0;
+        }
+
+        $rows = $this->createQueryBuilder('b')
+            ->select('b.status AS status, COUNT(b.id) AS total')
+            ->groupBy('b.status')
+            ->getQuery()
+            ->getScalarResult();
+
+        foreach ($rows as $row) {
+            // An enumType column comes back as its raw backing value here.
+            $counts[(string) $row['status']] = (int) $row['total'];
+        }
+
+        return $counts;
+    }
+
+    /**
+     * The most-used categories across every library.
+     *
+     * Queried from the owning side because Book→Category is unidirectional —
+     * Category has no books collection to count. Everything the card renders
+     * comes back in this one query, so there is no follow-up hydration.
+     *
+     * @return list<array{id: int, name: string, colorHex: string, books: int}>
+     */
+    public function countByCategory(int $limit): array
+    {
+        $rows = $this->createQueryBuilder('b')
+            ->select('c.id AS id, c.name AS name, c.colorHex AS colorHex, COUNT(b.id) AS total')
+            ->join('b.categories', 'c')
+            ->groupBy('c.id')
+            ->addGroupBy('c.name')
+            ->addGroupBy('c.colorHex')
+            ->orderBy('total', 'DESC')
+            ->addOrderBy('c.name', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getScalarResult();
+
+        return array_map(
+            static fn (array $row) => [
+                'id'       => (int) $row['id'],
+                'name'     => (string) $row['name'],
+                'colorHex' => (string) $row['colorHex'],
+                'books'    => (int) $row['total'],
+            ],
+            $rows,
+        );
+    }
+
+    /**
+     * The most-catalogued languages. Books with no language set are excluded
+     * rather than bucketed as "unknown" — a null there means "nobody said", which
+     * is not a language and would dominate the list without meaning anything.
+     *
+     * @return list<array{code: string, books: int}>
+     */
+    public function countByLanguage(int $limit): array
+    {
+        $rows = $this->createQueryBuilder('b')
+            ->select('b.language AS code, COUNT(b.id) AS total')
+            ->where('b.language IS NOT NULL')
+            ->groupBy('b.language')
+            ->orderBy('total', 'DESC')
+            ->addOrderBy('b.language', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getScalarResult();
+
+        return array_map(
+            static fn (array $row) => ['code' => (string) $row['code'], 'books' => (int) $row['total']],
+            $rows,
+        );
     }
 
     /**

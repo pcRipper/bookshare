@@ -13,9 +13,85 @@ use Doctrine\Persistence\ManagerRegistry;
 
 class LibraryRequestRepository extends ServiceEntityRepository
 {
+    /**
+     * What counts as a loan for the dashboard's rankings: a request that was
+     * actually approved and handed over. A pending or declined request is an
+     * intention, not a loan, and counting it would let a book nobody ever lent
+     * top the "most borrowed" list.
+     */
+    private const LOANED_STATUSES = [
+        RequestStatus::Approved,
+        RequestStatus::ReturnPending,
+        RequestStatus::Returned,
+    ];
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, LibraryRequest::class);
+    }
+
+    /**
+     * Book ids by loan count, most-borrowed first.
+     *
+     * Returns ids rather than books so the caller can hydrate the whole page in
+     * one findBy() — resolving each row with find() would be the N+1 this shape
+     * exists to avoid, the same two-query pattern UserStatsProvider::forUsers()
+     * uses.
+     *
+     * Deliberately unwindowed: "most borrowed" reads as all-time, and at this
+     * table's size the scan is cheap. Adding a date bound later means adding an
+     * index on requested_at in the same change — a windowed filter without one
+     * is strictly worse than no window.
+     *
+     * @return array<int, int> book id => loans, ordered
+     */
+    public function mostBorrowedBookIds(int $limit): array
+    {
+        $rows = $this->createQueryBuilder('r')
+            ->select('IDENTITY(r.book) AS bookId, COUNT(r.id) AS total')
+            ->where('r.status IN (:statuses)')
+            ->setParameter('statuses', self::LOANED_STATUSES)
+            ->groupBy('r.book')
+            ->orderBy('total', 'DESC')
+            ->addOrderBy('bookId', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getScalarResult();
+
+        $counts = [];
+        foreach ($rows as $row) {
+            $counts[(int) $row['bookId']] = (int) $row['total'];
+        }
+
+        return $counts;
+    }
+
+    /**
+     * Owner ids by how many of their books were lent out, most-active first.
+     * Same hydrate-in-one-query contract as mostBorrowedBookIds().
+     *
+     * @return array<int, int> user id => loans, ordered
+     */
+    public function topLenderIds(int $limit): array
+    {
+        $rows = $this->createQueryBuilder('r')
+            ->select('IDENTITY(b.owner) AS ownerId, COUNT(r.id) AS total')
+            ->join('r.book', 'b')
+            ->where('r.status IN (:statuses)')
+            ->setParameter('statuses', self::LOANED_STATUSES)
+            ->groupBy('b.owner')
+            ->orderBy('total', 'DESC')
+            ->addOrderBy('ownerId', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getScalarResult();
+
+        $counts = [];
+        foreach ($rows as $row) {
+            $counts[(int) $row['ownerId']] = (int) $row['total'];
+        }
+
+        return $counts;
     }
 
     /**

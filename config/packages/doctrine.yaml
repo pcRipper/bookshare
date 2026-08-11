@@ -13,6 +13,17 @@ doctrine:
         identity_generation_preferences:
             Doctrine\DBAL\Platforms\PostgreSQLPlatform: identity
         auto_mapping: true
+        # The operator dashboard buckets rows by calendar day, which Doctrine
+        # cannot express: it ships no DATE()/DATE_TRUNC DQL function. The
+        # alternative to registering one was to select every timestamp in the
+        # window and group them in PHP, which moves work the database is built
+        # for into the application and grows with the data.
+        #
+        # This is Postgres-specific, matching the raw PostgreSQL in migrations/ —
+        # the project is not portable across platforms and does not pretend to be.
+        dql:
+            datetime_functions:
+                date_trunc: DoctrineExtensions\Query\Postgresql\DateTrunc
         mappings:
             App:
                 type: attribute
