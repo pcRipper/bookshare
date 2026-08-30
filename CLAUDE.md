@@ -200,6 +200,7 @@ Full token spec: `references/design/literary_commons/DESIGN.md`
 | Section separator | 80px (`xl`) | Between major page sections |
 | Modal width | `--modal-w-sm/md/lg/xl` = 520/640/800/900px | Every dialog's `max-width` — pick by content, never a per-component number |
 | Modal overlay inset | `--modal-gutter` = 12px, 24px from 768px up | Overlay padding; the phone value buys back width the backdrop was eating |
+| Modal height | `--modal-max-h` = 85svh, 90svh from 768px up | Every dialog's `max-height`. **`svh`, never `vh`** — on iOS Safari `vh` is the viewport with the toolbars *hidden*, so a sheet sized in it hangs its close button and footer off the visible screen whenever they're shown. The `90vh` line above it is only the fallback for browsers without the newer units |
 
 **Modals are sized from the scale, not by hand.** `sm` = one short form (share a link), `md` = a compact single-column form (import, edit profile), `lg` = a two-column form (manage a book, edit a collection), `xl` = a cover-plus-detail reading surface (book/collection preview). From **768px** the two `lg` forms split into a cover column beside the fields (`.form__aside` / `.form__main` wrappers, plus `.picker-panes` for `CollectionEditModal`'s two book lists, which uses `auto-fit` so the selected pane spans full width in read-only mode); below it every modal is the original single stack. The `xl` covers grow at the same breakpoint so they stay in proportion with the wider sheet.
 
