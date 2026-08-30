@@ -23,6 +23,7 @@ Everything happens on the server. The flow is **`git pull` → `docker compose b
 |---|---|
 | `make prod-build` | Build both images locally, tag `bookshare-{php,nginx}:${IMAGE_TAG}` |
 | `make prod-deploy` | `git pull` + `docker compose build` + `up -d` (migrations auto-run) |
+| `make prod-deploy-front` | SPA-only: pull + rebuild the nginx image + recreate that one container (stack stays up) |
 
 ## First-time setup
 
@@ -115,6 +116,23 @@ Pulls the latest branch, rebuilds the images, restarts the stack, and auto-appli
 migrations (`RUN_MIGRATIONS=1`). Docker layer caching makes rebuilds fast when dependencies are
 unchanged. To run migrations manually instead, set `RUN_MIGRATIONS=0` and use `make prod-migrate`.
 
+### Frontend-only
+
+```bash
+make prod-deploy-front          # = bash scripts/rebuild-prod.sh --frontend-only
+```
+
+The built SPA is baked into the **nginx** image (`vite build`, stage 2 of its Dockerfile), so an
+SPA-only release is a one-image job. This path never stops the stack: `phpfpm`, `postgresql` and
+`mercure` keep serving — no downtime, no migration run, no dropped SSE connections — while nginx
+alone is rebuilt and recreated (`up -d --no-deps nginx`).
+
+It **refuses** if the pull also changed files the nginx image isn't built from, because shipping
+nginx alone would leave PHP-FPM on the previous commit — a half-deployed release that looks like it
+worked. The allowed set is a whitelist (`assets/`, `index.html`, `vite.config.js`, `package*.json`,
+`docker/production/nginx/`, plus markdown), so an unfamiliar path fails into "use the full rebuild"
+rather than shipping half of one. `--force` overrides it.
+
 ## Post-deploy smoke check: the public share pages
 
 Run this after any deploy that touched `config/packages/security.yaml`, the nginx
@@ -197,6 +215,7 @@ docker compose exec phpfpm php bin/console app:grant-admin you@example.com
 | `make prod-build` | Build the images locally on the server |
 | `make prod-up` / `prod-down` | Start / stop the stack |
 | `make prod-deploy` | Full redeploy (pull code + build + up) |
+| `make prod-deploy-front` | SPA-only redeploy (nginx image only, no downtime) |
 | `make prod-logs` | Tail logs |
 | `make prod-migrate` | Run migrations manually |
 
