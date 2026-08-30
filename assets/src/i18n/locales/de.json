@@ -245,12 +245,16 @@
       "collectionTitle": "Neue Sammlung",
       "collectionHint": "Fasse zwei oder mehr Bücher zusammen, um sie gemeinsam zu verleihen."
     },
-    "sections": {
-      "yourRequests": "Deine Anfragen",
-      "requestsForYourBooks": "Anfragen zu deinen Büchern",
-      "booksInHand": "Bücher bei dir",
-      "lentOut": "An andere verliehen",
-      "pastLoans": "Frühere Ausleihen"
+    "loans": {
+      "filterLabel": "Ausleihen nach Status filtern",
+      "filter": {
+        "all": "Alle",
+        "awaiting": "Offen",
+        "onLoan": "Verliehen",
+        "finished": "Abgeschlossen"
+      },
+      "details": "Details",
+      "noMatches": "Zu diesem Filter gibt es nichts."
     },
     "empty": {
       "borrowing": "Du hast derzeit keine Bücher geliehen.",
@@ -274,7 +278,7 @@
       "approve": "Die Anfrage konnte nicht genehmigt werden.",
       "decline": "Die Anfrage konnte nicht abgelehnt werden.",
       "confirmReturn": "Die Rückgabe konnte nicht bestätigt werden.",
-      "returnCollection": "Die Sammlung konnte nicht zurückgegeben werden."
+      "returnLoan": "Konnte nicht als zurückgegeben markiert werden."
     },
     "share": "Teilen"
   },

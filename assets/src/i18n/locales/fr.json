@@ -245,12 +245,16 @@
       "collectionTitle": "Nouvelle collection",
       "collectionHint": "Regroupez deux livres ou plus pour les prêter ensemble."
     },
-    "sections": {
-      "yourRequests": "Vos demandes",
-      "requestsForYourBooks": "Demandes pour vos livres",
-      "booksInHand": "Livres en votre possession",
-      "lentOut": "Prêtés à d’autres",
-      "pastLoans": "Prêts passés"
+    "loans": {
+      "filterLabel": "Filtrer les prêts par état",
+      "filter": {
+        "all": "Tous",
+        "awaiting": "En attente",
+        "onLoan": "En cours",
+        "finished": "Terminés"
+      },
+      "details": "Détails",
+      "noMatches": "Rien avec ce filtre."
     },
     "empty": {
       "borrowing": "Vous n’empruntez aucun livre pour le moment.",
@@ -274,7 +278,7 @@
       "approve": "La demande n’a pas pu être acceptée.",
       "decline": "La demande n’a pas pu être refusée.",
       "confirmReturn": "Le retour n’a pas pu être confirmé.",
-      "returnCollection": "La collection n’a pas pu être rendue."
+      "returnLoan": "Impossible de marquer ceci comme rendu."
     },
     "share": "Partager"
   },

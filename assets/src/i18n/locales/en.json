@@ -245,12 +245,16 @@
       "collectionTitle": "New Collection",
       "collectionHint": "Group two or more books to lend together."
     },
-    "sections": {
-      "yourRequests": "Your requests",
-      "requestsForYourBooks": "Requests for your books",
-      "booksInHand": "Books in hand",
-      "lentOut": "Lent out",
-      "pastLoans": "Past loans"
+    "loans": {
+      "filterLabel": "Filter loans by state",
+      "filter": {
+        "all": "All",
+        "awaiting": "Awaiting",
+        "onLoan": "On loan",
+        "finished": "Finished"
+      },
+      "details": "Details",
+      "noMatches": "Nothing under this filter."
     },
     "empty": {
       "borrowing": "You're not borrowing any books right now.",
@@ -274,7 +278,7 @@
       "approve": "Could not approve the request.",
       "decline": "Could not decline the request.",
       "confirmReturn": "Could not confirm the return.",
-      "returnCollection": "Could not return the collection."
+      "returnLoan": "Could not mark this as returned."
     },
     "share": "Share"
   },
