@@ -648,5 +648,30 @@ function applyTemplate(t) {
 @media (max-width: 520px) {
   .field-row { grid-template-columns: 1fr; }
   .modal { max-width: 100%; }
+
+  /* A wish-list book in edit mode puts four buttons in this row — Delete plus
+     acquire, Cancel and Save — which do not fit a phone. Unwrapped, the row
+     kept its nowrap width and pushed Save clean off the modal: the primary
+     action of the dialog was unreachable, not merely ugly.
+     Here the actions group takes the full width and the acquire button claims
+     its own line above Cancel/Save, leaving Delete on the line below. */
+  .modal__footer-actions {
+    width: 100%;
+    margin-left: 0;
+    flex-wrap: wrap;
+  }
+  .modal__footer-actions > * { flex: 1; justify-content: center; }
+  .btn-acquire { flex-basis: 100%; }
 }
+
+/* Never let a label break mid-word into a four-line button. */
+.btn-primary,
+.btn-secondary,
+.btn-delete { white-space: nowrap; }
+
+/* Wrapping is the safety net at every width: the footer's contents depend on
+   the book (Delete only when editing, acquire only for a wanted book), so the
+   row's intrinsic width is not fixed and must be allowed to fall to a new line
+   rather than overflow the modal. */
+.modal__footer { flex-wrap: wrap; }
 </style>
