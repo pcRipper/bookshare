@@ -14,16 +14,12 @@ import StatBar from '@/components/ui/StatBar.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import BookCard from '@/components/library/BookCard.vue'
-import BorrowingCard from '@/components/library/BorrowingCard.vue'
-import PendingRequestCard from '@/components/library/PendingRequestCard.vue'
-import RequestCard from '@/components/library/RequestCard.vue'
-import LoanHistoryCard from '@/components/library/LoanHistoryCard.vue'
+import LoanCard from '@/components/library/LoanCard.vue'
 import ManageBookModal from '@/components/library/ManageBookModal.vue'
 import ImportBooksModal from '@/components/library/ImportBooksModal.vue'
 import SharePublicLinkModal from '@/components/library/SharePublicLinkModal.vue'
 import CollectionCard from '@/components/collections/CollectionCard.vue'
 import CollectionEditModal from '@/components/collections/CollectionEditModal.vue'
-import CollectionRequestCard from '@/components/collections/CollectionRequestCard.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
 import ViewToggle from '@/components/ui/ViewToggle.vue'
@@ -32,6 +28,7 @@ import BookTable from '@/components/ui/BookTable.vue'
 import BookTableSkeleton from '@/components/ui/BookTableSkeleton.vue'
 import { useBookView } from '@/composables/useBookView'
 import { WISH_PRIORITIES, wishPriorityMeta, wishPriorityKey } from '@/utils/wishPriority'
+import { toLoans, sortLoans, matchesFilter } from '@/utils/loans'
 
 const store = useLibraryStore()
 const collections = useCollectionsStore()
@@ -106,54 +103,78 @@ const sharingSides = computed(() => [
 ])
 const isLending = computed(() => sharingSide.value === 'lending')
 
-const historyLoading = computed(() =>
-  isLending.value ? loading.value.history : loading.value.borrowingHistory,
-)
-const historyItems = computed(() =>
-  isLending.value ? history.value : borrowingHistory.value,
-)
-// Pagination metadata for whichever history side is showing.
-const historyPageMeta = computed(() =>
-  isLending.value ? historyMeta.value : borrowingHistoryMeta.value,
-)
+/* ── One list per side ────────────────────────────────────────────────────
+   Six endpoints feed a side — pending / active / settled, for books and for
+   collections — but they are six views of one thing, so they are normalised
+   into a single `loan` shape (utils/loans.js) and merged. The lifecycle stops
+   being a heading and becomes a pill on the card, which is what lets one card
+   component and one grid serve the whole panel.
 
-// Collection history mirrors the same lending/borrowing side.
-const cHistoryLoading = computed(() =>
-  isLending.value ? cLoading.value.history : cLoading.value.borrowingHistory,
+   The three status keywords partition the five statuses with no overlap, which
+   is why `fetchRequests`/`fetchIncoming` had to move off `open`: it shares
+   ReturnPending with `active` and the same loan would arrive twice. */
+const sideLoans = computed(() => {
+  const p = sharingSide.value
+  const [books, cols] = isLending.value
+    ? [[requests.value, lending.value, history.value], [cIncoming.value, cLending.value, cHistory.value]]
+    : [[pendingBorrowing.value, borrowing.value, borrowingHistory.value], [cPendingBorrowing.value, cBorrowing.value, cBorrowingHistory.value]]
+
+  return sortLoans([
+    ...books.flatMap(list => toLoans(list, 'book', p)),
+    ...cols.flatMap(list => toLoans(list, 'collection', p)),
+  ])
+})
+
+/* ── Status filter ───────────────────────────────────────────────────────── */
+const loanFilter = ref('all')
+const visibleLoans = computed(() => sideLoans.value.filter(l => matchesFilter(l, loanFilter.value)))
+
+// The settled slice is the only paginated one, so its count comes from the
+// server totals rather than the page in hand — otherwise the pill would read
+// "1" next to a list of twenty.
+const finishedTotal = computed(() =>
+  (isLending.value ? historyMeta.value.total : borrowingHistoryMeta.value.total) +
+  (isLending.value ? cHistoryMeta.value.total : cBorrowingHistoryMeta.value.total),
 )
-const cHistoryItems = computed(() =>
-  isLending.value ? cHistory.value : cBorrowingHistory.value,
+function liveCount(filter) {
+  return sideLoans.value.filter(l => matchesFilter(l, filter)).length
+}
+const loanFilters = computed(() => [
+  { key: 'all',      label: t('library.loans.filter.all'),      count: liveCount('awaiting') + liveCount('onLoan') + finishedTotal.value },
+  { key: 'awaiting', label: t('library.loans.filter.awaiting'), count: liveCount('awaiting') },
+  { key: 'onLoan',   label: t('library.loans.filter.onLoan'),   count: liveCount('onLoan') },
+  { key: 'finished', label: t('library.loans.filter.finished'), count: finishedTotal.value },
+])
+
+/* ── Paging the settled tail ─────────────────────────────────────────────
+   Two independently paginated sources sit under one control: pages advance
+   together and the shorter source simply runs out. Collection loans are rare
+   enough beside per-book ones that this reads as one list; two pagers would
+   not. Hidden for the live filters, which are bounded and unpaginated. */
+const historyMetaForSide = computed(() => isLending.value ? historyMeta.value : borrowingHistoryMeta.value)
+const cHistoryMetaForSide = computed(() => isLending.value ? cHistoryMeta.value : cBorrowingHistoryMeta.value)
+const historyLoading = computed(() =>
+  isLending.value
+    ? loading.value.history || cLoading.value.history
+    : loading.value.borrowingHistory || cLoading.value.borrowingHistory,
 )
-const cHistoryPageMeta = computed(() =>
-  isLending.value ? cHistoryMeta.value : cBorrowingHistoryMeta.value,
+const historyPages = computed(() => ({
+  page: historyMetaForSide.value.page,
+  totalPages: Math.max(historyMetaForSide.value.totalPages || 1, cHistoryMetaForSide.value.totalPages || 1),
+}))
+const showHistoryPager = computed(() =>
+  (loanFilter.value === 'all' || loanFilter.value === 'finished') && historyPages.value.totalPages > 1,
 )
 function onHistoryPage(page) {
-  if (isLending.value) store.fetchHistory(page)
-  else store.fetchBorrowingHistory(page)
-}
-function onCollectionHistoryPage(page) {
-  if (isLending.value) collections.fetchHistory(page)
-  else collections.fetchBorrowingHistory(page)
+  if (isLending.value) { store.fetchHistory(page); collections.fetchHistory(page) }
+  else { store.fetchBorrowingHistory(page); collections.fetchBorrowingHistory(page) }
 }
 
-// In-flight requests on the visible side (the first block of the panel).
-const sideRequests = computed(() => isLending.value ? requests.value : pendingBorrowing.value)
-const cSideRequests = computed(() => isLending.value ? cIncoming.value : cPendingBorrowing.value)
-// Active loans on the visible side (the second block).
-const sideActive = computed(() => isLending.value ? lending.value : borrowing.value)
-const cSideActive = computed(() => isLending.value ? cLending.value : cBorrowing.value)
-
-// True only while the side has produced nothing at all — used to choose between
-// the skeleton, the sections and the empty state.
-const sideEmpty = computed(() =>
-  !sideRequests.value.length && !cSideRequests.value.length &&
-  !sideActive.value.length && !cSideActive.value.length &&
-  !historyItems.value.length && !cHistoryItems.value.length,
-)
+const sideEmpty = computed(() => sideLoans.value.length === 0)
 const sideLoading = computed(() =>
   isLending.value
-    ? loading.value.lending || loading.value.requests || cLoading.value.lending || cLoading.value.incoming || cHistoryLoading.value || historyLoading.value
-    : loading.value.borrowing || loading.value.pendingBorrowing || cLoading.value.borrowing || cLoading.value.pendingBorrowing || cHistoryLoading.value || historyLoading.value,
+    ? loading.value.lending || loading.value.requests || cLoading.value.lending || cLoading.value.incoming || historyLoading.value
+    : loading.value.borrowing || loading.value.pendingBorrowing || cLoading.value.borrowing || cLoading.value.pendingBorrowing || historyLoading.value,
 )
 
 /* ── Data loading: collection + profile up front, others lazily ───────── */
@@ -189,8 +210,14 @@ watch(activeTab, tab => {
   if (tab === 'sharing') loadSharingSide(sharingSide.value)
 })
 
-// Switching sides while Sharing is open loads the side being revealed.
-watch(sharingSide, side => { if (activeTab.value === 'sharing') loadSharingSide(side) })
+// Switching sides while Sharing is open loads the side being revealed. The
+// filter resets with it: a narrowing that made sense on one side ("Awaiting")
+// can match nothing on the other, and landing on "nothing under this filter"
+// reads as an empty side rather than as a filter you left on.
+watch(sharingSide, side => {
+  loanFilter.value = 'all'
+  if (activeTab.value === 'sharing') loadSharingSide(side)
+})
 
 // Badges should reflect reality even before the tab is opened.
 onMounted(() => store.fetchRequests())
@@ -199,62 +226,46 @@ onMounted(() => store.fetchPendingBorrowing())
 // Collection badges (Requests + Borrowing) — kept in sync from first load.
 onMounted(() => { collections.fetchIncoming(); collections.fetchBorrowing(); collections.fetchPendingBorrowing() })
 
-/* ── Request actions (owner inbox) ────────────────────────────────────── */
-// Per-request in-flight action ('approve' | 'decline' | 'confirm-return').
-const processing = reactive({})
+/* ── Loan actions ─────────────────────────────────────────────────────────
+   One card serves both kinds and every state, so the ten handlers this replaced
+   collapse into one dispatcher: pick the store by `loan.kind`, run it, and key
+   the in-flight flag on `loan.key` (ids repeat across the two request tables).
+   The store actions refetch what each transition touches, so nothing here has
+   to know which list the card is about to move to. */
+const loanBusy = reactive({})
 
-async function handleApprove(id, dueDate) {
-  processing[id] = 'approve'
+async function runLoanAction(loan, action, run, errorKey) {
+  if (loanBusy[loan.key]) return
+  loanBusy[loan.key] = action
   try {
-    // The store refetches Lending and the profile stats itself, so the newly
-    // approved loan appears in the block below without anything more here.
-    await store.approveRequest(id, dueDate)
-  } finally {
-    delete processing[id]
-  }
-}
-async function handleDecline(id, message = null) {
-  processing[id] = 'decline'
-  try {
-    await store.declineRequest(id, message)
-  } finally {
-    delete processing[id]
-  }
-}
-async function handleConfirmReturn(id) {
-  processing[id] = 'confirm-return'
-  try {
-    await store.confirmReturn(id)
-  } finally {
-    delete processing[id]
-  }
-}
-
-/* ── Borrowing actions (borrower side) ────────────────────────────────── */
-const returning = reactive(new Set())
-async function handleReturn(id) {
-  if (returning.has(id)) return
-  returning.add(id)
-  try {
-    await store.returnBook(id)
-  } finally {
-    returning.delete(id)
-  }
-}
-
-// Withdraw a still-pending borrow request.
-const cancelling = reactive(new Set())
-async function handleCancel(id) {
-  if (cancelling.has(id)) return
-  cancelling.add(id)
-  try {
-    await store.cancelRequest(id)
+    await run()
   } catch (e) {
-    toast.error(apiErrorMessage(e, t('library.errors.cancelRequest')))
+    toast.error(apiErrorMessage(e, t(errorKey)))
   } finally {
-    cancelling.delete(id)
+    delete loanBusy[loan.key]
   }
 }
+const isCollectionLoan = loan => loan.kind === 'collection'
+
+const onLoanApprove = (loan, dueDate) => runLoanAction(loan, 'approve',
+  () => isCollectionLoan(loan) ? collections.approve(loan.id, dueDate) : store.approveRequest(loan.id, dueDate),
+  'library.errors.approve')
+
+const onLoanDecline = (loan, message = null) => runLoanAction(loan, 'decline',
+  () => isCollectionLoan(loan) ? collections.decline(loan.id, message) : store.declineRequest(loan.id, message),
+  'library.errors.decline')
+
+const onLoanConfirmReturn = loan => runLoanAction(loan, 'confirm-return',
+  () => isCollectionLoan(loan) ? collections.confirmReturn(loan.id) : store.confirmReturn(loan.id),
+  'library.errors.confirmReturn')
+
+const onLoanReturn = loan => runLoanAction(loan, 'return',
+  () => isCollectionLoan(loan) ? collections.returnCollection(loan.id) : store.returnBook(loan.id),
+  'library.errors.returnLoan')
+
+const onLoanCancel = loan => runLoanAction(loan, 'cancel',
+  () => isCollectionLoan(loan) ? collections.cancel(loan.id) : store.cancelRequest(loan.id),
+  'library.errors.cancelRequest')
 
 /* ── Following (unfollow from the management list) ────────────────────── */
 const unfollowing = reactive(new Set())
@@ -398,44 +409,6 @@ async function onCollectionDelete(id) {
   }
 }
 
-/* ── Collections: grouped request actions (owner inbox) ──────────────── */
-const cProcessing = reactive({})
-async function handleCApprove(id, dueDate) {
-  cProcessing[id] = 'approve'
-  try { await collections.approve(id, dueDate) }
-  catch (e) { toast.error(apiErrorMessage(e, t('library.errors.approve'))) }
-  finally { delete cProcessing[id] }
-}
-async function handleCDecline(id, message = null) {
-  cProcessing[id] = 'decline'
-  try { await collections.decline(id, message) }
-  catch (e) { toast.error(apiErrorMessage(e, t('library.errors.decline'))) }
-  finally { delete cProcessing[id] }
-}
-async function handleCConfirmReturn(id) {
-  cProcessing[id] = 'confirm-return'
-  try { await collections.confirmReturn(id) }
-  catch (e) { toast.error(apiErrorMessage(e, t('library.errors.confirmReturn'))) }
-  finally { delete cProcessing[id] }
-}
-
-/* ── Collections: borrower-side actions ──────────────────────────────── */
-const cReturning = reactive(new Set())
-async function handleCReturn(id) {
-  if (cReturning.has(id)) return
-  cReturning.add(id)
-  try { await collections.returnCollection(id) }
-  catch (e) { toast.error(apiErrorMessage(e, t('library.errors.returnCollection'))) }
-  finally { cReturning.delete(id) }
-}
-const cCancelling = reactive(new Set())
-async function handleCCancel(id) {
-  if (cCancelling.has(id)) return
-  cCancelling.add(id)
-  try { await collections.cancel(id) }
-  catch (e) { toast.error(apiErrorMessage(e, t('library.errors.cancelRequest'))) }
-  finally { cCancelling.delete(id) }
-}
 </script>
 
 <template>
@@ -633,18 +606,18 @@ async function handleCCancel(id) {
             <div class="collection-toolbar__actions">
               <!-- Priority filter: pills rather than a select, because there are
                    only four choices and each carries its own colour. -->
-              <div class="priority-filter" role="group" :aria-label="t('wishlist.filterLabel')">
+              <div class="filter-row" role="group" :aria-label="t('wishlist.filterLabel')">
                 <button
-                  class="priority-pill"
-                  :class="{ 'priority-pill--active': !wishlistPriority }"
+                  class="filter-pill"
+                  :class="{ 'filter-pill--active': !wishlistPriority }"
                   type="button"
                   @click="store.setWishlistPriority(null)"
                 >{{ t('wishlist.allLevels') }}</button>
                 <button
                   v-for="p in WISH_PRIORITIES"
                   :key="p"
-                  class="priority-pill"
-                  :class="[`priority-pill--${wishPriorityMeta(p).tone}`, { 'priority-pill--active': wishlistPriority === p }]"
+                  class="filter-pill"
+                  :class="[`filter-pill--${wishPriorityMeta(p).tone}`, { 'filter-pill--active': wishlistPriority === p }]"
                   type="button"
                   @click="store.setWishlistPriority(p)"
                 >{{ t(wishPriorityKey(p)) }}</button>
@@ -715,7 +688,7 @@ async function handleCCancel(id) {
           />
         </div>
 
-        <!-- Sharing tab — the whole loan lifecycle, split by your role in it -->
+        <!-- Sharing tab — every loan you are part of, in one list per side -->
         <div v-else-if="activeTab === 'sharing'" role="tabpanel">
           <!-- Borrowing (books I hold) vs Lending (books I own) -->
           <div class="subtab-nav" role="tablist">
@@ -733,131 +706,59 @@ async function handleCCancel(id) {
             </button>
           </div>
 
-          <BookGridSkeleton v-if="sideLoading && sideEmpty" :count="4" />
+          <!-- Lifecycle as a filter rather than as headings: one list, one card
+               shape, and the state lives on the card. Same control the wish list
+               uses for priority. -->
+          <div v-if="!sideEmpty || sideLoading" class="filter-row" role="group" :aria-label="t('library.loans.filterLabel')">
+            <button
+              v-for="f in loanFilters"
+              :key="f.key"
+              class="filter-pill"
+              :class="{ 'filter-pill--active': loanFilter === f.key }"
+              :aria-pressed="loanFilter === f.key"
+              @click="loanFilter = f.key"
+            >
+              {{ f.label }}
+              <span v-if="f.count" class="filter-pill__count">{{ f.count }}</span>
+            </button>
+          </div>
+
+          <ul v-if="sideLoading && sideEmpty" class="loan-list">
+            <li v-for="n in 3" :key="n" class="loan-skeleton">
+              <BaseSkeleton width="48px" height="68px" radius="var(--radius-sm)" />
+              <div class="loan-skeleton__lines">
+                <BaseSkeleton width="35%" height="12px" />
+                <BaseSkeleton width="60%" height="16px" />
+                <BaseSkeleton width="45%" height="12px" />
+              </div>
+            </li>
+          </ul>
 
           <template v-else-if="!sideEmpty">
-            <!-- 1. In flight: awaiting a decision. Collection cards carry their
-                 own "Collection" badge, so the two grids need no sub-headings. -->
-            <section v-if="cSideRequests.length || sideRequests.length" class="tab-section">
-              <h3 class="tab-section__title">
-                {{ isLending ? t('library.sections.requestsForYourBooks') : t('library.sections.yourRequests') }}
-              </h3>
-              <div v-if="cSideRequests.length" class="request-grid">
-                <CollectionRequestCard
-                  v-for="req in cSideRequests"
-                  :key="req.id"
-                  :request="req"
-                  :variant="isLending ? 'incoming' : 'outgoing-pending'"
-                  :pending="isLending ? (cProcessing[req.id] || null) : cCancelling.has(req.id)"
-                  @approve="handleCApprove"
-                  @decline="handleCDecline"
-                  @confirm-return="handleCConfirmReturn"
-                  @cancel="handleCCancel"
-                />
-              </div>
-              <div v-if="isLending && sideRequests.length" class="request-grid">
-                <RequestCard
-                  v-for="req in sideRequests"
-                  :key="req.id"
-                  :request="req"
-                  :pending="processing[req.id] || null"
-                  @approve="handleApprove"
-                  @decline="handleDecline"
-                  @confirm-return="handleConfirmReturn"
-                />
-              </div>
-              <div v-else-if="sideRequests.length" class="book-grid">
-                <PendingRequestCard
-                  v-for="req in sideRequests"
-                  :key="req.id"
-                  :request="req"
-                  :pending="cancelling.has(req.id)"
-                  @cancel="handleCancel"
-                />
-              </div>
-            </section>
-
-            <!-- 2. Active: the book has actually changed hands. -->
-            <section v-if="cSideActive.length || sideActive.length" class="tab-section">
-              <h3 class="tab-section__title">
-                {{ isLending ? t('library.sections.lentOut') : t('library.sections.booksInHand') }}
-              </h3>
-              <div v-if="cSideActive.length" class="request-grid">
-                <CollectionRequestCard
-                  v-for="loan in cSideActive"
-                  :key="loan.id"
-                  :request="loan"
-                  :variant="isLending ? 'lending' : 'borrowing'"
-                  :pending="!isLending && cReturning.has(loan.id)"
-                  @return="handleCReturn"
-                />
-              </div>
-              <div v-if="isLending && sideActive.length" class="book-grid">
-                <BookCard v-for="book in sideActive" :key="book.id" :book="book" @click="openEdit" />
-              </div>
-              <div v-else-if="sideActive.length" class="book-grid">
-                <BorrowingCard
-                  v-for="loan in sideActive"
-                  :key="loan.id"
+            <ul v-if="visibleLoans.length" class="loan-list">
+              <li v-for="loan in visibleLoans" :key="loan.key">
+                <LoanCard
                   :loan="loan"
-                  :pending="returning.has(loan.id)"
-                  @return="handleReturn"
+                  :perspective="sharingSide"
+                  :pending="loanBusy[loan.key] || null"
+                  @approve="onLoanApprove"
+                  @decline="onLoanDecline"
+                  @confirm-return="onLoanConfirmReturn"
+                  @return="onLoanReturn"
+                  @cancel="onLoanCancel"
                 />
-              </div>
-            </section>
+              </li>
+            </ul>
+            <p v-else class="empty-requests">{{ t('library.loans.noMatches') }}</p>
 
-            <!-- 3. Settled: the loans that already ran their course. Its own
-                 skeleton, so paging it never blanks the blocks above. -->
-            <section v-if="cHistoryItems.length || historyItems.length || cHistoryLoading || historyLoading" class="tab-section">
-              <h3 class="tab-section__title">{{ t('library.sections.pastLoans') }}</h3>
-
-              <ul v-if="(historyLoading || cHistoryLoading) && !historyItems.length && !cHistoryItems.length" class="history-list">
-                <li v-for="n in 2" :key="n" class="history-card-skeleton">
-                  <div class="history-card-skeleton__head">
-                    <BaseSkeleton width="40px" height="40px" circle />
-                    <div class="request-skeleton__lines" style="flex: 1">
-                      <BaseSkeleton width="60%" height="14px" />
-                      <BaseSkeleton width="35%" height="12px" />
-                    </div>
-                    <BaseSkeleton width="72px" height="22px" radius="var(--radius-full)" />
-                  </div>
-                  <BaseSkeleton width="100%" height="72px" radius="var(--radius-default)" />
-                </li>
-              </ul>
-
-              <template v-else>
-                <div v-if="cHistoryItems.length" class="request-grid">
-                  <CollectionRequestCard
-                    v-for="item in cHistoryItems"
-                    :key="item.id"
-                    :request="item"
-                    variant="history"
-                  />
-                </div>
-                <Pagination
-                  v-if="cHistoryItems.length"
-                  :page="cHistoryPageMeta.page"
-                  :total-pages="cHistoryPageMeta.totalPages"
-                  :disabled="cHistoryLoading"
-                  @change="onCollectionHistoryPage"
-                />
-                <ul v-if="historyItems.length" class="history-list">
-                  <LoanHistoryCard
-                    v-for="item in historyItems"
-                    :key="item.id"
-                    :request="item"
-                    :perspective="sharingSide"
-                  />
-                </ul>
-                <Pagination
-                  v-if="historyItems.length"
-                  :page="historyPageMeta.page"
-                  :total-pages="historyPageMeta.totalPages"
-                  :disabled="historyLoading"
-                  @change="onHistoryPage"
-                />
-              </template>
-            </section>
+            <!-- Pages the settled tail only; the live loans above are bounded. -->
+            <Pagination
+              v-if="showHistoryPager"
+              :page="historyPages.page"
+              :total-pages="historyPages.totalPages"
+              :disabled="historyLoading"
+              @change="onHistoryPage"
+            />
           </template>
 
           <div v-else class="empty-state">
@@ -1211,12 +1112,20 @@ async function handleCCancel(id) {
 .wishlist-sort { min-width: 168px; }
 
 
-.priority-filter {
-  display: inline-flex;
+/* One filter-pill row, shared by the wish list (priority) and the Sharing panel
+   (loan state). The colour modifiers below belong to the wish list alone. */
+/* Block-level, not inline: in the Sharing panel it follows the subtab pills,
+   and as an inline row the two controls ran together into one pill strip that
+   looked like a single six-way choice. */
+.filter-row {
+  display: flex;
   flex-wrap: wrap;
   gap: var(--space-xs);
 }
-.priority-pill {
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 6px 14px;
   border: 1px solid var(--color-outline-variant);
   border-radius: var(--radius-full);
@@ -1227,28 +1136,36 @@ async function handleCCancel(id) {
   white-space: nowrap;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
-.priority-pill:hover:not(.priority-pill--active) {
+.filter-pill:hover:not(.filter-pill--active) {
   background: var(--color-surface-container-low);
   color: var(--color-on-background);
 }
 /* Only the selected pill wears its colour — three permanently-lit pills would
    read as three states rather than one choice. */
-.priority-pill--active {
+.filter-pill--active {
   background: var(--color-primary);
   border-color: var(--color-primary);
   color: var(--color-on-primary);
   font-weight: 600;
 }
-.priority-pill--amber.priority-pill--active {
+.filter-pill--amber.filter-pill--active {
   background: var(--color-tertiary);
   border-color: var(--color-tertiary);
   color: #ffffff;
 }
-.priority-pill--red.priority-pill--active {
+.filter-pill--red.filter-pill--active {
   background: var(--color-error);
   border-color: var(--color-error);
   color: #ffffff;
 }
+/* The count rides inside the pill, so it inverts with it rather than sitting on
+   the same fill and disappearing. */
+.filter-pill__count {
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.75;
+}
+.filter-pill--active .filter-pill__count { opacity: 0.9; }
 
 /* ── Book grid ────────────────────────────────────────────────────────── */
 .book-grid {
@@ -1267,14 +1184,6 @@ async function handleCCancel(id) {
 /* Match the loaded grid's top offset so the loading skeleton doesn't sit flush
    against the import/export toolbar. */
 .collection-skeleton { padding-top: var(--space-sm); }
-
-.tab-section + .tab-section { margin-top: var(--space-md); }
-.tab-section__title {
-  font-family: var(--font-display);
-  font-size: var(--text-headline-md);
-  color: var(--color-on-background);
-  margin: 0 0 var(--space-sm);
-}
 
 /* Add-book placeholder card */
 .add-book-card {
@@ -1313,18 +1222,35 @@ async function handleCCancel(id) {
   margin: 0;
 }
 
-/* ── Request grid ─────────────────────────────────────────────────────── */
-.request-grid {
-  display: grid;
-  grid-template-columns: 1fr;
+/* ── Loan list (Sharing) ──────────────────────────────────────────────────
+   Deliberately a single column, not a grid: every row is the same card and the
+   eye should run straight down them. A multi-column grid was what made the old
+   panel read as several unrelated blocks. Capped so the meta line and the
+   action stay a readable distance apart on a wide screen. */
+.loan-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-sm) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  max-width: 860px;
+}
+
+.loan-skeleton {
+  display: flex;
   gap: var(--space-md);
-  padding-top: var(--space-sm);
+  background: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-surface-container-highest);
+  border-radius: var(--radius-default);
+  padding: var(--space-md);
 }
-@media (min-width: 600px) {
-  .request-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (min-width: 960px) {
-  .request-grid { grid-template-columns: repeat(3, 1fr); }
+.loan-skeleton__lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  flex: 1;
+  justify-content: center;
 }
 
 .empty-requests {
@@ -1357,20 +1283,6 @@ async function handleCCancel(id) {
   flex-direction: column;
   gap: var(--space-sm);
 }
-
-.request-skeleton {
-  background: var(--color-surface-container-lowest);
-  border: 1px solid var(--color-surface-container-highest);
-  border-radius: var(--radius-default);
-  padding: var(--space-md);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-}
-.request-skeleton__row { display: flex; align-items: center; gap: var(--space-sm); }
-.request-skeleton__lines { display: flex; flex-direction: column; gap: var(--space-xs); flex: 1; }
-.request-skeleton__actions { display: flex; gap: var(--space-sm); }
-.request-skeleton__actions > * { flex: 1; }
 
 /* ── Sharing subtabs (borrowing / lending) ───────────────────────────── */
 /* The segmented pill pair the loan history already used for this same axis. */
@@ -1408,33 +1320,6 @@ async function handleCCancel(id) {
   color: var(--color-primary);
 }
 .subtab-nav__btn:not(.subtab-nav__btn--active) .tab-badge { background: var(--color-outline); }
-
-/* ── History list ─────────────────────────────────────────────────────── */
-
-.history-list {
-  list-style: none;
-  margin: 0;
-  padding: var(--space-sm) 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-/* History loading skeleton */
-.history-card-skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-  padding: var(--space-md);
-  background: var(--color-surface-container-lowest);
-  border: 1px solid var(--color-surface-container-highest);
-  border-radius: var(--radius-default);
-}
-.history-card-skeleton__head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
 
 /* ── Following list ───────────────────────────────────────────────────── */
 .following-list {
