@@ -199,7 +199,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   box-shadow: 0 10px 30px rgba(35, 44, 51, 0.12);
   width: 100%;
   max-width: var(--modal-w-xl);
-  max-height: 90vh;
+  max-height: var(--modal-max-h);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -237,14 +237,21 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   }
 }
 
+/* Mobile: a centred plate rather than a full-width one. At the sheet's whole
+   width a 2:3 cover is ~500px tall — four fifths of the modal — so the title,
+   metadata and the footer all start below the fold. Narrowing it (rather than
+   capping its height) halves that while still showing the *whole* cover; a
+   max-height would crop the art to a band. */
 .modal__cover {
   flex-shrink: 0;
+  width: 55%;
+  margin: 0 auto;
   aspect-ratio: 2 / 3;
   background: var(--color-surface-container-low);
   overflow: hidden;
 }
 @media (min-width: 640px) {
-  .modal__cover { width: 220px; aspect-ratio: auto; }
+  .modal__cover { width: 220px; margin: 0; aspect-ratio: auto; }
 }
 /* The wider modal would otherwise leave the cover looking like a thumbnail
    pinned to a large sheet — grow it in step so the proportion holds. */
