@@ -69,15 +69,22 @@ async function onToggleRead({ id, isRead }) {
 /* ── Tabs ─────────────────────────────────────────────────────────────── */
 const activeTab = ref('collection')
 
+/* Sharing badges count only the lists fetched eagerly on mount. `lending` and
+   `cLending` are lazy, so counting them would read 0 until the tab is opened —
+   which is exactly why the old Lending tab carried no badge at all. */
+const borrowingCount = computed(() =>
+  borrowing.value.length + cBorrowing.value.length +
+  pendingBorrowing.value.length + cPendingBorrowing.value.length,
+)
+const lendingCount = computed(() => requests.value.length + cIncoming.value.length)
+
 const tabs = computed(() => [
   { key: 'collection',  label: t('library.tabs.books') },
   { key: 'collections', label: t('library.tabs.collections') },
   { key: 'wishlist',    label: t('library.tabs.wishlist'), badge: stats.value.wished || null },
-  { key: 'borrowing',   label: t('library.tabs.borrowing'), badge: (borrowing.value.length + cBorrowing.value.length) || null },
-  { key: 'lending',     label: t('library.tabs.lending') },
-  { key: 'requests',    label: t('library.tabs.requests'), badge: (requests.value.length + pendingBorrowing.value.length + cIncoming.value.length + cPendingBorrowing.value.length) || null },
+  // One tab for the whole loan lifecycle; the sides live below as subtabs.
+  { key: 'sharing',     label: t('library.tabs.sharing'), badge: (borrowingCount.value + lendingCount.value) || null },
   { key: 'following',   label: t('library.tabs.following'), badge: followingMeta.value.total || null },
-  { key: 'history',     label: t('library.tabs.history') },
 ])
 
 const statCards = computed(() => [
@@ -86,51 +93,87 @@ const statCards = computed(() => [
   { label: t('library.stats.loaned'),     value: stats.value.loaned },
 ])
 
-/* ── History sub-views: lending (as owner) vs borrowing (as borrower) ──── */
-const historySide = ref('lending')
+/* ── Sharing subtabs: borrowing (books I hold) vs lending (books I own) ──
+   Each side carries its whole lifecycle — requests in flight, the active loan,
+   then the settled ones — so a loan is found by asking "which side am I on?"
+   rather than "which of four lists holds it?". This axis is the one the loan
+   history was already split along, so its old inner toggle is now the subtab. */
+const sharingSide = ref('borrowing')
+
+const sharingSides = computed(() => [
+  { key: 'borrowing', label: t('library.tabs.borrowing'), badge: borrowingCount.value || null },
+  { key: 'lending',   label: t('library.tabs.lending'),   badge: lendingCount.value || null },
+])
+const isLending = computed(() => sharingSide.value === 'lending')
 
 const historyLoading = computed(() =>
-  historySide.value === 'lending' ? loading.value.history : loading.value.borrowingHistory,
+  isLending.value ? loading.value.history : loading.value.borrowingHistory,
 )
 const historyItems = computed(() =>
-  historySide.value === 'lending' ? history.value : borrowingHistory.value,
+  isLending.value ? history.value : borrowingHistory.value,
 )
 // Pagination metadata for whichever history side is showing.
 const historyPageMeta = computed(() =>
-  historySide.value === 'lending' ? historyMeta.value : borrowingHistoryMeta.value,
+  isLending.value ? historyMeta.value : borrowingHistoryMeta.value,
 )
 
-// Collection history mirrors the same lending/borrowing toggle.
+// Collection history mirrors the same lending/borrowing side.
 const cHistoryLoading = computed(() =>
-  historySide.value === 'lending' ? cLoading.value.history : cLoading.value.borrowingHistory,
+  isLending.value ? cLoading.value.history : cLoading.value.borrowingHistory,
 )
 const cHistoryItems = computed(() =>
-  historySide.value === 'lending' ? cHistory.value : cBorrowingHistory.value,
+  isLending.value ? cHistory.value : cBorrowingHistory.value,
 )
 const cHistoryPageMeta = computed(() =>
-  historySide.value === 'lending' ? cHistoryMeta.value : cBorrowingHistoryMeta.value,
+  isLending.value ? cHistoryMeta.value : cBorrowingHistoryMeta.value,
 )
 function onHistoryPage(page) {
-  if (historySide.value === 'lending') store.fetchHistory(page)
+  if (isLending.value) store.fetchHistory(page)
   else store.fetchBorrowingHistory(page)
 }
 function onCollectionHistoryPage(page) {
-  if (historySide.value === 'lending') collections.fetchHistory(page)
+  if (isLending.value) collections.fetchHistory(page)
   else collections.fetchBorrowingHistory(page)
 }
 
-/* ── Data loading: collection + profile up front, others lazily ───────── */
-// Lending is fetched lazily per side (per-book vs collection), so each side owns
-// its own loaded flag — otherwise approving on one side would suppress the
-// other side's first fetch when the tab opens.
-const loaded = ref({ collections: false, borrowing: false, lending: false, cLending: false, requests: false, following: false, wishlist: false })
+// In-flight requests on the visible side (the first block of the panel).
+const sideRequests = computed(() => isLending.value ? requests.value : pendingBorrowing.value)
+const cSideRequests = computed(() => isLending.value ? cIncoming.value : cPendingBorrowing.value)
+// Active loans on the visible side (the second block).
+const sideActive = computed(() => isLending.value ? lending.value : borrowing.value)
+const cSideActive = computed(() => isLending.value ? cLending.value : cBorrowing.value)
 
-// History shows in-progress loans too, whose state changes as the owner/borrower
-// acts in other tabs — so refetch the visible side each time it's viewed. Both
-// the per-book and collection histories share the lending/borrowing toggle.
-function loadHistorySide(side) {
-  if (side === 'lending') { store.fetchHistory(); collections.fetchHistory() }
-  if (side === 'borrowing') { store.fetchBorrowingHistory(); collections.fetchBorrowingHistory() }
+// True only while the side has produced nothing at all — used to choose between
+// the skeleton, the sections and the empty state.
+const sideEmpty = computed(() =>
+  !sideRequests.value.length && !cSideRequests.value.length &&
+  !sideActive.value.length && !cSideActive.value.length &&
+  !historyItems.value.length && !cHistoryItems.value.length,
+)
+const sideLoading = computed(() =>
+  isLending.value
+    ? loading.value.lending || loading.value.requests || cLoading.value.lending || cLoading.value.incoming || cHistoryLoading.value || historyLoading.value
+    : loading.value.borrowing || loading.value.pendingBorrowing || cLoading.value.borrowing || cLoading.value.pendingBorrowing || cHistoryLoading.value || historyLoading.value,
+)
+
+/* ── Data loading: collection + profile up front, others lazily ───────── */
+const loaded = ref({ collections: false, following: false, wishlist: false })
+
+// The Sharing panel refetches its whole visible side on every entry rather than
+// caching behind a `loaded` flag. That was already the History tab's rule — a
+// loan's state changes as the *other* party acts, so a cached list goes stale
+// without anything on this page touching it — and now that the requests, the
+// active loans and the settled ones share one panel, the rule covers them all.
+function loadSharingSide(side) {
+  if (side === 'lending') {
+    store.fetchRequests(); collections.fetchIncoming()
+    store.fetchLending(); collections.fetchLending()
+    store.fetchHistory(); collections.fetchHistory()
+  } else {
+    store.fetchPendingBorrowing(); collections.fetchPendingBorrowing()
+    store.fetchBorrowing(); collections.fetchBorrowing()
+    store.fetchBorrowingHistory(); collections.fetchBorrowingHistory()
+  }
 }
 
 onMounted(() => {
@@ -141,23 +184,17 @@ onMounted(() => {
 
 watch(activeTab, tab => {
   if (tab === 'collections' && !loaded.value.collections) { loaded.value.collections = true; collections.fetchMine() }
-  if (tab === 'borrowing' && !loaded.value.borrowing) { loaded.value.borrowing = true; store.fetchBorrowing(); collections.fetchBorrowing() }
-  if (tab === 'lending') {
-    if (!loaded.value.lending)  { loaded.value.lending  = true; store.fetchLending() }
-    if (!loaded.value.cLending) { loaded.value.cLending = true; collections.fetchLending() }
-  }
-  if (tab === 'requests' && !loaded.value.requests) { loaded.value.requests = true; store.fetchRequests(); store.fetchPendingBorrowing(); collections.fetchIncoming(); collections.fetchPendingBorrowing() }
   if (tab === 'wishlist' && !loaded.value.wishlist) { loaded.value.wishlist = true; store.fetchWishlist() }
   if (tab === 'following' && !loaded.value.following) { loaded.value.following = true; subscriptions.fetchFollowing() }
-  if (tab === 'history') loadHistorySide(historySide.value)
+  if (tab === 'sharing') loadSharingSide(sharingSide.value)
 })
 
-// Switching the lending/borrowing toggle (while on the History tab) lazy-loads it.
-watch(historySide, side => { if (activeTab.value === 'history') loadHistorySide(side) })
+// Switching sides while Sharing is open loads the side being revealed.
+watch(sharingSide, side => { if (activeTab.value === 'sharing') loadSharingSide(side) })
 
-// Badges should reflect reality even before their tabs are opened.
-onMounted(() => store.fetchRequests().then(() => { loaded.value.requests = true }))
-onMounted(() => store.fetchBorrowing().then(() => { loaded.value.borrowing = true }))
+// Badges should reflect reality even before the tab is opened.
+onMounted(() => store.fetchRequests())
+onMounted(() => store.fetchBorrowing())
 onMounted(() => store.fetchPendingBorrowing())
 // Collection badges (Requests + Borrowing) — kept in sync from first load.
 onMounted(() => { collections.fetchIncoming(); collections.fetchBorrowing(); collections.fetchPendingBorrowing() })
@@ -169,9 +206,9 @@ const processing = reactive({})
 async function handleApprove(id, dueDate) {
   processing[id] = 'approve'
   try {
+    // The store refetches Lending and the profile stats itself, so the newly
+    // approved loan appears in the block below without anything more here.
     await store.approveRequest(id, dueDate)
-    // The book is now an active loan — mark Lending loaded so it refetches fresh.
-    loaded.value.lending = true
   } finally {
     delete processing[id]
   }
@@ -188,8 +225,6 @@ async function handleConfirmReturn(id) {
   processing[id] = 'confirm-return'
   try {
     await store.confirmReturn(id)
-    // The book returned to the collection and the loan closed.
-    loaded.value.lending = true
   } finally {
     delete processing[id]
   }
@@ -263,7 +298,9 @@ async function onModalSave(payload) {
     } else {
       await store.createBook(payload)
     }
-    if (loaded.value.lending) await store.fetchLending()
+    // A lent book can be edited straight from the Lending block, so refresh it
+    // when that is what's on screen.
+    if (activeTab.value === 'sharing' && isLending.value) await store.fetchLending()
     modalOpen.value = false
   } catch (e) {
     // Surface the failure as a toast instead of letting it bubble to the
@@ -316,8 +353,8 @@ async function onExport() {
 }
 
 function onImported() {
-  // A replace import may empty Lending; refresh it next time it's viewed.
-  loaded.value.lending = false
+  // A replace import may empty Lending, but the Sharing panel refetches its
+  // whole side on every entry, so there is nothing to invalidate here.
   toast.success(t('library.toasts.imported'))
 }
 
@@ -365,7 +402,7 @@ async function onCollectionDelete(id) {
 const cProcessing = reactive({})
 async function handleCApprove(id, dueDate) {
   cProcessing[id] = 'approve'
-  try { await collections.approve(id, dueDate); loaded.value.cLending = true }
+  try { await collections.approve(id, dueDate) }
   catch (e) { toast.error(apiErrorMessage(e, t('library.errors.approve'))) }
   finally { delete cProcessing[id] }
 }
@@ -377,7 +414,7 @@ async function handleCDecline(id, message = null) {
 }
 async function handleCConfirmReturn(id) {
   cProcessing[id] = 'confirm-return'
-  try { await collections.confirmReturn(id); loaded.value.cLending = true }
+  try { await collections.confirmReturn(id) }
   catch (e) { toast.error(apiErrorMessage(e, t('library.errors.confirmReturn'))) }
   finally { delete cProcessing[id] }
 }
@@ -678,113 +715,49 @@ async function handleCCancel(id) {
           />
         </div>
 
-        <!-- Borrowing tab (books I'm borrowing from others) -->
-        <div v-else-if="activeTab === 'borrowing'" role="tabpanel">
-          <BookGridSkeleton v-if="loading.borrowing && !borrowing.length && !cBorrowing.length" :count="4" />
-          <template v-else-if="borrowing.length || cBorrowing.length">
-            <section v-if="cBorrowing.length" class="tab-section">
-              <h3 class="tab-section__title">{{ t('library.sections.collections') }}</h3>
-              <div class="request-grid">
-                <CollectionRequestCard
-                  v-for="loan in cBorrowing"
-                  :key="loan.id"
-                  :request="loan"
-                  variant="borrowing"
-                  :pending="cReturning.has(loan.id)"
-                  @return="handleCReturn"
-                />
-              </div>
-            </section>
-            <section v-if="borrowing.length" class="tab-section">
-              <h3 v-if="cBorrowing.length" class="tab-section__title">{{ t('library.sections.individualBooks') }}</h3>
-              <div class="book-grid">
-                <BorrowingCard
-                  v-for="loan in borrowing"
-                  :key="loan.id"
-                  :loan="loan"
-                  :pending="returning.has(loan.id)"
-                  @return="handleReturn"
-                />
-              </div>
-            </section>
-          </template>
-          <div v-else class="empty-state">
-            <span class="material-symbols-outlined empty-state__icon">auto_stories</span>
-            <p class="empty-state__text">{{ t('library.empty.borrowing') }}</p>
-            <RouterLink to="/discover" class="empty-state__link">{{ t('library.empty.borrowingLink') }}</RouterLink>
+        <!-- Sharing tab — the whole loan lifecycle, split by your role in it -->
+        <div v-else-if="activeTab === 'sharing'" role="tabpanel">
+          <!-- Borrowing (books I hold) vs Lending (books I own) -->
+          <div class="subtab-nav" role="tablist">
+            <button
+              v-for="side in sharingSides"
+              :key="side.key"
+              class="subtab-nav__btn"
+              :class="{ 'subtab-nav__btn--active': sharingSide === side.key }"
+              role="tab"
+              :aria-selected="sharingSide === side.key"
+              @click="sharingSide = side.key"
+            >
+              {{ side.label }}
+              <span v-if="side.badge" class="tab-badge">{{ side.badge }}</span>
+            </button>
           </div>
-        </div>
 
-        <!-- Lending tab -->
-        <div v-else-if="activeTab === 'lending'" role="tabpanel">
-          <BookGridSkeleton v-if="loading.lending && !lending.length && !cLending.length" :count="4" />
-          <template v-else-if="lending.length || cLending.length">
-            <section v-if="cLending.length" class="tab-section">
-              <h3 class="tab-section__title">{{ t('library.sections.collections') }}</h3>
-              <div class="request-grid">
-                <CollectionRequestCard
-                  v-for="loan in cLending"
-                  :key="loan.id"
-                  :request="loan"
-                  variant="lending"
-                />
-              </div>
-            </section>
-            <section v-if="lending.length" class="tab-section">
-              <h3 v-if="cLending.length" class="tab-section__title">{{ t('library.sections.individualBooks') }}</h3>
-              <div class="book-grid">
-                <BookCard v-for="book in lending" :key="book.id" :book="book" @click="openEdit" />
-              </div>
-            </section>
-          </template>
-          <div v-else class="empty-state">
-            <span class="material-symbols-outlined empty-state__icon">local_library</span>
-            <p class="empty-state__text">{{ t('library.empty.lending') }}</p>
-          </div>
-        </div>
+          <BookGridSkeleton v-if="sideLoading && sideEmpty" :count="4" />
 
-        <!-- Requests tab — both directions: incoming (owner inbox) + outgoing (borrower) -->
-        <div v-else-if="activeTab === 'requests'" role="tabpanel">
-          <div v-if="loading.requests" class="request-grid">
-            <div v-for="n in 2" :key="n" class="request-skeleton">
-              <div class="request-skeleton__row">
-                <BaseSkeleton width="40px" height="40px" circle />
-                <div class="request-skeleton__lines">
-                  <BaseSkeleton width="50%" height="14px" />
-                  <BaseSkeleton width="30%" height="12px" />
-                </div>
-              </div>
-              <BaseSkeleton width="100%" height="80px" radius="var(--radius-default)" />
-              <div class="request-skeleton__actions">
-                <BaseSkeleton width="100%" height="40px" radius="var(--radius-default)" />
-                <BaseSkeleton width="100%" height="40px" radius="var(--radius-default)" />
-              </div>
-            </div>
-          </div>
-          <template v-else-if="requests.length || pendingBorrowing.length || cIncoming.length || cPendingBorrowing.length">
-            <!-- Incoming collection requests. -->
-            <section v-if="cIncoming.length" class="tab-section">
-              <h3 class="tab-section__title">{{ t('library.sections.collectionRequestsForYou') }}</h3>
-              <div class="request-grid">
+          <template v-else-if="!sideEmpty">
+            <!-- 1. In flight: awaiting a decision. Collection cards carry their
+                 own "Collection" badge, so the two grids need no sub-headings. -->
+            <section v-if="cSideRequests.length || sideRequests.length" class="tab-section">
+              <h3 class="tab-section__title">
+                {{ isLending ? t('library.sections.requestsForYourBooks') : t('library.sections.yourRequests') }}
+              </h3>
+              <div v-if="cSideRequests.length" class="request-grid">
                 <CollectionRequestCard
-                  v-for="req in cIncoming"
+                  v-for="req in cSideRequests"
                   :key="req.id"
                   :request="req"
-                  variant="incoming"
-                  :pending="cProcessing[req.id] || null"
+                  :variant="isLending ? 'incoming' : 'outgoing-pending'"
+                  :pending="isLending ? (cProcessing[req.id] || null) : cCancelling.has(req.id)"
                   @approve="handleCApprove"
                   @decline="handleCDecline"
                   @confirm-return="handleCConfirmReturn"
+                  @cancel="handleCCancel"
                 />
               </div>
-            </section>
-
-            <!-- Incoming: other readers asking to borrow your books. -->
-            <section v-if="requests.length" class="tab-section">
-              <h3 class="tab-section__title">{{ t('library.sections.requestsForYourBooks') }}</h3>
-              <div class="request-grid">
+              <div v-if="isLending && sideRequests.length" class="request-grid">
                 <RequestCard
-                  v-for="req in requests"
+                  v-for="req in sideRequests"
                   :key="req.id"
                   :request="req"
                   :pending="processing[req.id] || null"
@@ -793,29 +766,9 @@ async function handleCCancel(id) {
                   @confirm-return="handleConfirmReturn"
                 />
               </div>
-            </section>
-
-            <!-- Outgoing collection requests still awaiting a decision. -->
-            <section v-if="cPendingBorrowing.length" class="tab-section">
-              <h3 class="tab-section__title">{{ t('library.sections.yourCollectionRequests') }}</h3>
-              <div class="request-grid">
-                <CollectionRequestCard
-                  v-for="req in cPendingBorrowing"
-                  :key="req.id"
-                  :request="req"
-                  variant="outgoing-pending"
-                  :pending="cCancelling.has(req.id)"
-                  @cancel="handleCCancel"
-                />
-              </div>
-            </section>
-
-            <!-- Outgoing: your own requests still awaiting the owner's decision. -->
-            <section v-if="pendingBorrowing.length" class="tab-section">
-              <h3 class="tab-section__title">{{ t('library.sections.yourBorrowRequests') }}</h3>
-              <div class="book-grid">
+              <div v-else-if="sideRequests.length" class="book-grid">
                 <PendingRequestCard
-                  v-for="req in pendingBorrowing"
+                  v-for="req in sideRequests"
                   :key="req.id"
                   :request="req"
                   :pending="cancelling.has(req.id)"
@@ -823,12 +776,99 @@ async function handleCCancel(id) {
                 />
               </div>
             </section>
+
+            <!-- 2. Active: the book has actually changed hands. -->
+            <section v-if="cSideActive.length || sideActive.length" class="tab-section">
+              <h3 class="tab-section__title">
+                {{ isLending ? t('library.sections.lentOut') : t('library.sections.booksInHand') }}
+              </h3>
+              <div v-if="cSideActive.length" class="request-grid">
+                <CollectionRequestCard
+                  v-for="loan in cSideActive"
+                  :key="loan.id"
+                  :request="loan"
+                  :variant="isLending ? 'lending' : 'borrowing'"
+                  :pending="!isLending && cReturning.has(loan.id)"
+                  @return="handleCReturn"
+                />
+              </div>
+              <div v-if="isLending && sideActive.length" class="book-grid">
+                <BookCard v-for="book in sideActive" :key="book.id" :book="book" @click="openEdit" />
+              </div>
+              <div v-else-if="sideActive.length" class="book-grid">
+                <BorrowingCard
+                  v-for="loan in sideActive"
+                  :key="loan.id"
+                  :loan="loan"
+                  :pending="returning.has(loan.id)"
+                  @return="handleReturn"
+                />
+              </div>
+            </section>
+
+            <!-- 3. Settled: the loans that already ran their course. Its own
+                 skeleton, so paging it never blanks the blocks above. -->
+            <section v-if="cHistoryItems.length || historyItems.length || cHistoryLoading || historyLoading" class="tab-section">
+              <h3 class="tab-section__title">{{ t('library.sections.pastLoans') }}</h3>
+
+              <ul v-if="(historyLoading || cHistoryLoading) && !historyItems.length && !cHistoryItems.length" class="history-list">
+                <li v-for="n in 2" :key="n" class="history-card-skeleton">
+                  <div class="history-card-skeleton__head">
+                    <BaseSkeleton width="40px" height="40px" circle />
+                    <div class="request-skeleton__lines" style="flex: 1">
+                      <BaseSkeleton width="60%" height="14px" />
+                      <BaseSkeleton width="35%" height="12px" />
+                    </div>
+                    <BaseSkeleton width="72px" height="22px" radius="var(--radius-full)" />
+                  </div>
+                  <BaseSkeleton width="100%" height="72px" radius="var(--radius-default)" />
+                </li>
+              </ul>
+
+              <template v-else>
+                <div v-if="cHistoryItems.length" class="request-grid">
+                  <CollectionRequestCard
+                    v-for="item in cHistoryItems"
+                    :key="item.id"
+                    :request="item"
+                    variant="history"
+                  />
+                </div>
+                <Pagination
+                  v-if="cHistoryItems.length"
+                  :page="cHistoryPageMeta.page"
+                  :total-pages="cHistoryPageMeta.totalPages"
+                  :disabled="cHistoryLoading"
+                  @change="onCollectionHistoryPage"
+                />
+                <ul v-if="historyItems.length" class="history-list">
+                  <LoanHistoryCard
+                    v-for="item in historyItems"
+                    :key="item.id"
+                    :request="item"
+                    :perspective="sharingSide"
+                  />
+                </ul>
+                <Pagination
+                  v-if="historyItems.length"
+                  :page="historyPageMeta.page"
+                  :total-pages="historyPageMeta.totalPages"
+                  :disabled="historyLoading"
+                  @change="onHistoryPage"
+                />
+              </template>
+            </section>
           </template>
-          <p v-else class="empty-requests">{{ t('library.empty.requests') }}</p>
+
+          <div v-else class="empty-state">
+            <span class="material-symbols-outlined empty-state__icon">{{ isLending ? 'local_library' : 'auto_stories' }}</span>
+            <p class="empty-state__text">{{ isLending ? t('library.empty.lending') : t('library.empty.borrowing') }}</p>
+            <RouterLink v-if="!isLending" to="/discover" class="empty-state__link">{{ t('library.empty.borrowingLink') }}</RouterLink>
+          </div>
         </div>
 
         <!-- Following tab (people you subscribe to) -->
-        <div v-else-if="activeTab === 'following'" role="tabpanel">
+        <div v-else role="tabpanel">
           <ul v-if="loadingFollowing && !following.length" class="following-list">
             <li v-for="n in 4" :key="n" class="following-row">
               <BaseSkeleton width="44px" height="44px" circle />
@@ -862,85 +902,6 @@ async function handleCCancel(id) {
             <span class="material-symbols-outlined empty-state__icon">group</span>
             <p class="empty-state__text">{{ t('library.empty.following') }}</p>
             <RouterLink to="/discover" class="empty-state__link">{{ t('library.empty.followingLink') }}</RouterLink>
-          </div>
-        </div>
-
-        <!-- History tab -->
-        <div v-else role="tabpanel">
-          <!-- Lending (as owner) vs Borrowing (as borrower) toggle -->
-          <div class="history-toggle" role="tablist">
-            <button
-              class="history-toggle__btn"
-              :class="{ 'history-toggle__btn--active': historySide === 'lending' }"
-              role="tab"
-              :aria-selected="historySide === 'lending'"
-              @click="historySide = 'lending'"
-            >{{ t('library.history.lentToOthers') }}</button>
-            <button
-              class="history-toggle__btn"
-              :class="{ 'history-toggle__btn--active': historySide === 'borrowing' }"
-              role="tab"
-              :aria-selected="historySide === 'borrowing'"
-              @click="historySide = 'borrowing'"
-            >{{ t('library.history.borrowedByMe') }}</button>
-          </div>
-
-          <ul v-if="historyLoading" class="history-list">
-            <li v-for="n in 4" :key="n" class="history-card-skeleton">
-              <div class="history-card-skeleton__head">
-                <BaseSkeleton width="40px" height="40px" circle />
-                <div class="request-skeleton__lines" style="flex: 1">
-                  <BaseSkeleton width="60%" height="14px" />
-                  <BaseSkeleton width="35%" height="12px" />
-                </div>
-                <BaseSkeleton width="72px" height="22px" radius="var(--radius-full)" />
-              </div>
-              <BaseSkeleton width="100%" height="72px" radius="var(--radius-default)" />
-            </li>
-          </ul>
-          <template v-else-if="historyItems.length || cHistoryItems.length">
-            <!-- Collection loan history -->
-            <section v-if="cHistoryItems.length" class="tab-section">
-              <h3 class="tab-section__title">{{ t('library.sections.collections') }}</h3>
-              <div class="request-grid">
-                <CollectionRequestCard
-                  v-for="item in cHistoryItems"
-                  :key="item.id"
-                  :request="item"
-                  variant="history"
-                />
-              </div>
-              <Pagination
-                :page="cHistoryPageMeta.page"
-                :total-pages="cHistoryPageMeta.totalPages"
-                :disabled="cHistoryLoading"
-                @change="onCollectionHistoryPage"
-              />
-            </section>
-
-            <!-- Per-book loan history -->
-            <section v-if="historyItems.length" class="tab-section">
-              <h3 v-if="cHistoryItems.length" class="tab-section__title">{{ t('library.sections.individualBooks') }}</h3>
-              <ul class="history-list">
-                <LoanHistoryCard
-                  v-for="item in historyItems"
-                  :key="item.id"
-                  :request="item"
-                  :perspective="historySide"
-                />
-              </ul>
-              <Pagination
-                :page="historyPageMeta.page"
-                :total-pages="historyPageMeta.totalPages"
-                :disabled="historyLoading"
-                @change="onHistoryPage"
-              />
-            </section>
-          </template>
-          <div v-else class="empty-state">
-            <span class="material-symbols-outlined empty-state__icon">history</span>
-            <p v-if="historySide === 'lending'" class="empty-state__text">{{ t('library.empty.historyLending') }}</p>
-            <p v-else class="empty-state__text">{{ t('library.empty.historyBorrowing') }}</p>
           </div>
         </div>
 
@@ -1133,12 +1094,13 @@ async function handleCCancel(id) {
 }
 .tab-nav::-webkit-scrollbar { display: none; }
 
-/* Seven tabs don't fit a phone, and a hidden scrollbar leaves nothing to say the
-   strip scrolls — Lending through History read as missing. Wrapping would cost
-   three rows, so keep the scroller and give it the cue it lacked: a shadow at
-   whichever edge has more tabs behind it, which retracts once you reach that
-   end. The `local` gradients are the page-coloured covers that hide each shadow
-   when there's nothing more to scroll to; the `scroll` ones are the shadows.
+/* Even at five tabs the strip still overflows a phone — measured 565px of tabs
+   in 342px at 390 wide — so the scroller and its cue stay. A hidden scrollbar
+   leaves nothing to say the strip scrolls, and anything past the fold reads as
+   missing; wrapping would cost extra rows. The cue is a shadow at whichever edge
+   has more tabs behind it, which retracts once you reach that end. The `local`
+   gradients are the page-coloured covers that hide each shadow when there's
+   nothing more to scroll to; the `scroll` ones are the shadows themselves.
    Tighter padding fits one more tab in the same width. */
 @media (max-width: 767px) {
   .tab-nav {
@@ -1410,9 +1372,9 @@ async function handleCCancel(id) {
 .request-skeleton__actions { display: flex; gap: var(--space-sm); }
 .request-skeleton__actions > * { flex: 1; }
 
-/* ── History list ─────────────────────────────────────────────────────── */
-/* Lending/borrowing segmented toggle */
-.history-toggle {
+/* ── Sharing subtabs (borrowing / lending) ───────────────────────────── */
+/* The segmented pill pair the loan history already used for this same axis. */
+.subtab-nav {
   display: inline-flex;
   gap: 4px;
   padding: 4px;
@@ -1421,7 +1383,10 @@ async function handleCCancel(id) {
   border: 1px solid var(--color-outline-variant);
   border-radius: var(--radius-full);
 }
-.history-toggle__btn {
+.subtab-nav__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
   padding: 6px 16px;
   border-radius: var(--radius-full);
   font-size: var(--text-label-md);
@@ -1430,12 +1395,21 @@ async function handleCCancel(id) {
   white-space: nowrap;
   transition: background 0.2s, color 0.2s;
 }
-.history-toggle__btn:hover:not(.history-toggle__btn--active) { color: var(--color-on-background); }
-.history-toggle__btn--active {
+.subtab-nav__btn:hover:not(.subtab-nav__btn--active) { color: var(--color-on-background); }
+.subtab-nav__btn--active {
   background: var(--color-primary);
   color: var(--color-on-primary);
   font-weight: 600;
 }
+/* The badge's own fill is the primary green, which the active pill also uses —
+   invert it there so the count doesn't vanish into its own background. */
+.subtab-nav__btn--active .tab-badge {
+  background: var(--color-on-primary);
+  color: var(--color-primary);
+}
+.subtab-nav__btn:not(.subtab-nav__btn--active) .tab-badge { background: var(--color-outline); }
+
+/* ── History list ─────────────────────────────────────────────────────── */
 
 .history-list {
   list-style: none;
