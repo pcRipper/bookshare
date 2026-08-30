@@ -7,6 +7,7 @@ use App\Dto\BookInput;
 use App\Entity\Book;
 use App\Entity\User;
 use App\Enum\BookStatus;
+use App\Enum\WishPriority;
 use App\Language\LanguageCatalog;
 use App\Repository\BookRepository;
 use App\Repository\CategoryRepository;
@@ -18,9 +19,14 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  * CSV export / import for a user's book collection.
  *
  * The CSV carries one book per row with the columns: title, author, description,
- * isbn, cover, language (ISO 639-1 code), status, read, categories (semicolon-joined
- * names). `cover` exports the remote URL the image came from rather than our
- * localized copy of it (see coverLink()).
+ * isbn, cover, language (ISO 639-1 code), status, read, wished, priority,
+ * categories (semicolon-joined names). `cover` exports the remote URL the image
+ * came from rather than our localized copy of it (see coverLink()).
+ *
+ * Both shelves travel in one file: `wished` marks a row as a book the owner
+ * *wants*, and `priority` carries its WishPriority number. A file exported before
+ * those columns existed imports exactly as it used to — the header map is
+ * name-based, and a missing `wished` reads as an owned book.
  *
  * Import is parameterised by two independent choices:
  *  - replace:  wipe the user's existing (home) books first, vs. append.
@@ -41,7 +47,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class BookCsvService
 {
     /** Columns, in export order. Import matches them case-insensitively by header. */
-    private const COLUMNS = ['title', 'author', 'description', 'isbn', 'cover', 'language', 'status', 'read', 'categories'];
+    private const COLUMNS = ['title', 'author', 'description', 'isbn', 'cover', 'language', 'status', 'read', 'wished', 'priority', 'categories'];
 
     /** Statuses a book may be imported as — never 'lent', which needs a live loan. */
     private const IMPORTABLE_STATUSES = ['own', 'unavailable', 'currently_reading'];
@@ -79,6 +85,8 @@ class BookCsvService
                 $book->getLanguage() ?? '',
                 $book->getStatus()->value,
                 $book->isRead() ? '1' : '0',
+                $book->isWished() ? '1' : '0',
+                (string) ($book->getWishPriority()?->value ?? ''),
                 implode('; ', array_map(static fn ($c) => $c->getName(), $book->getCategories()->toArray())),
             ], ',', '"', '');
         }
@@ -162,20 +170,23 @@ class BookCsvService
         // Build the set of title+author keys the owner will still hold after this
         // run, so we can skip rows that would duplicate them. In replace mode the
         // home shelf is cleared, so only the loaned-out books seed the set.
+        // Both shelves: the file carries the wish list too, so a replace that
+        // ignored it would leave the old wanted books behind and then report
+        // every re-imported one as a duplicate.
         $seen = [];
-        foreach ($this->bookRepo->findByOwner($owner) as $existing) {
+        foreach ($this->bookRepo->findByOwner($owner, null, null) as $existing) {
             if ($replace && $existing->isHome()) {
                 // Frozen books out on loan are left intact; home books are wiped.
                 $this->em->remove($existing);
                 continue;
             }
-            $seen[$this->dedupeKey($existing->getTitle(), $existing->getAuthor())] = true;
+            $seen[$this->dedupeKey($existing->getTitle(), $existing->getAuthor(), $existing->isWished())] = true;
         }
 
         $imported = 0;
         $duplicates = [];
         foreach ($valid as ['line' => $rowLine, 'input' => $input]) {
-            $key = $this->dedupeKey($input->title, $input->author);
+            $key = $this->dedupeKey($input->title, $input->author, $input->isWished);
             if (isset($seen[$key])) {
                 $duplicates[] = ['line' => $rowLine, 'errors' => [
                     $this->errors->translate('Duplicate of an existing book — skipped.'),
@@ -200,10 +211,23 @@ class BookCsvService
         ];
     }
 
-    /** Case-insensitive title+author identity used to detect duplicate books. */
-    private function dedupeKey(string $title, string $author): string
+    /** The CSV's boolean spelling, shared by the `read` and `wished` columns. */
+    private static function truthy(string $value): bool
     {
-        return mb_strtolower(trim($title)) . "\0" . mb_strtolower(trim($author));
+        return in_array(strtolower($value), ['1', 'true', 'yes', 'y'], true);
+    }
+
+    /**
+     * Case-insensitive title+author identity used to detect duplicate books.
+     *
+     * The shelf is part of it: wanting a book and owning one are different rows
+     * about different facts, so a wish-list row must not be swallowed as a
+     * duplicate of a book already on the shelf (or the reverse). Within a shelf
+     * the rule is unchanged, which is what keeps re-importing an export a no-op.
+     */
+    private function dedupeKey(string $title, string $author, bool $wished): string
+    {
+        return ($wished ? 'w' : 'o') . "\0" . mb_strtolower(trim($title)) . "\0" . mb_strtolower(trim($author));
     }
 
     /**
@@ -251,7 +275,18 @@ class BookCsvService
         $input->language = $language !== '' ? $language : null;
 
         // Truthy read flag; a missing column (older files) defaults to unread.
-        $input->isRead = in_array(strtolower($get('read')), ['1', 'true', 'yes', 'y'], true);
+        $input->isRead = self::truthy($get('read'));
+
+        // Wish list. A missing column (a file exported before the feature) imports
+        // as an owned book, which is what it was.
+        $input->isWished = self::truthy($get('wished'));
+        $priority = $get('priority');
+        if ($priority !== '') {
+            $input->wishPriority = ctype_digit($priority) ? WishPriority::tryFrom((int) $priority) : null;
+            if ($input->wishPriority === null) {
+                $errors[] = $this->errors->translate('Unsupported wish-list priority "%priority%".', ['%priority%' => $priority]);
+            }
+        }
 
         $statusRaw = strtolower($get('status')) ?: 'own';
         if (in_array($statusRaw, self::IMPORTABLE_STATUSES, true)) {

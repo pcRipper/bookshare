@@ -233,6 +233,7 @@
     "tabs": {
       "books": "Bücher",
       "collections": "Sammlungen",
+      "wishlist": "Wunschliste",
       "borrowing": "Geliehen",
       "lending": "Verliehen",
       "requests": "Anfragen",
@@ -311,11 +312,13 @@
     "tabs": {
       "available": "Zum Ausleihen verfügbar",
       "full": "Alle Bücher",
-      "collections": "Sammlungen"
+      "collections": "Sammlungen",
+      "wishlist": "Wunschliste"
     },
     "empty": {
       "available": "Derzeit ist kein Buch zum Ausleihen verfügbar.",
       "full": "Diese Sammlung ist leer.",
+      "wishlist": "Die Wunschliste dieses Lesers ist leer.",
       "ownCollections": "Du hast noch keine Sammlungen angelegt.",
       "collections": "Dieser Leser hat noch keine Sammlungen."
     },
@@ -469,6 +472,32 @@
     "empty": "Du folgst noch niemandem, der Bücher zeigt.",
     "emptyLink": "Leser zum Folgen entdecken"
   },
+  "wishlist": {
+    "markWanted": "Zu meiner Wunschliste hinzufügen",
+    "priorityLabel": "Priorität",
+    "priority": {
+      "canWait": "Kann warten",
+      "veryInterested": "Sehr interessiert",
+      "urgent": "Dringend",
+      "unset": "Keine Priorität"
+    },
+    "acquire": "Ich besitze es jetzt",
+    "addBook": "Wunschbuch hinzufügen",
+    "addCard": {
+      "title": "Wunschbuch hinzufügen",
+      "hint": "Merke dir ein Buch, das du besitzen möchtest."
+    },
+    "searchPlaceholder": "Wunschliste durchsuchen…",
+    "noMatches": "Nichts auf deiner Wunschliste passt dazu.",
+    "allLevels": "Alle",
+    "filterLabel": "Nach Priorität filtern",
+    "sortLabel": "Wunschliste sortieren",
+    "sortPriority": "Nach Priorität",
+    "sortNewest": "Neueste zuerst",
+    "toasts": {
+      "acquired": "In deine Sammlung verschoben."
+    }
+  },
   "table": {
     "read": "Gelesen",
     "cover": "Cover",
@@ -593,6 +622,9 @@
       "author": "Autor",
       "member": "Mitglied",
       "loans": "Ausleihen",
+      "mostWanted": "Meistgewünschte Bücher",
+      "wanted": "Gewünscht von",
+      "wishlistTotal": "{count} Buch steht community-weit auf Wunschlisten. | {count} Bücher stehen community-weit auf Wunschlisten.",
       "empty": "Noch keine Bücher erfasst."
     }
   }

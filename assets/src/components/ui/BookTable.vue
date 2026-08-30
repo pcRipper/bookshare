@@ -24,6 +24,7 @@ import { currentLocale } from '@/i18n'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 import { languageLabel } from '@/utils/languages'
 import { relativeTime } from '@/utils/time'
+import { wishPriorityMeta, wishPriorityKey } from '@/utils/wishPriority'
 
 const { hasCover, onCoverError } = useCoverFallback()
 const { t } = useI18n()
@@ -51,6 +52,9 @@ defineProps({
   showHolder: { type: Boolean, default: true },
   // Allow ticking "read" inline (owner's own library; still gated on canEdit).
   readEditable: { type: Boolean, default: false },
+  // Wish-list mode: the status column carries the priority instead, and the
+  // holder column is dropped — a book nobody has yet is held by nobody.
+  wish: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['open', 'toggle-read'])
@@ -81,8 +85,8 @@ function absoluteDate(iso) {
             <th class="book-table__col-isbn" scope="col">{{ t('table.isbn') }}</th>
           </template>
           <th class="book-table__col-lang" scope="col">{{ t('table.language') }}</th>
-          <th class="book-table__col-status" scope="col">{{ t('table.status') }}</th>
-          <th v-if="detailed && showHolder" class="book-table__col-person" scope="col">{{ t('table.holder') }}</th>
+          <th class="book-table__col-status" scope="col">{{ wish ? t('wishlist.priorityLabel') : t('table.status') }}</th>
+          <th v-if="detailed && showHolder && !wish" class="book-table__col-person" scope="col">{{ t('table.holder') }}</th>
           <th v-if="showOwner" class="book-table__col-person" scope="col">{{ t('table.owner') }}</th>
           <th v-if="detailed" class="book-table__col-added" scope="col">{{ t('table.added') }}</th>
         </tr>
@@ -165,13 +169,20 @@ function absoluteDate(iso) {
           </td>
 
           <td class="book-table__col-status">
-            <span class="book-table__status" :class="`book-table__status--${book.status}`">
+            <span
+              v-if="wish"
+              class="book-table__status"
+              :class="`book-table__status--wish-${wishPriorityMeta(book.wishPriority)?.tone ?? 'none'}`"
+            >
+              {{ t(wishPriorityKey(book.wishPriority)) }}
+            </span>
+            <span v-else class="book-table__status" :class="`book-table__status--${book.status}`">
               {{ statusLabel(book.status) }}
             </span>
           </td>
 
           <!-- Holder: only interesting once the book has left its shelf. -->
-          <td v-if="detailed && showHolder" class="book-table__col-person">
+          <td v-if="detailed && showHolder && !wish" class="book-table__col-person">
             <RouterLink
               v-if="!book.isHome && book.currentHolder"
               :to="`/profile/${book.currentHolder.id}`"
@@ -366,6 +377,12 @@ function absoluteDate(iso) {
 .book-table__status--own { background: var(--color-primary-fixed); color: var(--color-on-primary-fixed-variant); }
 .book-table__status--lent { background: var(--color-primary); color: var(--color-on-primary); }
 .book-table__status--currently_reading { background: var(--color-tertiary); color: #fff; }
+
+/* Wish-list priority, in the same pill and the same traffic light as the card. */
+.book-table__status--wish-green { background: var(--color-primary-fixed); color: var(--color-on-primary-fixed-variant); }
+.book-table__status--wish-amber { background: var(--color-tertiary); color: #fff; }
+.book-table__status--wish-red { background: var(--color-error); color: #fff; }
+.book-table__status--wish-none { background: var(--color-surface-container-high); color: var(--color-on-surface-variant); }
 
 .sr-only {
   position: absolute;

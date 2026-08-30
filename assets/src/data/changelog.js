@@ -7,6 +7,17 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.23.0',
+    date: '2026-08-30',
+    notes: [
+      'Your library now has a Wish List: books you would like to own, kept apart from the ones you have. You add one exactly the way you add any other book — including from the template search — and every wanted book carries a priority, shown as a colour: green for "can wait", yellow for "very interested", red for "urgent". Sort the tab by priority or by what you added most recently, and filter it down to a single level.',
+      'Tick "Add to my wish list" while cataloguing from the Books tab, or use the tab\'s own Add button, which opens the form ready for a wanted book.',
+      'When a book finally arrives, "I own this now" moves it onto your shelf with everything you already recorded about it — cover, categories, language — and it becomes shareable from that moment.',
+      'Other readers can see your wish list on your profile, and on your public share link if you use one — so someone who owns a book you are after can find out. Wanted books stay out of Discover and cannot be borrowed: they are books you do not have yet.',
+      'Your CSV export now carries your wish list alongside your collection, and importing that file restores both.',
+    ],
+  },
+  {
     version: '1.22.0',
     date: '2026-08-12',
     notes: [

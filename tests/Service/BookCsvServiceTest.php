@@ -8,6 +8,7 @@ use App\Entity\Book;
 use App\Entity\Category;
 use App\Entity\User;
 use App\Enum\BookStatus;
+use App\Enum\WishPriority;
 use App\Repository\BookRepository;
 use App\Repository\CategoryRepository;
 use App\Service\ActivityRecorder;
@@ -76,7 +77,7 @@ class BookCsvServiceTest extends TestCase
         $csv = $this->service()->export([$book]);
 
         $lines = preg_split('/\r\n|\n/', trim($csv));
-        self::assertSame('title,author,description,isbn,cover,language,status,read,categories', $lines[0]);
+        self::assertSame('title,author,description,isbn,cover,language,status,read,wished,priority,categories', $lines[0]);
         self::assertStringContainsString('Dune', $lines[1]);
         self::assertStringContainsString('Herbert', $lines[1]);
         self::assertStringContainsString('/covers/dune.jpg', $lines[1]);
@@ -112,7 +113,68 @@ class BookCsvServiceTest extends TestCase
 
         $row = preg_split('/\r\n|\n/', trim($this->service()->export([$book])))[1];
 
-        self::assertSame('Dune,Herbert,,,,,own,0,', $row);
+        self::assertSame('Dune,Herbert,,,,,own,0,0,,', $row);
+    }
+
+    public function testWishListRowsRoundTrip(): void
+    {
+        $created = [];
+        $em = $this->createStub(EntityManagerInterface::class);
+        $em->method('persist')->willReturnCallback(function (Book $b) use (&$created) { $created[] = $b; });
+
+        $csv = "title,author,wished,priority\nDune,Herbert,1,3\n";
+
+        $summary = $this->service($em)->import(new User(), $csv, replace: false, abortOnError: false);
+
+        self::assertSame(1, $summary['imported']);
+        self::assertTrue($created[0]->isWished());
+        self::assertSame(WishPriority::Urgent, $created[0]->getWishPriority());
+    }
+
+    public function testAFileWithoutTheWishedColumnImportsAsOwnedBooks(): void
+    {
+        $created = [];
+        $em = $this->createStub(EntityManagerInterface::class);
+        $em->method('persist')->willReturnCallback(function (Book $b) use (&$created) { $created[] = $b; });
+
+        // Exports predating the wish list carry neither column — those rows were
+        // owned books and must stay owned books.
+        $csv = "title,author\nDune,Herbert\n";
+
+        $this->service($em)->import(new User(), $csv, replace: false, abortOnError: false);
+
+        self::assertFalse($created[0]->isWished());
+        self::assertNull($created[0]->getWishPriority());
+    }
+
+    public function testAnUnsupportedPriorityIsRejected(): void
+    {
+        $csv = "title,author,wished,priority\nDune,Herbert,1,9\n";
+
+        $summary = $this->service()->import(new User(), $csv, replace: false, abortOnError: false);
+
+        self::assertSame(0, $summary['imported']);
+        self::assertSame(1, $summary['skipped']);
+    }
+
+    public function testWantingABookIsNotADuplicateOfOwningIt(): void
+    {
+        $owner = new User();
+        $existing = (new Book())->setOwner($owner)->setTitle('Dune')->setAuthor('Herbert');
+
+        $bookRepo = $this->createStub(BookRepository::class);
+        $bookRepo->method('findByOwner')->willReturn([$existing]);
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        // The wish row is about a different fact, so it is imported, not skipped.
+        $em->expects($this->once())->method('persist');
+
+        $csv = "title,author,wished\nDune,Herbert,1\n";
+
+        $summary = $this->service($em, $bookRepo)->import($owner, $csv, replace: false, abortOnError: false);
+
+        self::assertSame(1, $summary['imported']);
+        self::assertSame(0, $summary['skipped']);
     }
 
     public function testImportSetsCoverFromCoverColumn(): void

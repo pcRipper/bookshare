@@ -233,6 +233,7 @@
     "tabs": {
       "books": "Books",
       "collections": "Collections",
+      "wishlist": "Wish List",
       "borrowing": "Borrowing",
       "lending": "Lending",
       "requests": "Requests",
@@ -311,11 +312,13 @@
     "tabs": {
       "available": "Available to Borrow",
       "full": "All Books",
-      "collections": "Collections"
+      "collections": "Collections",
+      "wishlist": "Wish List"
     },
     "empty": {
       "available": "No books available to borrow right now.",
       "full": "This collection is empty.",
+      "wishlist": "This reader’s wish list is empty.",
       "ownCollections": "You haven’t created any collections yet.",
       "collections": "This reader has no collections yet."
     },
@@ -469,6 +472,32 @@
     "empty": "You're not following anyone with books to show yet.",
     "emptyLink": "Discover readers to follow"
   },
+  "wishlist": {
+    "markWanted": "Add to my wish list",
+    "priorityLabel": "Priority",
+    "priority": {
+      "canWait": "Can wait",
+      "veryInterested": "Very interested",
+      "urgent": "Urgent",
+      "unset": "No priority"
+    },
+    "acquire": "I own this now",
+    "addBook": "Add wanted book",
+    "addCard": {
+      "title": "Add a Wanted Book",
+      "hint": "Track a book you’d like to own."
+    },
+    "searchPlaceholder": "Search your wish list…",
+    "noMatches": "Nothing on your wish list matches that.",
+    "allLevels": "All",
+    "filterLabel": "Filter by priority",
+    "sortLabel": "Sort wish list",
+    "sortPriority": "By priority",
+    "sortNewest": "Newest first",
+    "toasts": {
+      "acquired": "Moved to your collection."
+    }
+  },
   "table": {
     "read": "Read",
     "cover": "Cover",
@@ -593,6 +622,9 @@
       "author": "Author",
       "member": "Member",
       "loans": "Loans",
+      "mostWanted": "Most wanted books",
+      "wanted": "Wanted by",
+      "wishlistTotal": "{count} book on wish lists across the community. | {count} books on wish lists across the community.",
       "empty": "No books catalogued yet."
     }
   }

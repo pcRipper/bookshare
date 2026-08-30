@@ -10,6 +10,7 @@ use App\Dto\Pagination;
 use App\Entity\Book;
 use App\Entity\User;
 use App\Enum\BookStatus;
+use App\Enum\WishPriority;
 use App\Language\LanguageCatalog;
 use App\Repository\BookRepository;
 use App\Repository\CategoryRepository;
@@ -79,6 +80,23 @@ class BookRestController extends AbstractController
             }
         }
 
+        // ?wished=1 switches to the owner's wish list — books they want rather
+        // than hold. The two shelves never mix in one response.
+        $wished = $request->query->getBoolean('wished');
+
+        $priority = null;
+        if ($wished && ($raw = $request->query->get('priority')) !== null && $raw !== '') {
+            $priority = ctype_digit((string) $raw) ? WishPriority::tryFrom((int) $raw) : null;
+            if ($priority === null) {
+                return $this->errors->response('Invalid wish-list priority filter.', Response::HTTP_BAD_REQUEST);
+            }
+        }
+
+        // Wish-list ordering: by priority (the default) or newest first. An
+        // unknown value falls back to the default rather than 422-ing, matching
+        // how Pagination clamps instead of rejecting.
+        $byPriority = $request->query->get('sort') !== 'newest';
+
         // Optional free-text filter over title / author / ISBN.
         $q = trim((string) $request->query->get('q', ''));
 
@@ -87,7 +105,16 @@ class BookRestController extends AbstractController
         $excludeCollectionHeld = $request->query->getBoolean('excludeCollectionLoans');
 
         $pagination = Pagination::fromRequest($request, self::COLLECTION_PER_PAGE);
-        $result = $repo->findByOwnerPaginated($owner, $status, $pagination, $q !== '' ? $q : null, $excludeCollectionHeld);
+        $result = $repo->findByOwnerPaginated(
+            $owner,
+            $status,
+            $pagination,
+            $q !== '' ? $q : null,
+            $excludeCollectionHeld,
+            $wished,
+            $priority,
+            $byPriority,
+        );
 
         // Annotate viewer-relative borrow state when browsing someone else's shelf.
         $browsing = $owner !== $viewer;
@@ -185,14 +212,18 @@ class BookRestController extends AbstractController
         ]);
     }
 
-    /** Download the signed-in user's collection as a CSV file. */
+    /**
+     * Download the signed-in user's collection as a CSV file — both shelves, the
+     * books they hold and the ones they want, since an export that silently
+     * dropped the wish list would lose data the file claims to carry.
+     */
     #[Route('/export', methods: ['GET'])]
     public function export(BookRepository $repo): Response
     {
         /** @var User $user */
         $user = $this->getUser();
 
-        $csv = $this->csv->export($repo->findByOwner($user));
+        $csv = $this->csv->export($repo->findByOwner($user, null, null));
 
         return new Response($csv, Response::HTTP_OK, [
             'Content-Type'        => 'text/csv; charset=UTF-8',
@@ -249,6 +280,26 @@ class BookRestController extends AbstractController
         $this->denyAccessUnlessGranted(BookVoter::EDIT, $book, self::lockedMessage($book));
 
         $this->books->update($book, $input, $this->localizeCover($input));
+        $this->em->flush();
+
+        return $this->json($this->mapper->book($book));
+    }
+
+    /**
+     * Move a wish-list book onto the owner's shelf — "I've got it now".
+     *
+     * Its own endpoint rather than a PATCH with `isWished: false` because it is
+     * a single product action with no other input, and one the audit trail
+     * should show as itself; the modal would otherwise have to resend the whole
+     * DTO to express it. Idempotent: acquiring a book already on the shelf is a
+     * no-op, not a 409.
+     */
+    #[Route('/{id}/acquire', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function acquire(Book $book): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(BookVoter::EDIT, $book, self::lockedMessage($book));
+
+        $this->books->acquire($book);
         $this->em->flush();
 
         return $this->json($this->mapper->book($book));

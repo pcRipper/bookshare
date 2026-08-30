@@ -402,6 +402,17 @@ class LibraryRequestServiceTest extends TestCase
         $this->service()->confirmReturn($request, $owner);
     }
 
+    public function testAWishListBookCannotBeBorrowed(): void
+    {
+        // Every list that could surface it filters wish-list books out, so this
+        // only fires on a hand-made request — but the shelves must not be
+        // bridgeable by id, and the book carries the borrowable `own` status.
+        $book = $this->book(new User(), BookStatus::Own)->setWish(true);
+
+        $this->expectException(\DomainException::class);
+        $this->service()->create(new User(), $book);
+    }
+
     /* ───────────────────────── helpers ───────────────────────── */
 
     private function service(

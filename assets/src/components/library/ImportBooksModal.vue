@@ -79,7 +79,7 @@ async function run() {
                translation can accidentally rename a CSV header. -->
           <i18n-t keypath="import.hint" tag="p" class="modal__hint">
             <template #columns>
-              <code>title, author, isbn, cover, language, status, categories</code>
+              <code>title, author, isbn, cover, language, status, read, wished, priority, categories</code>
             </template>
           </i18n-t>
 

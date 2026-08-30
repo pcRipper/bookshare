@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import { languageLabel } from '@/utils/languages'
+import { wishPriorityMeta, wishPriorityKey } from '@/utils/wishPriority'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 
 const { hasCover, onCoverError } = useCoverFallback()
@@ -32,7 +33,15 @@ function onCardClick() {
 const available = computed(() => props.book.status === 'own')
 
 // Corner badge for non-available books in the full collection view.
+//
+// A wish-list book has no lending state — its owner doesn't have it — so the
+// badge carries the priority instead and the borrow action is withheld below.
+// Decided here rather than by a parent prop: the shelf is a property of the
+// book, and every surface rendering this card would otherwise have to know.
+const wishMeta = computed(() => props.book.isWished ? wishPriorityMeta(props.book.wishPriority) : null)
+
 const statusBadge = computed(() => {
+  if (props.book.isWished) return t(wishPriorityKey(props.book.wishPriority))
   if (props.book.status === 'lent') return t('book.status.lent')
   if (props.book.status === 'currently_reading') return t('book.status.reading')
   if (props.book.status === 'unavailable') return t('book.status.unavailable')
@@ -66,7 +75,11 @@ function onAction() {
       <div v-else class="borrow-card__placeholder" aria-hidden="true">
         <span class="material-symbols-outlined">menu_book</span>
       </div>
-      <span v-if="statusBadge" class="borrow-card__badge">{{ statusBadge }}</span>
+      <span
+        v-if="statusBadge"
+        class="borrow-card__badge"
+        :class="wishMeta ? `borrow-card__badge--wish-${wishMeta.tone}` : null"
+      >{{ statusBadge }}</span>
       <span v-if="book.isRead" class="borrow-card__read" :title="t('profile.readBadge')">
         <span class="material-symbols-outlined">check_circle</span>
         {{ t('book.read') }}
@@ -82,9 +95,10 @@ function onAction() {
         {{ languageLabel(book.language, book.languageName) }}
       </p>
 
-      <!-- Own-profile cards are a preview only — no borrow affordance. -->
+      <!-- Own-profile cards are a preview only — no borrow affordance. Neither
+           is a wish-list book: its owner hasn't got it to lend. -->
       <button
-        v-if="!isSelf"
+        v-if="!isSelf && !book.isWished"
         class="borrow-card__action"
         :class="`borrow-card__action--${action.state}`"
         :disabled="action.state === 'requested' || action.state === 'disabled' || pending"
@@ -152,10 +166,16 @@ function onAction() {
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+/* Wish-list priority, the same traffic light the library cards use. */
+.borrow-card__badge--wish-green { background: var(--color-primary); color: var(--color-on-primary); }
+.borrow-card__badge--wish-amber { background: var(--color-tertiary); color: #ffffff; }
+.borrow-card__badge--wish-red { background: var(--color-error); color: #ffffff; }
 
+/* Bottom-left, for the same reason as BookCard's: the priority badge opposite
+   it is wide enough to collide when a book is both wanted and already read. */
 .borrow-card__read {
   position: absolute;
-  top: var(--space-base);
+  bottom: var(--space-base);
   left: var(--space-base);
   display: inline-flex;
   align-items: center;

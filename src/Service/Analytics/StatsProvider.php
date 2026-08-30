@@ -38,6 +38,7 @@ class StatsProvider
     private const TOP_LANGUAGES = 8;
     private const TOP_BOOKS = 10;
     private const TOP_LENDERS = 10;
+    private const TOP_WANTED = 10;
     private const RECENT_ACTIVITY = 20;
 
     public function __construct(
@@ -167,6 +168,16 @@ class StatsProvider
             'topLanguages'  => $this->topLanguages(),
             'mostBorrowed'  => $this->mostBorrowed(),
             'topLenders'    => $this->topLenders(),
+            // Wish lists sit under "library health" rather than growth: they say
+            // what the shelves are *missing*, which is the same question the
+            // status and category breakdowns above ask from the other side.
+            // Every other number on this dashboard excludes wish-list rows.
+            'wishlist'      => [
+                'total'      => $this->books->countWishedAll(),
+                // Keyed by WishPriority value; the SPA owns the labels/colours.
+                'byPriority' => $this->books->countByWishPriority(),
+                'mostWanted' => $this->books->countMostWanted(self::TOP_WANTED),
+            ],
         ];
     }
 

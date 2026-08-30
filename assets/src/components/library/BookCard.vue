@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 import { languageLabel } from '@/utils/languages'
+import { wishPriorityMeta, wishPriorityKey } from '@/utils/wishPriority'
 
 const { hasCover, onCoverError } = useCoverFallback()
 const { t } = useI18n()
@@ -20,7 +21,18 @@ defineEmits(['click'])
 
 // Mark non-"own" books in the Collection so a borrowed/unavailable title is
 // obvious at a glance — it stays in the grid, just flagged.
+//
+// A wanted book has no lending state, so the same corner carries its priority
+// instead: the wish list is scanned for what to buy next, which makes the level
+// the one thing worth reading off the cover.
 const statusBadge = computed(() => {
+  if (props.book.isWished) {
+    const meta = wishPriorityMeta(props.book.wishPriority)
+
+    return meta
+      ? { label: t(wishPriorityKey(props.book.wishPriority)), icon: meta.icon, kind: `wish-${meta.tone}` }
+      : null
+  }
   if (props.book.status === 'lent') return { label: t('book.status.lent'), icon: 'handshake', kind: 'lent' }
   if (props.book.status === 'currently_reading') return { label: t('book.status.reading'), icon: 'auto_stories', kind: 'reading' }
   if (props.book.status === 'unavailable') return { label: t('book.status.unavailable'), icon: 'block', kind: 'unavailable' }
@@ -165,10 +177,30 @@ const statusBadge = computed(() => {
   color: #ffffff;
 }
 
-/* "Read" marker — top-left, so it never collides with the status badge */
+/* Wish-list priority: a traffic light in the app's own palette — the brand
+   green, the tertiary amber and the error red — rather than three new tones. */
+.book-card__badge--wish-green {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+.book-card__badge--wish-amber {
+  background: var(--color-tertiary);
+  color: #ffffff;
+}
+.book-card__badge--wish-red {
+  background: var(--color-error);
+  color: #ffffff;
+}
+
+/* "Read" marker — bottom-left of the cover.
+   It used to sit top-left, opposite the status badge, which worked only while
+   both labels were short. A wish-list priority ("Very interested", and longer
+   in several locales) is wide enough that the two pills met in the middle and
+   the read badge painted over it, leaving a truncated word. They share no axis
+   now, so neither can clip the other however long the label gets. */
 .book-card__read {
   position: absolute;
-  top: var(--space-base);
+  bottom: var(--space-base);
   left: var(--space-base);
   display: inline-flex;
   align-items: center;

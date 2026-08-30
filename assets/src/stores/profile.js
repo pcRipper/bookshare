@@ -16,7 +16,7 @@ export const useProfileStore = defineStore('profile', () => {
   const booksMeta = ref(emptyMeta())    // pagination for that page
   const booksLoading = ref(false)       // page-of-books loading (shelf switch / paging)
   const availableCount = ref(0)         // total of the 'available' shelf, for its tab chip
-  const shelf = ref('available')        // 'available' (status=own) | 'full'
+  const shelf = ref('available')        // 'available' (status=own) | 'full' | 'wished'
   const booksQuery = ref('')            // free-text filter (title/author/ISBN)
   const loading = ref(false)
   const error = ref(null) // 'not-found' | 'private' | 'error' | null
@@ -60,6 +60,9 @@ export const useProfileStore = defineStore('profile', () => {
     try {
       const params = { owner: currentId.value, page }
       if (shelf.value === 'available') params.status = 'own'
+      // The wish list is a different shelf, not a filter on this one: no status
+      // applies, and the server orders it by priority.
+      if (shelf.value === 'wished') params.wished = 1
       if (booksQuery.value) params.q = booksQuery.value
       const { data } = await api.get('/books', { params })
       books.value = data.items

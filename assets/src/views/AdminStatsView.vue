@@ -245,8 +245,24 @@ const lenderColumns = computed(() => [
   { key: 'loans', label: t('admin.library.loans'), numeric: true },
 ])
 
+/* ── wish lists ────────────────────────────────────────────────────────── */
+// Titles matched on title+author across every wish list, so a row is "this many
+// members want this book" — the one thing the wish list tells an operator that
+// nothing else on the page does.
+const wishlistTotal = computed(() => stats.value?.library?.wishlist?.total ?? 0)
+
+const wantedRows = computed(() =>
+  (stats.value?.library?.wishlist?.mostWanted ?? []).map((row, i) => ({ id: i, ...row })),
+)
+
+const wantedColumns = computed(() => [
+  { key: 'title', label: t('admin.library.bookTitle') },
+  { key: 'author', label: t('admin.library.author') },
+  { key: 'wanted', label: t('admin.library.wanted'), numeric: true },
+])
+
 const libraryEmpty = computed(() =>
-  statusEmpty.value && !topCategories.value.length && !bookRows.value.length,
+  statusEmpty.value && !topCategories.value.length && !bookRows.value.length && !wantedRows.value.length,
 )
 </script>
 
@@ -457,6 +473,16 @@ const libraryEmpty = computed(() =>
               </div>
             </div>
 
+            <!-- What the shelves are missing: the same question the status and
+                 category breakdowns ask, from the other side. Hidden entirely
+                 when nobody wants anything yet — a table of nothing under a
+                 heading reads as a broken query. -->
+            <div v-if="wantedRows.length" class="admin__panel">
+              <h3 class="admin__panel-title">{{ t('admin.library.mostWanted') }}</h3>
+              <p class="admin__panel-note">{{ t('admin.library.wishlistTotal', { count: wishlistTotal }) }}</p>
+              <RankTable :rows="wantedRows" :columns="wantedColumns" bar-key="wanted" ranked min-width="480px" />
+            </div>
+
             <div class="admin__panel">
               <h3 class="admin__panel-title">{{ t('admin.library.topLenders') }}</h3>
               <RankTable :rows="lenderRows" :columns="lenderColumns" bar-key="loans" ranked>
@@ -583,6 +609,16 @@ const libraryEmpty = computed(() =>
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--color-on-surface-variant);
+}
+/* Context line under a panel title — the whole-population figure the ranking
+   below is a slice of. Sits between the two, so neither has to carry it. */
+/* Pulls back most of the panel's 12px gap so the note reads as a subtitle of
+   the title rather than a third sibling — but not all of it: cancelling the
+   gap outright left the two lines touching. */
+.admin__panel-note {
+  margin: calc(var(--space-sm) * -1 + 4px) 0 0;
+  font-size: var(--text-body-md);
+  color: var(--color-secondary);
 }
 
 /* In-page states, matching SubscriptionsView's .feed-state. StatusScreen is

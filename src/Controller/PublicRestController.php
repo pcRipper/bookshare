@@ -83,7 +83,19 @@ class PublicRestController extends AbstractController
         $query = $request->query->get('q');
         $pagination = $this->pagination($request);
 
-        $result = $books->findByOwnerPaginated($owner, $status, $pagination, $query !== '' ? $query : null);
+        // ?wished=1 serves the owner's wish list instead of their shelf. Shared
+        // deliberately: "books I'd like" is a normal thing to publish a link to,
+        // and the shape carries no borrower, owner or viewer-relative field.
+        // The status filter is meaningless there and is dropped.
+        $wished = $request->query->getBoolean('wished');
+
+        $result = $books->findByOwnerPaginated(
+            $owner,
+            $wished ? null : $status,
+            $pagination,
+            $query !== '' ? $query : null,
+            wished: $wished,
+        );
 
         return $this->json($this->mapper->paginated(
             $result->items,

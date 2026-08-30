@@ -233,6 +233,7 @@
     "tabs": {
       "books": "Libros",
       "collections": "Colecciones",
+      "wishlist": "Lista de deseos",
       "borrowing": "Prestados a mí",
       "lending": "Prestados por mí",
       "requests": "Solicitudes",
@@ -311,11 +312,13 @@
     "tabs": {
       "available": "Disponibles para pedir",
       "full": "Todos los libros",
-      "collections": "Colecciones"
+      "collections": "Colecciones",
+      "wishlist": "Lista de deseos"
     },
     "empty": {
       "available": "Ahora mismo no hay libros disponibles para pedir.",
       "full": "Esta colección está vacía.",
+      "wishlist": "La lista de deseos de este lector está vacía.",
       "ownCollections": "Todavía no has creado ninguna colección.",
       "collections": "Este lector aún no tiene colecciones."
     },
@@ -469,6 +472,32 @@
     "empty": "Todavía no sigues a nadie que tenga libros que mostrar.",
     "emptyLink": "Descubre lectores a los que seguir"
   },
+  "wishlist": {
+    "markWanted": "Añadir a mi lista de deseos",
+    "priorityLabel": "Prioridad",
+    "priority": {
+      "canWait": "Puede esperar",
+      "veryInterested": "Muy interesado",
+      "urgent": "Urgente",
+      "unset": "Sin prioridad"
+    },
+    "acquire": "Ya lo tengo",
+    "addBook": "Añadir libro deseado",
+    "addCard": {
+      "title": "Añadir un libro deseado",
+      "hint": "Apunta un libro que te gustaría tener."
+    },
+    "searchPlaceholder": "Buscar en tu lista de deseos…",
+    "noMatches": "Nada en tu lista de deseos coincide con eso.",
+    "allLevels": "Todas",
+    "filterLabel": "Filtrar por prioridad",
+    "sortLabel": "Ordenar lista de deseos",
+    "sortPriority": "Por prioridad",
+    "sortNewest": "Más recientes primero",
+    "toasts": {
+      "acquired": "Movido a tu colección."
+    }
+  },
   "table": {
     "read": "Leído",
     "cover": "Portada",
@@ -593,6 +622,9 @@
       "author": "Autor",
       "member": "Miembro",
       "loans": "Préstamos",
+      "mostWanted": "Libros más deseados",
+      "wanted": "Deseado por",
+      "wishlistTotal": "{count} libro en las listas de deseos de la comunidad. | {count} libros en las listas de deseos de la comunidad.",
       "empty": "Todavía no hay libros catalogados."
     }
   }

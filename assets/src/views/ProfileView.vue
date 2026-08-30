@@ -75,6 +75,9 @@ const tabs = computed(() => [
   { key: 'available',   label: t('profile.tabs.available'),   count: availableCount.value },
   { key: 'full',        label: t('profile.tabs.full'),        count: profile.value?.stats?.totalBooks ?? 0 },
   { key: 'collections', label: t('profile.tabs.collections'), count: profile.value?.stats?.collections ?? 0, collections: true },
+  // Read-only here: it's what this reader is after, which is the social point
+  // of publishing one — someone browsing may own a book on it.
+  { key: 'wished',      label: t('profile.tabs.wishlist'),    count: profile.value?.stats?.wished ?? 0 },
 ])
 
 function isTabActive(tab) {
@@ -322,6 +325,7 @@ async function onProfileSave(payload) {
             v-else-if="books.length && bookView === 'table'"
             :books="books"
             :detailed="tableDetailed"
+            :wish="shelf === 'wished'"
             role="tabpanel"
             @open="openDetail"
           />
@@ -339,6 +343,7 @@ async function onProfileSave(payload) {
           <div v-else class="empty-state">
             <span class="material-symbols-outlined empty-state__icon">{{ booksQuery ? 'search_off' : 'auto_stories' }}</span>
             <p v-if="booksQuery">{{ t('library.noMatches', { query: booksQuery }) }}</p>
+            <p v-else-if="shelf === 'wished'">{{ t('profile.empty.wishlist') }}</p>
             <p v-else>{{ shelf === 'available' ? t('profile.empty.available') : t('profile.empty.full') }}</p>
           </div>
 

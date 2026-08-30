@@ -7,6 +7,7 @@ use App\Entity\LibraryRequestEvent;
 use App\Enum\BookStatus;
 use App\Enum\LibraryRequestEventType;
 use App\Enum\RequestStatus;
+use App\Enum\WishPriority;
 use App\Repository\PageViewDailyRepository;
 use App\Repository\PageViewVisitorRepository;
 use App\Service\Analytics\StatsProvider;
@@ -53,9 +54,10 @@ class StatsProviderTest extends RepositoryTestCase
         self::assertSame(['totals', 'series', 'recentActivity'], array_keys($data['engagement']));
         self::assertSame(['totals', 'series', 'topRoutes'], array_keys($data['traffic']));
         self::assertSame(
-            ['booksByStatus', 'topCategories', 'topLanguages', 'mostBorrowed', 'topLenders'],
+            ['booksByStatus', 'topCategories', 'topLanguages', 'mostBorrowed', 'topLenders', 'wishlist'],
             array_keys($data['library']),
         );
+        self::assertSame(['total', 'byPriority', 'mostWanted'], array_keys($data['library']['wishlist']));
     }
 
     /**
@@ -128,6 +130,38 @@ class StatsProviderTest extends RepositoryTestCase
 
         self::assertGreaterThanOrEqual(2, $data['growth']['series']['users'][$today]);
         self::assertGreaterThanOrEqual(2, $data['growth']['totals']['users']);
+    }
+
+    /**
+     * The rule the whole wish-list feature rests on: every number on this
+     * dashboard is about books people *have*, except the wish-list block.
+     */
+    public function testWishListBooksAreCountedOnlyUnderTheirOwnBlock(): void
+    {
+        $owner = $this->makeUser();
+        $this->makeBook($owner);
+        // Two different members want the same book.
+        $this->makeBook($owner)->setWish(true, WishPriority::Urgent)->setTitle('Wanted Title');
+        $this->makeBook($this->makeUser())->setWish(true, WishPriority::Urgent)->setTitle('Wanted Title');
+        $this->em->flush();
+
+        $data = $this->dashboard(7);
+        $today = array_key_last($data['days']);
+
+        // The library-wide figures see the one owned book and nothing else.
+        self::assertSame(1, $data['growth']['totals']['books']);
+        self::assertSame(1, $data['growth']['series']['books'][$today]);
+        self::assertSame(1, $data['library']['booksByStatus'][BookStatus::Own->value]);
+
+        $wishlist = $data['library']['wishlist'];
+        self::assertSame(2, $wishlist['total']);
+        self::assertSame(2, $wishlist['byPriority'][WishPriority::Urgent->value]);
+        self::assertSame(0, $wishlist['byPriority'][WishPriority::CanWait->value]);
+
+        // Two members wanting the same title is one row saying so — the point of
+        // the ranking.
+        self::assertSame('Wanted Title', $wishlist['mostWanted'][0]['title']);
+        self::assertSame(2, $wishlist['mostWanted'][0]['wanted']);
     }
 
     public function testTrafficReflectsRecordedViews(): void

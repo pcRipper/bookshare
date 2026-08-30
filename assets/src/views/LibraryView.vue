@@ -27,16 +27,24 @@ import CollectionRequestCard from '@/components/collections/CollectionRequestCar
 import Pagination from '@/components/ui/Pagination.vue'
 import SearchInput from '@/components/ui/SearchInput.vue'
 import ViewToggle from '@/components/ui/ViewToggle.vue'
+import BaseSelect from '@/components/ui/BaseSelect.vue'
 import BookTable from '@/components/ui/BookTable.vue'
 import BookTableSkeleton from '@/components/ui/BookTableSkeleton.vue'
 import { useBookView } from '@/composables/useBookView'
+import { WISH_PRIORITIES, wishPriorityMeta, wishPriorityKey } from '@/utils/wishPriority'
 
 const store = useLibraryStore()
 const collections = useCollectionsStore()
 const subscriptions = useSubscriptionsStore()
 const toast = useToastStore()
 const { t } = useI18n()
-const { profile, stats, collection, collectionMeta, collectionQuery, lending, requests, history, historyMeta, borrowing, pendingBorrowing, borrowingHistory, borrowingHistoryMeta, loading } = storeToRefs(store)
+const { profile, stats, collection, collectionMeta, collectionQuery, lending, requests, history, historyMeta, borrowing, pendingBorrowing, borrowingHistory, borrowingHistoryMeta, loading, wishlist, wishlistMeta, wishlistQuery, wishlistPriority, wishlistSort } = storeToRefs(store)
+
+// Priority first (what to buy next) or newest first (what did I just add).
+const wishlistSortOptions = computed(() => [
+  { value: 'priority', label: t('wishlist.sortPriority') },
+  { value: 'newest',   label: t('wishlist.sortNewest') },
+])
 const {
   mine: myCollections, mineMeta,
   incoming: cIncoming, pendingBorrowing: cPendingBorrowing,
@@ -64,6 +72,7 @@ const activeTab = ref('collection')
 const tabs = computed(() => [
   { key: 'collection',  label: t('library.tabs.books') },
   { key: 'collections', label: t('library.tabs.collections') },
+  { key: 'wishlist',    label: t('library.tabs.wishlist'), badge: stats.value.wished || null },
   { key: 'borrowing',   label: t('library.tabs.borrowing'), badge: (borrowing.value.length + cBorrowing.value.length) || null },
   { key: 'lending',     label: t('library.tabs.lending') },
   { key: 'requests',    label: t('library.tabs.requests'), badge: (requests.value.length + pendingBorrowing.value.length + cIncoming.value.length + cPendingBorrowing.value.length) || null },
@@ -114,7 +123,7 @@ function onCollectionHistoryPage(page) {
 // Lending is fetched lazily per side (per-book vs collection), so each side owns
 // its own loaded flag — otherwise approving on one side would suppress the
 // other side's first fetch when the tab opens.
-const loaded = ref({ collections: false, borrowing: false, lending: false, cLending: false, requests: false, following: false })
+const loaded = ref({ collections: false, borrowing: false, lending: false, cLending: false, requests: false, following: false, wishlist: false })
 
 // History shows in-progress loans too, whose state changes as the owner/borrower
 // acts in other tabs — so refetch the visible side each time it's viewed. Both
@@ -138,6 +147,7 @@ watch(activeTab, tab => {
     if (!loaded.value.cLending) { loaded.value.cLending = true; collections.fetchLending() }
   }
   if (tab === 'requests' && !loaded.value.requests) { loaded.value.requests = true; store.fetchRequests(); store.fetchPendingBorrowing(); collections.fetchIncoming(); collections.fetchPendingBorrowing() }
+  if (tab === 'wishlist' && !loaded.value.wishlist) { loaded.value.wishlist = true; store.fetchWishlist() }
   if (tab === 'following' && !loaded.value.following) { loaded.value.following = true; subscriptions.fetchFollowing() }
   if (tab === 'history') loadHistorySide(historySide.value)
 })
@@ -232,9 +242,13 @@ const shareOpen = ref(false)
 const modalOpen = ref(false)
 const modalBusy = ref(false)
 const editingBook = ref(null)
+// Create mode only: open with the wish checkbox already ticked (the Wish List
+// tab's own add affordance). Cleared on every other open.
+const creatingWished = ref(false)
 
-function openCreate() {
+function openCreate({ wished = false } = {}) {
   editingBook.value = null
+  creatingWished.value = wished
   modalOpen.value = true
 }
 function openEdit(book) {
@@ -259,6 +273,20 @@ async function onModalSave(payload) {
     modalBusy.value = false
   }
 }
+// "I own this now": the book leaves the wish list for the shelf.
+async function onModalAcquire(id) {
+  modalBusy.value = true
+  try {
+    await store.acquireBook(id)
+    modalOpen.value = false
+    toast.success(t('wishlist.toasts.acquired'))
+  } catch (e) {
+    toast.error(apiErrorMessage(e, t('library.errors.saveBook')))
+  } finally {
+    modalBusy.value = false
+  }
+}
+
 async function onModalDelete(id) {
   modalBusy.value = true
   try {
@@ -553,6 +581,103 @@ async function handleCCancel(id) {
           </template>
         </div>
 
+        <!-- Wish List tab (books you want, not ones you hold) -->
+        <div v-else-if="activeTab === 'wishlist'" role="tabpanel">
+          <div class="collection-toolbar">
+            <!-- Same uncontrolled-input caveat as the Books tab: the panel is
+                 v-if-ed while the store keeps the filter, so seed it on mount. -->
+            <SearchInput
+              class="collection-toolbar__search"
+              :placeholder="t('wishlist.searchPlaceholder')"
+              :loading="loading.wishlist"
+              :initial="wishlistQuery"
+              @search="store.setWishlistSearch"
+            />
+            <div class="collection-toolbar__actions">
+              <!-- Priority filter: pills rather than a select, because there are
+                   only four choices and each carries its own colour. -->
+              <div class="priority-filter" role="group" :aria-label="t('wishlist.filterLabel')">
+                <button
+                  class="priority-pill"
+                  :class="{ 'priority-pill--active': !wishlistPriority }"
+                  type="button"
+                  @click="store.setWishlistPriority(null)"
+                >{{ t('wishlist.allLevels') }}</button>
+                <button
+                  v-for="p in WISH_PRIORITIES"
+                  :key="p"
+                  class="priority-pill"
+                  :class="[`priority-pill--${wishPriorityMeta(p).tone}`, { 'priority-pill--active': wishlistPriority === p }]"
+                  type="button"
+                  @click="store.setWishlistPriority(p)"
+                >{{ t(wishPriorityKey(p)) }}</button>
+              </div>
+              <BaseSelect
+                class="wishlist-sort"
+                :model-value="wishlistSort"
+                :options="wishlistSortOptions"
+                :aria-label="t('wishlist.sortLabel')"
+                @update:model-value="store.setWishlistSort"
+              />
+              <ViewToggle v-model="bookView" v-model:detailed="tableDetailed" />
+              <button
+                v-if="bookView === 'table'"
+                class="toolbar-btn toolbar-btn--add"
+                type="button"
+                :aria-label="t('wishlist.addBook')"
+                @click="openCreate({ wished: true })"
+              >
+                <span class="material-symbols-outlined">add</span>
+                <span class="toolbar-btn__label">{{ t('wishlist.addBook') }}</span>
+              </button>
+            </div>
+          </div>
+
+          <template v-if="loading.wishlist && !wishlist.length">
+            <BookTableSkeleton v-if="bookView === 'table'" :count="8" :detailed="tableDetailed" />
+            <BookGridSkeleton v-else :count="8" class="collection-skeleton" />
+          </template>
+          <div v-else-if="(wishlistQuery || wishlistPriority) && !wishlist.length" class="empty-state">
+            <span class="material-symbols-outlined empty-state__icon">search_off</span>
+            <p class="empty-state__text">{{ t('wishlist.noMatches') }}</p>
+          </div>
+          <BookTable
+            v-else-if="bookView === 'table'"
+            :books="wishlist"
+            :detailed="tableDetailed"
+            wish
+            read-editable
+            @open="openEdit"
+            @toggle-read="onToggleRead"
+          />
+          <div v-else class="book-grid">
+            <!-- Lead card, mirroring the Books tab's "Catalog a New Book". -->
+            <div
+              v-if="wishlistMeta.page === 1 && !wishlistQuery && !wishlistPriority"
+              class="add-book-card"
+              role="button"
+              tabindex="0"
+              @click="openCreate({ wished: true })"
+            >
+              <span class="material-symbols-outlined add-book-card__icon">bookmark_add</span>
+              <h3 class="add-book-card__title">{{ t('wishlist.addCard.title') }}</h3>
+              <p class="add-book-card__hint">{{ t('wishlist.addCard.hint') }}</p>
+            </div>
+            <BookCard
+              v-for="book in wishlist"
+              :key="book.id"
+              :book="book"
+              @click="openEdit"
+            />
+          </div>
+          <Pagination
+            :page="wishlistMeta.page"
+            :total-pages="wishlistMeta.totalPages"
+            :disabled="loading.wishlist"
+            @change="store.fetchWishlist"
+          />
+        </div>
+
         <!-- Borrowing tab (books I'm borrowing from others) -->
         <div v-else-if="activeTab === 'borrowing'" role="tabpanel">
           <BookGridSkeleton v-if="loading.borrowing && !borrowing.length && !cBorrowing.length" :count="4" />
@@ -823,10 +948,12 @@ async function handleCCancel(id) {
     </div>
 
     <!-- Mobile FAB (hidden on desktop) -->
+    <!-- The toolbar's add button is desktop-only, so on a phone this is the only
+         way onto the Wish List tab's create flow — it follows the active tab. -->
     <button
       class="fab"
-      :aria-label="t('library.addBookAria')"
-      @click="openCreate"
+      :aria-label="activeTab === 'wishlist' ? t('wishlist.addBook') : t('library.addBookAria')"
+      @click="openCreate({ wished: activeTab === 'wishlist' })"
     >
       <span class="material-symbols-outlined">add</span>
     </button>
@@ -836,8 +963,10 @@ async function handleCCancel(id) {
       :open="modalOpen"
       :book="editingBook"
       :busy="modalBusy"
+      :wished="creatingWished"
       @save="onModalSave"
       @delete="onModalDelete"
+      @acquire="onModalAcquire"
       @close="modalOpen = false"
     />
 
@@ -1113,6 +1242,50 @@ async function handleCCancel(id) {
     padding: 8px 12px;
     gap: 0;
   }
+}
+
+/* ── Wish-list sort + priority filter ─────────────────────────────────── */
+/* Narrow enough not to crowd the toolbar; the two labels are short. */
+.wishlist-sort { min-width: 168px; }
+
+
+.priority-filter {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+.priority-pill {
+  padding: 6px 14px;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-container-lowest);
+  font-size: var(--text-label-md);
+  font-weight: 500;
+  color: var(--color-secondary);
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.priority-pill:hover:not(.priority-pill--active) {
+  background: var(--color-surface-container-low);
+  color: var(--color-on-background);
+}
+/* Only the selected pill wears its colour — three permanently-lit pills would
+   read as three states rather than one choice. */
+.priority-pill--active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 600;
+}
+.priority-pill--amber.priority-pill--active {
+  background: var(--color-tertiary);
+  border-color: var(--color-tertiary);
+  color: #ffffff;
+}
+.priority-pill--red.priority-pill--active {
+  background: var(--color-error);
+  border-color: var(--color-error);
+  color: #ffffff;
 }
 
 /* ── Book grid ────────────────────────────────────────────────────────── */

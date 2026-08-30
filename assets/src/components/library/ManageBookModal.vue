@@ -7,6 +7,7 @@ import LanguageSelect from '@/components/ui/LanguageSelect.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import { useCoverFallback } from '@/composables/useCoverFallback'
+import { WISH_PRIORITIES, WISH_DEFAULT, wishPriorityKey } from '@/utils/wishPriority'
 
 const { hasCover, onCoverError } = useCoverFallback()
 const { t } = useI18n()
@@ -16,9 +17,13 @@ const props = defineProps({
   book:  { type: Object, default: null },   // null = create mode
   // Parent-controlled: true while a save/delete request is in flight.
   busy:  { type: Boolean, default: false },
+  // Create mode: open with "add to my wish list" already ticked. Set by the Wish
+  // List tab's own add button, so that tab's flow lands where it says it will
+  // while the Books tab keeps offering the same checkbox unticked.
+  wished: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['save', 'delete', 'close'])
+const emit = defineEmits(['save', 'delete', 'close', 'acquire'])
 
 // Statuses an owner may pick by hand. 'lent' is intentionally absent: it's set
 // only by the lending lifecycle (approve), never chosen manually — doing so would
@@ -35,7 +40,7 @@ const DESC_MAX = 500
 
 const form = ref(blank())
 // Which action the parent is currently processing — drives the right spinner.
-const pendingAction = ref(null) // 'save' | 'delete' | null
+const pendingAction = ref(null) // 'save' | 'delete' | 'acquire' | null
 const errorMsg = ref(null)
 // Create mode only: 'manual' form vs. 'template' search. Reset on every open.
 const activeTab = ref('manual')
@@ -56,6 +61,16 @@ const statusOptions = computed(() =>
 
 const descRemaining = computed(() => DESC_MAX - form.value.description.length)
 
+// The three levels, most urgent first — the picker's order matches the tab's.
+const priorityOptions = computed(() =>
+  WISH_PRIORITIES.map(value => ({ value, label: t(wishPriorityKey(value)) })),
+)
+
+// A wanted book has no lending state: it isn't on a shelf, so "available /
+// reading / unavailable" is a question about a book that isn't there. The field
+// is hidden rather than disabled, and the record keeps its stored default.
+const showStatus = computed(() => !form.value.isWished)
+
 // Which required field the error is about. Derived rather than stored, so it
 // clears itself the moment the user types instead of needing a second Save.
 const titleInvalid = computed(() => !!errorMsg.value && !form.value.title.trim())
@@ -63,7 +78,11 @@ const authorInvalid = computed(() => !!errorMsg.value && !form.value.author.trim
 
 function blank() {
   // categories: array of { id, name, colorHex }
-  return { title: '', author: '', description: '', isbn: '', status: 'own', language: null, coverPath: '', isRead: false, categories: [] }
+  return {
+    title: '', author: '', description: '', isbn: '', status: 'own', language: null,
+    coverPath: '', isRead: false, isWished: props.wished, wishPriority: WISH_DEFAULT,
+    categories: [],
+  }
 }
 
 // Repopulate whenever the modal opens or the target book changes.
@@ -84,6 +103,10 @@ watch(
           language: props.book.language ?? null,
           coverPath: props.book.coverPath ?? '',
           isRead: props.book.isRead ?? false,
+          isWished: props.book.isWished ?? false,
+          // A book on the shelf still needs a level in hand, so ticking the
+          // checkbox doesn't leave the picker empty.
+          wishPriority: props.book.wishPriority ?? WISH_DEFAULT,
           categories: [...(props.book.categories ?? [])],
         }
       : blank()
@@ -110,6 +133,9 @@ function onSave() {
     language: form.value.language || null,
     coverPath: form.value.coverPath.trim() || null,
     isRead: form.value.isRead,
+    isWished: form.value.isWished,
+    // Sent only when it means something; the server drops it otherwise anyway.
+    wishPriority: form.value.isWished ? form.value.wishPriority : null,
     categoryIds: form.value.categories.map(c => c.id),
   })
 }
@@ -117,6 +143,13 @@ function onSave() {
 function onDelete() {
   pendingAction.value = 'delete'
   emit('delete', props.book.id)
+}
+
+// "I own this now" — a dedicated action rather than unticking the checkbox and
+// saving, because it is the one thing a wish-list entry exists to become.
+function onAcquire() {
+  pendingAction.value = 'acquire'
+  emit('acquire', props.book.id)
 }
 
 // Picking a search result seeds the manual form with its metadata and switches
@@ -132,6 +165,10 @@ function applyTemplate(t) {
     language: t.language ?? null,
     coverPath: t.coverPath ?? '',
     isRead: false,
+    // A template says nothing about which shelf you're filling — keep the one
+    // the modal was opened for.
+    isWished: form.value.isWished,
+    wishPriority: form.value.wishPriority,
     categories: [],
   }
   errorMsg.value = null
@@ -268,9 +305,15 @@ function applyTemplate(t) {
                 :disabled="readOnly"
               />
             </div>
-            <div class="field">
+            <!-- Lending status for a book on the shelf; how badly it's wanted
+                 for one on the wish list. The two are never both meaningful. -->
+            <div v-if="showStatus" class="field">
               <label class="field__label" for="mb-status">{{ t('manageBook.status') }}</label>
               <BaseSelect id="mb-status" v-model="form.status" :options="statusOptions" :disabled="readOnly" />
+            </div>
+            <div v-else class="field">
+              <label class="field__label" for="mb-priority">{{ t('wishlist.priorityLabel') }}</label>
+              <BaseSelect id="mb-priority" v-model="form.wishPriority" :options="priorityOptions" :disabled="readOnly" />
             </div>
           </div>
 
@@ -288,6 +331,15 @@ function applyTemplate(t) {
             <input type="checkbox" v-model="form.isRead" :disabled="readOnly" />
             <span class="material-symbols-outlined">check_circle</span>
             {{ t('manageBook.markRead') }}
+          </label>
+
+          <!-- The wish-list switch. Offered from the Books tab too (already
+               ticked when the Wish List tab opened the modal), so cataloguing a
+               book you want is the same flow as one you have. -->
+          <label class="checkbox-field">
+            <input type="checkbox" v-model="form.isWished" :disabled="readOnly" />
+            <span class="material-symbols-outlined">bookmark_heart</span>
+            {{ t('wishlist.markWanted') }}
           </label>
 
           <div class="field">
@@ -319,6 +371,19 @@ function applyTemplate(t) {
               {{ busy && pendingAction === 'delete' ? t('manageBook.deleting') : t('common.delete') }}
             </button>
             <div class="modal__footer-actions">
+              <!-- The move a wish-list entry exists to make. Edit mode only:
+                   there is nothing to acquire until the book is saved. -->
+              <button
+                v-if="isEdit && book?.isWished"
+                class="btn-secondary btn-acquire"
+                type="button"
+                :disabled="busy"
+                @click="onAcquire"
+              >
+                <BaseSpinner v-if="busy && pendingAction === 'acquire'" size="sm" />
+                <span v-else class="material-symbols-outlined">library_add_check</span>
+                {{ t('wishlist.acquire') }}
+              </button>
               <button class="btn-secondary" type="button" :disabled="busy" @click="emit('close')">
                 {{ t('common.cancel') }}
               </button>
@@ -565,6 +630,12 @@ function applyTemplate(t) {
 .btn-secondary:hover { background: var(--color-surface-container-low); }
 .btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* "I own this now" — a secondary button that leads with its icon, so the
+   footer's primary Save stays the obvious default action. */
+.btn-acquire { border-color: var(--color-primary); color: var(--color-primary); }
+.btn-acquire:hover:not(:disabled) { background: var(--color-surface-container-low); }
+.btn-acquire .material-symbols-outlined { font-size: 18px; }
+
 .btn-delete {
   background: transparent;
   color: var(--color-error);
@@ -577,5 +648,30 @@ function applyTemplate(t) {
 @media (max-width: 520px) {
   .field-row { grid-template-columns: 1fr; }
   .modal { max-width: 100%; }
+
+  /* A wish-list book in edit mode puts four buttons in this row — Delete plus
+     acquire, Cancel and Save — which do not fit a phone. Unwrapped, the row
+     kept its nowrap width and pushed Save clean off the modal: the primary
+     action of the dialog was unreachable, not merely ugly.
+     Here the actions group takes the full width and the acquire button claims
+     its own line above Cancel/Save, leaving Delete on the line below. */
+  .modal__footer-actions {
+    width: 100%;
+    margin-left: 0;
+    flex-wrap: wrap;
+  }
+  .modal__footer-actions > * { flex: 1; justify-content: center; }
+  .btn-acquire { flex-basis: 100%; }
 }
+
+/* Never let a label break mid-word into a four-line button. */
+.btn-primary,
+.btn-secondary,
+.btn-delete { white-space: nowrap; }
+
+/* Wrapping is the safety net at every width: the footer's contents depend on
+   the book (Delete only when editing, acquire only for a wanted book), so the
+   row's intrinsic width is not fixed and must be allowed to fall to a new line
+   rather than overflow the modal. */
+.modal__footer { flex-wrap: wrap; }
 </style>
