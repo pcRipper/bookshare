@@ -100,8 +100,9 @@ export const useLibraryStore = defineStore('library', () => {
   async function fetchHistory(page = historyMeta.value.page) {
     loading.value.history = true
     try {
-      // Every incoming request, in-progress or finished, so History shows each step.
-      const { data } = await api.get('/requests/incoming', { params: { status: 'all', page } })
+      // Settled loans only: the in-flight ones have their own blocks above the
+      // "Past loans" list, and listing them twice on one panel read as duplicates.
+      const { data } = await api.get('/requests/incoming', { params: { status: 'resolved', page } })
       history.value = data.items.map(toCardRequest)
       historyMeta.value = data.pagination
     } finally {
@@ -131,11 +132,11 @@ export const useLibraryStore = defineStore('library', () => {
     }
   }
 
-  // The current user's borrows — every outgoing request, in-progress or finished.
+  // The current user's settled borrows (see fetchHistory for why not `all`).
   async function fetchBorrowingHistory(page = borrowingHistoryMeta.value.page) {
     loading.value.borrowingHistory = true
     try {
-      const { data } = await api.get('/requests/outgoing', { params: { status: 'all', page } })
+      const { data } = await api.get('/requests/outgoing', { params: { status: 'resolved', page } })
       borrowingHistory.value = data.items.map(toCardRequest)
       borrowingHistoryMeta.value = data.pagination
     } finally {

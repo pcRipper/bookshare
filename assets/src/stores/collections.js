@@ -138,7 +138,7 @@ export const useCollectionsStore = defineStore('collections', () => {
   async function fetchHistory(page = historyMeta.value.page) {
     loading.value.history = true
     try {
-      const { data } = await api.get('/collection-requests/incoming', { params: { status: 'all', page } })
+      const { data } = await api.get('/collection-requests/incoming', { params: { status: 'resolved', page } })
       history.value = data.items.map(toCard)
       historyMeta.value = data.pagination
     } finally {
@@ -149,7 +149,7 @@ export const useCollectionsStore = defineStore('collections', () => {
   async function fetchBorrowingHistory(page = borrowingHistoryMeta.value.page) {
     loading.value.borrowingHistory = true
     try {
-      const { data } = await api.get('/collection-requests/outgoing', { params: { status: 'all', page } })
+      const { data } = await api.get('/collection-requests/outgoing', { params: { status: 'resolved', page } })
       borrowingHistory.value = data.items.map(toCard)
       borrowingHistoryMeta.value = data.pagination
     } finally {

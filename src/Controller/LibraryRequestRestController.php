@@ -55,7 +55,7 @@ class LibraryRequestRestController extends AbstractController
         }
 
         // The full history can grow unbounded → paginate it; in-flight slices stay bare.
-        if ($keyword === 'all') {
+        if (self::isPaginatedSlice($keyword)) {
             $pagination = Pagination::fromRequest($request, self::HISTORY_PER_PAGE);
             $result = $repo->findIncomingPaginated($user, $statuses, $pagination);
 
@@ -87,7 +87,7 @@ class LibraryRequestRestController extends AbstractController
         }
 
         // The full history can grow unbounded → paginate it; in-flight slices stay bare.
-        if ($keyword === 'all') {
+        if (self::isPaginatedSlice($keyword)) {
             $pagination = Pagination::fromRequest($request, self::HISTORY_PER_PAGE);
             $result = $repo->findOutgoingPaginated($user, $statuses, $pagination);
 
@@ -100,6 +100,17 @@ class LibraryRequestRestController extends AbstractController
         }
 
         return $this->json($this->mapper->requests($repo->findOutgoing($user, $statuses)));
+    }
+
+    /**
+     * Which slices come back in the paginated envelope rather than a bare array:
+     * the ones that grow without bound. `resolved` — the settled tail the Sharing
+     * panel's "Past loans" block reads — accumulates for the life of the account
+     * exactly as `all` does, so it pages on the same terms.
+     */
+    private static function isPaginatedSlice(string $keyword): bool
+    {
+        return $keyword === 'all' || $keyword === 'resolved';
     }
 
     /**

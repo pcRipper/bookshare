@@ -49,7 +49,7 @@ class CollectionRequestRestController extends AbstractController
             return $this->errors->response('Invalid status filter.', Response::HTTP_BAD_REQUEST);
         }
 
-        if ($keyword === 'all') {
+        if (self::isPaginatedSlice($keyword)) {
             $pagination = Pagination::fromRequest($request, self::HISTORY_PER_PAGE);
             $result = $repo->findIncomingPaginated($user, $statuses, $pagination);
 
@@ -77,7 +77,7 @@ class CollectionRequestRestController extends AbstractController
             return $this->errors->response('Invalid status filter.', Response::HTTP_BAD_REQUEST);
         }
 
-        if ($keyword === 'all') {
+        if (self::isPaginatedSlice($keyword)) {
             $pagination = Pagination::fromRequest($request, self::HISTORY_PER_PAGE);
             $result = $repo->findOutgoingPaginated($user, $statuses, $pagination);
 
@@ -90,6 +90,15 @@ class CollectionRequestRestController extends AbstractController
         }
 
         return $this->json($this->mapper->collectionRequests($repo->findOutgoing($user, $statuses)));
+    }
+
+    /**
+     * Which slices page rather than return a bare array — mirrors the per-book
+     * controller: `all` and the settled `resolved` tail both grow unbounded.
+     */
+    private static function isPaginatedSlice(string $keyword): bool
+    {
+        return $keyword === 'all' || $keyword === 'resolved';
     }
 
     /**
