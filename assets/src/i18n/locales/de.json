@@ -234,11 +234,10 @@
       "books": "Bücher",
       "collections": "Sammlungen",
       "wishlist": "Wunschliste",
+      "sharing": "Teilen",
       "borrowing": "Geliehen",
       "lending": "Verliehen",
-      "requests": "Anfragen",
-      "following": "Folge ich",
-      "history": "Verlauf"
+      "following": "Folge ich"
     },
     "addCard": {
       "bookTitle": "Neues Buch erfassen",
@@ -247,26 +246,18 @@
       "collectionHint": "Fasse zwei oder mehr Bücher zusammen, um sie gemeinsam zu verleihen."
     },
     "sections": {
-      "collections": "Sammlungen",
-      "individualBooks": "Einzelne Bücher",
-      "collectionRequestsForYou": "Sammlungsanfragen an dich",
+      "yourRequests": "Deine Anfragen",
       "requestsForYourBooks": "Anfragen zu deinen Büchern",
-      "yourCollectionRequests": "Deine Sammlungsanfragen",
-      "yourBorrowRequests": "Deine Leihanfragen"
-    },
-    "history": {
-      "lentToOthers": "An andere verliehen",
-      "borrowedByMe": "Von mir geliehen"
+      "booksInHand": "Bücher bei dir",
+      "lentOut": "An andere verliehen",
+      "pastLoans": "Frühere Ausleihen"
     },
     "empty": {
       "borrowing": "Du hast derzeit keine Bücher geliehen.",
       "borrowingLink": "Bücher zum Ausleihen entdecken",
       "lending": "Derzeit ist kein Buch verliehen.",
-      "requests": "Alles erledigt — keine offenen Anfragen.",
       "following": "Du folgst noch niemandem.",
-      "followingLink": "Leser zum Folgen entdecken",
-      "historyLending": "Hier erscheint dein Verleihverlauf.",
-      "historyBorrowing": "Hier erscheint dein Leihverlauf."
+      "followingLink": "Leser zum Folgen entdecken"
     },
     "toasts": {
       "imported": "Deine Sammlung wurde aktualisiert."

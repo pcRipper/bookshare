@@ -234,11 +234,10 @@
       "books": "Книги",
       "collections": "Збірки",
       "wishlist": "Список бажань",
+      "sharing": "Обмін",
       "borrowing": "Позичив я",
       "lending": "Позичив іншим",
-      "requests": "Запити",
-      "following": "Підписки",
-      "history": "Історія"
+      "following": "Підписки"
     },
     "addCard": {
       "bookTitle": "Додати нову книгу",
@@ -247,26 +246,18 @@
       "collectionHint": "Обʼєднайте дві або більше книг, щоб позичати їх разом."
     },
     "sections": {
-      "collections": "Збірки",
-      "individualBooks": "Окремі книги",
-      "collectionRequestsForYou": "Запити на ваші збірки",
+      "yourRequests": "Ваші запити",
       "requestsForYourBooks": "Запити на ваші книги",
-      "yourCollectionRequests": "Ваші запити на збірки",
-      "yourBorrowRequests": "Ваші запити на позику"
-    },
-    "history": {
-      "lentToOthers": "Позичив іншим",
-      "borrowedByMe": "Позичив я"
+      "booksInHand": "Книги у вас",
+      "lentOut": "Позичено іншим",
+      "pastLoans": "Минулі позики"
     },
     "empty": {
       "borrowing": "Ви зараз не маєте позичених книг.",
       "borrowingLink": "Знайти книги, які можна позичити",
       "lending": "Зараз нічого не позичено.",
-      "requests": "Усе опрацьовано — відкритих запитів немає.",
       "following": "Ви ще ні на кого не підписані.",
-      "followingLink": "Знайти читачів, на яких підписатися",
-      "historyLending": "Тут зʼявиться історія ваших позик іншим.",
-      "historyBorrowing": "Тут зʼявиться історія книг, які ви позичали."
+      "followingLink": "Знайти читачів, на яких підписатися"
     },
     "toasts": {
       "imported": "Вашу збірку оновлено."

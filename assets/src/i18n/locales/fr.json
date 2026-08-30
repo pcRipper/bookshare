@@ -234,11 +234,10 @@
       "books": "Livres",
       "collections": "Collections",
       "wishlist": "Liste de souhaits",
+      "sharing": "Partage",
       "borrowing": "Emprunts",
       "lending": "Prêts",
-      "requests": "Demandes",
-      "following": "Abonnements",
-      "history": "Historique"
+      "following": "Abonnements"
     },
     "addCard": {
       "bookTitle": "Cataloguer un nouveau livre",
@@ -247,26 +246,18 @@
       "collectionHint": "Regroupez deux livres ou plus pour les prêter ensemble."
     },
     "sections": {
-      "collections": "Collections",
-      "individualBooks": "Livres à l’unité",
-      "collectionRequestsForYou": "Demandes de collections reçues",
+      "yourRequests": "Vos demandes",
       "requestsForYourBooks": "Demandes pour vos livres",
-      "yourCollectionRequests": "Vos demandes de collections",
-      "yourBorrowRequests": "Vos demandes d’emprunt"
-    },
-    "history": {
-      "lentToOthers": "Prêtés à d’autres",
-      "borrowedByMe": "Empruntés par moi"
+      "booksInHand": "Livres en votre possession",
+      "lentOut": "Prêtés à d’autres",
+      "pastLoans": "Prêts passés"
     },
     "empty": {
       "borrowing": "Vous n’empruntez aucun livre pour le moment.",
       "borrowingLink": "Découvrir des livres à emprunter",
       "lending": "Aucun livre n’est prêté pour le moment.",
-      "requests": "Tout est à jour — aucune demande en attente.",
       "following": "Vous ne suivez encore personne.",
-      "followingLink": "Découvrir des lecteurs à suivre",
-      "historyLending": "Votre historique de prêts apparaîtra ici.",
-      "historyBorrowing": "Votre historique d’emprunts apparaîtra ici."
+      "followingLink": "Découvrir des lecteurs à suivre"
     },
     "toasts": {
       "imported": "Votre collection a été mise à jour."

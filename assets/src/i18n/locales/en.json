@@ -234,11 +234,10 @@
       "books": "Books",
       "collections": "Collections",
       "wishlist": "Wish List",
+      "sharing": "Sharing",
       "borrowing": "Borrowing",
       "lending": "Lending",
-      "requests": "Requests",
-      "following": "Following",
-      "history": "History"
+      "following": "Following"
     },
     "addCard": {
       "bookTitle": "Catalog a New Book",
@@ -247,26 +246,18 @@
       "collectionHint": "Group two or more books to lend together."
     },
     "sections": {
-      "collections": "Collections",
-      "individualBooks": "Individual books",
-      "collectionRequestsForYou": "Collection requests for you",
+      "yourRequests": "Your requests",
       "requestsForYourBooks": "Requests for your books",
-      "yourCollectionRequests": "Your collection requests",
-      "yourBorrowRequests": "Your borrow requests"
-    },
-    "history": {
-      "lentToOthers": "Lent to others",
-      "borrowedByMe": "Borrowed by me"
+      "booksInHand": "Books in hand",
+      "lentOut": "Lent out",
+      "pastLoans": "Past loans"
     },
     "empty": {
       "borrowing": "You're not borrowing any books right now.",
       "borrowingLink": "Discover books to borrow",
       "lending": "No books currently lent out.",
-      "requests": "All caught up — no open requests.",
       "following": "You're not following anyone yet.",
-      "followingLink": "Discover readers to follow",
-      "historyLending": "Your lending history will appear here.",
-      "historyBorrowing": "Your borrowing history will appear here."
+      "followingLink": "Discover readers to follow"
     },
     "toasts": {
       "imported": "Your collection has been updated."
