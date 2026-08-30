@@ -192,10 +192,15 @@ const statusBadge = computed(() => {
   color: #ffffff;
 }
 
-/* "Read" marker — top-left, so it never collides with the status badge */
+/* "Read" marker — bottom-left of the cover.
+   It used to sit top-left, opposite the status badge, which worked only while
+   both labels were short. A wish-list priority ("Very interested", and longer
+   in several locales) is wide enough that the two pills met in the middle and
+   the read badge painted over it, leaving a truncated word. They share no axis
+   now, so neither can clip the other however long the label gets. */
 .book-card__read {
   position: absolute;
-  top: var(--space-base);
+  bottom: var(--space-base);
   left: var(--space-base);
   display: inline-flex;
   align-items: center;

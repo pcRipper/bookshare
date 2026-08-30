@@ -171,9 +171,11 @@ function onAction() {
 .borrow-card__badge--wish-amber { background: var(--color-tertiary); color: #ffffff; }
 .borrow-card__badge--wish-red { background: var(--color-error); color: #ffffff; }
 
+/* Bottom-left, for the same reason as BookCard's: the priority badge opposite
+   it is wide enough to collide when a book is both wanted and already read. */
 .borrow-card__read {
   position: absolute;
-  top: var(--space-base);
+  bottom: var(--space-base);
   left: var(--space-base);
   display: inline-flex;
   align-items: center;
