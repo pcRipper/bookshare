@@ -1,5 +1,5 @@
 .PHONY: docker-start docker-stop \
-        prod-build prod-up prod-down prod-deploy prod-logs prod-migrate
+        prod-build prod-up prod-down prod-deploy prod-deploy-front prod-logs prod-migrate
 
 # ── Local development ────────────────────────────────────────────────────────
 docker-start:
@@ -24,6 +24,12 @@ prod-down:
 # Full redeploy on the server: git pull + build images + up (migrations auto-run).
 prod-deploy:
 	bash scripts/deploy.sh
+
+# SPA-only redeploy: rebuild just the nginx image (which bakes the built Vue
+# app) and recreate that container. The rest of the stack keeps serving — no
+# downtime, no migration run. Refuses if the pull also changed backend code.
+prod-deploy-front:
+	bash scripts/rebuild-prod.sh --frontend-only
 
 prod-logs:
 	$(PROD) logs -f --tail=100
