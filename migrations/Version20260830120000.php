@@ -33,6 +33,11 @@ final class Version20260830120000 extends AbstractMigration
     public function up(Schema $schema): void
     {
         $this->addSql('ALTER TABLE book ADD is_wished BOOLEAN DEFAULT FALSE NOT NULL');
+        // The default exists only to fill the existing rows in the statement
+        // above — the entity always writes the flag explicitly. Dropping it here
+        // keeps the column matching the mapping, which has no `default` option;
+        // leaving it would make every future migrations:diff ask for this line.
+        $this->addSql('ALTER TABLE book ALTER is_wished DROP DEFAULT');
         $this->addSql('ALTER TABLE book ADD wish_priority SMALLINT DEFAULT NULL');
         $this->addSql('CREATE INDEX idx_book_wishlist ON book (owner_id, wish_priority DESC) WHERE is_wished = TRUE');
     }
