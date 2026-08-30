@@ -612,8 +612,11 @@ const libraryEmpty = computed(() =>
 }
 /* Context line under a panel title — the whole-population figure the ranking
    below is a slice of. Sits between the two, so neither has to carry it. */
+/* Pulls back most of the panel's 12px gap so the note reads as a subtitle of
+   the title rather than a third sibling — but not all of it: cancelling the
+   gap outright left the two lines touching. */
 .admin__panel-note {
-  margin: calc(var(--space-sm) * -1) 0 0;
+  margin: calc(var(--space-sm) * -1 + 4px) 0 0;
   font-size: var(--text-body-md);
   color: var(--color-secondary);
 }
