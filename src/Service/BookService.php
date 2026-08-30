@@ -31,7 +31,12 @@ class BookService
         $this->applyInput($book, $input, $coverSourceUrl);
 
         $this->em->persist($book);
-        $this->activity->record($owner, ActivityType::AddedBook, targetBook: $book);
+        // A wish-list book is something the owner wants, not something the
+        // community gained — announcing it to followers as "added a book" would
+        // put a book nobody can borrow in everyone's feed.
+        if (!$book->isWished()) {
+            $this->activity->record($owner, ActivityType::AddedBook, targetBook: $book);
+        }
 
         return $book;
     }
@@ -39,6 +44,24 @@ class BookService
     public function update(Book $book, BookInput $input, ?string $coverSourceUrl = null): void
     {
         $this->applyInput($book, $input, $coverSourceUrl);
+    }
+
+    /**
+     * The owner finally got the book: it leaves the wish list and lands on the
+     * shelf, keeping everything already catalogued about it (cover, categories,
+     * language). Its own status is left alone — a wish-list book carries the
+     * `own` default, so it is immediately shareable — and the "added a book"
+     * activity that create() withheld is recorded now, since this is the moment
+     * the community actually gained it.
+     */
+    public function acquire(Book $book): void
+    {
+        if (!$book->isWished()) {
+            return;
+        }
+
+        $book->acquire();
+        $this->activity->record($book->getOwner(), ActivityType::AddedBook, targetBook: $book);
     }
 
     public function delete(Book $book): void
@@ -65,7 +88,10 @@ class BookService
             ->setCoverPath($coverPath)
             ->setStatus($input->status)
             ->setLanguage($input->language !== null && trim($input->language) !== '' ? trim($input->language) : null)
-            ->setIsRead($input->isRead);
+            ->setIsRead($input->isRead)
+            // setWish keeps the pair coherent: a priority is stored only for a
+            // wanted book, and a wanted book always ends up with a level.
+            ->setWish($input->isWished, $input->wishPriority);
 
         $book->clearCategories();
         foreach ($this->categories->findByIds($input->categoryIds) as $category) {

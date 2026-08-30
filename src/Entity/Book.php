@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Enum\BookStatus;
+use App\Enum\WishPriority;
 use App\Repository\BookRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -51,6 +52,24 @@ class Book
     /** Owner's personal "I've read this" flag — orthogonal to lending status. */
     #[ORM\Column]
     private bool $isRead = false;
+
+    /**
+     * True when this is a book the owner *wants*, not one they hold.
+     *
+     * A wish-list book is a Book so the whole cataloguing flow (template search,
+     * categories, cover localization, the Manage Book modal) is reused verbatim,
+     * but it exists on its own shelf: every query over real libraries — listing,
+     * Discover, templates, the subscription feed, collections, stats, analytics —
+     * filters it out, and it can never be borrowed. `status` and `currentHolder`
+     * are meaningless while this is true; acquiring the book (`acquire()`) is what
+     * moves it onto the owned shelf.
+     */
+    #[ORM\Column]
+    private bool $isWished = false;
+
+    /** How badly it's wanted. Null exactly when $isWished is false. */
+    #[ORM\Column(type: 'smallint', nullable: true, enumType: WishPriority::class)]
+    private ?WishPriority $wishPriority = null;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
@@ -108,6 +127,30 @@ class Book
 
     public function isRead(): bool { return $this->isRead; }
     public function setIsRead(bool $isRead): static { $this->isRead = $isRead; return $this; }
+
+    public function isWished(): bool { return $this->isWished; }
+
+    /**
+     * Wish state and priority move together: a book that isn't wanted has no
+     * priority, and a wanted one always has a level. Keeping the invariant here
+     * rather than in the caller means no query has to cope with the third,
+     * meaningless combination.
+     */
+    public function setWish(bool $isWished, ?WishPriority $priority = null): static
+    {
+        $this->isWished = $isWished;
+        $this->wishPriority = $isWished ? ($priority ?? WishPriority::DEFAULT) : null;
+
+        return $this;
+    }
+
+    public function getWishPriority(): ?WishPriority { return $this->wishPriority; }
+
+    /** The owner got hold of it: the book leaves the wish list for the shelf. */
+    public function acquire(): static
+    {
+        return $this->setWish(false);
+    }
 
     public function getOwner(): User { return $this->owner; }
     public function setOwner(User $owner): static
