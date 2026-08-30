@@ -1,6 +1,7 @@
 # Techical
 
 ## Backend
+
 - [x] Enrich categories color palate
 - [x] add path prefixes for all rest controller routes, rename dedicated controllers to have suffix REST, add for all of them this prefix in .yaml level
 - [x] add audit tables to the system, currentyle for each table(except for migrations, and all these system tables), skip tables, which by themselfs represnt one time stan and wont change at all or change very rarely(like one field at most)
@@ -17,24 +18,26 @@
 - [x] cache images of book covers, maybe add local s3, do it on each change of corresponding fields, use caching key by hash of the file (hash of content + name + type) — ImageLocalizer downloads covers to our origin on create/update, content-hash keyed; swappable ImageStorage backend; `app:localize-images` backfills existing rows
 
 ## Security & Tests
+
 - [x] add all possible unit tests
 - [x] validate all possible security breaches
 - [x] add ratelimiters for ip, user, ip + user
 
-
 # UI
+
 - [x] numbered pagination control (shared ui/Pagination.vue) across the paginated grids/lists
 - [x] add loaders for buttons
 - [x] add placeholders of ui elements(glowing or blinking blocks) instead of simple Loading... signs
 - [x] add error page and not found page
 - [x] Improve mobile layout, now it has horizontal scroll because of shifted elements. Revise positioning for mobile version and overall improve look of it
 - [x] detailed read-only book overview modal (opens on click from Discover, Following feed and other readers' profiles — not from your own editable library); replaces the hover blurb that clipped long descriptions
-- [x] no language info on the book card on the profile page 
+- [x] no language info on the book card on the profile page
 - [x] fix ios navigation bar, icons are shifted upwards when bottom bar with controll elements disappear
 - [x] add table view for lists with card-only format. Display only essential fields + checkbox for complete version
 - [x] table view amendments: owner column on discover, table-shaped loading skeletons, an "all columns" switch for the full record, horizontal scroll on mobile instead of dropped columns, and a labelled read column (interactive in your own library only)
 
 # Functional
+
 - [x] Time landing: lending side is saying when will be the due date for book return, no approval from requester side needed, its the requirement of the lending side only
 - [x] Add subscription page and functional of subscriptions. It should be instea of activity page/button. It should look like this: rows with recent books, grouppe by subscribed person, 10-15 books max, as a scrollable horizontal list. Subscriptions list is available at library page, there you can cancel subscription and view people you are subscribed on.
 - [x] add language select for the book
@@ -53,9 +56,11 @@
 - [ skip for now ] list of "want to read" + notify when some of the following accounts have this book available(cron or event)
 - [x] multi-languag ui: english, german, french, spanish, ukrainian. Switched from a popover in the header (and on the login page, where the pick is applied to the account on successful sign-in) — not the settings page. API error/validation messages are translated too (English sentence as translation id); release-note prose stays English; book language names localized via Intl.DisplayNames
 - [x] public access to the library(without authorization): by link or qr code(just encode link here), button on library page or profile page. Share button on the library toolbar opens a link + server-rendered QR; /public/library/:id serves books and collections read-only, gated by the existing privacy toggle
-- [x] lightweight statistics & site analytics: user activity, books created, pages visited etc. Self-hosted, no third-party tracker — admin-only dashboard at /admin/stats over one endpoint, covering growth, engagement (incl. the previously unread ActivityItem log), traffic and library health across a 7/30/90-day window. Page views are stored as aggregate counters keyed on the SPA route *name* (never the path, which carries ids) plus one row per distinct visitor per day, hashed with a salt that rotates daily. ROLE_ADMIN is a new roles column granted with `app:grant-admin`
+- [x] lightweight statistics & site analytics: user activity, books created, pages visited etc. Self-hosted, no third-party tracker — admin-only dashboard at /admin/stats over one endpoint, covering growth, engagement (incl. the previously unread ActivityItem log), traffic and library health across a 7/30/90-day window. Page views are stored as aggregate counters keyed on the SPA route _name_ (never the path, which carries ids) plus one row per distinct visitor per day, hashed with a salt that rotates daily. ROLE_ADMIN is a new roles column granted with `app:grant-admin`
+- [ ] introduce wish list: it should be a separate tab in profile/library pages, flow of creating a wish-list book the same a regular one. Creating a wish-list book should be available both from separate tab and from books tab(on books tab just add a checkbox somewhere on top, to mark as wanted). These books should be showed only on library/profile pages in their own tab. Lets also introduce a priority field only for wish list books and sorting/filtering on the tab with them. There also should be a process with moving book from wish-list to the owning one, think about that, maybe some button. Consider both mobile and desktop variants
 
 # Deployment
+
 - [x] add script to install all needed dependenices on droplet(like docker to start up, git to pull a branch etc)
 - [x] droplet will be running prod-grade docker containers, they should be run from optimized two-stage images, cause memory on VHS is very low
 - [x] frontend will be shipped built
