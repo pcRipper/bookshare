@@ -5,6 +5,7 @@ import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
 import { languageLabel } from '@/utils/languages'
+import { wishPriorityMeta, wishPriorityKey } from '@/utils/wishPriority'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 
 const { t } = useI18n()
@@ -33,8 +34,17 @@ const { hasCover, onCoverError } = useCoverFallback()
 
 const hasDescription = computed(() => !!props.book?.description?.trim())
 
+// A wish-list book has no lending state — its owner doesn't have it — so the
+// pill carries the priority instead and the borrow action is withheld below.
+// Read off the book rather than taken as a prop, the same call BorrowBookCard
+// makes: the shelf is a property of the book, not of the surface showing it.
+const wishMeta = computed(() => props.book?.isWished ? wishPriorityMeta(props.book.wishPriority) : null)
+
 // Status pill — a compact read of the book's availability.
 const statusPill = computed(() => {
+  if (props.book?.isWished) {
+    return { label: t(wishPriorityKey(props.book.wishPriority)), tone: 'muted' }
+  }
   switch (props.book?.status) {
     case 'own':               return { label: t('bookDetail.status.own'), tone: 'available' }
     case 'lent':              return { label: t('bookDetail.status.lent'), tone: 'muted' }
@@ -95,7 +105,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
           <!-- Info (scrolls independently on desktop) -->
           <div class="modal__info">
             <div v-if="statusPill || book.isRead" class="detail-pills">
-              <span v-if="statusPill" class="detail-status" :class="`detail-status--${statusPill.tone}`">
+              <span
+                v-if="statusPill"
+                class="detail-status"
+                :class="wishMeta ? `detail-status--wish-${wishMeta.tone}` : `detail-status--${statusPill.tone}`"
+              >
                 {{ statusPill.label }}
               </span>
               <span v-if="book.isRead" class="detail-status detail-status--read">
@@ -144,8 +158,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
         <footer class="modal__footer">
           <button class="btn-secondary" type="button" @click="close">{{ t('common.close') }}</button>
+          <!-- Your own book has no borrow affordance, and neither does a
+               wish-list one: its owner hasn't got it to lend (the API rejects
+               such a request outright — see LibraryRequestService::create). -->
           <button
-            v-if="!isSelf"
+            v-if="!isSelf && !book.isWished"
             class="btn-request"
             :class="`btn-request--${action.state}`"
             type="button"
@@ -293,6 +310,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   background: var(--color-primary-container);
   color: var(--color-on-primary-container);
 }
+/* Wish-list priority, the same traffic light the cards use. */
+.detail-status--wish-green { background: var(--color-primary); color: var(--color-on-primary); }
+.detail-status--wish-amber { background: var(--color-tertiary); color: #ffffff; }
+.detail-status--wish-red { background: var(--color-error); color: #ffffff; }
+
 .detail-status--muted {
   background: var(--color-surface-container-high);
   color: var(--color-on-surface-variant);
