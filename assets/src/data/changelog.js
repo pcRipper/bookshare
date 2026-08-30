@@ -7,6 +7,16 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.24.0',
+    date: '2026-08-30',
+    notes: [
+      'Borrowing, Lending, Requests and History were four tabs describing the same thing from different angles, and finding one loan meant guessing which of them held it. They are now a single Sharing tab with two sides: Borrowing, for the books you have, and Lending, for the books you own.',
+      'Each side reads top to bottom as the loan itself does — the requests still waiting on a decision, then the books that have actually changed hands, then the loans that are finished. The counter on each side tells you how much is in flight there.',
+      'Past loans now lists only loans that ended. A request you are still waiting on, or a book still out, appears once, in its own place further up the page, instead of a second time at the bottom.',
+      'Your library strip is down from eight tabs to five, so far less of it is hidden off the side of a phone screen.',
+    ],
+  },
+  {
     version: '1.23.0',
     date: '2026-08-30',
     notes: [
