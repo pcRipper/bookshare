@@ -116,10 +116,25 @@
   /* Overlay inset. Tighter on phones — at 24px a side, a 390px screen loses
      an eighth of its width to backdrop the user can't read anything through. */
   --modal-gutter: var(--space-sm);
+
+  /* Every dialog's height ceiling, for the same reason the widths are tokens.
+     `vh` is the *large* viewport — on iOS Safari that is the height with the
+     toolbars hidden, so a sheet sized in it overflows the screen whenever they
+     are showing and takes its close button and footer off with it. `svh` is
+     the small viewport (toolbars shown), which is the one that is always
+     visible. The `vh` line stays as the fallback for browsers without the
+     newer units; the second declaration simply wins where they exist. */
+  --modal-max-h: 90vh;
+  --modal-max-h: 85svh;
 }
 
 @media (min-width: 768px) {
-  :root { --modal-gutter: var(--space-md); }
+  :root {
+    --modal-gutter: var(--space-md);
+    /* A desktop viewport has no disappearing toolbars to buy back — and there
+       `svh`, `vh` and `lvh` are the same number anyway. */
+    --modal-max-h: 90svh;
+  }
 }
 
 /* ── Global base ──────────────────────────────────────────────────────── */

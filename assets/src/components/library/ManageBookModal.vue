@@ -417,7 +417,7 @@ function applyTemplate(t) {
   box-shadow: 0 10px 30px rgba(35, 44, 51, 0.08);
   width: 100%;
   max-width: var(--modal-w-lg);
-  max-height: 90vh;
+  max-height: var(--modal-max-h);
   display: flex;
   flex-direction: column;
 }

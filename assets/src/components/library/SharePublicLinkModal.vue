@@ -153,7 +153,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   border-radius: var(--radius-lg);
   width: 100%;
   max-width: var(--modal-w-sm);
-  max-height: 90vh;
+  max-height: var(--modal-max-h);
   display: flex;
   flex-direction: column;
   overflow: hidden;
