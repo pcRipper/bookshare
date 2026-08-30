@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/api'
-import { relativeTime } from '@/utils/time'
 import { toBookInput } from '@/utils/bookPayload'
 
 /**
@@ -38,11 +37,6 @@ export const useLibraryStore = defineStore('library', () => {
   const loading = ref({ collection: false, lending: false, requests: false, history: false, borrowing: false, pendingBorrowing: false, borrowingHistory: false, wishlist: false })
   const error = ref(null)
 
-  // Map an API request payload to RequestCard's expected shape (relative date).
-  function toCardRequest(r) {
-    return { ...r, requestedAt: relativeTime(r.requestedAt) }
-  }
-
   async function fetchMe() {
     const { data } = await api.get('/me')
     stats.value = data.stats
@@ -71,16 +65,16 @@ export const useLibraryStore = defineStore('library', () => {
     return fetchCollection(1)
   }
 
-  // Lending is a naturally-small in-flight list (books currently out on loan);
-  // it shares the paginated /books endpoint but isn't page-controlled in the UI,
-  // so fetch a single generous page and read the envelope's items.
+  // Books currently out on loan, as *requests* rather than books: the Sharing
+  // list shows one card shape for every loan, and only the request carries the
+  // borrower, the due date and the timeline. `parentRequest IS NULL` on the
+  // repository side already keeps collection-borrowed books out, which is what
+  // the old /books call needed `excludeCollectionLoans` for.
   async function fetchLending() {
     loading.value.lending = true
     try {
-      // excludeCollectionLoans: books out via a collection are shown grouped in
-      // the collection card, so keep them out of the individual Lending grid.
-      const { data } = await api.get('/books', { params: { status: 'lent', perPage: 100, excludeCollectionLoans: 1 } })
-      lending.value = data.items
+      const { data } = await api.get('/requests/incoming', { params: { status: 'active' } })
+      lending.value = data
     } finally {
       loading.value.lending = false
     }
@@ -89,9 +83,12 @@ export const useLibraryStore = defineStore('library', () => {
   async function fetchRequests() {
     loading.value.requests = true
     try {
-      // "open" = pending borrow requests + return confirmations awaiting the owner.
-      const { data } = await api.get('/requests/incoming', { params: { status: 'open' } })
-      requests.value = data.map(toCardRequest)
+      // Strictly `pending`, not `open`: `open` also carries ReturnPending, which
+      // `active` carries too, so the same loan would appear in both slices — and
+      // the Sharing list merges them. A return awaiting confirmation belongs with
+      // the active loans anyway; the book is still out.
+      const { data } = await api.get('/requests/incoming', { params: { status: 'pending' } })
+      requests.value = data
     } finally {
       loading.value.requests = false
     }
@@ -103,7 +100,7 @@ export const useLibraryStore = defineStore('library', () => {
       // Settled loans only: the in-flight ones have their own blocks above the
       // "Past loans" list, and listing them twice on one panel read as duplicates.
       const { data } = await api.get('/requests/incoming', { params: { status: 'resolved', page } })
-      history.value = data.items.map(toCardRequest)
+      history.value = data.items
       historyMeta.value = data.pagination
     } finally {
       loading.value.history = false
@@ -115,7 +112,7 @@ export const useLibraryStore = defineStore('library', () => {
     loading.value.borrowing = true
     try {
       const { data } = await api.get('/requests/outgoing', { params: { status: 'active' } })
-      borrowing.value = data.map(toCardRequest)
+      borrowing.value = data
     } finally {
       loading.value.borrowing = false
     }
@@ -126,7 +123,7 @@ export const useLibraryStore = defineStore('library', () => {
     loading.value.pendingBorrowing = true
     try {
       const { data } = await api.get('/requests/outgoing', { params: { status: 'pending' } })
-      pendingBorrowing.value = data.map(toCardRequest)
+      pendingBorrowing.value = data
     } finally {
       loading.value.pendingBorrowing = false
     }
@@ -137,7 +134,7 @@ export const useLibraryStore = defineStore('library', () => {
     loading.value.borrowingHistory = true
     try {
       const { data } = await api.get('/requests/outgoing', { params: { status: 'resolved', page } })
-      borrowingHistory.value = data.items.map(toCardRequest)
+      borrowingHistory.value = data.items
       borrowingHistoryMeta.value = data.pagination
     } finally {
       loading.value.borrowingHistory = false

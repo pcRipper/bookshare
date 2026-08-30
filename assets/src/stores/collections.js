@@ -1,14 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/api'
-import { relativeTime } from '@/utils/time'
 import { useLibraryStore } from '@/stores/library'
 
 /**
  * Backs the book-collections feature: the owner's collections (Library tab) with
  * CRUD, another reader's collections (Profile tab), collection-borrow creation,
  * and the grouped collection-request lists/transitions that live alongside the
- * per-book ones in the Requests / Borrowing / Lending / History tabs.
+ * per-book ones in the Sharing tab.
  *
  * Mirrors the shapes and conventions of the `library` store (paginated
  * `fetchX(page)`, bare in-flight arrays refetched wholesale on Mercure signals).
@@ -25,24 +24,22 @@ export const useCollectionsStore = defineStore('collections', () => {
   const profileMeta = ref(emptyMeta())
   const profileOwnerId = ref(null)
 
-  // Grouped collection requests, split like the per-book request lists.
-  const incoming = ref([])          // open incoming (owner side): pending + return-pending
+  // Grouped collection requests, split like the per-book ones into three
+  // non-overlapping slices per side — pending, active, settled — which the
+  // Sharing panel merges into one list.
+  const incoming = ref([])          // incoming awaiting the owner's decision
   const pendingBorrowing = ref([])  // outgoing still awaiting the owner's decision
   const borrowing = ref([])         // active outgoing collection loans
   const lending = ref([])           // active incoming collection loans (owner side)
-  const history = ref([])           // all incoming, any state — lending history
+  const history = ref([])           // settled incoming — lending history
   const historyMeta = ref(emptyMeta())
-  const borrowingHistory = ref([])  // all outgoing, any state — borrowing history
+  const borrowingHistory = ref([])  // settled outgoing — borrowing history
   const borrowingHistoryMeta = ref(emptyMeta())
 
   const loading = ref({
     mine: false, profile: false, incoming: false, pendingBorrowing: false,
     borrowing: false, lending: false, history: false, borrowingHistory: false,
   })
-
-  function toCard(r) {
-    return { ...r, requestedAt: relativeTime(r.requestedAt) }
-  }
 
   /* ── Collection CRUD (owner) ─────────────────────────────────────────── */
 
@@ -98,8 +95,10 @@ export const useCollectionsStore = defineStore('collections', () => {
   async function fetchIncoming() {
     loading.value.incoming = true
     try {
-      const { data } = await api.get('/collection-requests/incoming', { params: { status: 'open' } })
-      incoming.value = data.map(toCard)
+      // `pending` rather than `open` — see the per-book store: `open` and `active`
+      // both contain ReturnPending, which double-lists a loan once they merge.
+      const { data } = await api.get('/collection-requests/incoming', { params: { status: 'pending' } })
+      incoming.value = data
     } finally {
       loading.value.incoming = false
     }
@@ -109,7 +108,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     loading.value.pendingBorrowing = true
     try {
       const { data } = await api.get('/collection-requests/outgoing', { params: { status: 'pending' } })
-      pendingBorrowing.value = data.map(toCard)
+      pendingBorrowing.value = data
     } finally {
       loading.value.pendingBorrowing = false
     }
@@ -119,7 +118,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     loading.value.borrowing = true
     try {
       const { data } = await api.get('/collection-requests/outgoing', { params: { status: 'active' } })
-      borrowing.value = data.map(toCard)
+      borrowing.value = data
     } finally {
       loading.value.borrowing = false
     }
@@ -129,7 +128,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     loading.value.lending = true
     try {
       const { data } = await api.get('/collection-requests/incoming', { params: { status: 'active' } })
-      lending.value = data.map(toCard)
+      lending.value = data
     } finally {
       loading.value.lending = false
     }
@@ -139,7 +138,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     loading.value.history = true
     try {
       const { data } = await api.get('/collection-requests/incoming', { params: { status: 'resolved', page } })
-      history.value = data.items.map(toCard)
+      history.value = data.items
       historyMeta.value = data.pagination
     } finally {
       loading.value.history = false
@@ -150,7 +149,7 @@ export const useCollectionsStore = defineStore('collections', () => {
     loading.value.borrowingHistory = true
     try {
       const { data } = await api.get('/collection-requests/outgoing', { params: { status: 'resolved', page } })
-      borrowingHistory.value = data.items.map(toCard)
+      borrowingHistory.value = data.items
       borrowingHistoryMeta.value = data.pagination
     } finally {
       loading.value.borrowingHistory = false
