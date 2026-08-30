@@ -18,7 +18,7 @@ class UserStatsProvider
         private readonly CollectionRepository $collections,
     ) {}
 
-    /** @return array{totalBooks:int, shared:int, loaned:int, collections:int} */
+    /** @return array{totalBooks:int, shared:int, loaned:int, collections:int, wished:int} */
     public function forUser(User $user): array
     {
         return [
@@ -26,6 +26,10 @@ class UserStatsProvider
             'shared'      => $this->books->countShareableByOwner($user),
             'loaned'      => $this->books->countByOwnerAndStatus($user, BookStatus::Lent),
             'collections' => $this->collections->countByOwner($user),
+            // Sizes the Wish List tab's counter. Not shown as a headline stat —
+            // the three above are about what a reader shares with the community,
+            // and a wish list is about what they don't have.
+            'wished'      => $this->books->countWishedByOwner($user),
         ];
     }
 
@@ -35,7 +39,7 @@ class UserStatsProvider
      * full page of reader cards on every visit rather than only after a search.
      *
      * @param  User[] $users
-     * @return array<int, array{totalBooks:int, shared:int, loaned:int, collections:int}> keyed by user id
+     * @return array<int, array{totalBooks:int, shared:int, loaned:int, collections:int, wished:int}> keyed by user id
      */
     public function forUsers(array $users): array
     {
@@ -43,6 +47,9 @@ class UserStatsProvider
         $shared      = $this->books->countShareableByOwners($users);
         $loaned      = $this->books->countByOwnersAndStatus($users, BookStatus::Lent);
         $collections = $this->collections->countByOwners($users);
+        // Grouped like the rest rather than skipped, so a page of reader cards
+        // and a single profile report the same shape.
+        $wished      = $this->books->countWishedByOwners($users);
 
         $stats = [];
         foreach ($users as $user) {
@@ -52,6 +59,7 @@ class UserStatsProvider
                 'shared'      => $shared[$id] ?? 0,
                 'loaned'      => $loaned[$id] ?? 0,
                 'collections' => $collections[$id] ?? 0,
+                'wished'      => $wished[$id] ?? 0,
             ];
         }
 

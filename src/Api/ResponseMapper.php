@@ -69,6 +69,11 @@ class ResponseMapper
             'languageName' => \App\Language\LanguageCatalog::name($book->getLanguage()),
             // Owner's personal "already read" flag.
             'isRead'       => $book->isRead(),
+            // Wish list: wanted rather than held, and how badly. The priority is
+            // the enum's number — the SPA owns the green/yellow/red labels, the
+            // same split as `status`.
+            'isWished'     => $book->isWished(),
+            'wishPriority' => $book->getWishPriority()?->value,
             // When the book was catalogued — shown as the table view's "Added" column.
             'createdAt'    => $book->getCreatedAt()->format(\DateTimeInterface::ATOM),
             // Who currently holds the book — owner while home, borrower while lent.
@@ -113,6 +118,11 @@ class ResponseMapper
             'language'     => $book->getLanguage(),
             'languageName' => \App\Language\LanguageCatalog::name($book->getLanguage()),
             'isRead'       => $book->isRead(),
+            // Published on purpose: the share page carries a wish-list section,
+            // and "books I'd like" is exactly the sort of thing a link is shared
+            // for. Neither field is viewer-relative or names a third party.
+            'isWished'     => $book->isWished(),
+            'wishPriority' => $book->getWishPriority()?->value,
             'createdAt'    => $book->getCreatedAt()->format(\DateTimeInterface::ATOM),
             'categories'   => array_map(
                 fn ($c) => ['id' => $c->getId(), 'name' => $c->getName(), 'colorHex' => $c->getColorHex()],
