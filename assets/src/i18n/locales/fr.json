@@ -233,6 +233,7 @@
     "tabs": {
       "books": "Livres",
       "collections": "Collections",
+      "wishlist": "Liste de souhaits",
       "borrowing": "Emprunts",
       "lending": "Prêts",
       "requests": "Demandes",
@@ -311,11 +312,13 @@
     "tabs": {
       "available": "Disponibles à l’emprunt",
       "full": "Tous les livres",
-      "collections": "Collections"
+      "collections": "Collections",
+      "wishlist": "Liste de souhaits"
     },
     "empty": {
       "available": "Aucun livre n’est disponible à l’emprunt pour le moment.",
       "full": "Cette collection est vide.",
+      "wishlist": "La liste de souhaits de ce lecteur est vide.",
       "ownCollections": "Vous n’avez encore créé aucune collection.",
       "collections": "Ce lecteur n’a pas encore de collections."
     },
@@ -469,6 +472,32 @@
     "empty": "Vous ne suivez encore personne ayant des livres à montrer.",
     "emptyLink": "Découvrir des lecteurs à suivre"
   },
+  "wishlist": {
+    "markWanted": "Ajouter à ma liste de souhaits",
+    "priorityLabel": "Priorité",
+    "priority": {
+      "canWait": "Peut attendre",
+      "veryInterested": "Très intéressé",
+      "urgent": "Urgent",
+      "unset": "Sans priorité"
+    },
+    "acquire": "Je l’ai maintenant",
+    "addBook": "Ajouter un livre souhaité",
+    "addCard": {
+      "title": "Ajouter un livre souhaité",
+      "hint": "Notez un livre que vous aimeriez posséder."
+    },
+    "searchPlaceholder": "Rechercher dans votre liste de souhaits…",
+    "noMatches": "Rien dans votre liste de souhaits ne correspond.",
+    "allLevels": "Toutes",
+    "filterLabel": "Filtrer par priorité",
+    "sortLabel": "Trier la liste de souhaits",
+    "sortPriority": "Par priorité",
+    "sortNewest": "Plus récents d’abord",
+    "toasts": {
+      "acquired": "Déplacé vers votre collection."
+    }
+  },
   "table": {
     "read": "Lu",
     "cover": "Couverture",
@@ -593,6 +622,9 @@
       "author": "Auteur",
       "member": "Membre",
       "loans": "Emprunts",
+      "mostWanted": "Livres les plus souhaités",
+      "wanted": "Souhaité par",
+      "wishlistTotal": "{count} livre figure sur les listes de souhaits de la communauté. | {count} livres figurent sur les listes de souhaits de la communauté.",
       "empty": "Aucun livre catalogué pour l'instant."
     }
   }

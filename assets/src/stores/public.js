@@ -20,7 +20,11 @@ export const usePublicLibraryStore = defineStore('publicLibrary', () => {
   const booksMeta = ref(emptyMeta())
   const booksLoading = ref(false)
   const availableCount = ref(0)
-  const shelf = ref('available')        // 'available' (status=own) | 'full'
+  const shelf = ref('available')        // 'available' (status=own) | 'full' | 'wished'
+  // Each shelf's own total, kept like availableCount so a tab chip neither
+  // shrinks while a search is active nor reports another shelf's size.
+  const fullCount = ref(0)
+  const wishedCount = ref(0)
   const booksQuery = ref('')
   const loading = ref(false)
   const error = ref(null)               // 'not-found' | 'error' | null
@@ -60,12 +64,20 @@ export const usePublicLibraryStore = defineStore('publicLibrary', () => {
     try {
       const params = { page }
       if (shelf.value === 'available') params.status = 'own'
+      if (shelf.value === 'wished') params.wished = 1
       if (booksQuery.value) params.q = booksQuery.value
       const { data } = await api.get(`/public/users/${currentId.value}/books`, { params })
       books.value = data.items
       booksMeta.value = data.pagination
-      // Keep the tab chip on the shelf's true size — don't let a search shrink it.
-      if (shelf.value === 'available' && !booksQuery.value) availableCount.value = data.pagination.total
+      // Keep the tab chips on their shelf's true size — don't let a search shrink them.
+      // Each chip remembers its own shelf's total. Reading them all off the
+      // current page's `total` (as the "All books" chip used to) makes every
+      // chip show whichever shelf happens to be open.
+      if (!booksQuery.value) {
+        if (shelf.value === 'available') availableCount.value = data.pagination.total
+        if (shelf.value === 'full') fullCount.value = data.pagination.total
+        if (shelf.value === 'wished') wishedCount.value = data.pagination.total
+      }
     } finally {
       if (!silent) booksLoading.value = false
     }
@@ -95,7 +107,7 @@ export const usePublicLibraryStore = defineStore('publicLibrary', () => {
   }
 
   return {
-    owner, books, booksMeta, booksLoading, availableCount, shelf, booksQuery, loading, error,
+    owner, books, booksMeta, booksLoading, availableCount, fullCount, wishedCount, shelf, booksQuery, loading, error,
     collections, collectionsMeta, collectionsLoading,
     fetchLibrary, fetchBooksPage, fetchCollectionsPage, setShelf, setBooksSearch,
   }

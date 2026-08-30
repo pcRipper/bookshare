@@ -34,7 +34,7 @@ const store = usePublicLibraryStore()
 const toast = useToastStore()
 const { t } = useI18n()
 const {
-  owner, books, booksMeta, booksLoading, availableCount, shelf, booksQuery, loading, error,
+  owner, books, booksMeta, booksLoading, availableCount, fullCount, wishedCount, shelf, booksQuery, loading, error,
   collections, collectionsMeta, collectionsLoading,
 } = storeToRefs(store)
 const { bookView, tableDetailed } = useBookView()
@@ -45,8 +45,11 @@ const collectionsLoaded = ref(false)
 
 const tabs = computed(() => [
   { key: 'available',   label: t('profile.tabs.available'),   count: availableCount.value },
-  { key: 'full',        label: t('profile.tabs.full'),        count: booksMeta.value.total },
+  { key: 'full',        label: t('profile.tabs.full'),        count: fullCount.value },
   { key: 'collections', label: t('profile.tabs.collections'), count: collectionsMeta.value.total, collections: true },
+  // Shared for the same reason the shelves are: a visitor who owns one of these
+  // is exactly who the link was sent to.
+  { key: 'wished',      label: t('profile.tabs.wishlist'),    count: wishedCount.value },
 ])
 
 function isTabActive(tab) {
@@ -174,6 +177,7 @@ watch(() => route.params.id, load)
             :books="books"
             :detailed="tableDetailed"
             :show-holder="false"
+            :wish="shelf === 'wished'"
             role="tabpanel"
             @open="openDetail"
           />
@@ -189,6 +193,7 @@ watch(() => route.params.id, load)
           <div v-else class="empty-state">
             <span class="material-symbols-outlined empty-state__icon">{{ booksQuery ? 'search_off' : 'auto_stories' }}</span>
             <p v-if="booksQuery">{{ t('library.noMatches', { query: booksQuery }) }}</p>
+            <p v-else-if="shelf === 'wished'">{{ t('profile.empty.wishlist') }}</p>
             <p v-else>{{ shelf === 'available' ? t('profile.empty.available') : t('profile.empty.full') }}</p>
           </div>
 

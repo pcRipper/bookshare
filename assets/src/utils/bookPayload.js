@@ -15,6 +15,10 @@ export function toBookInput(book) {
     status: book.status,
     language: book.language ?? null,
     isRead: book.isRead,
+    // Carried for the same reason as everything else here: a PATCH that omitted
+    // these would quietly move a wanted book onto the shelf.
+    isWished: book.isWished ?? false,
+    wishPriority: book.wishPriority ?? null,
     categoryIds: (book.categories ?? []).map(c => c.id),
   }
 }

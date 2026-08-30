@@ -27,7 +27,15 @@ export const useLibraryStore = defineStore('library', () => {
   const borrowingHistoryMeta = ref(emptyMeta()) // pagination for the borrowing-history list
   const categories = ref([])
 
-  const loading = ref({ collection: false, lending: false, requests: false, history: false, borrowing: false, pendingBorrowing: false, borrowingHistory: false })
+  // Wish list — books the user wants rather than holds. Its own shelf, served by
+  // the same endpoint under ?wished=1, with its own filter state.
+  const wishlist = ref([])
+  const wishlistMeta = ref(emptyMeta())
+  const wishlistQuery = ref('')            // free-text filter (title/author/ISBN)
+  const wishlistPriority = ref(null)       // null = every level
+  const wishlistSort = ref('priority')     // 'priority' | 'newest'
+
+  const loading = ref({ collection: false, lending: false, requests: false, history: false, borrowing: false, pendingBorrowing: false, borrowingHistory: false, wishlist: false })
   const error = ref(null)
 
   // Map an API request payload to RequestCard's expected shape (relative date).
@@ -135,6 +143,46 @@ export const useLibraryStore = defineStore('library', () => {
     }
   }
 
+  // One page of the wish list, most-wanted first (the server orders it — the
+  // priority is an integer there precisely so it can). The active search and
+  // priority filter narrow it server-side.
+  async function fetchWishlist(page = wishlistMeta.value.page) {
+    loading.value.wishlist = true
+    try {
+      const params = { page, wished: 1, sort: wishlistSort.value }
+      if (wishlistQuery.value) params.q = wishlistQuery.value
+      if (wishlistPriority.value) params.priority = wishlistPriority.value
+      const { data } = await api.get('/books', { params })
+      wishlist.value = data.items
+      wishlistMeta.value = data.pagination
+    } finally {
+      loading.value.wishlist = false
+    }
+  }
+
+  function setWishlistSearch(q) {
+    wishlistQuery.value = q
+    return fetchWishlist(1)
+  }
+
+  // `null` clears the filter and shows every level.
+  function setWishlistPriority(priority) {
+    wishlistPriority.value = priority
+    return fetchWishlist(1)
+  }
+
+  function setWishlistSort(sort) {
+    wishlistSort.value = sort
+    return fetchWishlist(1)
+  }
+
+  // "I've got it now": the book moves onto the shelf, so both lists change and
+  // the stat counters with them.
+  async function acquireBook(id) {
+    await api.post(`/books/${id}/acquire`)
+    await Promise.all([fetchWishlist(), fetchCollection(1), fetchMe()])
+  }
+
   async function fetchCategories() {
     const { data } = await api.get('/categories')
     categories.value = data
@@ -165,13 +213,16 @@ export const useLibraryStore = defineStore('library', () => {
 
   async function createBook(payload) {
     await api.post('/books', payload)
-    // A new book is newest-first → jump to page 1 so it's visible.
-    await Promise.all([fetchCollection(1), fetchMe()])
+    // A new book leads its own shelf → jump to page 1 of the one it landed on.
+    const shelf = payload.isWished ? fetchWishlist(1) : fetchCollection(1)
+    await Promise.all([shelf, fetchMe()])
   }
 
   async function updateBook(id, payload) {
     await api.patch(`/books/${id}`, payload)
-    await Promise.all([fetchCollection(), fetchMe()])
+    // Both shelves: an edit can move a book between them (the modal's wish
+    // checkbox), and refreshing only the one it came from would leave it on both.
+    await Promise.all([fetchCollection(), fetchWishlist(), fetchMe()])
     // a status change may add/remove from lending — refresh if already loaded
     if (lending.value.length) await fetchLending()
   }
@@ -180,7 +231,9 @@ export const useLibraryStore = defineStore('library', () => {
   // local flag, PATCH the whole DTO (the endpoint maps the full BookInput), and
   // revert on failure so the checkbox reflects the true server state.
   async function setBookRead(id, isRead) {
-    const book = collection.value.find(b => b.id === id) || lending.value.find(b => b.id === id)
+    const book = collection.value.find(b => b.id === id)
+      || lending.value.find(b => b.id === id)
+      || wishlist.value.find(b => b.id === id)
     if (!book) return
     const prev = book.isRead
     book.isRead = isRead
@@ -194,7 +247,7 @@ export const useLibraryStore = defineStore('library', () => {
 
   async function deleteBook(id) {
     await api.delete(`/books/${id}`)
-    await Promise.all([fetchCollection(), fetchMe()])
+    await Promise.all([fetchCollection(), fetchWishlist(), fetchMe()])
   }
 
   // Download the collection as a CSV file (triggers a browser download).
@@ -259,7 +312,9 @@ export const useLibraryStore = defineStore('library', () => {
 
   return {
     profile, stats, collection, collectionMeta, collectionQuery, lending, requests, history, historyMeta, borrowing, pendingBorrowing, borrowingHistory, borrowingHistoryMeta, categories, loading, error,
+    wishlist, wishlistMeta, wishlistQuery, wishlistPriority, wishlistSort,
     fetchMe, fetchCollection, setCollectionSearch, fetchLending, fetchRequests, fetchHistory, fetchBorrowing, fetchPendingBorrowing, fetchBorrowingHistory, fetchCategories,
+    fetchWishlist, setWishlistSearch, setWishlistPriority, setWishlistSort, acquireBook,
     searchCategories, createCategory, searchBookTemplates,
     createBook, updateBook, deleteBook, setBookRead, exportBooks, importBooks,
     approveRequest, declineRequest, confirmReturn, returnBook, cancelRequest,
