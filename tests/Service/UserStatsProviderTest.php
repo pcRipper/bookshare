@@ -19,6 +19,7 @@ class UserStatsProviderTest extends TestCase
         $books->expects($this->once())->method('countByOwner')->with($user)->willReturn(10);
         $books->expects($this->once())->method('countShareableByOwner')->with($user)->willReturn(6);
         $books->expects($this->once())->method('countByOwnerAndStatus')->with($user, BookStatus::Lent)->willReturn(2);
+        $books->expects($this->once())->method('countWishedByOwner')->with($user)->willReturn(4);
 
         $collections = $this->createMock(CollectionRepository::class);
         $collections->expects($this->once())->method('countByOwner')->with($user)->willReturn(3);
@@ -26,7 +27,7 @@ class UserStatsProviderTest extends TestCase
         $stats = (new UserStatsProvider($books, $collections))->forUser($user);
 
         self::assertSame(
-            ['totalBooks' => 10, 'shared' => 6, 'loaned' => 2, 'collections' => 3],
+            ['totalBooks' => 10, 'shared' => 6, 'loaned' => 2, 'collections' => 3, 'wished' => 4],
             $stats,
         );
     }
@@ -42,6 +43,7 @@ class UserStatsProviderTest extends TestCase
         $books->method('countByOwners')->willReturn([7 => 10]);
         $books->method('countShareableByOwners')->willReturn([7 => 6]);
         $books->method('countByOwnersAndStatus')->willReturn([7 => 2]);
+        $books->method('countWishedByOwners')->willReturn([7 => 4]);
 
         $collections = $this->createStub(CollectionRepository::class);
         $collections->method('countByOwners')->willReturn([7 => 3, 9 => 1]);
@@ -50,8 +52,8 @@ class UserStatsProviderTest extends TestCase
 
         self::assertSame(
             [
-                7 => ['totalBooks' => 10, 'shared' => 6, 'loaned' => 2, 'collections' => 3],
-                9 => ['totalBooks' => 0, 'shared' => 0, 'loaned' => 0, 'collections' => 1],
+                7 => ['totalBooks' => 10, 'shared' => 6, 'loaned' => 2, 'collections' => 3, 'wished' => 4],
+                9 => ['totalBooks' => 0, 'shared' => 0, 'loaned' => 0, 'collections' => 1, 'wished' => 0],
             ],
             $stats,
         );

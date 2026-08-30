@@ -9,6 +9,7 @@ use App\Entity\Category;
 use App\Entity\User;
 use App\Enum\ActivityType;
 use App\Enum\BookStatus;
+use App\Enum\WishPriority;
 use App\Repository\CategoryRepository;
 use App\Service\ActivityRecorder;
 use App\Service\BookService;
@@ -91,6 +92,84 @@ class BookServiceTest extends TestCase
         self::assertNull($book->getIsbn());
         self::assertNull($book->getCoverPath());
         self::assertNull($book->getDescription());
+    }
+
+    public function testCreatingAWishListBookRecordsNoActivity(): void
+    {
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->expects($this->once())->method('persist');
+        $categories = $this->createStub(CategoryRepository::class);
+        $categories->method('findByIds')->willReturn([]);
+        // A book nobody can borrow has no business in everyone's feed.
+        $activity = $this->createMock(ActivityRecorder::class);
+        $activity->expects($this->never())->method('record');
+
+        $input = $this->wishInput(WishPriority::Urgent);
+
+        $book = (new BookService($em, $categories, $activity))->create(new User(), $input);
+
+        self::assertTrue($book->isWished());
+        self::assertSame(WishPriority::Urgent, $book->getWishPriority());
+    }
+
+    public function testAPriorityOnANonWishedBookIsDiscarded(): void
+    {
+        $em = $this->createStub(EntityManagerInterface::class);
+        $categories = $this->createStub(CategoryRepository::class);
+        $categories->method('findByIds')->willReturn([]);
+        $activity = $this->createStub(ActivityRecorder::class);
+
+        $input = $this->wishInput(WishPriority::Urgent);
+        $input->isWished = false;
+
+        $book = (new BookService($em, $categories, $activity))->create(new User(), $input);
+
+        self::assertFalse($book->isWished());
+        self::assertNull($book->getWishPriority());
+    }
+
+    public function testAcquiringMovesTheBookToTheShelfAndAnnouncesItThen(): void
+    {
+        $em = $this->createStub(EntityManagerInterface::class);
+        $categories = $this->createStub(CategoryRepository::class);
+        $categories->method('findByIds')->willReturn([]);
+        // create() withheld the "added a book" event; acquiring is when the
+        // community actually gained it, so it fires here instead.
+        $activity = $this->createMock(ActivityRecorder::class);
+        $activity->expects($this->once())->method('record')->willReturn(new ActivityItem());
+
+        $service = new BookService($em, $categories, $activity);
+        $book = $service->create(new User(), $this->wishInput());
+
+        $service->acquire($book);
+
+        self::assertFalse($book->isWished());
+        self::assertNull($book->getWishPriority());
+    }
+
+    public function testAcquiringABookAlreadyOnTheShelfIsANoOp(): void
+    {
+        $em = $this->createStub(EntityManagerInterface::class);
+        $categories = $this->createStub(CategoryRepository::class);
+        $activity = $this->createMock(ActivityRecorder::class);
+        $activity->expects($this->never())->method('record');
+
+        $book = (new Book())->setOwner(new User());
+
+        (new BookService($em, $categories, $activity))->acquire($book);
+
+        self::assertFalse($book->isWished());
+    }
+
+    private function wishInput(?WishPriority $priority = null): BookInput
+    {
+        $input = new BookInput();
+        $input->title = 'Dune';
+        $input->author = 'Frank Herbert';
+        $input->isWished = true;
+        $input->wishPriority = $priority;
+
+        return $input;
     }
 
     public function testUpdateAppliesInputWithoutPersistingOrRecording(): void
