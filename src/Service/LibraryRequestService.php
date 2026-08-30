@@ -48,6 +48,12 @@ class LibraryRequestService
         if ($ownerSettings !== null && !$ownerSettings->allowsRequests()) {
             throw new DomainRuleException('This reader isn\'t accepting borrow requests right now.');
         }
+        // A wish-list book is one its owner doesn't have yet. Every list that
+        // could surface it already filters it out, so this only ever fires on a
+        // hand-made request — but the shelves must not be bridgeable by id.
+        if ($book->isWished()) {
+            throw new DomainRuleException('This book is on its owner\'s wish list, not their shelf.');
+        }
         if ($book->getStatus() !== BookStatus::Own) {
             throw new DomainRuleException('This book is not available to borrow right now.');
         }

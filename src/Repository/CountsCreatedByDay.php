@@ -24,13 +24,15 @@ trait CountsCreatedByDay
      */
     public function countCreatedByDay(\DateTimeImmutable $since): array
     {
-        $rows = $this->createQueryBuilder('e')
+        $qb = $this->createQueryBuilder('e')
             ->select("DATE_TRUNC('day', e.createdAt) AS day, COUNT(e.id) AS total")
             ->where('e.createdAt >= :since')
             ->setParameter('since', $since)
-            ->groupBy('day')
-            ->getQuery()
-            ->getScalarResult();
+            ->groupBy('day');
+
+        $this->scopeCreatedByDay($qb);
+
+        $rows = $qb->getQuery()->getScalarResult();
 
         $byDay = [];
         foreach ($rows as $row) {
@@ -38,5 +40,14 @@ trait CountsCreatedByDay
         }
 
         return $byDay;
+    }
+
+    /**
+     * Hook for a repository whose table holds rows that aren't really "created
+     * things" — BookRepository excludes wish-list books here. The alias is `e`.
+     * No-op by default, so User and BookCollection are unaffected.
+     */
+    protected function scopeCreatedByDay(\Doctrine\ORM\QueryBuilder $qb): void
+    {
     }
 }
