@@ -1,0 +1,36 @@
+framework:
+    messenger:
+        failure_transport: failed
+
+        transports:
+            # Mail is delivered out of band: an SMTP round-trip is 0.3–2s and a
+            # loan transition must not pay it. The Doctrine transport is used
+            # rather than AMQP/Redis deliberately — the droplet is memory-bound
+            # and PostgreSQL is already there.
+            #
+            # auto_setup=0: the table is created by a checked-in migration, not
+            # by the first message. A worker booting into DDL on a production
+            # database is not a thing we want to rely on.
+            async:
+                dsn: '%env(default:messenger_transport_dsn_fallback:MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    max_retries: 3
+                    delay: 60000        # 1 min, then 2, then 8 — rides out a relay blip
+                    multiplier: 3
+            failed: 'doctrine://default?queue_name=failed&auto_setup=0'
+
+        routing:
+            # Every mail the app sends goes through this one route.
+            Symfony\Component\Mailer\Messenger\SendEmailMessage: async
+
+parameters:
+    messenger_transport_dsn_fallback: 'doctrine://default?auto_setup=0'
+
+when@test:
+    framework:
+        messenger:
+            # No table, no worker, no queue to drain: the suite asserts against
+            # the MailerInterface seam instead.
+            transports:
+                async: 'in-memory://'
+                failed: 'in-memory://'
