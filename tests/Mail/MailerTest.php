@@ -23,7 +23,7 @@ class MailerTest extends TestCase
     /** @var list<TemplatedEmail> */
     private array $sent = [];
 
-    private function mailer(?\Throwable $transportError = null): Mailer
+    private function mailer(?\Throwable $transportError = null, ?LoggerInterface $logger = null): Mailer
     {
         $this->sent = [];
 
@@ -45,7 +45,7 @@ class MailerTest extends TestCase
             static fn (string $id, array $parameters = []) => strtr($id, $parameters),
         );
 
-        return new Mailer($transport, $translator, $this->createStub(LoggerInterface::class), 'https://folioshare.test');
+        return new Mailer($transport, $translator, $logger ?? $this->createStub(LoggerInterface::class), 'https://folioshare.test');
     }
 
     private function user(?UserSettings $settings = null, string $email = 'reader@example.com'): User
@@ -62,9 +62,34 @@ class MailerTest extends TestCase
     {
         $mailer = $this->mailer();
 
-        self::assertTrue($mailer->send($this->user(), MailType::LoanRequested, ['requester' => 'Bo Borrower']));
+        $context = ['requester' => 'Bo Borrower', 'item' => 'Dracula'];
+
+        self::assertTrue($mailer->send($this->user(), MailType::LoanRequested, $context));
         self::assertCount(1, $this->sent);
-        self::assertSame('Bo Borrower would like to borrow ', $this->sent[0]->getSubject());
+        self::assertSame('Bo Borrower would like to borrow Dracula', $this->sent[0]->getSubject());
+    }
+
+    /**
+     * A placeholder with nothing behind it still sends — but it is always a bug
+     * at the call site, and it is invisible from anywhere else: the mail is
+     * delivered, the queue is clean, and the subject just quietly misses a name.
+     * This is what shipped " would like to borrow The Dunwich Horror" to a real
+     * inbox, because LoanMailer named the person `counterpart` and the subject
+     * asked for `%requester%`.
+     */
+    public function testAnUnfilledSubjectPlaceholderIsLogged(): void
+    {
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::once())
+            ->method('warning')
+            ->with(
+                self::stringContains('unfilled placeholders'),
+                self::callback(static fn (array $c) => $c['missing'] === 'requester'),
+            );
+
+        $mailer = $this->mailer(logger: $logger);
+
+        self::assertTrue($mailer->send($this->user(), MailType::LoanRequested, ['item' => 'Dracula']));
     }
 
     public function testAnOptedOutRecipientIsNotSent(): void

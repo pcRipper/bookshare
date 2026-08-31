@@ -137,8 +137,27 @@ final class Mailer
     private function subject(MailType $type, array $context, string $locale): string
     {
         $parameters = [];
+        $missing = [];
         foreach ($type->subjectPlaceholders() as $name) {
-            $parameters['%'.$name.'%'] = (string) ($context[$name] ?? '');
+            $value = (string) ($context[$name] ?? '');
+            if (trim($value) === '') {
+                $missing[] = $name;
+            }
+
+            $parameters['%'.$name.'%'] = $value;
+        }
+
+        if ($missing !== []) {
+            // Still sent — a subject missing a name is worse read as an error
+            // page than as a slightly odd sentence. But it is never intentional:
+            // it means a call site's context key does not match the placeholder,
+            // which ships a subject like " would like to borrow Dracula" and
+            // nothing else in the system notices. Logged rather than thrown so
+            // one bad context can't cost a delivery.
+            $this->logger->warning('Mail "{type}" subject has unfilled placeholders: {missing}', [
+                'type'    => $type->value,
+                'missing' => implode(', ', $missing),
+            ]);
         }
 
         return $this->translator->trans($type->subject(), $parameters, 'mails', $locale);

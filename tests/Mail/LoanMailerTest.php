@@ -126,6 +126,53 @@ class LoanMailerTest extends TestCase
         self::assertSame([$expectedAddress, $expectedType->template('html')], $this->onlyMail());
     }
 
+    /**
+     * The seam that shipped a broken subject to a real inbox.
+     *
+     * Mailer fills a subject's %placeholders% by exact key lookup in the context
+     * LoanMailer hands it, so a name the context calls something else resolves to
+     * an empty string: "<blank> would like to borrow The Dunwich Horror". Nothing caught
+     * it — MailerTest supplied `requester` by hand and proved substitution works,
+     * LoanMailerTest proved routing works, and the templates map the placeholder
+     * themselves (`{'%requester%': counterpart}`) so every body was correct.
+     * Both sides were tested; the join between them was not.
+     *
+     * @return iterable<string, array{callable(LoanMailerTest): void, MailType}>
+     */
+    public static function everyLoanMail(): iterable
+    {
+        foreach (self::bookReasons() as $label => [$reason, , $type]) {
+            yield "book: {$label}" => [static fn (self $t) => $t->mails->notifyLoan($t->bookLoan(), $reason), $type];
+        }
+
+        foreach (self::collectionReasons() as $label => [$reason, , $type]) {
+            yield "collection: {$label}" => [
+                static fn (self $t) => $t->mails->notifyCollectionLoan($t->collectionLoan(), $reason),
+                $type,
+            ];
+        }
+
+        foreach (['due_soon', 'overdue'] as $state) {
+            yield "reminder: {$state}" => [
+                static fn (self $t) => $t->mails->remindBorrower($t->bookLoan(), $state),
+                MailType::LoanReminder,
+            ];
+        }
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('everyLoanMail')]
+    public function testEverySubjectPlaceholderIsSupplied(callable $send, MailType $type): void
+    {
+        $send($this);
+
+        $context = $this->sent[0]->getContext();
+
+        foreach ($type->subjectPlaceholders() as $name) {
+            self::assertArrayHasKey($name, $context, "{$type->value}: nothing supplies %{$name}% for the subject.");
+            self::assertNotSame('', trim((string) $context[$name]), "{$type->value}: %{$name}% is empty.");
+        }
+    }
+
     /** @return iterable<string, array{string, string, MailType}> */
     public static function collectionReasons(): iterable
     {
