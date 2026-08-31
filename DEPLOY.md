@@ -229,17 +229,50 @@ its due date), so 300/day is about 60 loans a day.
 1. Create the Brevo account, then **Senders, Domains & Dedicated IPs → Domains** and add
    the sending domain. Publish the DKIM/SPF records it gives you; an unauthenticated
    domain gets filed as spam regardless of what the relay accepts.
-2. **SMTP & API → SMTP** gives a login and an SMTP key.
+2. **SMTP & API → API Keys** gives an **API v3 key**. That is the one to use — *not* the
+   SMTP key on the neighbouring tab. See "Why the HTTP API and not SMTP" below.
 3. Fill in `.env` on the droplet:
 
 ```dotenv
-MAILER_DSN=smtp://<brevo-login>:<brevo-smtp-key>@smtp-relay.brevo.com:587
+MAILER_DSN=brevo+api://<api-v3-key>@default
+# Display name + <address>. MAILER_SENDER is the bare address. The asymmetry is
+# real and unforgiving: `FolioShare noreply@example.com` without the angle
+# brackets is not an RFC 2822 addr-spec, and the mail fails while it is still
+# being built — before the queue, before the relay. Nothing reaches the worker,
+# so `messenger:stats` and `messenger:failed:show` are both empty and it looks
+# like no mail was ever attempted. The `mail` channel is the only witness.
 MAILER_FROM="FolioShare <noreply@your-domain>"
 MAILER_SENDER=noreply@your-domain
 # Mails are rendered in a worker, which has no request context — every link in
 # every mail is built from this, so a wrong value ships broken links.
 DEFAULT_URI=https://your-domain
 ```
+
+### Why the HTTP API and not SMTP
+
+**DigitalOcean blocks outbound SMTP.** Ports 25, 465 and 587 are dropped at the account
+level on newer accounts — silently, by discarding the packets rather than refusing the
+connection. Measured from this droplet: `mailer:test` hangs for a full 60s and then
+reports
+
+```
+Connection could not be established with host "smtp-relay.brevo.com:587":
+stream_socket_client(): Unable to connect (Operation timed out)
+```
+
+which is indistinguishable from a dead relay or a wrong host, and says nothing about the
+credentials (they are never sent — the TCP handshake never completes). Brevo's alternate
+**2525 is blocked here as well**.
+
+`brevo+api://` sends over HTTPS on 443, which a host cannot block without breaking
+everything else. It is also fewer round-trips than SMTP's handshake. The transport sits
+below `MailerInterface`, so nothing above it — `App\Mail\Mailer`, the templates, the
+queue, the worker, the opt-in gates, the recipient-locale handling — is aware of the
+change; only this DSN line differs.
+
+The other way out is a DigitalOcean support ticket asking for the block to be lifted.
+It is usually granted, but it is a wait, it may be refused on the smallest droplets, and
+it leaves the deployment one provider policy change away from silence.
 
 `.env` is mounted, not baked in, so a credential change needs a restart rather than a
 rebuild: `docker compose -f compose.prod.yaml restart phpfpm messenger-worker`.
@@ -258,9 +291,13 @@ $PROD exec phpfpm php bin/console messenger:stats
 # 3. Anything that did fail is inspectable, and retryable, rather than lost.
 $PROD exec phpfpm php bin/console messenger:failed:show
 
-# 4. The relay actually accepts our credentials. Sends one real mail — use your
-#    own address.
-$PROD exec phpfpm php bin/console mailer:test you@example.com
+# 4. The provider actually accepts our credentials. Sends one real mail — use
+#    your own address. `mailer:test` injects the transport directly rather than
+#    the message bus, so it proves the provider WITHOUT the queue or the worker;
+#    that is what makes it the first thing to run when mail goes quiet.
+#    --from is required: the default is from@example.org, which any provider
+#    rejects as an unverified sender — an error that reads like bad credentials.
+$PROD exec phpfpm php bin/console mailer:test --from=noreply@your-domain you@example.com
 ```
 
 If a mail never arrives, the order to check is: `messenger:stats` (queued but not

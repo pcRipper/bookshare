@@ -4,6 +4,7 @@ namespace App\Tests\Mail;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Mailer\Messenger\SendEmailMessage;
+use Symfony\Component\Mime\Address;
 use Symfony\Component\Yaml\Yaml;
 
 /**
@@ -73,6 +74,50 @@ class MailConfigTest extends TestCase
             'default:messenger_transport_dsn_fallback:MESSENGER_TRANSPORT_DSN',
             self::config('messenger.yaml')['framework']['messenger']['transports']['async']['dsn'],
         );
+    }
+
+    /**
+     * Every From:/sender value we ship must parse as an address.
+     *
+     * This is not hypothetical tidiness. `MAILER_FROM` takes `Name <addr>` while
+     * `MAILER_SENDER` takes a bare `addr`, and dropping the angle brackets off
+     * the first produces a value that fails in the worst possible place: the
+     * framework applies it as the default From: header, so the mail throws while
+     * it is still being *built* — before the bus, before SMTP. The queue stays at
+     * zero, the failure transport stays empty, and the only trace is one warning
+     * on the `mail` channel. It cost an evening in production once.
+     *
+     * @return iterable<string, array{string, string}>
+     */
+    public static function addressValues(): iterable
+    {
+        $files = ['.env', 'docker/local/php/app.env'];
+
+        foreach ($files as $file) {
+            $body = file_get_contents(\dirname(__DIR__, 2).'/'.$file);
+
+            foreach (['MAILER_FROM', 'MAILER_SENDER'] as $var) {
+                // Only real assignments: the same files carry commented-out
+                // examples of DSNs and alternatives, which are documentation.
+                if (preg_match('/^'.$var.'=(.*)$/m', $body, $m) === 1) {
+                    yield "{$file}: {$var}" => [trim($m[1], " \"'"), "{$file} {$var}"];
+                }
+            }
+        }
+
+        // The fallbacks are what a machine with no value configured actually
+        // sends with, so they are held to the same rule.
+        $parameters = Yaml::parseFile(\dirname(__DIR__, 2).'/config/packages/mailer.yaml')['parameters'];
+        yield 'mailer.yaml: from fallback' => [$parameters['mailer_from_fallback'], 'mailer_from_fallback'];
+        yield 'mailer.yaml: sender fallback' => [$parameters['mailer_sender_fallback'], 'mailer_sender_fallback'];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('addressValues')]
+    public function testEveryShippedFromAddressParses(string $value, string $where): void
+    {
+        $address = Address::create($value);
+
+        self::assertNotSame('', $address->getAddress(), "{$where} parsed to an empty address.");
     }
 
     /**

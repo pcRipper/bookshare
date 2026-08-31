@@ -571,9 +571,23 @@ whitelist, so a reminder write appends an actor-less `library_request_audit` row
 **Local**: everything lands in **Mailpit** (`docker compose up -d`, UI + REST API on
 `http://localhost:8025`); `MAILER_DSN=smtp://mailpit:1025` in `docker/local/php/app.env`. A dev
 database full of plausible addresses is the last thing that should reach a real relay.
-**Production**: a **Brevo** SMTP relay (9,000/month, 300/day free — the daily cap is the binding
-one at ~60 loans/day; Mailjet is a DSN-only fallback). Provider setup, the DKIM/SPF requirement,
-the post-deploy smoke check and the cron line are in the _Mail_ section of `DEPLOY.md`.
+**Production**: **Brevo over its HTTP API** — `brevo+api://<key>@default`, the
+`symfony/brevo-mailer` bridge (9,000/month, 300/day free — the daily cap is the binding one at
+~60 loans/day). **Not SMTP, and that is forced rather than preferred**: DigitalOcean drops
+outbound 25/465/587 (and 2525) at the account level, silently, so an SMTP DSN hangs for 60s and
+dies with a connect timeout that reads exactly like a dead relay while never sending the
+credentials at all. Port 443 is not blockable. The transport sits below `MailerInterface`, so the
+switch is one DSN line — `Mailer`, the templates, the queue, the worker and the gates are unaware.
+The key is an **API v3 key, not the SMTP key** (the two live on neighbouring Brevo tabs and the
+wrong one 401s). Provider setup, the DKIM/SPF requirement, the post-deploy smoke check and the
+cron line are in the _Mail_ section of `DEPLOY.md`.
+
+> **`MAILER_FROM` takes `Name <addr>`; `MAILER_SENDER` takes a bare `addr`.** Dropping the angle
+> brackets fails in the worst place available: the framework applies the value as the default
+> `From:` header, so the mail throws while being *built* — before the bus, before the transport.
+> The queue stays at 0 and the failure transport stays empty, so both look like nothing was ever
+> attempted; the `mail` channel's warning is the only witness. `MailConfigTest` now parses every
+> shipped value as an `Address`.
 
 > **The `.env.local.php` trap applies to all three new vars.** `MAILER_DSN`, `MAILER_FROM`/
 > `MAILER_SENDER` and `MESSENGER_TRANSPORT_DSN` each resolve through the `default:` processor to a
