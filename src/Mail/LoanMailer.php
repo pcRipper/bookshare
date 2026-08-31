@@ -137,6 +137,10 @@ final class LoanMailer
             'dueDate'         => $request->getDueDate(),
             'counterpart'     => $owner->getFullName(),
             'counterpartRole' => 'owner',
+            // Role-named, as in notify(): every loan mail carries both people
+            // under their roles so a subject never has to guess.
+            'requester'       => $request->getRequester()->getFullName(),
+            'owner'           => $owner->getFullName(),
         ]);
     }
 
@@ -162,6 +166,14 @@ final class LoanMailer
             // label in the shared summary block.
             'counterpart'     => $toOwner ? $requester->getFullName() : $owner->getFullName(),
             'counterpartRole' => $toOwner ? 'requester' : 'owner',
+            // The same two people under their roles, which is what a *subject*
+            // needs: Mailer fills %requester% by looking the name up in this
+            // array by exact key, and cannot know that `counterpart` happens to
+            // be the requester on an owner-directed mail. A template can make
+            // that mapping itself (`{'%requester%': counterpart}`) and does; a
+            // subject has no such hook, so it silently rendered an empty name.
+            'requester'       => $requester->getFullName(),
+            'owner'           => $owner->getFullName(),
         ]);
     }
 
