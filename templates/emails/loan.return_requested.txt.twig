@@ -2,7 +2,6 @@
 
 {% block heading %}{{ 'A return is on its way'|trans({}, 'mails') }}{% endblock %}
 {% block intro %}{{ '%requester% has started returning this. Confirm the return once it is back with you.'|trans({'%requester%': counterpart}, 'mails') }}{% endblock %}
-{% block summary %}
-{% include 'emails/_loan_summary.txt.twig' %}{% endblock %}
+{% block summary %}{% include 'emails/_loan_summary.txt.twig' %}{% endblock %}
 {% block action_url %}{{ appUrl }}/library{% endblock %}
 {% block action_label %}{{ 'Confirm the return'|trans({}, 'mails') }}{% endblock %}

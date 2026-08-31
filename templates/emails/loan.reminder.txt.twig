@@ -2,7 +2,6 @@
 
 {% block heading %}{% if state == 'overdue' %}{{ 'This loan is overdue'|trans({}, 'mails') }}{% else %}{{ 'Due back tomorrow'|trans({}, 'mails') }}{% endif %}{% endblock %}
 {% block intro %}{% if state == 'overdue' %}{{ 'This was due back on %date%. Please arrange the return with %owner%.'|trans({'%date%': dueDate|format_date('long', locale=locale), '%owner%': counterpart}, 'mails') }}{% else %}{{ 'This is a friendly reminder to return this tomorrow.'|trans({}, 'mails') }}{% endif %}{% endblock %}
-{% block summary %}
-{% include 'emails/_loan_summary.txt.twig' %}{% endblock %}
+{% block summary %}{% include 'emails/_loan_summary.txt.twig' %}{% endblock %}
 {% block action_url %}{{ appUrl }}/library{% endblock %}
 {% block action_label %}{{ 'View the loan'|trans({}, 'mails') }}{% endblock %}
