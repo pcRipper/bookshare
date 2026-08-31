@@ -44,6 +44,7 @@ bookshare/
 │   ├── Category/        # CategoryPalette (colour allow-list, single source of truth)
 │   ├── Language/        # LanguageCatalog (book-language vocabulary, single source of truth)
 │   ├── I18n/            # LocaleCatalog (UI-language allow-list, mirrored in the SPA)
+│   ├── Mail/            # MailType (the 8 mails) + Mailer (one send path) + LoanMailer
 │   ├── Exception/       # DomainRuleException — translatable business-rule violations
 │   ├── Security/Voter/  # BookVoter — edit/delete authorization
 │   ├── EventSubscriber/ # RateLimit / Locale / ApiException (kernel.request, .exception)
@@ -54,8 +55,10 @@ bookshare/
 │   ├── routes.yaml      # Imports src/Controller/ under the shared `/api` prefix
 │   └── jwt/             # RSA keypair — gitignored, generated once
 ├── migrations/          # Doctrine migrations (incl. *_audit tables)
-├── translations/        # API message + validator catalogs (de/es/fr/uk; en needs none)
+├── templates/emails/    # Twig mail templates (html + txt per MailType) + shared layout
+├── translations/        # API message + validator + mail catalogs (de/es/fr/uk; en needs none)
 ├── tests/               # PHPUnit suite (unit-level: Entity/Service/Dto/Api/Security…)
+│   └── e2e/             # Playwright specs — the mail delivery path against Mailpit
 ├── public/
 │   ├── index.php        # Symfony front controller
 │   └── build/           # Vite production output — gitignored
@@ -83,7 +86,8 @@ bookshare/
 | Rate limiting | `symfony/rate-limiter` |
 | Audit | `damienharper/auditor-bundle` `6.3.*` (see _Audit trail_) |
 | Real-time | `symfony/mercure-bundle` — SSE via a standalone Mercure hub container (see _Real-time_) |
-| Logging | `symfony/monolog-bundle` ^4 — incl. the dedicated `book_template` channel (see _Book templates_) |
+| Mail | `symfony/mailer` + Twig templates; queued through `symfony/messenger` + `symfony/doctrine-messenger` and sent by the `messenger-worker` container (see _Mail_) |
+| Logging | `symfony/monolog-bundle` ^4 — incl. the dedicated `book_template` and `mail` channels (see _Book templates_, _Mail_) |
 | QR codes | `endroid/qr-code` ^6.1 — SVG only (`SvgWriter`); PNG would need `ext-gd` (see _Public library access_) |
 | DQL extras | `beberlei/doctrineextensions` ^1.5 — registered for PostgreSQL `DATE_TRUNC` only; Doctrine ships no date function (see _Analytics_) |
 | Dev/test | `phpunit/phpunit` ^13.2, `doctrine-fixtures-bundle`, `maker-bundle`, `browser-kit`, `css-selector`, `debug-bundle` |
@@ -235,6 +239,10 @@ php bin/console debug:router                 # list all registered routes
 php bin/console lint:container               # verify service wiring
 php bin/console app:grant-admin <email>      # grant the operator dashboard (--revoke to remove)
 php bin/console app:prune-analytics          # drop old visitor rows (--days=120, --dry-run)
+php bin/console app:send-loan-reminders      # mail due-tomorrow/overdue borrowers (--dry-run)
+php bin/console messenger:consume async      # drain the mail queue by hand (the worker does this)
+php bin/console messenger:stats              # queued/failed counts
+php bin/console mailer:test you@example.com  # prove the configured relay accepts us
 php bin/console lint:yaml translations        # validate the message/validator catalogs
 ```
 
@@ -244,6 +252,7 @@ php bin/console lint:yaml translations        # validate the message/validator c
 ```bash
 tail -f var/log/dev.log            # application log (dev)
 tail -f var/log/book_template.log  # one record per external template search (dev)
+tail -f var/log/mail.log           # one record per mail sent or deliberately skipped (dev)
 ```
 
 > `book_template.log` is the first place to look at any "Find a template" complaint — it distinguishes a genuinely empty upstream result from a degraded one, and shows the cache hit/miss and duration behind a search that felt slow. In prod both go to stderr (JSON), so it's the container log. See _Book templates_.
@@ -251,7 +260,14 @@ tail -f var/log/book_template.log  # one record per external template search (de
 ### Tests
 ```bash
 php bin/phpunit            # full suite (config: phpunit.dist.xml)
+npm run test:e2e           # Playwright — needs the docker stack up + `npm run build`
 ```
+
+> `npm run test:e2e` is the **only** JS test suite, and it exists for one reason: mail
+> crosses a queue, a worker and an SMTP hop, and only the catcher can tell "queued" from
+> "delivered". It drives the running local stack and asserts against Mailpit's REST API
+> (`tests/e2e/`, config in `playwright.config.js`). Sign-in is seeded from a JWT minted
+> with `lexik:jwt:generate-token` — Google OAuth can't be driven from a test browser.
 
 ## Key Conventions
 
@@ -436,6 +452,107 @@ A self-hosted, admin-only view of how the site is doing — growth, engagement, 
 **Frontend**: `stores/admin.js` (`windowDays`, **never `window`** — it would shadow the global in a module that calls `window.matchMedia`; plus the `reqToken` out-of-order guard, which is *not* optional here because the picker invites rapid 7→90→30 clicking and the 90-day query is slowest), `views/AdminStatsView.vue`, `components/admin/{RankTable,AdminStatsSkeleton}.vue`, and the beacon in `utils/analytics.js` fired from a **second** `router.afterEach` (the existing one is entirely about chunk-reload semantics). The route carries `meta: { admin: true }`; the guard renders the **404 in place with the URL preserved** rather than redirecting, and sits *after* the authentication check so a bookmark on an expired session goes to `/login` instead of looking like the page vanished — it is a client-side hint only. The entry point is a conditional item in `AppHeader`'s **account dropdown**, not the nav strip (that strip is the product nav and must not change shape per viewer) and **not** `MobileBottomNav` (5 items in a fixed 64px bar).
 
 **Charts**: `components/ui/BaseChart.vue` is the app's only Chart.js surface. Controllers are **registered explicitly** rather than via `chart.js/auto` (roughly halves the import and fails loudly on an unregistered type); there is deliberately **no `TimeScale`**, which would need a date adapter plus a date library. **Only the admin view may import it** — `AdminStatsView` is a dynamic import, so Rollup confines chart.js to the admin chunk and the entry bundle pays nothing (measured: entry unchanged, admin chunk ~200 kB / 69 kB gz). Verify that on every build. The instance is a plain `let`, **never a `ref`** — a Chart.js object inside Vue's reactive proxy breaks its identity comparisons and makes every `update()` pay for deep tracking. Data changes mutate and `update()`; only a type *or locale* change rebuilds — the `Intl` formatters live in the frozen `options` object, so without `watch(locale, rebuild)` the ticks and tooltips would keep the old language while every heading around them switched. Colours come only from design tokens and `CATEGORY_PALETTE`; no new hex. A section whose series is all zeroes renders an **empty state, not a chart** — a flat line on a 0-to-1 axis reads as a rendering fault.
+
+### Mail
+
+Transactional mail for the things that happen while nobody is looking at the tab. It is the
+slow-channel twin of _Real-time_: same events, same recipient routing, different medium — so
+`LoanMailer` reads `LoanEventPublisher`'s own reason constants rather than inventing a
+vocabulary that could drift from it.
+
+**Delivery is asynchronous and that is not optional.** Every mail is routed to Messenger's
+`async` transport (`doctrine://default`, i.e. PostgreSQL — the droplet has no memory for a
+broker) and sent by a **`messenger-worker` container** in both stacks. An SMTP round-trip is
+0.3–2s and there are five PHP-FPM workers; a loan transition must never hold one. The queue
+table is a **checked-in migration with `auto_setup=0`**, not DDL on first send. `MailConfigTest`
+pins the routing, because `when@test: in-memory://` means no test can observe the real
+transport and the symptom of a regression is latency, not an error.
+
+**One send path.** `App\Mail\Mailer::send(User, MailType, context)` decides everything a caller
+would otherwise have to remember:
+- **the opt-in gate** — each `MailType` names the `UserSettings` predicate that must be true
+  (`notifiesBorrowRequests` / `notifiesRequestUpdates` / `notifiesActivity`, or none for the
+  welcome mail). A member with no settings row behaves as if every setting is at its default,
+  which is what makes reading the accessor off a fresh `UserSettings` correct. **These four
+  toggles existed in the UI long before anything read them; this is what made them real.**
+- **the locale is the recipient's, never the request's** (`UserSettings.locale ?? 'en'`). The
+  actor's `Accept-Language` — which drives every API response — says nothing about who is being
+  notified. It travels as `TemplatedEmail::locale()` and is applied by the `LocaleSwitcher`
+  inside Twig's `BodyRenderer`, in the worker.
+- **best-effort, and never silent.** A transport failure is caught and logged exactly like
+  `LoanEventPublisher`'s Mercure publish. Sends *and deliberate skips* both leave a record on the
+  dedicated **`mail` monolog channel** (dev: `var/log/mail.log`; prod: stderr **outside** the
+  `fingers_crossed` gate, same reasoning as `book_template` — an unsent mail raises no error, so a
+  buffered handler would discard precisely these records). It is the only way to tell "nobody was
+  notified" from "nobody needed to be".
+
+**Eight mails, from sixteen candidates** — `MailType` is the single source of truth (template
+stem, subject, gate) and nothing else branches on mail kind:
+`loan.requested` · `loan.approved` · `loan.declined` · `loan.return_requested` ·
+`loan.return_confirmed` · `loan.reminder` · `account.welcome` · `social.new_follower`.
+The consolidation is deliberate and is what keeps the provider footprint and the template count
+down:
+- **A collection borrow reuses the five per-book loan mails** with `isCollection` + `bookCount`
+  set. The two differ only in "a book by an author" vs "a collection of N books" — the same
+  collapse `ResponseMapper::request()`/`::collectionRequest()` and the SPA's single `LoanCard`
+  already make. Six parallel templates would have been six files kept in sync by hand.
+- **A withdrawn request mails nobody.** It would notify an owner about a pending request that no
+  longer exists, and it is the transition that fires most on impulse browsing — the worst
+  volume-to-value ratio in the set. The Mercure signal already clears their badge. Mapped
+  explicitly to `null` in `LoanMailer::TYPE_BY_REASON` and pinned by `MailTypeTest`, so
+  "we decided not to" stays distinguishable from "we forgot".
+- **Due-soon and overdue are one type with a `state`**, not two mails.
+- `notify_newsletter` is deliberately **unimplemented** (no content pipeline); it keeps its toggle.
+
+**Templates** (`templates/emails/`) are table-based with **inlined styles**, drawn from the design
+tokens — so no CSS-inliner dependency, since there is nothing left to inline. Playfair/Work Sans
+are named inside real fallback stacks (webfonts don't load in most clients), the column is capped
+at 600px, and every mail ships a **text/plain alternative** (spam filters penalise HTML-only mail,
+and it is what a text-mode client reads). The six loan mails share `_loan_summary`, so each is a
+headline plus a button. Two traps worth knowing:
+- **Twig eats the first newline after a `%}`**, which shipped plain-text mails with sentences run
+  together. `base.txt.twig` therefore carries its spacing explicitly and children leave it alone.
+- **Every link is absolute, built from `DEFAULT_URI`** via the `appUrl` context value. The worker
+  has no request context, and SPA paths are Vue routes, so `url()` cannot be used and a relative
+  href would be a broken link in the inbox.
+
+**Ids are English sentences** in a `mails` domain (`translations/mails.{de,es,fr,uk}.yaml`), the
+`ApiError` convention, so `en` needs no catalog. `tests/I18n/MailTranslationCoverageTest` does for
+this domain what `TranslationCoverageTest` does for `messages` — coverage, parity, dead keys — plus
+a **placeholder check**, since a translation that drops `%date%` renders a sentence missing the
+thing it was about. These ids live in Twig, where no PHP lexer sweeps them up. (The one `src/Mail`
+sentence that is *not* user-facing, `LoanMailer`'s "unknown reason" guard, is exempted in
+`TranslationCoverageTest::NOT_USER_FACING` alongside the publisher's twins.)
+
+**Call sites** sit next to the Mercure publish they belong to, always after `flush()`:
+`LibraryRequestRestController` / `CollectionRequestRestController` (the same three lines that
+publish), `AuthRestController` (welcome), `SubscriptionRestController` (new follower). Both
+"is this new?" checks read an **id before flush**, where a freshly persisted row is still id-less:
+that is what keeps the welcome mail to genuine first sign-ins and stops an unfollow/refollow cycle
+from mailing repeatedly (`subscribe()` is idempotent and returns the existing edge).
+
+**Reminders** are the one mail no user action triggers: `app:send-loan-reminders` (cron, `--dry-run`)
+mails the borrower about a loan due tomorrow or already overdue. **Idempotent by construction** —
+`due_reminder_sent_at` / `overdue_reminder_sent_at` on both request tables, and the repository query
+filters on the column being null, so a cron firing twice mails once. The stamp is written **only
+when the mail was actually queued**, so an opt-out doesn't burn the single reminder a loan gets and
+a queue outage is retried tomorrow. Only `Approved` loans qualify (a borrower in `ReturnPending` has
+already acted), and the per-book query keeps `parentRequest IS NULL` so a five-book collection
+borrow sends **one** reminder through its parent rather than six. `LibraryRequest` is on the audit
+whitelist, so a reminder write appends an actor-less `library_request_audit` row — accepted.
+
+**Local**: everything lands in **Mailpit** (`docker compose up -d`, UI + REST API on
+`http://localhost:8025`); `MAILER_DSN=smtp://mailpit:1025` in `docker/local/php/app.env`. A dev
+database full of plausible addresses is the last thing that should reach a real relay.
+**Production**: a **Brevo** SMTP relay (9,000/month, 300/day free — the daily cap is the binding
+one at ~60 loans/day; Mailjet is a DSN-only fallback). Provider setup, the DKIM/SPF requirement,
+the post-deploy smoke check and the cron line are in the _Mail_ section of `DEPLOY.md`.
+
+> **The `.env.local.php` trap applies to all three new vars.** `MAILER_DSN`, `MAILER_FROM`/
+> `MAILER_SENDER` and `MESSENGER_TRANSPORT_DSN` each resolve through the `default:` processor to a
+> parameter fallback (`mailer.yaml`, `messenger.yaml`), so a dev machine whose hand-maintained
+> `.env.local.php` doesn't list them still boots — it just sends nowhere (`null://null`). Add them
+> to `.env.local.php` by hand to see mail in Mailpit outside docker; never run `composer dump-env`.
 
 ### CORS
 `nelmio/cors-bundle`. `CORS_ALLOW_ORIGIN` in `.env` defaults to a regex matching any `localhost` port (covers the Vite dev server). Adjust for production in `.env.local` / deployment config.
