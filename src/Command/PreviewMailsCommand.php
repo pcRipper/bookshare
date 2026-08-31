@@ -14,6 +14,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\BodyRendererInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Renders every mail to a file, from fixed sample data.
@@ -45,6 +46,7 @@ class PreviewMailsCommand extends Command
 
     public function __construct(
         private readonly BodyRendererInterface $renderer,
+        private readonly TranslatorInterface $translator,
         private readonly string $projectDir,
     ) {
         parent::__construct();
@@ -77,6 +79,11 @@ class PreviewMailsCommand extends Command
             'message'         => null,
             'counterpart'     => 'Ada Lovelace',
             'counterpartRole' => 'requester',
+            // Role-named, exactly as LoanMailer supplies them — the subjects
+            // read these, and a fixture that omitted them is what let a blank
+            // name into production unnoticed.
+            'requester'       => 'Ada Lovelace',
+            'owner'           => 'Iris Murdoch',
         ];
         $fromOwner = ['counterpart' => 'Iris Murdoch', 'counterpartRole' => 'owner'] + $book;
         $collection = ['item' => 'The Earthsea Cycle', 'author' => null, 'isCollection' => true, 'bookCount' => 4] + $book;
@@ -132,7 +139,7 @@ class PreviewMailsCommand extends Command
                 $email = (new TemplatedEmail())
                     ->from(new Address('noreply@folioshare.example', 'FolioShare'))
                     ->to(new Address('reader@folioshare.example', 'Ada Reader'))
-                    ->subject($type->subject())
+                    ->subject($this->subject($type, $context, $locale))
                     ->htmlTemplate($type->template('html'))
                     ->textTemplate($type->template('txt'))
                     ->locale($locale)
@@ -150,7 +157,7 @@ class PreviewMailsCommand extends Command
                 $stem = sprintf('%s.%s', $name, $locale);
                 $files->dumpFile("{$dir}/{$stem}.html", (string) $email->getHtmlBody());
                 $files->dumpFile("{$dir}/{$stem}.txt", (string) $email->getTextBody());
-                $written[] = $stem;
+                $written[$stem] = (string) $email->getSubject();
             }
         }
 
@@ -161,19 +168,50 @@ class PreviewMailsCommand extends Command
         return Command::SUCCESS;
     }
 
-    /** A plain contact sheet, so a design review is one file to open. */
+    /**
+     * The rendered subject, filled the way Mailer::subject() fills it: by exact
+     * key lookup in the context.
+     *
+     * Worth the small duplication of that rule. This command previewed the raw
+     * id — `%requester% would like to borrow %item%` — and never displayed it,
+     * so the one artefact a human reviews could not show a broken subject line.
+     * One shipped: a context that named the person `counterpart` left
+     * `%requester%` empty in every borrow-request mail that reached production.
+     *
+     * @param array<string, mixed> $context
+     */
+    private function subject(MailType $type, array $context, string $locale): string
+    {
+        $parameters = [];
+        foreach ($type->subjectPlaceholders() as $name) {
+            $parameters['%'.$name.'%'] = (string) ($context[$name] ?? '');
+        }
+
+        return $this->translator->trans($type->subject(), $parameters, 'mails', $locale);
+    }
+
+    /**
+     * A plain contact sheet, so a design review is one file to open. The subject
+     * sits under each link because it is part of what the reader sees and
+     * appears nowhere in the rendered body.
+     *
+     * @param array<string, string> $stems stem => rendered subject
+     */
     private function index(array $stems): string
     {
         $rows = '';
-        foreach ($stems as $stem) {
+        foreach ($stems as $stem => $subject) {
             $rows .= sprintf(
-                '<li><a href="%1$s.html">%1$s</a> &middot; <a href="%1$s.txt">text</a></li>'."\n",
+                '<li><a href="%1$s.html">%1$s</a> &middot; <a href="%1$s.txt">text</a>'
+                .'<br><span class="s">%2$s</span></li>'."\n",
                 htmlspecialchars($stem, \ENT_QUOTES),
+                htmlspecialchars($subject, \ENT_QUOTES),
             );
         }
 
         return "<!doctype html>\n<meta charset=\"utf-8\">\n<title>Mail preview</title>\n"
-            ."<style>body{font:16px/1.6 system-ui;margin:40px;max-width:60ch}li{margin:4px 0}</style>\n"
+            ."<style>body{font:16px/1.6 system-ui;margin:40px;max-width:70ch}li{margin:10px 0}"
+            .".s{color:#3c434c;font-size:14px}</style>\n"
             ."<h1>Mail preview</h1>\n<ul>\n{$rows}</ul>\n";
     }
 }
