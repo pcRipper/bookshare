@@ -10,6 +10,7 @@ use App\Entity\BookCollection;
 use App\Entity\CollectionRequest;
 use App\Entity\User;
 use App\Enum\RequestStatus;
+use App\Mail\LoanMailer;
 use App\Repository\CollectionRepository;
 use App\Repository\CollectionRequestRepository;
 use App\Service\CollectionRequestService;
@@ -33,6 +34,7 @@ class CollectionRequestRestController extends AbstractController
         private readonly CollectionRequestService $service,
         private readonly EntityManagerInterface $em,
         private readonly LoanEventPublisher $publisher,
+        private readonly LoanMailer $mails,
         private readonly ApiError $errors,
     ) {}
 
@@ -147,8 +149,11 @@ class CollectionRequestRestController extends AbstractController
         }
         $this->em->flush();
 
-        // After commit: one signal to the collection owner (never one per book).
+        // After commit: one signal AND one mail to the collection owner — never
+        // one per book (LibraryRequestService, which the children go through,
+        // publishes and mails nothing for exactly this reason).
         $this->publisher->publishCollectionSignal($collectionRequest, LoanEventPublisher::COLLECTION_REQUEST_RECEIVED);
+        $this->mails->notifyCollectionLoan($collectionRequest, LoanEventPublisher::COLLECTION_REQUEST_RECEIVED);
 
         return $this->json($this->mapper->collectionRequest($collectionRequest), Response::HTTP_CREATED);
     }
@@ -213,6 +218,7 @@ class CollectionRequestRestController extends AbstractController
         }
         $this->em->flush();
 
+        // No mail here either — see the per-book cancel().
         if ($ownerId !== null) {
             $this->publisher->publishCollectionToUser($ownerId, LoanEventPublisher::COLLECTION_REQUEST_CANCELLED, $requestId);
         }
@@ -255,6 +261,7 @@ class CollectionRequestRestController extends AbstractController
         $this->em->flush();
 
         $this->publisher->publishCollectionSignal($collectionRequest, $signalReason);
+        $this->mails->notifyCollectionLoan($collectionRequest, $signalReason);
 
         return $this->json($this->mapper->collectionRequest($collectionRequest));
     }

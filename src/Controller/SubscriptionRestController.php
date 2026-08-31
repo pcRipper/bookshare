@@ -9,6 +9,8 @@ use App\Entity\Subscription;
 use App\Entity\User;
 use App\Repository\BookRepository;
 use App\Repository\LibraryRequestRepository;
+use App\Mail\Mailer;
+use App\Mail\MailType;
 use App\Repository\SubscriptionRepository;
 use App\Service\SubscriptionService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -31,6 +33,7 @@ class SubscriptionRestController extends AbstractController
         private readonly BookRepository $books,
         private readonly LibraryRequestRepository $requests,
         private readonly EntityManagerInterface $em,
+        private readonly Mailer $mails,
         private readonly ApiError $errors,
     ) {}
 
@@ -95,7 +98,21 @@ class SubscriptionRestController extends AbstractController
         } catch (\DomainException $e) {
             return $this->errors->fromDomain($e, Response::HTTP_CONFLICT);
         }
+        // subscribe() is idempotent: a repeat follow hands back the existing
+        // edge, which already has an id. Read it BEFORE flush, where a freshly
+        // persisted row is still id-less, so an unfollow/refollow cycle can't
+        // mail the same person over and over.
+        $isNewFollow = $subscription->getId() === null;
+
         $this->em->flush();
+
+        // After commit, and gated on notifyActivity (off by default).
+        if ($isNewFollow) {
+            $this->mails->send($target, MailType::SocialNewFollower, [
+                'follower'   => $user->getFullName(),
+                'followerId' => $user->getId(),
+            ]);
+        }
 
         return $this->json($this->mapper->subscription($subscription), Response::HTTP_CREATED);
     }
