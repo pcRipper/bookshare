@@ -39,6 +39,13 @@ services:
             $logger: '@monolog.logger.mail'
             $appUrl: '%env(DEFAULT_URI)%'
 
+    # Deterministic mail previews (design review + the visual-regression
+    # baselines). %kernel.project_dir% rather than a relative path so it works
+    # from any working directory, including inside the container.
+    App\Command\PreviewMailsCommand:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
     App\Service\GoogleAuthService:
         arguments:
             $clientId: '%env(GOOGLE_CLIENT_ID)%'
