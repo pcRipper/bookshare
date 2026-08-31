@@ -7,6 +7,17 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.25.0',
+    date: '2026-08-31',
+    notes: [
+      'FolioShare now emails you when something happens to one of your loans: when a reader asks to borrow from you, when a request of yours is approved or declined (with the owner’s note, if they left one), when a borrower starts a return, and when a return is confirmed. A collection borrow arrives as one email about the whole set, not one per book.',
+      'Emails arrive in your own language — the one you picked in the header — whoever it was that triggered them.',
+      'You now get a reminder the day before a borrowed book is due back, and one more if it slips past its date. One reminder each, never a stream of them.',
+      'The notification switches in Settings finally do something. New borrow requests and Request updates control the loan emails, Community activity covers the "someone followed you" email and stays off unless you turn it on, and every email links straight back to those switches.',
+      'Signing up for the first time gets you a short welcome email pointing at your new library.',
+    ],
+  },
+  {
     version: '1.24.0',
     date: '2026-08-30',
     notes: [
