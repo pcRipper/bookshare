@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { and, expectNoMessage, purgeInbox, readMessage, subjectContains, to, waitForMessage } from './helpers/mailpit.js'
-import { BORROWER, OWNER, authHeaders, createBook, requestBook, uniqueTitle, updateSettings } from './helpers/app.js'
+import { BORROWER, OWNER, authHeaders, createBook, requestBook, uniqueTitle, withSettings } from './helpers/app.js'
 
 /**
  * The loan lifecycle's mails, end to end: an API call queues one, the worker
@@ -102,25 +102,22 @@ test.describe('loan mails', () => {
     await expectNoMessage(request, subjectContains(title))
   })
 
-  test('an opted-out owner is not mailed, and the opt-out is per family', async ({ request }) => {
-    await updateSettings(request, OWNER, { notifyBorrowRequests: false })
-
-    try {
+  test('an opted-out owner is not mailed', async ({ request }) => {
+    // withSettings puts back what it found rather than a default: these specs
+    // run against a shared database and must leave the account untouched.
+    await withSettings(request, OWNER, { notifyBorrowRequests: false }, async () => {
       const title = uniqueTitle('E2E OptedOut')
       const book = await createBook(request, { title })
       await requestBook(request, book.id)
 
       await expectNoMessage(request, and(to(OWNER), subjectContains(title)), { window: 8_000 })
-    } finally {
-      // Leave the account as it was — the specs share one database.
-      await updateSettings(request, OWNER, { notifyBorrowRequests: true })
-    }
+    })
   })
 
   test("a mail is written in the recipient's own language, not the actor's", async ({ request }) => {
-    await updateSettings(request, OWNER, { locale: 'uk' })
-
-    try {
+    // Restoring the *previous* locale matters here specifically: null means
+    // "never chose a language", which is not the same as an explicit 'en'.
+    await withSettings(request, OWNER, { locale: 'uk' }, async () => {
       const title = uniqueTitle('E2E Locale')
       const book = await createBook(request, { title })
       // The requester's own locale stays English; only the recipient's matters.
@@ -133,8 +130,6 @@ test.describe('loan mails', () => {
 
       expect(mail.Subject).toMatch(/\p{Script=Cyrillic}/u)
       expect(full.HTML).toMatch(/\p{Script=Cyrillic}/u)
-    } finally {
-      await updateSettings(request, OWNER, { locale: 'en' })
-    }
+    })
   })
 })

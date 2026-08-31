@@ -93,6 +93,37 @@ export async function updateSettings(request, email, settings) {
   return response.json()
 }
 
+/**
+ * Reads a member's current settings, so a spec can put back exactly what it
+ * found. Restoring to a *default* instead would quietly rewrite the account:
+ * `locale` in particular treats null ("never chose a language") as distinct from
+ * an explicit 'en'.
+ */
+export async function readSettings(request, email) {
+  const response = await request.get('/api/me/settings', { headers: authHeaders(email) })
+  if (!response.ok()) {
+    throw new Error(`Could not read settings for ${email} (${response.status()}).`)
+  }
+
+  return response.json()
+}
+
+/**
+ * Applies settings for the body of a callback and restores the previous values
+ * afterwards, whatever happens — the specs share one database.
+ */
+export async function withSettings(request, email, overrides, body) {
+  const before = await readSettings(request, email)
+  const previous = Object.fromEntries(Object.keys(overrides).map((key) => [key, before[key] ?? null]))
+
+  await updateSettings(request, email, overrides)
+  try {
+    await body()
+  } finally {
+    await updateSettings(request, email, previous)
+  }
+}
+
 /** A title unique per run, so a rerun never matches the previous run's mail. */
 export function uniqueTitle(prefix) {
   return `${prefix} ${Date.now().toString(36)}`
