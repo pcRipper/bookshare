@@ -1,0 +1,15 @@
+{#
+  The plain-text alternative. Not decoration: a text/plain part is what keeps a
+  mail out of the spam filters that penalise HTML-only messages, and it is what
+  a text-mode or screen-reader client actually reads. Same blocks as the HTML
+  layout, minus the presentation.
+#}
+{% block heading %}{% endblock %}
+
+{% block intro %}{% endblock %}
+{% block summary %}{% endblock %}{% block extra %}{% endblock %}
+{% set action_url = block('action_url') is defined ? block('action_url')|trim : '' %}{% if action_url %}{% block action_label %}{% endblock %}: {{ action_url }}
+{% endif %}
+--
+{% block footer_note %}{{ 'You are receiving this because of your notification settings.'|trans({}, 'mails') }}{% endblock %}
+{{ 'Manage email preferences'|trans({}, 'mails') }}: {{ settingsUrl }}

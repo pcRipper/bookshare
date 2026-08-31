@@ -29,6 +29,16 @@ services:
     # without touching ImageLocalizer.
     App\Service\Storage\ImageStorage: '@App\Service\Storage\LocalImageStorage'
 
+    # The mail layer. `mail` is its own monolog channel (see monolog.yaml): one
+    # record per send or deliberate skip, which is the only trace an unsent mail
+    # leaves. $appUrl is DEFAULT_URI rather than the request host — mails are
+    # rendered by the worker, which has no request context, so a relative link
+    # or a router-built URL would resolve against `http://localhost`.
+    App\Mail\Mailer:
+        arguments:
+            $logger: '@monolog.logger.mail'
+            $appUrl: '%env(DEFAULT_URI)%'
+
     App\Service\GoogleAuthService:
         arguments:
             $clientId: '%env(GOOGLE_CLIENT_ID)%'

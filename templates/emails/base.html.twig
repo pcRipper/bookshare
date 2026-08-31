@@ -1,0 +1,75 @@
+{#
+  The mail layout. Built from the design system in
+  references/design/literary_commons/DESIGN.md — primary green #274738,
+  paper-white ground #fbf9f5, white card, 8px spacing multiples, 4px radii on
+  controls and 8px on the sheet — so a mail looks like the app it came from.
+
+  Email-client constraints drive the rest, and they are not stylistic choices:
+    • table layout, because Outlook's Word renderer has no reliable flexbox/grid;
+    • every style inlined, because Gmail strips <style> in some clients (which is
+      also why no CSS-inliner dependency is needed — there is nothing to inline);
+    • Playfair Display / Work Sans are named first but always inside a real
+      fallback stack, since webfonts don't load in most clients;
+    • one 600px column, the width that survives every viewport.
+
+  Blocks: preheader (inbox preview line), heading, intro, summary, extra,
+  action_url + action_label, footer_note.
+#}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#fbf9f5;margin:0;padding:0;">
+  <tr>
+    <td align="center" style="padding:24px 12px;">
+
+      {# Inbox preview text: shown in the list, never on the page itself. #}
+      <div style="display:none;max-height:0;overflow:hidden;opacity:0;">{% block preheader %}{% endblock %}</div>
+
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:100%;max-width:600px;">
+
+        {# Brand bar #}
+        <tr>
+          <td style="background-color:#274738;border-radius:8px 8px 0 0;padding:24px;">
+            <a href="{{ appUrl }}" style="color:#ffffff;font-family:'Playfair Display',Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;text-decoration:none;letter-spacing:-0.01em;">FolioShare</a>
+          </td>
+        </tr>
+
+        {# Card #}
+        <tr>
+          <td style="background-color:#ffffff;border-radius:0 0 8px 8px;padding:32px 24px;">
+
+            <h1 style="margin:0 0 16px;color:#1b1c1a;font-family:'Playfair Display',Georgia,'Times New Roman',serif;font-size:24px;font-weight:600;line-height:1.4;">{% block heading %}{% endblock %}</h1>
+
+            <p style="margin:0 0 24px;color:#414844;font-family:'Work Sans',Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;">{% block intro %}{% endblock %}</p>
+
+            {% block summary %}{% endblock %}
+
+            {% block extra %}{% endblock %}
+
+            {% set action_url = block('action_url') is defined ? block('action_url')|trim : '' %}
+            {% if action_url %}
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 0;">
+                <tr>
+                  <td style="background-color:#274738;border-radius:4px;">
+                    <a href="{{ action_url }}" style="display:inline-block;padding:12px 24px;color:#ffffff;font-family:'Work Sans',Helvetica,Arial,sans-serif;font-size:16px;font-weight:600;text-decoration:none;">{% block action_label %}{% endblock %}</a>
+                  </td>
+                </tr>
+              </table>
+            {% endif %}
+
+          </td>
+        </tr>
+
+        {# Footer — every mail carries the way out, including the ungated one. #}
+        <tr>
+          <td style="padding:24px;">
+            <p style="margin:0 0 8px;color:#727974;font-family:'Work Sans',Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;">
+              {% block footer_note %}{{ 'You are receiving this because of your notification settings.'|trans({}, 'mails') }}{% endblock %}
+            </p>
+            <p style="margin:0;font-family:'Work Sans',Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;">
+              <a href="{{ settingsUrl }}" style="color:#274738;text-decoration:underline;">{{ 'Manage email preferences'|trans({}, 'mails') }}</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>

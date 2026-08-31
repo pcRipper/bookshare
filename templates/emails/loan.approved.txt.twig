@@ -1,0 +1,8 @@
+{% extends 'emails/base.txt.twig' %}
+
+{% block heading %}{{ 'Your request was approved'|trans({}, 'mails') }}{% endblock %}
+{% block intro %}{{ '%owner% approved your request. Enjoy the read!'|trans({'%owner%': counterpart}, 'mails') }}{% endblock %}
+{% block summary %}
+{% include 'emails/_loan_summary.txt.twig' %}{% endblock %}
+{% block action_url %}{{ appUrl }}/library{% endblock %}
+{% block action_label %}{{ 'View the loan'|trans({}, 'mails') }}{% endblock %}

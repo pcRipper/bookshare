@@ -1,0 +1,9 @@
+{% extends 'emails/base.html.twig' %}
+
+{% block preheader %}{{ '%requester% would like to borrow this from your library.'|trans({'%requester%': counterpart}, 'mails') }}{% endblock %}
+{% block heading %}{{ 'A new borrow request'|trans({}, 'mails') }}{% endblock %}
+{% block intro %}{{ '%requester% would like to borrow this from your library.'|trans({'%requester%': counterpart}, 'mails') }}{% endblock %}
+{% block summary %}{% include 'emails/_loan_summary.html.twig' %}{% endblock %}
+{% block extra %}<p style="margin:0 0 24px;color:#414844;font-family:'Work Sans',Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;">{{ 'Approve it with a due date, or decline with a reason.'|trans({}, 'mails') }}</p>{% endblock %}
+{% block action_url %}{{ appUrl }}/library{% endblock %}
+{% block action_label %}{{ 'Review the request'|trans({}, 'mails') }}{% endblock %}

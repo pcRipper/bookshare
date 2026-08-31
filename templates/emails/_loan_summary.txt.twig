@@ -1,0 +1,6 @@
+{{ item }}
+{% if isCollection %}{{ 'A collection of %count% books'|trans({'%count%': bookCount}, 'mails') }}
+{% elseif author %}{{ 'by %author%'|trans({'%author%': author}, 'mails') }}
+{% endif %}{% if counterpart %}{{ (counterpartRole == 'owner' ? 'Owner' : 'Requested by')|trans({}, 'mails') }}: {{ counterpart }}
+{% endif %}{% if dueDate %}{{ 'Due back'|trans({}, 'mails') }}: {{ dueDate|format_date('long', locale=locale) }}
+{% endif %}

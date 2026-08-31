@@ -1,0 +1,10 @@
+{% extends 'emails/base.txt.twig' %}
+
+{% block heading %}{{ 'A new borrow request'|trans({}, 'mails') }}{% endblock %}
+{% block intro %}{{ '%requester% would like to borrow this from your library.'|trans({'%requester%': counterpart}, 'mails') }}{% endblock %}
+{% block summary %}
+{% include 'emails/_loan_summary.txt.twig' %}{% endblock %}
+{% block extra %}
+{{ 'Approve it with a due date, or decline with a reason.'|trans({}, 'mails') }}{% endblock %}
+{% block action_url %}{{ appUrl }}/library{% endblock %}
+{% block action_label %}{{ 'Review the request'|trans({}, 'mails') }}{% endblock %}

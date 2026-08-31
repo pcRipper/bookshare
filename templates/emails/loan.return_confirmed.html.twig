@@ -1,0 +1,8 @@
+{% extends 'emails/base.html.twig' %}
+
+{% block preheader %}{{ '%owner% confirmed your return. Thank you for bringing it back.'|trans({'%owner%': counterpart}, 'mails') }}{% endblock %}
+{% block heading %}{{ 'The loan is closed'|trans({}, 'mails') }}{% endblock %}
+{% block intro %}{{ '%owner% confirmed your return. Thank you for bringing it back.'|trans({'%owner%': counterpart}, 'mails') }}{% endblock %}
+{% block summary %}{% include 'emails/_loan_summary.html.twig' %}{% endblock %}
+{% block action_url %}{{ appUrl }}/discover{% endblock %}
+{% block action_label %}{{ 'Browse more books'|trans({}, 'mails') }}{% endblock %}

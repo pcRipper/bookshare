@@ -1,0 +1,9 @@
+{% extends 'emails/base.html.twig' %}
+
+{% block preheader %}{{ '%owner% declined your request.'|trans({'%owner%': counterpart}, 'mails') }}{% endblock %}
+{% block heading %}{{ 'Your request was declined'|trans({}, 'mails') }}{% endblock %}
+{% block intro %}{{ '%owner% declined your request.'|trans({'%owner%': counterpart}, 'mails') }}{% endblock %}
+{% block summary %}{% include 'emails/_loan_summary.html.twig' %}{% endblock %}
+{% block extra %}{% if message %}<p style="margin:0 0 24px;color:#414844;font-family:'Work Sans',Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;"><span style="color:#727974;">{{ 'Their note:'|trans({}, 'mails') }}</span><br><em>{{ message }}</em></p>{% endif %}{% endblock %}
+{% block action_url %}{{ appUrl }}/discover{% endblock %}
+{% block action_label %}{{ 'Find another book'|trans({}, 'mails') }}{% endblock %}

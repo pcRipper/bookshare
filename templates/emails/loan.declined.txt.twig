@@ -1,0 +1,11 @@
+{% extends 'emails/base.txt.twig' %}
+
+{% block heading %}{{ 'Your request was declined'|trans({}, 'mails') }}{% endblock %}
+{% block intro %}{{ '%owner% declined your request.'|trans({'%owner%': counterpart}, 'mails') }}{% endblock %}
+{% block summary %}
+{% include 'emails/_loan_summary.txt.twig' %}{% endblock %}
+{% block extra %}
+{% if message %}{{ 'Their note:'|trans({}, 'mails') }} {{ message }}
+{% endif %}{% endblock %}
+{% block action_url %}{{ appUrl }}/discover{% endblock %}
+{% block action_label %}{{ 'Find another book'|trans({}, 'mails') }}{% endblock %}

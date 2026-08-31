@@ -29,6 +29,7 @@ class TranslationCoverageTest extends TestCase
         'Unknown template source "%s".',
         'Unknown loan signal reason "%s".',
         'Unknown collection signal reason "%s".',
+        'Unknown loan mail reason "%s".',
     ];
 
     /** @return array<string, list<string>> id => ["File.php:line", …] */
