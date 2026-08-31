@@ -1,0 +1,21 @@
+framework:
+    mailer:
+        # `null://null` in dev/CI keeps the app bootable with no catcher running;
+        # the local docker stack points this at Mailpit (docker/local/php/app.env)
+        # and production at the Brevo relay (see DEPLOY.md).
+        #
+        # The `default:` fallbacks matter here: dev Symfony reads only the
+        # hand-maintained .env.local.php, so a var that exists in .env but not
+        # there would throw "Environment variable not found" on every request.
+        dsn: '%env(default:mailer_dsn_fallback:MAILER_DSN)%'
+        envelope:
+            # The bounce/return-path address. Must be a sender the SMTP provider
+            # has verified, or Brevo rejects the message outright.
+            sender: '%env(default:mailer_sender_fallback:MAILER_SENDER)%'
+        headers:
+            From: '%env(default:mailer_from_fallback:MAILER_FROM)%'
+
+parameters:
+    mailer_dsn_fallback: 'null://null'
+    mailer_sender_fallback: 'noreply@folioshare.local'
+    mailer_from_fallback: 'FolioShare <noreply@folioshare.local>'

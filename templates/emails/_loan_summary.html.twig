@@ -1,0 +1,30 @@
+{#
+  The one block every loan mail shows: what the loan is about. Included by all
+  six of them, which is why each loan template is only a headline and a button.
+
+  `isCollection` collapses the book/collection split the same way the SPA's
+  utils/loans.js does - a collection is the same loan with a book count instead
+  of an author.
+#}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 24px;background-color:#eef1f5;border-left:4px solid #223b54;border-radius:4px;">
+  <tr>
+    <td style="padding:16px;font-family:'IBM Plex Sans',Helvetica,Arial,sans-serif;">
+      <p style="margin:0;color:#171b21;font-family:'Literata',Georgia,'Times New Roman',serif;font-size:18px;font-weight:600;line-height:1.4;">{{ item }}</p>
+      {% if isCollection %}
+        <p style="margin:4px 0 0;color:#3c434c;font-size:14px;">{{ 'A collection of %count% books'|trans({'%count%': bookCount}, 'mails') }}</p>
+      {% elseif author %}
+        <p style="margin:4px 0 0;color:#3c434c;font-size:14px;">{{ 'by %author%'|trans({'%author%': author}, 'mails') }}</p>
+      {% endif %}
+      {% if counterpart %}
+        <p style="margin:12px 0 0;color:#3c434c;font-size:14px;">
+          <span style="color:#6b727b;">{{ counterpartRole == 'owner' ? 'Owner'|trans({}, 'mails') : 'Requested by'|trans({}, 'mails') }}:</span> {{ counterpart }}
+        </p>
+      {% endif %}
+      {% if dueDate %}
+        <p style="margin:4px 0 0;color:#3c434c;font-size:14px;">
+          <span style="color:#6b727b;">{{ 'Due back'|trans({}, 'mails') }}:</span> {{ dueDate|format_date('long', locale=locale) }}
+        </p>
+      {% endif %}
+    </td>
+  </tr>
+</table>

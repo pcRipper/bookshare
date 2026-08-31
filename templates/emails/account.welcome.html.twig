@@ -1,0 +1,8 @@
+{% extends 'emails/base.html.twig' %}
+
+{% block preheader %}{{ 'Your library is ready. Catalog the books you own, lend them to other readers, and borrow theirs.'|trans({}, 'mails') }}{% endblock %}
+{% block heading %}{{ 'Welcome to FolioShare'|trans({}, 'mails') }}{% endblock %}
+{% block intro %}{{ 'Your library is ready. Catalog the books you own, lend them to other readers, and borrow theirs.'|trans({}, 'mails') }}{% endblock %}
+{% block action_url %}{{ appUrl }}/library{% endblock %}
+{% block action_label %}{{ 'Open your library'|trans({}, 'mails') }}{% endblock %}
+{% block footer_note %}{{ 'You can choose which emails you receive at any time.'|trans({}, 'mails') }}{% endblock %}

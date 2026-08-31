@@ -7,6 +7,12 @@ monolog:
         # status and duration — read to answer "why did that search come back
         # empty / slow", not to hunt application errors.
         - book_template
+        # Outbound mail. One record per send (or per deliberate skip: an opt-out,
+        # a user with no address). Its own channel for the same reason
+        # book_template has one — a mail that never went out raises no error, so
+        # this feed is the only way to tell "nobody was notified" from "nobody
+        # needed to be".
+        - mail
 
 when@dev:
     monolog:
@@ -17,12 +23,17 @@ when@dev:
                 level: debug
                 # book_template gets its own file below — excluded here so a
                 # search feed doesn't drown the application log.
-                channels: ["!event", "!book_template"]
+                channels: ["!event", "!book_template", "!mail"]
             book_template:
                 type: stream
                 path: "%kernel.logs_dir%/book_template.log"
                 level: info
                 channels: [book_template]
+            mail:
+                type: stream
+                path: "%kernel.logs_dir%/mail.log"
+                level: debug
+                channels: [mail]
             console:
                 type: console
                 process_psr_3_messages: false
@@ -54,7 +65,7 @@ when@prod:
                 # successful-but-slow search logs at info and raises no error, so
                 # the gate would hold — and then discard — exactly the records we
                 # added the channel for. It streams unconditionally below.
-                channels: ["!deprecation", "!book_template"]
+                channels: ["!deprecation", "!book_template", "!mail"]
                 buffer_size: 50 # How many messages should be saved? Prevent memory leaks
             nested:
                 type: stream
@@ -64,6 +75,14 @@ when@prod:
             book_template:
                 type: stream
                 channels: [book_template]
+                path: php://stderr
+                level: info
+                formatter: monolog.formatter.json
+            # Same reasoning as book_template: outside the fingers_crossed gate,
+            # since a skipped or queued mail logs at info and never trips it.
+            mail:
+                type: stream
+                channels: [mail]
                 path: php://stderr
                 level: info
                 formatter: monolog.formatter.json

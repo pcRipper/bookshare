@@ -47,6 +47,19 @@ class CollectionRequest
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $returnedAt = null;
 
+    /**
+     * When the "due tomorrow" and "overdue" reminders were mailed to the
+     * borrower. Two nullable timestamps rather than a reminder-log entity: the
+     * only question asked of them is "has this one gone out yet", and as columns
+     * the answer is part of the query that finds the loans to remind about - so
+     * a daily cron cannot double-send even if it runs twice.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $dueReminderSentAt = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $overdueReminderSentAt = null;
+
     /** The owner's optional reason when declining the whole collection request. */
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $declineMessage = null;
@@ -87,6 +100,12 @@ class CollectionRequest
 
     public function getReturnedAt(): ?\DateTimeImmutable { return $this->returnedAt; }
     public function setReturnedAt(?\DateTimeImmutable $returnedAt): static { $this->returnedAt = $returnedAt; return $this; }
+
+    public function getDueReminderSentAt(): ?\DateTimeImmutable { return $this->dueReminderSentAt; }
+    public function setDueReminderSentAt(?\DateTimeImmutable $at): static { $this->dueReminderSentAt = $at; return $this; }
+
+    public function getOverdueReminderSentAt(): ?\DateTimeImmutable { return $this->overdueReminderSentAt; }
+    public function setOverdueReminderSentAt(?\DateTimeImmutable $at): static { $this->overdueReminderSentAt = $at; return $this; }
 
     public function getDeclineMessage(): ?string { return $this->declineMessage; }
     public function setDeclineMessage(?string $declineMessage): static { $this->declineMessage = $declineMessage; return $this; }

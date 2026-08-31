@@ -208,6 +208,84 @@ Grant the first administrator on the droplet with:
 docker compose exec phpfpm php bin/console app:grant-admin you@example.com
 ```
 
+## Mail
+
+Transactional mail (loan lifecycle, welcome, new follower, due/overdue reminders) is
+**queued in PostgreSQL and delivered by the `messenger-worker` container**, so no API
+response ever waits on an SMTP round-trip. Nothing is sent until that worker is up:
+a queued mail with no consumer is indistinguishable from no mail at all.
+
+### Provider: Brevo (free tier)
+
+Roughly 2–3k mails/month is the expected volume. Of the free tiers that survive it,
+only two have real headroom — **Brevo** (9,000/month, **300/day**) and Mailjet
+(6,000/month, 200/day). Resend's 100/day makes a burst impossible, MailerSend dropped
+to 500/month with a card requirement, and SES closed its free tier to new accounts in
+July 2026. Brevo it is; **Mailjet is a drop-in fallback — only the DSN changes.**
+
+The binding limit is the **daily** one: a completed loan costs 4 mails (+1 if it nears
+its due date), so 300/day is about 60 loans a day.
+
+1. Create the Brevo account, then **Senders, Domains & Dedicated IPs → Domains** and add
+   the sending domain. Publish the DKIM/SPF records it gives you; an unauthenticated
+   domain gets filed as spam regardless of what the relay accepts.
+2. **SMTP & API → SMTP** gives a login and an SMTP key.
+3. Fill in `.env` on the droplet:
+
+```dotenv
+MAILER_DSN=smtp://<brevo-login>:<brevo-smtp-key>@smtp-relay.brevo.com:587
+MAILER_FROM="FolioShare <noreply@your-domain>"
+MAILER_SENDER=noreply@your-domain
+# Mails are rendered in a worker, which has no request context — every link in
+# every mail is built from this, so a wrong value ships broken links.
+DEFAULT_URI=https://your-domain
+```
+
+`.env` is mounted, not baked in, so a credential change needs a restart rather than a
+rebuild: `docker compose -f compose.prod.yaml restart phpfpm messenger-worker`.
+
+### Smoke check after a deploy
+
+```bash
+PROD="docker compose -f compose.prod.yaml"
+
+# 1. The worker is consuming (not just running).
+$PROD logs --tail=20 messenger-worker | grep 'Consuming messages'
+
+# 2. Nothing is stuck: `async` should drain to ~0, `failed` should stay empty.
+$PROD exec phpfpm php bin/console messenger:stats
+
+# 3. Anything that did fail is inspectable, and retryable, rather than lost.
+$PROD exec phpfpm php bin/console messenger:failed:show
+
+# 4. The relay actually accepts our credentials. Sends one real mail — use your
+#    own address.
+$PROD exec phpfpm php bin/console mailer:test you@example.com
+```
+
+If a mail never arrives, the order to check is: `messenger:stats` (queued but not
+consumed ⇒ worker), `messenger:failed:show` (consumed but rejected ⇒ credentials, or an
+unverified sender domain), then the container log's `mail` channel — it carries one
+record per send **and per deliberate skip**, which is how an opt-out is told from a
+failure:
+
+```bash
+$PROD logs phpfpm | grep '"channel":"mail"'
+```
+
+### Daily reminders (cron)
+
+The one mail no user action triggers. Add it to the droplet's crontab — it is idempotent
+(each loan records when each reminder went out), so a double run mails once:
+
+```cron
+# Loan reminders: due tomorrow + overdue. 08:00 server time.
+0 8 * * * cd /path/to/bookshare && docker compose -f compose.prod.yaml exec -T phpfpm php bin/console app:send-loan-reminders >> /var/log/bookshare-reminders.log 2>&1
+```
+
+Dry-run it first: `... app:send-loan-reminders --dry-run` lists what it would send and
+records nothing.
+
 ## Make targets
 
 | Target | Purpose |
@@ -225,4 +303,7 @@ docker compose exec phpfpm php bin/console app:grant-admin you@example.com
 - **Uploads** (`var/share`) persist in the `app_uploads` named volume across deploys.
 - **OPcache** runs with `validate_timestamps=0` (code is immutable in the image); a redeploy
   replaces the container, so there is nothing to invalidate.
+- **Mail** is queued in PostgreSQL (`messenger_messages`) and sent by the `messenger-worker`
+  container. It recycles itself hourly / at 96 MB; `restart: always` turns the clean exit into a
+  fresh process. `RUN_MIGRATIONS` is pinned off on it — migrations belong to exactly one container.
 - Excluded from production by design: Mailpit, Prometheus/Alloy/Grafana, Xdebug.

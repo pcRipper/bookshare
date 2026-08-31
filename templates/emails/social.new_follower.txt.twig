@@ -1,0 +1,6 @@
+{% extends 'emails/base.txt.twig' %}
+
+{% block heading %}{{ 'You have a new follower'|trans({}, 'mails') }}{% endblock %}
+{% block intro %}{{ '%follower% is now following your library.'|trans({'%follower%': follower}, 'mails') }}{% endblock %}
+{% block action_url %}{{ appUrl }}/profile/{{ followerId }}{% endblock %}
+{% block action_label %}{{ 'View their profile'|trans({}, 'mails') }}{% endblock %}

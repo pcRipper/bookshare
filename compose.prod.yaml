@@ -128,6 +128,37 @@ services:
     networks:
       - app
 
+  # -- Messenger worker (outbound mail) --------------------------------------
+  # Consumes the `async` transport so no API response waits on the SMTP relay.
+  # Reuses the phpfpm image (already built and tagged above) with a console
+  # command instead of php-fpm; no build block of its own.
+  #
+  # RUN_MIGRATIONS is pinned off: migrations belong to exactly one container, and
+  # two racing `migrations:migrate` runs on boot is a real failure mode.
+  #
+  # --time-limit/--memory-limit recycle the process; `restart: always` turns the
+  # clean exit into a fresh one. The memory ceiling is deliberately tight — the
+  # droplet is small and this process only renders and posts mail.
+  messenger-worker:
+    image: bookshare-php:${IMAGE_TAG:-latest}
+    restart: always
+    command: php bin/console messenger:consume async --time-limit=3600 --memory-limit=96M
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-changeme}@postgresql:5432/${POSTGRES_DB:-bookshare}?serverVersion=16&charset=utf8
+      RUN_MIGRATIONS: 0
+    volumes:
+      - ./.env:/var/www/app/.env:ro
+      - ./config/jwt:/var/www/app/config/jwt:ro
+      # Covers cover/avatar paths appearing in a mail context; harmless otherwise.
+      - app_uploads:/var/www/app/public/uploads:ro
+    depends_on:
+      phpfpm:
+        # The phpfpm container owns migrations, so wait for it to be healthy
+        # before consuming — the queue table may not exist until it has run.
+        condition: service_healthy
+    networks:
+      - app
+
 networks:
   app:
     driver: bridge

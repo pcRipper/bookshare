@@ -278,4 +278,50 @@ class LibraryRequestRepository extends ServiceEntityRepository
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    /**
+     * Approved loans that need a reminder mailed to the borrower, for the given
+     * calendar day boundaries. Two shapes of one query (see
+     * App\Command\SendLoanRemindersCommand):
+     *
+     *  - due-soon: due inside [$from, $to) and not yet reminded;
+     *  - overdue:  due before $from and not yet chased.
+     *
+     * Three filters carry the design:
+     *  - `status = Approved` only. A loan already in ReturnPending has had the
+     *    borrower act; nagging them about it would be noise.
+     *  - `parentRequest IS NULL` — a collection borrow is reminded once, through
+     *    its parent CollectionRequest. Without this a five-book collection would
+     *    send six mails for one loan.
+     *  - the sent-at column IS NULL, so "already reminded" is part of the query
+     *    rather than something the command has to remember. A cron that runs
+     *    twice sends once.
+     *
+     * @return LibraryRequest[]
+     */
+    public function findNeedingReminder(
+        \DateTimeImmutable $from,
+        ?\DateTimeImmutable $to,
+        string $sentAtField,
+    ): array {
+        $qb = $this->createQueryBuilder('r')
+            ->join('r.book', 'b')->addSelect('b')
+            ->join('b.owner', 'o')->addSelect('o')
+            ->join('r.requester', 'u')->addSelect('u')
+            ->andWhere('r.status = :approved')
+            ->andWhere('r.parentRequest IS NULL')
+            ->andWhere(sprintf('r.%s IS NULL', $sentAtField))
+            ->setParameter('approved', RequestStatus::Approved)
+            ->orderBy('r.dueDate', 'ASC');
+
+        if ($to === null) {
+            $qb->andWhere('r.dueDate < :from')->setParameter('from', $from);
+        } else {
+            $qb->andWhere('r.dueDate >= :from AND r.dueDate < :to')
+                ->setParameter('from', $from)
+                ->setParameter('to', $to);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 }

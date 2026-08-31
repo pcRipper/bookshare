@@ -9,6 +9,7 @@ use App\Entity\Book;
 use App\Entity\LibraryRequest;
 use App\Entity\User;
 use App\Enum\RequestStatus;
+use App\Mail\LoanMailer;
 use App\Repository\BookRepository;
 use App\Repository\LibraryRequestRepository;
 use App\Service\LibraryRequestService;
@@ -35,6 +36,7 @@ class LibraryRequestRestController extends AbstractController
         private readonly LibraryRequestService $service,
         private readonly EntityManagerInterface $em,
         private readonly LoanEventPublisher $publisher,
+        private readonly LoanMailer $mails,
         private readonly ApiError $errors,
     ) {}
 
@@ -163,8 +165,10 @@ class LibraryRequestRestController extends AbstractController
         }
         $this->em->flush();
 
-        // After commit: signal the book owner that a request landed.
+        // After commit: signal the book owner that a request landed, and mail
+        // them for the (likely) case that they aren't looking at the tab.
         $this->publisher->publishLoanSignal($libraryRequest, LoanEventPublisher::REQUEST_RECEIVED);
+        $this->mails->notifyLoan($libraryRequest, LoanEventPublisher::REQUEST_RECEIVED);
 
         return $this->json($this->mapper->request($libraryRequest), Response::HTTP_CREATED);
     }
@@ -232,6 +236,8 @@ class LibraryRequestRestController extends AbstractController
         $this->em->flush();
 
         // After commit: signal the book owner so their incoming inbox refetches.
+        // No mail for a withdrawal: it would notify an owner about a pending
+        // request that no longer exists (see LoanMailer::TYPE_BY_REASON).
         if ($ownerId !== null) {
             $this->publisher->publishToUser($ownerId, LoanEventPublisher::REQUEST_CANCELLED, $requestId);
         }
@@ -273,8 +279,11 @@ class LibraryRequestRestController extends AbstractController
         }
         $this->em->flush();
 
-        // After commit: signal the affected party so their SPA refetches.
+        // After commit: signal the affected party so their SPA refetches, and
+        // mail the same person. Both are best-effort and both route off the same
+        // reason, so the two channels can't disagree about the recipient.
         $this->publisher->publishLoanSignal($libraryRequest, $signalReason);
+        $this->mails->notifyLoan($libraryRequest, $signalReason);
 
         return $this->json($this->mapper->request($libraryRequest));
     }

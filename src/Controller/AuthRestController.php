@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use App\Api\ApiError;
+use App\Mail\Mailer;
+use App\Mail\MailType;
 use App\Repository\UserRepository;
 use App\Service\GoogleAuthService;
 use App\Service\ImageLocalizer;
@@ -33,6 +35,7 @@ class AuthRestController extends AbstractController
         UserRepository $users,
         ImageLocalizer $images,
         JWTTokenManagerInterface $jwt,
+        Mailer $mails,
         ApiError $errors,
     ): JsonResponse {
         $code = $request->toArray()['code'] ?? null;
@@ -52,6 +55,11 @@ class AuthRestController extends AbstractController
             fullName: $info['name'],
         );
 
+        // A brand-new account is the only one still id-less at this point
+        // (identity ids land at flush), which is what tells a first sign-in from
+        // the hundreds that follow. Read it before the flush below.
+        $isNewAccount = $user->getId() === null;
+
         // Re-sync the avatar from Google, downloading it to our own origin so the
         // browser never hotlinks (and gets 429'd by) Google's CDN. We only touch
         // avatars we own — a fresh user (null), one we previously localized, or a
@@ -69,6 +77,13 @@ class AuthRestController extends AbstractController
         }
 
         $this->entityManager->flush();
+
+        // After commit: welcome the new member. Ungated — it is the mail that
+        // says where the other seven are turned off — and best-effort, so a mail
+        // problem can never block a sign-in.
+        if ($isNewAccount) {
+            $mails->send($user, MailType::AccountWelcome);
+        }
 
         return $this->json([
             'token' => $jwt->create($user),
