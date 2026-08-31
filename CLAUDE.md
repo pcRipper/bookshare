@@ -186,17 +186,25 @@ The whole lending lifecycle lives in **one** library tab, split by **your role i
 - The stores keep `requestedAt` as the **ISO timestamp** (it is the list's sort key) and the card derives the human phrasing with `relativeTime`; the old `toCardRequest`/`toCard` mappers that overwrote it with a relative string are gone.
 
 ### Design System
-Full token spec: `references/design/literary_commons/DESIGN.md`
+**`assets/src/styles/tokens.css` is the single source of truth.** Read values from there, never
+from `references/design/literary_commons/DESIGN.md` — that file is the *original* design study and
+still describes the green "Literary Commons" palette the app was recoloured away from (`d7f565c`
+navy + brass, `8b3ec78` cool neutrals, `b01246f` Literata + IBM Plex Sans). It is kept for the
+type-scale and component sketches; its colours and faces are historical. The mail templates were
+built from it once, and shipped a green mail inside a navy app.
 
 | Token | Value | Usage |
 |---|---|---|
-| Primary green | `#274738` | Primary buttons, focus rings, active tab indicator |
-| Paper white | `#fbf9f5` | Page background |
+| Primary — Maritime Navy | `#223b54` | Primary buttons, focus rings, active tab indicator, mail brand bar |
+| Accent — Antique Brass | `#a9781f` | Used **sparingly**: active / selected states only |
+| Page ground | `#f4f6f9` | Page background (cool, biased toward the navy) |
 | Surface | `#ffffff` | Cards, modals |
+| Container (low) | `#eef1f5` | Inset blocks — e.g. the mail loan-summary panel |
+| On-surface / variant | `#171b21` / `#3c434c` | Body text and its muted second level |
 | Error/destructive | `#ba1a1a` | Delete actions, error states |
-| Outline | `#727974` | Borders, dividers |
-| Headline font | Playfair Display (serif) | Page titles, modal headers, book titles on cards |
-| UI/body font | Work Sans (sans-serif) | All other text |
+| Outline | `#6b727b` | Borders, dividers, muted labels |
+| Headline font | Literata (serif) | Page titles, modal headers, book titles on cards |
+| UI/body font | IBM Plex Sans (sans-serif) | All other text |
 | Border radius — standard | 4px | Buttons, inputs, cards |
 | Border radius — modals | 8px | Modal containers |
 | Border radius — tags | 9999px (pill) | Category chips |
@@ -209,6 +217,16 @@ Full token spec: `references/design/literary_commons/DESIGN.md`
 **Modals are sized from the scale, not by hand.** `sm` = one short form (share a link), `md` = a compact single-column form (import, edit profile), `lg` = a two-column form (manage a book, edit a collection), `xl` = a cover-plus-detail reading surface (book/collection preview). From **768px** the two `lg` forms split into a cover column beside the fields (`.form__aside` / `.form__main` wrappers, plus `.picker-panes` for `CollectionEditModal`'s two book lists, which uses `auto-fit` so the selected pane spans full width in read-only mode); below it every modal is the original single stack. The `xl` covers grow at the same breakpoint so they stay in proportion with the wider sheet.
 
 Category chips use a curated **10-tone muted palette** (see _Categories_). The footer year is rendered dynamically (`new Date().getFullYear()`).
+
+**The one surface that can't read a token is mail.** An email client has no CSS variables, so
+`templates/emails/` carries literal hexes and font stacks copied out of `tokens.css` — the only
+duplication of the palette in the project, and it rots the way the palette/`categoryColors.js`
+pair would if nothing watched it. Two guards, deliberately different in kind: `MailStyleTest`
+fails on any colour that is not a value defined in `tokens.css` (and names the retired ones), and
+`tests/e2e/mail-visual.spec.js` screenshots every mail against a committed baseline **and**
+asserts the computed background of the brand bar and button. The visual half exists because a
+mail in the wrong colour is not an error, a missing key or a broken link — nothing else in the
+suite can see it.
 
 ## Dev Commands
 
@@ -240,6 +258,7 @@ php bin/console lint:container               # verify service wiring
 php bin/console app:grant-admin <email>      # grant the operator dashboard (--revoke to remove)
 php bin/console app:prune-analytics          # drop old visitor rows (--days=120, --dry-run)
 php bin/console app:send-loan-reminders      # mail due-tomorrow/overdue borrowers (--dry-run)
+php bin/console app:mail-preview --all-locales  # render every mail to var/mail-preview (design review)
 php bin/console messenger:consume async      # drain the mail queue by hand (the worker does this)
 php bin/console messenger:stats              # queued/failed counts
 php bin/console mailer:test you@example.com  # prove the configured relay accepts us
@@ -504,8 +523,9 @@ down:
 - **Due-soon and overdue are one type with a `state`**, not two mails.
 - `notify_newsletter` is deliberately **unimplemented** (no content pipeline); it keeps its toggle.
 
-**Templates** (`templates/emails/`) are table-based with **inlined styles**, drawn from the design
-tokens — so no CSS-inliner dependency, since there is nothing left to inline. Playfair/Work Sans
+**Templates** (`templates/emails/`) are table-based with **inlined styles**, copied from
+`assets/src/styles/tokens.css` (see _Design System_ for why that file and not the design study) —
+so no CSS-inliner dependency, since there is nothing left to inline. Playfair/Work Sans
 are named inside real fallback stacks (webfonts don't load in most clients), the column is capped
 at 600px, and every mail ships a **text/plain alternative** (spam filters penalise HTML-only mail,
 and it is what a text-mode client reads). The six loan mails share `_loan_summary`, so each is a
@@ -515,6 +535,13 @@ headline plus a button. Two traps worth knowing:
 - **Every link is absolute, built from `DEFAULT_URI`** via the `appUrl` context value. The worker
   has no request context, and SPA paths are Vue routes, so `url()` cannot be used and a relative
   href would be a broken link in the inbox.
+
+**Looking at a mail is one command**: `app:mail-preview` renders every mail — including the
+variants a `MailType` alone doesn't capture (collection, decline with and without a note, both
+reminder states) — to `var/mail-preview/`, with an `index.html` contact sheet. Its fixtures are
+**literals, and nothing in it reads the clock**: that is what lets the Playwright visual baselines
+compare the same bytes next month, and it is also the only practical way to review eight mails in
+five languages.
 
 **Ids are English sentences** in a `mails` domain (`translations/mails.{de,es,fr,uk}.yaml`), the
 `ApiError` convention, so `en` needs no catalog. `tests/I18n/MailTranslationCoverageTest` does for
