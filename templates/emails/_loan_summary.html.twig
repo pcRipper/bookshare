@@ -17,7 +17,7 @@
       {% endif %}
       {% if counterpart %}
         <p style="margin:12px 0 0;color:#414844;font-size:14px;">
-          <span style="color:#727974;">{{ (counterpartRole == 'owner' ? 'Owner' : 'Requested by')|trans({}, 'mails') }}:</span> {{ counterpart }}
+          <span style="color:#727974;">{{ counterpartRole == 'owner' ? 'Owner'|trans({}, 'mails') : 'Requested by'|trans({}, 'mails') }}:</span> {{ counterpart }}
         </p>
       {% endif %}
       {% if dueDate %}

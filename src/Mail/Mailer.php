@@ -54,8 +54,11 @@ final class Mailer
      */
     public function send(User $to, MailType $type, array $context = []): bool
     {
-        $email = $to->getEmail();
-        if ($email === null || $email === '') {
+        // The column is NOT NULL, so this is the blank case rather than the
+        // missing one — but an address the transport would reject outright is
+        // worth naming in the log instead of surfacing as a transport warning.
+        $email = trim($to->getEmail());
+        if ($email === '') {
             $this->skip($type, $to, 'no email address');
 
             return false;
