@@ -173,6 +173,69 @@ services:
     networks:
       - monitoring
 
+  # -- Messenger worker (outbound mail) --------------------------------------
+  # Consumes the `async` transport, which every mail is routed to: sending is an
+  # SMTP round-trip and no API response should wait on one. Same image as
+  # phpfpm — it runs the same app, just from the console instead of FPM.
+  #
+  # --time-limit and --memory-limit make the worker restart itself periodically:
+  # a long-lived PHP process accumulates memory, and `restart: unless-stopped`
+  # turns a clean exit into a fresh process rather than a dead queue.
+  messenger-worker:
+    build:
+      # Same build as phpfpm above (compose has no way to share one build block).
+      context: .
+      dockerfile: docker/local/php/Dockerfile
+      args:
+        PHP_VERSION: ${PHP_VERSION:-8.4}
+    restart: unless-stopped
+    command: php bin/console messenger:consume async --time-limit=3600 --memory-limit=128M -v
+    volumes:
+      - .:/var/www/app
+    env_file:
+      - docker/local/php/app.env
+    environment:
+      APP_SECRET: ${APP_SECRET:-change_me_in_dot_env_local}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-changeme}@postgresql:5432/${POSTGRES_DB:-bookshare}?serverVersion=16&charset=utf8
+      JWT_PASSPHRASE: ${JWT_PASSPHRASE:-}
+      PHP_MEMORY_LIMIT: ${PHP_MEMORY_LIMIT:-256M}
+      # Xdebug in a worker would stall every message the same way it stalled
+      # every request (see docker/local/php/xdebug.ini).
+      XDEBUG_MODE: "off"
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      phpfpm:
+        # Not a dependency of the worker itself — it just keeps the queue table's
+        # migration (run by the phpfpm entrypoint) ahead of the first consume.
+        condition: service_healthy
+    networks:
+      - app
+
+  # -- Mailpit (local SMTP catcher) -------------------------------------------
+  # Everything the app sends locally lands here instead of a real relay: the
+  # stack has no credentials for one, and a dev database full of plausible
+  # addresses is exactly what you don't want pointed at an SMTP provider.
+  #   • UI + REST API:  http://localhost:${MAILPIT_UI_PORT:-8025}
+  #   • SMTP:           mailpit:1025 (MAILER_DSN in docker/local/php/app.env)
+  # The REST API is what the Playwright suite asserts against (tests/e2e).
+  # Production has no equivalent, deliberately — see compose.prod.yaml.
+  mailpit:
+    image: ${MAILPIT_IMAGE:-axllent/mailpit:v1.21}
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+      # Exposed so a host-side script (or a second app instance) can send too.
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+    environment:
+      # Accept anything: there are no credentials worth checking in a catcher.
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+      # Ring buffer — a long-running dev stack shouldn't grow unbounded.
+      MP_MAX_MESSAGES: 500
+    networks:
+      - app
+
 networks:
   app:
     driver: bridge
