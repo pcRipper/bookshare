@@ -1,5 +1,6 @@
 {
   "common": {
+    "bookCount": "{count} book | {count} books",
     "cancel": "Cancel",
     "close": "Close",
     "delete": "Delete",
@@ -136,7 +137,6 @@
   "collections": {
     "badge": "Collection",
     "onLoan": "On loan",
-    "bookCount": "{count} book | {count} books",
     "availableCount": "{count} available",
     "borrow": "Borrow collection",
     "notEnough": "Not enough available",
@@ -200,7 +200,6 @@
     "loadFailed": "Something went wrong loading Discover.",
     "noReaderMatches": "No readers match your search just yet.",
     "noReaders": "No other readers here yet.",
-    "bookCount": "{count} book | {count} books",
     "sharedCount": "{count} shared",
     "noBookMatches": "No books match your search just yet.",
     "noBooks": "No books are being shared by the community right now. Check back soon."
@@ -302,6 +301,7 @@
     "following": "Following",
     "followed": "Following {name}",
     "noBio": "No bio yet.",
+    "moreTags": "+{count} more",
     "backToDiscover": "Back to Discover",
     "tabs": {
       "available": "Available to Borrow",

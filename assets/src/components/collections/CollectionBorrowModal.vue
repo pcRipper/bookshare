@@ -126,7 +126,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             </RouterLink>
 
             <p class="detail-meta">
-              {{ t('collections.bookCount', books.length, { named: { count: books.length } }) }}
+              {{ t('common.bookCount', books.length, { named: { count: books.length } }) }}
               · {{ t('collections.availableCount', { count: availableCount }) }}
             </p>
 

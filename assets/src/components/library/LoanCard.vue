@@ -122,7 +122,7 @@ const detailsOpen = ref(false)
         <h3 class="loan-card__title">{{ loan.title }}</h3>
         <p v-if="loan.author" class="loan-card__author">{{ loan.author }}</p>
         <p v-else-if="isCollection" class="loan-card__author">
-          {{ t('collections.bookCount', loan.books.length, { named: { count: loan.books.length } }) }}
+          {{ t('common.bookCount', loan.books.length, { named: { count: loan.books.length } }) }}
         </p>
 
         <div class="loan-card__meta">

@@ -1,5 +1,6 @@
 {
   "common": {
+    "bookCount": "{count} libro | {count} libros",
     "cancel": "Cancelar",
     "close": "Cerrar",
     "delete": "Eliminar",
@@ -136,7 +137,6 @@
   "collections": {
     "badge": "Colección",
     "onLoan": "Prestada",
-    "bookCount": "{count} libro | {count} libros",
     "availableCount": "{count} disponibles",
     "borrow": "Pedir la colección",
     "notEnough": "No hay suficientes disponibles",
@@ -200,7 +200,6 @@
     "loadFailed": "Algo ha fallado al cargar Descubrir.",
     "noReaderMatches": "Todavía no hay lectores que coincidan con tu búsqueda.",
     "noReaders": "Aún no hay otros lectores por aquí.",
-    "bookCount": "{count} libro | {count} libros",
     "sharedCount": "{count} compartidos",
     "noBookMatches": "Todavía no hay libros que coincidan con tu búsqueda.",
     "noBooks": "Ahora mismo la comunidad no comparte ningún libro. Vuelve pronto."
@@ -302,6 +301,7 @@
     "following": "Siguiendo",
     "followed": "Ahora sigues a {name}",
     "noBio": "Todavía sin biografía.",
+    "moreTags": "+{count} más",
     "backToDiscover": "Volver a Descubrir",
     "tabs": {
       "available": "Disponibles para pedir",
