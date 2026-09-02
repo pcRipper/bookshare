@@ -13,6 +13,7 @@ export const CHANGELOG = [
       'Your library page is down to three tabs. Books, Collections and Wish List were three tabs holding three shelves of the same catalogue, so they are now one — Books — with the shelf picker inside it, matching how Sharing already works.',
       'The tab strip no longer scrolls sideways on a phone. Three tabs fit, so they sit as a fixed row with an icon each and an underline that slides to whichever one you pick.',
       'On a phone the add button now follows the shelf you are looking at, so you can finally create a collection without reaching for a laptop.',
+      'The stat panel at the top of the library is gone. Total, shared and loaned restated what the shelves below already show, and it cost every visit a block of space before the first book.',
     ],
   },
   {
