@@ -226,11 +226,6 @@
     "searchPlaceholder": "Buscar por título, autor o ISBN",
     "noMatches": "Ningún libro coincide con «{query}».",
     "unfollow": "Dejar de seguir",
-    "stats": {
-      "totalBooks": "Libros en total",
-      "shared": "Compartidos",
-      "loaned": "Prestados"
-    },
     "tabs": {
       "books": "Libros",
       "collections": "Colecciones",

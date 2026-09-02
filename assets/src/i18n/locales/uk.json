@@ -226,11 +226,6 @@
     "searchPlaceholder": "Пошук за назвою, автором або ISBN",
     "noMatches": "Немає книг за запитом «{query}».",
     "unfollow": "Відписатися",
-    "stats": {
-      "totalBooks": "Усього книг",
-      "shared": "У спільному доступі",
-      "loaned": "Позичено"
-    },
     "tabs": {
       "books": "Книги",
       "collections": "Збірки",

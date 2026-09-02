@@ -10,7 +10,6 @@ import { apiErrorMessage } from '@/utils/apiError'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
-import StatBar from '@/components/ui/StatBar.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import BookShelfPanel from '@/components/library/BookShelfPanel.vue'
@@ -123,12 +122,6 @@ const shelves = computed(() => [
   { key: 'wishlist',    label: t('library.tabs.wishlist'),    icon: 'bookmark',             count: stats.value.wished || null },
 ])
 const onBooksTab = computed(() => activeTab.value === 'books')
-
-const statCards = computed(() => [
-  { label: t('library.stats.totalBooks'), value: stats.value.totalBooks },
-  { label: t('library.stats.shared'),     value: stats.value.shared },
-  { label: t('library.stats.loaned'),     value: stats.value.loaned },
-])
 
 /* ── Sharing subtabs: borrowing (books I hold) vs lending (books I own) ──
    Each side carries its whole lifecycle — requests in flight, the active loan,
@@ -510,14 +503,14 @@ async function onCollectionDelete(id) {
           </template>
         </div>
 
-        <!-- Right rail: primary action + the dedicated stat block -->
-        <div class="profile-header__aside">
-          <button class="btn-add-book" @click="openCreate">
-            <span class="material-symbols-outlined">add</span>
-            {{ t('library.addNewBook') }}
-          </button>
-          <StatBar :stats="statCards" :loading="!profile" />
-        </div>
+        <!-- The primary action, and nothing else. The three-figure stat block
+             that used to sit under it (total / shared / loaned) is gone: the
+             numbers restated what the shelves themselves show, and the panel
+             they lived in cost the top of every visit a 232px column. -->
+        <button class="btn-add-book" @click="openCreate">
+          <span class="material-symbols-outlined">add</span>
+          {{ t('library.addNewBook') }}
+        </button>
       </section>
 
       <!-- ── Library content ───────────────────────────────────────────── -->
@@ -858,7 +851,6 @@ async function onCollectionDelete(id) {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  padding-bottom: var(--space-sm);
 }
 @media (min-width: 768px) {
   .profile-header {
@@ -904,33 +896,11 @@ async function onCollectionDelete(id) {
 .profile-header__bio {
   font-size: var(--text-body-md);
   color: var(--color-secondary);
-  margin: 0 0 var(--space-sm);
-}
-@media (min-width: 768px) {
-  .profile-header__bio { margin-bottom: var(--space-md); }
-}
-
-/* Right rail: the primary action over the dedicated stat block.
-   Full-width column on mobile (Add is hidden there → just the stat card);
-   on desktop the two fuse into one framed panel — the navy button is its
-   header, the stat rows its body. */
-.profile-header__aside {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-  min-width: 0;
-}
-@media (min-width: 768px) {
-  .profile-header__aside {
-    align-items: stretch;
-    flex-shrink: 0;
-    width: 232px;
-    gap: 0;
-    border: 1px solid var(--color-outline-variant);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface-container-low);
-    overflow: hidden; /* clip the button's top corners to the panel radius */
-  }
+  /* No trailing margin: with the stat panel gone the bio is the last thing in
+     the header, so its bottom margin and the header's own bottom padding were
+     stacking under it — 84px of nothing above the tabs, on top of the section
+     gap that is already there to separate them. */
+  margin: 0;
 }
 
 .btn-add-book {
@@ -950,14 +920,11 @@ async function onCollectionDelete(id) {
    to avoid two competing "add book" affordances on the same screen. */
 @media (max-width: 767px) { .btn-add-book { display: none; } }
 .btn-add-book:hover { background: var(--color-primary-container); }
-/* Desktop: the button is the panel header — square (the panel clips to its
-   own radius), centered, and divided from the stat rows below. */
+/* Desktop: a plain button at the top of the header row, no longer the header
+   of a framed panel. `flex-shrink: 0` keeps it off the identity column's
+   wrapping — the label is one line and must stay one line. */
 @media (min-width: 768px) {
-  .profile-header__aside .btn-add-book {
-    justify-content: center;
-    border-radius: 0;
-    border-bottom: 1px solid var(--color-outline-variant);
-  }
+  .btn-add-book { flex-shrink: 0; align-self: flex-start; }
 }
 
 /* ── Library content section ─────────────────────────────────────────── */

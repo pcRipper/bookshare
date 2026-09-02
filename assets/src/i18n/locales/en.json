@@ -226,11 +226,6 @@
     "searchPlaceholder": "Search by title, author or ISBN",
     "noMatches": "No books match “{query}”.",
     "unfollow": "Unfollow",
-    "stats": {
-      "totalBooks": "Total Books",
-      "shared": "Shared",
-      "loaned": "Loaned"
-    },
     "tabs": {
       "books": "Books",
       "collections": "Collections",
