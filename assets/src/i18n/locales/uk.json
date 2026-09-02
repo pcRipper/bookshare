@@ -220,6 +220,7 @@
     "addNewBook": "Додати книгу",
     "addBook": "Додати книгу",
     "addBookAria": "Додати нову книгу",
+    "addCollectionAria": "Створити нову збірку",
     "import": "Імпорт",
     "export": "Експорт",
     "searchPlaceholder": "Пошук за назвою, автором або ISBN",
@@ -233,12 +234,15 @@
     "tabs": {
       "books": "Книги",
       "collections": "Збірки",
-      "wishlist": "Список бажань",
+      "wishlist": "Бажання",
       "sharing": "Обмін",
       "borrowing": "Позичив я",
       "lending": "Позичив іншим",
       "following": "Підписки"
     },
+    "tabsLabel": "Розділи бібліотеки",
+    "shelvesLabel": "Вибрати полицю",
+    "sidesLabel": "Вибрати сторону позики",
     "addCard": {
       "bookTitle": "Додати нову книгу",
       "bookHint": "Додайте книгу до своєї збірки.",

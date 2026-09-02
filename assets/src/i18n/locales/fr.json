@@ -220,6 +220,7 @@
     "addNewBook": "Ajouter un livre",
     "addBook": "Ajouter un livre",
     "addBookAria": "Ajouter un nouveau livre",
+    "addCollectionAria": "Créer une collection",
     "import": "Importer",
     "export": "Exporter",
     "searchPlaceholder": "Rechercher par titre, auteur ou ISBN",
@@ -233,12 +234,15 @@
     "tabs": {
       "books": "Livres",
       "collections": "Collections",
-      "wishlist": "Liste de souhaits",
+      "wishlist": "Souhaits",
       "sharing": "Partage",
       "borrowing": "Emprunts",
       "lending": "Prêts",
       "following": "Abonnements"
     },
+    "tabsLabel": "Sections de la bibliothèque",
+    "shelvesLabel": "Choisir une étagère",
+    "sidesLabel": "Choisir un côté du prêt",
     "addCard": {
       "bookTitle": "Cataloguer un nouveau livre",
       "bookHint": "Ajoutez un titre à votre collection.",

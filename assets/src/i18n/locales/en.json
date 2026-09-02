@@ -220,6 +220,7 @@
     "addNewBook": "Add New Book",
     "addBook": "Add Book",
     "addBookAria": "Add new book",
+    "addCollectionAria": "Create a new collection",
     "import": "Import",
     "export": "Export",
     "searchPlaceholder": "Search by title, author or ISBN",
@@ -239,6 +240,9 @@
       "lending": "Lending",
       "following": "Following"
     },
+    "tabsLabel": "Library sections",
+    "shelvesLabel": "Choose a shelf",
+    "sidesLabel": "Choose a side of the loan",
     "addCard": {
       "bookTitle": "Catalog a New Book",
       "bookHint": "Add a title to your collection.",
