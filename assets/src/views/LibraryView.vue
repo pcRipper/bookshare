@@ -79,12 +79,18 @@ const borrowingCount = computed(() =>
 )
 const lendingCount = computed(() => requests.value.length + cIncoming.value.length)
 
+/* The top strip carries no counters. Books can't have one — a shelf size is not
+   a task — so a number on the other two made the three tabs three different
+   kinds of thing, and on a phone, where the icon sits above the label, the
+   badge had nowhere to go but on top of the icon. The counts live one level
+   down instead, on the Borrowing / Lending pills, where they are next to the
+   loans they describe. */
 const tabs = computed(() => [
   // One tab for the whole catalogue and one for the whole loan lifecycle; both
   // split into subtabs below.
   { key: 'books',     label: t('library.tabs.books'),     icon: 'book_2' },
-  { key: 'sharing',   label: t('library.tabs.sharing'),   icon: 'swap_horiz', badge: (borrowingCount.value + lendingCount.value) || null },
-  { key: 'following', label: t('library.tabs.following'), icon: 'group',      badge: followingMeta.value.total || null },
+  { key: 'sharing',   label: t('library.tabs.sharing'),   icon: 'swap_horiz' },
+  { key: 'following', label: t('library.tabs.following'), icon: 'group' },
 ])
 const activeTabIndex = computed(() => Math.max(tabs.value.findIndex(x => x.key === activeTab.value), 0))
 
@@ -544,7 +550,6 @@ async function onCollectionDelete(id) {
           >
             <span class="material-symbols-outlined tab-btn__icon">{{ tab.icon }}</span>
             <span class="tab-btn__label">{{ tab.label }}</span>
-            <span v-if="tab.badge" class="tab-badge">{{ tab.badge }}</span>
           </button>
           <span class="tab-nav__indicator" aria-hidden="true" />
         </div>
@@ -1043,15 +1048,6 @@ async function onCollectionDelete(id) {
     padding: var(--space-xs) 4px var(--space-sm);
   }
   .tab-btn__icon { font-size: 22px; }
-  /* The badge would push the label off-centre in a column, so it rides on the
-     icon's top-right corner the way a notification dot does. */
-  .tab-btn { position: relative; }
-  .tab-badge {
-    position: absolute;
-    top: 2px;
-    left: 50%;
-    margin-left: 6px;
-  }
 }
 
 /* Motion is decoration here — the colour and fill changes already say which tab
@@ -1062,22 +1058,6 @@ async function onCollectionDelete(id) {
   .tab-btn__icon { transition: none; }
   .tab-btn--active .tab-btn__icon { transform: none; }
 }
-
-.tab-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  border-radius: var(--radius-full);
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1;
-}
-.tab-btn:not(.tab-btn--active) .tab-badge { background: var(--color-outline); }
 
 /* ── Wish-list sort + priority filter ─────────────────────────────────── */
 /* Narrow enough not to crowd the toolbar; the two labels are short. */
