@@ -13,7 +13,7 @@ import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import StatBar from '@/components/ui/StatBar.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
-import BookCard from '@/components/library/BookCard.vue'
+import BookShelfPanel from '@/components/library/BookShelfPanel.vue'
 import LoanCard from '@/components/library/LoanCard.vue'
 import ManageBookModal from '@/components/library/ManageBookModal.vue'
 import ImportBooksModal from '@/components/library/ImportBooksModal.vue'
@@ -21,12 +21,8 @@ import SharePublicLinkModal from '@/components/library/SharePublicLinkModal.vue'
 import CollectionCard from '@/components/collections/CollectionCard.vue'
 import CollectionEditModal from '@/components/collections/CollectionEditModal.vue'
 import Pagination from '@/components/ui/Pagination.vue'
-import SearchInput from '@/components/ui/SearchInput.vue'
-import ViewToggle from '@/components/ui/ViewToggle.vue'
+import SubTabNav from '@/components/ui/SubTabNav.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
-import BookTable from '@/components/ui/BookTable.vue'
-import BookTableSkeleton from '@/components/ui/BookTableSkeleton.vue'
-import { useBookView } from '@/composables/useBookView'
 import { WISH_PRIORITIES, wishPriorityMeta, wishPriorityKey } from '@/utils/wishPriority'
 import { toLoans, sortLoans, matchesFilter } from '@/utils/loans'
 
@@ -51,7 +47,6 @@ const {
   loading: cLoading,
 } = storeToRefs(collections)
 const { following, followingMeta, loadingFollowing } = storeToRefs(subscriptions)
-const { bookView, tableDetailed } = useBookView()
 
 // Inline "mark as read" toggle from the table view; revert is handled in the
 // store, so just surface a failure as a toast.
@@ -63,8 +58,17 @@ async function onToggleRead({ id, isRead }) {
   }
 }
 
-/* ── Tabs ─────────────────────────────────────────────────────────────── */
-const activeTab = ref('collection')
+/* ── Tabs ─────────────────────────────────────────────────────────────────
+   Three, and three is the point. Books, Collections and Wish List were three
+   top-level tabs holding three shelves of the same catalogue — the wish list is
+   literally the Books shelf under `is_wished`, and a collection is a grouping
+   *of* the Books shelf — so finding something meant knowing which shelf it had
+   been filed on before you could look for it. They are now one **Books** tab
+   with the shelf as a subtab, exactly the move Sharing made for the four loan
+   lists, and the strip is down from five entries to three: one for what you
+   have, one for what is on loan, one for who you read alongside. Three fits a
+   phone without scrolling, which is what lets the strip below be static. */
+const activeTab = ref('books')
 
 /* Sharing badges count only the lists fetched eagerly on mount. `lending` and
    `cLending` are lazy, so counting them would read 0 until the tab is opened —
@@ -76,13 +80,43 @@ const borrowingCount = computed(() =>
 const lendingCount = computed(() => requests.value.length + cIncoming.value.length)
 
 const tabs = computed(() => [
-  { key: 'collection',  label: t('library.tabs.books') },
-  { key: 'collections', label: t('library.tabs.collections') },
-  { key: 'wishlist',    label: t('library.tabs.wishlist'), badge: stats.value.wished || null },
-  // One tab for the whole loan lifecycle; the sides live below as subtabs.
-  { key: 'sharing',     label: t('library.tabs.sharing'), badge: (borrowingCount.value + lendingCount.value) || null },
-  { key: 'following',   label: t('library.tabs.following'), badge: followingMeta.value.total || null },
+  // One tab for the whole catalogue and one for the whole loan lifecycle; both
+  // split into subtabs below.
+  { key: 'books',     label: t('library.tabs.books'),     icon: 'book_2' },
+  { key: 'sharing',   label: t('library.tabs.sharing'),   icon: 'swap_horiz', badge: (borrowingCount.value + lendingCount.value) || null },
+  { key: 'following', label: t('library.tabs.following'), icon: 'group',      badge: followingMeta.value.total || null },
 ])
+const activeTabIndex = computed(() => Math.max(tabs.value.findIndex(x => x.key === activeTab.value), 0))
+
+// Arrow keys walk the strip, which is what `role="tablist"` promises. The whole
+// list is one tab stop (the active button), so Tab still leaves the strip in one
+// press rather than stepping through every panel switch.
+function onTabKeydown(e) {
+  const dir = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0
+  if (!dir) return
+  e.preventDefault()
+  const list = tabs.value
+  const next = (activeTabIndex.value + dir + list.length) % list.length
+  activeTab.value = list[next].key
+  // Focus by index, not by `[aria-selected]` — that attribute won't have moved
+  // until the next render, so selecting it here would refocus the old tab.
+  e.currentTarget.querySelectorAll('[role="tab"]')[next]?.focus()
+}
+
+/* ── Books subtabs: the three shelves of your own catalogue ───────────────
+   Books (what you hold) · Collections (how you've grouped it) · Wish List
+   (what you don't hold yet). The pills carry *counts*, not badges: Sharing's
+   badge means "these want something from you", and a shelf being large is not a
+   task. Every count comes from the one eager `fetchMe()`, so none of them reads
+   0 until its shelf is opened — the trap the Sharing badges had to work around. */
+const shelf = ref('books')
+
+const shelves = computed(() => [
+  { key: 'books',       label: t('library.tabs.books'),       icon: 'menu_book',            count: stats.value.totalBooks || null },
+  { key: 'collections', label: t('library.tabs.collections'), icon: 'collections_bookmark', count: stats.value.collections || null },
+  { key: 'wishlist',    label: t('library.tabs.wishlist'),    icon: 'bookmark',             count: stats.value.wished || null },
+])
+const onBooksTab = computed(() => activeTab.value === 'books')
 
 const statCards = computed(() => [
   { label: t('library.stats.totalBooks'), value: stats.value.totalBooks },
@@ -98,8 +132,10 @@ const statCards = computed(() => [
 const sharingSide = ref('borrowing')
 
 const sharingSides = computed(() => [
-  { key: 'borrowing', label: t('library.tabs.borrowing'), badge: borrowingCount.value || null },
-  { key: 'lending',   label: t('library.tabs.lending'),   badge: lendingCount.value || null },
+  // The arrows read as direction of travel: a borrowed book came to you, a lent
+  // one went out.
+  { key: 'borrowing', label: t('library.tabs.borrowing'), icon: 'call_received', badge: borrowingCount.value || null },
+  { key: 'lending',   label: t('library.tabs.lending'),   icon: 'call_made',     badge: lendingCount.value || null },
 ])
 const isLending = computed(() => sharingSide.value === 'lending')
 
@@ -177,8 +213,16 @@ const sideLoading = computed(() =>
     : loading.value.borrowing || loading.value.pendingBorrowing || cLoading.value.borrowing || cLoading.value.pendingBorrowing || historyLoading.value,
 )
 
-/* ── Data loading: collection + profile up front, others lazily ───────── */
+/* ── Data loading: the Books shelf + profile up front, others lazily ───── */
 const loaded = ref({ collections: false, following: false, wishlist: false })
+
+// The two lazy shelves load on first entry and are then cached: nothing but
+// this page writes to them, so unlike a loan list they can't go stale behind
+// your back. The Books shelf is already fetched on mount.
+function loadShelf(which) {
+  if (which === 'collections' && !loaded.value.collections) { loaded.value.collections = true; collections.fetchMine() }
+  if (which === 'wishlist' && !loaded.value.wishlist) { loaded.value.wishlist = true; store.fetchWishlist() }
+}
 
 // The Sharing panel refetches its whole visible side on every entry rather than
 // caching behind a `loaded` flag. That was already the History tab's rule — a
@@ -204,11 +248,13 @@ onMounted(() => {
 })
 
 watch(activeTab, tab => {
-  if (tab === 'collections' && !loaded.value.collections) { loaded.value.collections = true; collections.fetchMine() }
-  if (tab === 'wishlist' && !loaded.value.wishlist) { loaded.value.wishlist = true; store.fetchWishlist() }
+  if (tab === 'books') loadShelf(shelf.value)
   if (tab === 'following' && !loaded.value.following) { loaded.value.following = true; subscriptions.fetchFollowing() }
   if (tab === 'sharing') loadSharingSide(sharingSide.value)
 })
+
+// Switching shelf while the Books tab is open loads the one being revealed.
+watch(shelf, which => { if (onBooksTab.value) loadShelf(which) })
 
 // Switching sides while Sharing is open loads the side being revealed. The
 // filter resets with it: a narrowing that made sense on one side ("Awaiting")
@@ -347,6 +393,21 @@ async function onModalDelete(id) {
   }
 }
 
+/* ── Mobile FAB ───────────────────────────────────────────────────────────
+   The toolbar's add button is desktop-only, so on a phone this is the only way
+   into a create flow — which means it has to follow the shelf you're looking
+   at, collections included. */
+const fabAction = computed(() => {
+  if (!onBooksTab.value) return { key: 'book', label: t('library.addBookAria') }
+  if (shelf.value === 'collections') return { key: 'collection', label: t('library.addCollectionAria') }
+  if (shelf.value === 'wishlist') return { key: 'wish', label: t('wishlist.addBook') }
+  return { key: 'book', label: t('library.addBookAria') }
+})
+function onFab() {
+  if (fabAction.value.key === 'collection') openCreateCollection()
+  else openCreate({ wished: fabAction.value.key === 'wish' })
+}
+
 /* ── Import / export ─────────────────────────────────────────────────── */
 const importOpen = ref(false)
 const exporting = ref(false)
@@ -456,52 +517,65 @@ async function onCollectionDelete(id) {
       <!-- ── Library content ───────────────────────────────────────────── -->
       <section class="library-content">
 
-        <!-- Tabs -->
-        <div v-hscroll class="tab-nav" role="tablist">
+        <!-- Tabs — a static three-up strip. At five tabs this had to scroll
+             (565px of tabs in 342px at 390 wide) and carried edge shadows to
+             say so; three share the width evenly and nothing is off-screen, so
+             the scroller, its hidden scrollbar and the shadow hack are gone.
+             The active marker is one span rather than a per-button border, so
+             it slides between tabs — and since the tabs are equal thirds it can
+             be positioned from the index alone, with no measuring. -->
+        <div
+          class="tab-nav"
+          role="tablist"
+          :aria-label="t('library.tabsLabel')"
+          :style="{ '--tab-count': tabs.length, '--tab-index': activeTabIndex }"
+          @keydown="onTabKeydown"
+        >
           <button
             v-for="tab in tabs"
             :key="tab.key"
             class="tab-btn"
             :class="{ 'tab-btn--active': activeTab === tab.key }"
+            type="button"
             role="tab"
             :aria-selected="activeTab === tab.key"
+            :tabindex="activeTab === tab.key ? 0 : -1"
             @click="activeTab = tab.key"
           >
-            {{ tab.label }}
+            <span class="material-symbols-outlined tab-btn__icon">{{ tab.icon }}</span>
+            <span class="tab-btn__label">{{ tab.label }}</span>
             <span v-if="tab.badge" class="tab-badge">{{ tab.badge }}</span>
           </button>
+          <span class="tab-nav__indicator" aria-hidden="true" />
         </div>
 
-        <!-- Collection tab -->
-        <div v-if="activeTab === 'collection'" role="tabpanel">
-          <!-- Search + import / export toolbar -->
-          <div class="collection-toolbar">
-            <!-- This panel is `v-if`-ed, so leaving the tab unmounts the search
-                 box while the store keeps the filter (and the filtered page).
-                 Seed it back on remount, or the list returns filtered behind an
-                 empty box. -->
-            <SearchInput
-              class="collection-toolbar__search"
-              :placeholder="t('library.searchPlaceholder')"
-              :loading="loading.collection"
-              :initial="collectionQuery"
-              @search="store.setCollectionSearch"
-            />
-            <div class="collection-toolbar__actions">
-              <ViewToggle v-model="bookView" v-model:detailed="tableDetailed" />
-              <!-- The grid leads with an "add" placeholder card; the table has no
-                   such cell, so the affordance moves into the toolbar (desktop
-                   only — mobile already has the FAB). -->
-              <button
-                v-if="bookView === 'table'"
-                class="toolbar-btn toolbar-btn--add"
-                type="button"
-                :aria-label="t('library.addBook')"
-                @click="openCreate"
-              >
-                <span class="material-symbols-outlined">add</span>
-                <span class="toolbar-btn__label">{{ t('library.addBook') }}</span>
-              </button>
+        <!-- ── Books tab: the three shelves of your own catalogue ────────── -->
+        <div v-if="onBooksTab" role="tabpanel">
+          <SubTabNav v-model="shelf" :items="shelves" :aria-label="t('library.shelvesLabel')" />
+
+          <!-- Books shelf -->
+          <BookShelfPanel
+            v-if="shelf === 'books'"
+            :books="collection"
+            :meta="collectionMeta"
+            :loading="loading.collection"
+            :query="collectionQuery"
+            :filtered="!!collectionQuery"
+            :search-placeholder="t('library.searchPlaceholder')"
+            :no-matches="t('library.noMatches', { query: collectionQuery })"
+            :add-label="t('library.addBook')"
+            add-icon="add_circle"
+            :add-title="t('library.addCard.bookTitle')"
+            :add-hint="t('library.addCard.bookHint')"
+            @search="store.setCollectionSearch"
+            @open="openEdit"
+            @toggle-read="onToggleRead"
+            @page="store.fetchCollection"
+            @add="openCreate()"
+          >
+            <!-- Whole-shelf actions: only the owned shelf can be shared or
+                 round-tripped through CSV. -->
+            <template #actions>
               <button class="toolbar-btn" type="button" :aria-label="t('library.share')" @click="shareOpen = true">
                 <span class="material-symbols-outlined">share</span>
                 <span class="toolbar-btn__label">{{ t('library.share') }}</span>
@@ -521,91 +595,62 @@ async function onCollectionDelete(id) {
                 <span v-else class="material-symbols-outlined">download</span>
                 <span class="toolbar-btn__label">{{ t('library.export') }}</span>
               </button>
-            </div>
-          </div>
+            </template>
+          </BookShelfPanel>
 
-          <template v-if="loading.collection && !collection.length">
-            <BookTableSkeleton v-if="bookView === 'table'" :count="8" :detailed="tableDetailed" />
-            <BookGridSkeleton v-else :count="8" class="collection-skeleton" />
+          <!-- Collections shelf (curated groups you own) -->
+          <template v-else-if="shelf === 'collections'">
+            <BookGridSkeleton v-if="cLoading.mine && !myCollections.length" :count="4" />
+            <template v-else>
+              <div class="book-grid">
+                <!-- "New collection" lead card (first page only) -->
+                <div v-if="mineMeta.page === 1" class="add-book-card" role="button" tabindex="0" @click="openCreateCollection">
+                  <span class="material-symbols-outlined add-book-card__icon">library_add</span>
+                  <h3 class="add-book-card__title">{{ t('library.addCard.collectionTitle') }}</h3>
+                  <p class="add-book-card__hint">{{ t('library.addCard.collectionHint') }}</p>
+                </div>
+                <CollectionCard
+                  v-for="c in myCollections"
+                  :key="c.id"
+                  :collection="c"
+                  variant="owner"
+                  @edit="openEditCollection"
+                />
+              </div>
+              <Pagination
+                :page="mineMeta.page"
+                :total-pages="mineMeta.totalPages"
+                :disabled="cLoading.mine"
+                @change="collections.fetchMine"
+              />
+            </template>
           </template>
-          <!-- No matches for an active search -->
-          <div v-else-if="collectionQuery && !collection.length" class="empty-state">
-            <span class="material-symbols-outlined empty-state__icon">search_off</span>
-            <p class="empty-state__text">{{ t('library.noMatches', { query: collectionQuery }) }}</p>
-          </div>
-          <BookTable
-            v-else-if="bookView === 'table'"
-            :books="collection"
-            :detailed="tableDetailed"
-            read-editable
+
+          <!-- Wish List shelf (books you want, not ones you hold) -->
+          <BookShelfPanel
+            v-else
+            :books="wishlist"
+            :meta="wishlistMeta"
+            :loading="loading.wishlist"
+            :query="wishlistQuery"
+            :filtered="!!wishlistQuery || !!wishlistPriority"
+            wish
+            :search-placeholder="t('wishlist.searchPlaceholder')"
+            :no-matches="t('wishlist.noMatches')"
+            :add-label="t('wishlist.addBook')"
+            add-icon="bookmark_add"
+            :add-title="t('wishlist.addCard.title')"
+            :add-hint="t('wishlist.addCard.hint')"
+            @search="store.setWishlistSearch"
             @open="openEdit"
             @toggle-read="onToggleRead"
-          />
-          <div v-else class="book-grid">
-            <!-- "Add new book" placeholder card, leading the grid (first page, and not while searching) -->
-            <div v-if="collectionMeta.page === 1 && !collectionQuery" class="add-book-card" @click="openCreate" role="button" tabindex="0">
-              <span class="material-symbols-outlined add-book-card__icon">add_circle</span>
-              <h3 class="add-book-card__title">{{ t('library.addCard.bookTitle') }}</h3>
-              <p class="add-book-card__hint">{{ t('library.addCard.bookHint') }}</p>
-            </div>
-            <BookCard
-              v-for="book in collection"
-              :key="book.id"
-              :book="book"
-              @click="openEdit"
-            />
-          </div>
-          <Pagination
-            :page="collectionMeta.page"
-            :total-pages="collectionMeta.totalPages"
-            :disabled="loading.collection"
-            @change="store.fetchCollection"
-          />
-        </div>
-
-        <!-- Collections tab (curated groups you own) -->
-        <div v-else-if="activeTab === 'collections'" role="tabpanel">
-          <BookGridSkeleton v-if="cLoading.mine && !myCollections.length" :count="4" />
-          <template v-else>
-            <div class="book-grid">
-              <!-- "New collection" lead card (first page only) -->
-              <div v-if="mineMeta.page === 1" class="add-book-card" role="button" tabindex="0" @click="openCreateCollection">
-                <span class="material-symbols-outlined add-book-card__icon">library_add</span>
-                <h3 class="add-book-card__title">{{ t('library.addCard.collectionTitle') }}</h3>
-                <p class="add-book-card__hint">{{ t('library.addCard.collectionHint') }}</p>
-              </div>
-              <CollectionCard
-                v-for="c in myCollections"
-                :key="c.id"
-                :collection="c"
-                variant="owner"
-                @edit="openEditCollection"
-              />
-            </div>
-            <Pagination
-              :page="mineMeta.page"
-              :total-pages="mineMeta.totalPages"
-              :disabled="cLoading.mine"
-              @change="collections.fetchMine"
-            />
-          </template>
-        </div>
-
-        <!-- Wish List tab (books you want, not ones you hold) -->
-        <div v-else-if="activeTab === 'wishlist'" role="tabpanel">
-          <div class="collection-toolbar">
-            <!-- Same uncontrolled-input caveat as the Books tab: the panel is
-                 v-if-ed while the store keeps the filter, so seed it on mount. -->
-            <SearchInput
-              class="collection-toolbar__search"
-              :placeholder="t('wishlist.searchPlaceholder')"
-              :loading="loading.wishlist"
-              :initial="wishlistQuery"
-              @search="store.setWishlistSearch"
-            />
-            <div class="collection-toolbar__actions">
-              <!-- Priority filter: pills rather than a select, because there are
-                   only four choices and each carries its own colour. -->
+            @page="store.fetchWishlist"
+            @add="openCreate({ wished: true })"
+          >
+            <!-- Narrowing controls: priority as pills rather than a select,
+                 because there are only four choices and each carries its own
+                 colour; the sort is a plain two-option select. -->
+            <template #filters>
               <div class="filter-row" role="group" :aria-label="t('wishlist.filterLabel')">
                 <button
                   class="filter-pill"
@@ -629,82 +674,14 @@ async function onCollectionDelete(id) {
                 :aria-label="t('wishlist.sortLabel')"
                 @update:model-value="store.setWishlistSort"
               />
-              <ViewToggle v-model="bookView" v-model:detailed="tableDetailed" />
-              <button
-                v-if="bookView === 'table'"
-                class="toolbar-btn toolbar-btn--add"
-                type="button"
-                :aria-label="t('wishlist.addBook')"
-                @click="openCreate({ wished: true })"
-              >
-                <span class="material-symbols-outlined">add</span>
-                <span class="toolbar-btn__label">{{ t('wishlist.addBook') }}</span>
-              </button>
-            </div>
-          </div>
-
-          <template v-if="loading.wishlist && !wishlist.length">
-            <BookTableSkeleton v-if="bookView === 'table'" :count="8" :detailed="tableDetailed" />
-            <BookGridSkeleton v-else :count="8" class="collection-skeleton" />
-          </template>
-          <div v-else-if="(wishlistQuery || wishlistPriority) && !wishlist.length" class="empty-state">
-            <span class="material-symbols-outlined empty-state__icon">search_off</span>
-            <p class="empty-state__text">{{ t('wishlist.noMatches') }}</p>
-          </div>
-          <BookTable
-            v-else-if="bookView === 'table'"
-            :books="wishlist"
-            :detailed="tableDetailed"
-            wish
-            read-editable
-            @open="openEdit"
-            @toggle-read="onToggleRead"
-          />
-          <div v-else class="book-grid">
-            <!-- Lead card, mirroring the Books tab's "Catalog a New Book". -->
-            <div
-              v-if="wishlistMeta.page === 1 && !wishlistQuery && !wishlistPriority"
-              class="add-book-card"
-              role="button"
-              tabindex="0"
-              @click="openCreate({ wished: true })"
-            >
-              <span class="material-symbols-outlined add-book-card__icon">bookmark_add</span>
-              <h3 class="add-book-card__title">{{ t('wishlist.addCard.title') }}</h3>
-              <p class="add-book-card__hint">{{ t('wishlist.addCard.hint') }}</p>
-            </div>
-            <BookCard
-              v-for="book in wishlist"
-              :key="book.id"
-              :book="book"
-              @click="openEdit"
-            />
-          </div>
-          <Pagination
-            :page="wishlistMeta.page"
-            :total-pages="wishlistMeta.totalPages"
-            :disabled="loading.wishlist"
-            @change="store.fetchWishlist"
-          />
+            </template>
+          </BookShelfPanel>
         </div>
 
         <!-- Sharing tab — every loan you are part of, in one list per side -->
         <div v-else-if="activeTab === 'sharing'" role="tabpanel">
           <!-- Borrowing (books I hold) vs Lending (books I own) -->
-          <div class="subtab-nav" role="tablist">
-            <button
-              v-for="side in sharingSides"
-              :key="side.key"
-              class="subtab-nav__btn"
-              :class="{ 'subtab-nav__btn--active': sharingSide === side.key }"
-              role="tab"
-              :aria-selected="sharingSide === side.key"
-              @click="sharingSide = side.key"
-            >
-              {{ side.label }}
-              <span v-if="side.badge" class="tab-badge">{{ side.badge }}</span>
-            </button>
-          </div>
+          <SubTabNav v-model="sharingSide" :items="sharingSides" :aria-label="t('library.sidesLabel')" />
 
           <!-- Lifecycle as a filter rather than as headings: one list, one card
                shape, and the state lives on the card. Same control the wish list
@@ -809,14 +786,10 @@ async function onCollectionDelete(id) {
       </section>
     </div>
 
-    <!-- Mobile FAB (hidden on desktop) -->
-    <!-- The toolbar's add button is desktop-only, so on a phone this is the only
-         way onto the Wish List tab's create flow — it follows the active tab. -->
-    <button
-      class="fab"
-      :aria-label="activeTab === 'wishlist' ? t('wishlist.addBook') : t('library.addBookAria')"
-      @click="openCreate({ wished: activeTab === 'wishlist' })"
-    >
+    <!-- Mobile FAB (hidden on desktop) — follows the shelf you're on, so it
+         creates a collection on the Collections shelf and a wanted book on the
+         Wish List. -->
+    <button class="fab" :aria-label="fabAction.label" @click="onFab">
       <span class="material-symbols-outlined">add</span>
     </button>
 
@@ -985,54 +958,109 @@ async function onCollectionDelete(id) {
 /* ── Library content section ─────────────────────────────────────────── */
 .library-content { display: flex; flex-direction: column; gap: var(--space-md); }
 
-/* Tab nav */
+/* ── Tab nav ──────────────────────────────────────────────────────────────
+   A static, equal-thirds strip. Five tabs could not fit a phone — 565px of
+   tabs in 342px at 390 wide — so this was a hidden-scrollbar scroller with
+   edge shadows standing in for the missing affordance. Three tabs fit, so the
+   whole apparatus is gone: no scroll container, no `v-hscroll`, no gradients
+   masquerading as a cue. Nothing here is ever off-screen. */
 .tab-nav {
+  position: relative;
   display: flex;
   border-bottom: 1px solid var(--color-surface-container-highest);
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  /* One pitch for the whole strip: the tabs are laid out on it and the marker
+     is measured from it, so the two can't disagree. Phones divide the width
+     evenly; from 768px the tabs take a fixed width and sit left, because an
+     equal third of a 1200px page put 400px of marker under a 60px label. */
+  --tab-w: calc(100% / var(--tab-count));
 }
-.tab-nav::-webkit-scrollbar { display: none; }
+@media (min-width: 768px) {
+  .tab-nav { --tab-w: 168px; }
+}
 
-/* Even at five tabs the strip still overflows a phone — measured 565px of tabs
-   in 342px at 390 wide — so the scroller and its cue stay. A hidden scrollbar
-   leaves nothing to say the strip scrolls, and anything past the fold reads as
-   missing; wrapping would cost extra rows. The cue is a shadow at whichever edge
-   has more tabs behind it, which retracts once you reach that end. The `local`
-   gradients are the page-coloured covers that hide each shadow when there's
-   nothing more to scroll to; the `scroll` ones are the shadows themselves.
-   Tighter padding fits one more tab in the same width. */
-@media (max-width: 767px) {
-  .tab-nav {
-    background:
-      linear-gradient(to right, var(--color-background) 45%, transparent) left center / 36px 100% no-repeat local,
-      linear-gradient(to left, var(--color-background) 45%, transparent) right center / 36px 100% no-repeat local,
-      radial-gradient(farthest-side at 0 50%, rgba(35, 44, 51, 0.3), transparent) left center / 20px 100% no-repeat scroll,
-      radial-gradient(farthest-side at 100% 50%, rgba(35, 44, 51, 0.3), transparent) right center / 20px 100% no-repeat scroll;
-    scroll-behavior: smooth;
-  }
-  .tab-btn { padding-inline: var(--space-sm); }
+/* The active marker is one element, not a border on the selected button, so it
+   travels between tabs instead of blinking from one to the next. Every tab is
+   the same width, so its position follows from the index alone — no measuring,
+   no observer, and it stays correct through a locale switch that changes every
+   label's width. */
+.tab-nav__indicator {
+  position: absolute;
+  left: 0;
+  bottom: -1px; /* sit on the strip's own border, not above it */
+  height: 2px;
+  width: var(--tab-w);
+  /* 100% of the marker is one tab pitch, which is what makes this exact. */
+  transform: translateX(calc(var(--tab-index) * 100%));
+  background: var(--color-accent);
+  border-radius: var(--radius-full) var(--radius-full) 0 0;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tab-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-xs);
-  padding: var(--space-sm) var(--space-md);
+  /* Every tab is exactly one pitch wide — never its content width — so a long
+     label in one locale can't win space from its neighbours and knock the
+     marker out of alignment with its tab. */
+  flex: 0 0 var(--tab-w);
+  max-width: var(--tab-w);
+  min-width: 0;
+  padding: var(--space-sm) var(--space-xs);
   font-size: var(--text-label-md);
   font-weight: 500;
   letter-spacing: var(--ls-label-md);
   color: var(--color-secondary);
-  border-bottom: 2px solid transparent;
-  white-space: nowrap;
-  transition: color 0.2s, border-color 0.2s;
+  transition: color 0.2s;
 }
 .tab-btn:hover { color: var(--color-on-background); }
-.tab-btn--active {
-  color: var(--color-primary);
-  border-bottom-color: var(--color-accent);
-  font-weight: 600;
+.tab-btn--active { color: var(--color-primary); font-weight: 600; }
+.tab-btn__label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The icon is the fast half of the pair — it's what the eye returns to once the
+   labels have been read once — so it carries the state change: it fills and
+   grows a touch on selection, while the label only shifts colour. */
+.tab-btn__icon {
+  font-size: 20px;
+  transition: font-variation-settings 0.2s, transform 0.2s;
+}
+.tab-btn--active .tab-btn__icon {
+  font-variation-settings: 'FILL' 1, 'wght' 500;
+  transform: scale(1.08);
+}
+
+@media (max-width: 767px) {
+  /* Icon over label: three columns of ~114px at 390 wide are comfortable
+     stacked and cramped side by side. */
+  .tab-btn {
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-xs) 4px var(--space-sm);
+  }
+  .tab-btn__icon { font-size: 22px; }
+  /* The badge would push the label off-centre in a column, so it rides on the
+     icon's top-right corner the way a notification dot does. */
+  .tab-btn { position: relative; }
+  .tab-badge {
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    margin-left: 6px;
+  }
+}
+
+/* Motion is decoration here — the colour and fill changes already say which tab
+   is active — so it goes entirely when asked. */
+@media (prefers-reduced-motion: reduce) {
+  .tab-nav__indicator,
+  .tab-btn,
+  .tab-btn__icon { transition: none; }
+  .tab-btn--active .tab-btn__icon { transform: none; }
 }
 
 .tab-badge {
@@ -1049,63 +1077,7 @@ async function onCollectionDelete(id) {
   font-weight: 700;
   line-height: 1;
 }
-.tab-btn--active .tab-badge { background: var(--color-primary); }
 .tab-btn:not(.tab-btn--active) .tab-badge { background: var(--color-outline); }
-
-/* ── Collection toolbar (search + import / export) ────────────────────── */
-.collection-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-sm);
-  padding-top: var(--space-sm);
-}
-.collection-toolbar__search { flex: 1 1 220px; min-width: 0; }
-.collection-toolbar__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
-  /* Shrinkable on purpose: with flex-shrink:0 this row keeps its max-content
-     width, so its own flex-wrap never engages and extra buttons overflow the
-     viewport instead of wrapping. */
-  min-width: 0;
-}
-.toolbar-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: 8px 16px;
-  border: 1px solid var(--color-outline-variant);
-  border-radius: var(--radius-default);
-  background: var(--color-surface-container-lowest);
-  font-size: var(--text-label-md);
-  font-weight: 500;
-  color: var(--color-on-surface-variant);
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
-}
-.toolbar-btn:hover:not(:disabled) {
-  background: var(--color-surface-container-low);
-  color: var(--color-on-background);
-  border-color: var(--color-outline);
-}
-.toolbar-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.toolbar-btn .material-symbols-outlined { font-size: 18px; }
-/* Mobile uses the floating action button instead, so hide the toolbar one —
-   same rule as .btn-add-book. Must come after the .toolbar-btn base rule:
-   same specificity, later wins. */
-@media (max-width: 767px) { .toolbar-btn--add { display: none; } }
-/* Phones: icons only. Four labelled buttons don't fit a narrow viewport, and
-   wrapping them onto a second row costs more vertical space above the grid
-   than the labels are worth. Each button keeps an aria-label, so the icon is
-   never the only thing naming the action. */
-@media (max-width: 767px) {
-  .toolbar-btn__label { display: none; }
-  .toolbar-btn {
-    padding: 8px 12px;
-    gap: 0;
-  }
-}
 
 /* ── Wish-list sort + priority filter ─────────────────────────────────── */
 /* Narrow enough not to crowd the toolbar; the two labels are short. */
@@ -1180,10 +1152,6 @@ async function onCollectionDelete(id) {
 @media (min-width: 960px) {
   .book-grid { grid-template-columns: repeat(4, 1fr); }
 }
-
-/* Match the loaded grid's top offset so the loading skeleton doesn't sit flush
-   against the import/export toolbar. */
-.collection-skeleton { padding-top: var(--space-sm); }
 
 /* Add-book placeholder card */
 .add-book-card {
@@ -1283,43 +1251,6 @@ async function onCollectionDelete(id) {
   flex-direction: column;
   gap: var(--space-sm);
 }
-
-/* ── Sharing subtabs (borrowing / lending) ───────────────────────────── */
-/* The segmented pill pair the loan history already used for this same axis. */
-.subtab-nav {
-  display: inline-flex;
-  gap: 4px;
-  padding: 4px;
-  margin: var(--space-sm) 0;
-  background: var(--color-surface-container-low);
-  border: 1px solid var(--color-outline-variant);
-  border-radius: var(--radius-full);
-}
-.subtab-nav__btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: 6px 16px;
-  border-radius: var(--radius-full);
-  font-size: var(--text-label-md);
-  font-weight: 500;
-  color: var(--color-secondary);
-  white-space: nowrap;
-  transition: background 0.2s, color 0.2s;
-}
-.subtab-nav__btn:hover:not(.subtab-nav__btn--active) { color: var(--color-on-background); }
-.subtab-nav__btn--active {
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  font-weight: 600;
-}
-/* The badge's own fill is the primary green, which the active pill also uses —
-   invert it there so the count doesn't vanish into its own background. */
-.subtab-nav__btn--active .tab-badge {
-  background: var(--color-on-primary);
-  color: var(--color-primary);
-}
-.subtab-nav__btn:not(.subtab-nav__btn--active) .tab-badge { background: var(--color-outline); }
 
 /* ── Following list ───────────────────────────────────────────────────── */
 .following-list {
