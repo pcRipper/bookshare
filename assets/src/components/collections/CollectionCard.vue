@@ -94,7 +94,7 @@ function onCardClick() {
       <p v-if="collection.description" class="collection-card__desc">{{ collection.description }}</p>
 
       <p class="collection-card__meta">
-        <span>{{ t('collections.bookCount', collection.bookCount, { named: { count: collection.bookCount } }) }}</span>
+        <span>{{ t('common.bookCount', collection.bookCount, { named: { count: collection.bookCount } }) }}</span>
         <span class="collection-card__dot">·</span>
         <span>{{ t('collections.availableCount', { count: collection.availableCount }) }}</span>
       </p>

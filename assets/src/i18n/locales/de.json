@@ -1,5 +1,6 @@
 {
   "common": {
+    "bookCount": "{count} Buch | {count} Bücher",
     "cancel": "Abbrechen",
     "close": "Schließen",
     "delete": "Löschen",
@@ -136,7 +137,6 @@
   "collections": {
     "badge": "Sammlung",
     "onLoan": "Verliehen",
-    "bookCount": "{count} Buch | {count} Bücher",
     "availableCount": "{count} verfügbar",
     "borrow": "Sammlung ausleihen",
     "notEnough": "Nicht genug verfügbar",
@@ -200,7 +200,6 @@
     "loadFailed": "Beim Laden von Entdecken ist etwas schiefgelaufen.",
     "noReaderMatches": "Bisher passt kein Leser zu deiner Suche.",
     "noReaders": "Hier gibt es noch keine anderen Leser.",
-    "bookCount": "{count} Buch | {count} Bücher",
     "sharedCount": "{count} geteilt",
     "noBookMatches": "Bisher passt kein Buch zu deiner Suche.",
     "noBooks": "Derzeit teilt die Community keine Bücher. Schau bald wieder vorbei."
@@ -220,16 +219,12 @@
     "addNewBook": "Neues Buch",
     "addBook": "Buch hinzufügen",
     "addBookAria": "Neues Buch hinzufügen",
+    "addCollectionAria": "Neue Sammlung erstellen",
     "import": "Importieren",
     "export": "Exportieren",
     "searchPlaceholder": "Nach Titel, Autor oder ISBN suchen",
     "noMatches": "Kein Buch passt zu „{query}“.",
     "unfollow": "Nicht mehr folgen",
-    "stats": {
-      "totalBooks": "Bücher insgesamt",
-      "shared": "Geteilt",
-      "loaned": "Verliehen"
-    },
     "tabs": {
       "books": "Bücher",
       "collections": "Sammlungen",
@@ -239,6 +234,9 @@
       "lending": "Verliehen",
       "following": "Folge ich"
     },
+    "tabsLabel": "Bibliotheksbereiche",
+    "shelvesLabel": "Regal wählen",
+    "sidesLabel": "Seite der Leihe wählen",
     "addCard": {
       "bookTitle": "Neues Buch erfassen",
       "bookHint": "Nimm einen Titel in deine Sammlung auf.",
@@ -303,6 +301,7 @@
     "following": "Folge ich",
     "followed": "Du folgst {name}",
     "noBio": "Noch keine Biografie.",
+    "moreTags": "+{count} weitere",
     "backToDiscover": "Zurück zu Entdecken",
     "tabs": {
       "available": "Zum Ausleihen verfügbar",

@@ -33,7 +33,7 @@ function onToggle() {
       <h3 class="user-card__name">{{ user.fullName }}</h3>
       <p v-if="user.bio" class="user-card__bio">{{ user.bio }}</p>
       <p class="user-card__stats">
-        {{ t('discover.bookCount', stats.totalBooks, { named: { count: stats.totalBooks } }) }}
+        {{ t('common.bookCount', stats.totalBooks, { named: { count: stats.totalBooks } }) }}
         · {{ t('discover.sharedCount', { count: stats.shared }) }}
       </p>
     </RouterLink>

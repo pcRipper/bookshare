@@ -1,5 +1,6 @@
 {
   "common": {
+    "bookCount": "{count} livre | {count} livres",
     "cancel": "Annuler",
     "close": "Fermer",
     "delete": "Supprimer",
@@ -136,7 +137,6 @@
   "collections": {
     "badge": "Collection",
     "onLoan": "Prêtée",
-    "bookCount": "{count} livre | {count} livres",
     "availableCount": "{count} disponibles",
     "borrow": "Emprunter la collection",
     "notEnough": "Pas assez de livres disponibles",
@@ -200,7 +200,6 @@
     "loadFailed": "Le chargement de Découvrir a échoué.",
     "noReaderMatches": "Aucun lecteur ne correspond encore à votre recherche.",
     "noReaders": "Il n’y a pas encore d’autres lecteurs ici.",
-    "bookCount": "{count} livre | {count} livres",
     "sharedCount": "{count} partagés",
     "noBookMatches": "Aucun livre ne correspond encore à votre recherche.",
     "noBooks": "La communauté ne partage aucun livre pour le moment. Revenez bientôt."
@@ -220,25 +219,24 @@
     "addNewBook": "Ajouter un livre",
     "addBook": "Ajouter un livre",
     "addBookAria": "Ajouter un nouveau livre",
+    "addCollectionAria": "Créer une collection",
     "import": "Importer",
     "export": "Exporter",
     "searchPlaceholder": "Rechercher par titre, auteur ou ISBN",
     "noMatches": "Aucun livre ne correspond à « {query} ».",
     "unfollow": "Ne plus suivre",
-    "stats": {
-      "totalBooks": "Livres au total",
-      "shared": "Partagés",
-      "loaned": "Prêtés"
-    },
     "tabs": {
       "books": "Livres",
       "collections": "Collections",
-      "wishlist": "Liste de souhaits",
+      "wishlist": "Souhaits",
       "sharing": "Partage",
       "borrowing": "Emprunts",
       "lending": "Prêts",
       "following": "Abonnements"
     },
+    "tabsLabel": "Sections de la bibliothèque",
+    "shelvesLabel": "Choisir une étagère",
+    "sidesLabel": "Choisir un côté du prêt",
     "addCard": {
       "bookTitle": "Cataloguer un nouveau livre",
       "bookHint": "Ajoutez un titre à votre collection.",
@@ -303,6 +301,7 @@
     "following": "Abonné",
     "followed": "Vous suivez {name}",
     "noBio": "Pas encore de biographie.",
+    "moreTags": "+{count} autres",
     "backToDiscover": "Retour à Découvrir",
     "tabs": {
       "available": "Disponibles à l’emprunt",

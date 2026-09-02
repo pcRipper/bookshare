@@ -1,5 +1,6 @@
 {
   "common": {
+    "bookCount": "{count} книга | {count} книги | {count} книг",
     "cancel": "Скасувати",
     "close": "Закрити",
     "delete": "Видалити",
@@ -136,7 +137,6 @@
   "collections": {
     "badge": "Збірка",
     "onLoan": "Позичена",
-    "bookCount": "{count} книга | {count} книги | {count} книг",
     "availableCount": "доступно {count}",
     "borrow": "Позичити збірку",
     "notEnough": "Недостатньо доступних книг",
@@ -200,7 +200,6 @@
     "loadFailed": "Не вдалося завантажити огляд.",
     "noReaderMatches": "Поки що немає читачів за таким запитом.",
     "noReaders": "Тут ще немає інших читачів.",
-    "bookCount": "{count} книга | {count} книги | {count} книг",
     "sharedCount": "{count} у спільному доступі",
     "noBookMatches": "Поки що немає книг за таким запитом.",
     "noBooks": "Зараз спільнота не поділилася жодною книгою. Зазирніть згодом."
@@ -220,25 +219,24 @@
     "addNewBook": "Додати книгу",
     "addBook": "Додати книгу",
     "addBookAria": "Додати нову книгу",
+    "addCollectionAria": "Створити нову збірку",
     "import": "Імпорт",
     "export": "Експорт",
     "searchPlaceholder": "Пошук за назвою, автором або ISBN",
     "noMatches": "Немає книг за запитом «{query}».",
     "unfollow": "Відписатися",
-    "stats": {
-      "totalBooks": "Усього книг",
-      "shared": "У спільному доступі",
-      "loaned": "Позичено"
-    },
     "tabs": {
       "books": "Книги",
       "collections": "Збірки",
-      "wishlist": "Список бажань",
+      "wishlist": "Бажання",
       "sharing": "Обмін",
       "borrowing": "Позичив я",
       "lending": "Позичив іншим",
       "following": "Підписки"
     },
+    "tabsLabel": "Розділи бібліотеки",
+    "shelvesLabel": "Вибрати полицю",
+    "sidesLabel": "Вибрати сторону позики",
     "addCard": {
       "bookTitle": "Додати нову книгу",
       "bookHint": "Додайте книгу до своєї збірки.",
@@ -303,6 +301,7 @@
     "following": "Ви підписані",
     "followed": "Ви підписалися на {name}",
     "noBio": "Опису ще немає.",
+    "moreTags": "ще {count}",
     "backToDiscover": "Повернутися до огляду",
     "tabs": {
       "available": "Доступні для позики",

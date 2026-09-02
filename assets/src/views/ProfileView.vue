@@ -271,7 +271,7 @@ async function onProfileSave(payload) {
                 :label="cat.name"
                 :color="cat.colorHex"
               />
-              <span class="count-chip">{{ profile.stats.totalBooks }} Books</span>
+              <span class="count-chip">{{ t('common.bookCount', profile.stats.totalBooks, { named: { count: profile.stats.totalBooks } }) }}</span>
             </div>
           </div>
         </section>
@@ -285,7 +285,7 @@ async function onProfileSave(payload) {
             :label="cat.name"
             :color="cat.colorHex"
           />
-          <span v-if="extraTagCount" class="count-chip">+{{ extraTagCount }} more</span>
+          <span v-if="extraTagCount" class="count-chip">{{ t('profile.moreTags', { count: extraTagCount }) }}</span>
         </div>
 
         <!-- ── Tabs ───────────────────────────────────────────────────── -->

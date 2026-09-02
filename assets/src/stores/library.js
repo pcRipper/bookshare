@@ -12,7 +12,10 @@ export const useLibraryStore = defineStore('library', () => {
   const emptyMeta = () => ({ page: 1, perPage: 24, total: 0, totalPages: 1 })
 
   const profile = ref(null)
-  const stats = ref({ totalBooks: 0, shared: 0, loaned: 0 })
+  // Every key `UserStatsProvider` sends, so the shape is the same before and
+  // after `fetchMe()` — the shelf subtab counts read `collections`/`wished`,
+  // and an absent key there would render as an undefined count rather than 0.
+  const stats = ref({ totalBooks: 0, shared: 0, loaned: 0, collections: 0, wished: 0 })
   const collection = ref([])
   const collectionMeta = ref(emptyMeta())  // pagination for the collection grid
   const collectionQuery = ref('')          // free-text filter (title/author/ISBN)
