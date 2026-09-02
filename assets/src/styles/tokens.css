@@ -199,3 +199,47 @@ img { display: block; max-width: 100%; }
   align-items: center;
   user-select: none;
 }
+
+/* ── Toolbar button ──────────────────────────────────────────────────────
+   The outlined, icon-plus-label button that sits in a list toolbar (share,
+   import, export, add). Global rather than scoped because the toolbar row now
+   spans a component boundary: `BookShelfPanel` renders the row and its own Add
+   button, while the per-shelf actions arrive through a slot compiled in the
+   caller, so no single scope id covers both.
+
+   On phones the label is dropped and only the icon remains — four labelled
+   buttons don't fit a narrow viewport, and wrapping them onto a second row
+   costs more vertical space above the grid than the labels are worth. Every
+   button carries an aria-label, so the icon is never the only thing naming the
+   action. */
+.toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 8px 16px;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-default);
+  background: var(--color-surface-container-lowest);
+  font-size: var(--text-label-md);
+  font-weight: 500;
+  color: var(--color-on-surface-variant);
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.toolbar-btn:hover:not(:disabled) {
+  background: var(--color-surface-container-low);
+  color: var(--color-on-background);
+  border-color: var(--color-outline);
+}
+.toolbar-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.toolbar-btn .material-symbols-outlined { font-size: 18px; }
+
+/* Mobile uses the floating action button instead, so hide the toolbar's own
+   add affordance. Must follow the base rule: same specificity, later wins. */
+@media (max-width: 767px) {
+  .toolbar-btn--add { display: none; }
+  .toolbar-btn__label { display: none; }
+  .toolbar-btn {
+    padding: 8px 12px;
+    gap: 0;
+  }
+}
