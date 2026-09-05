@@ -87,6 +87,11 @@ const router = createRouter({
           name: 'admin-stats',
           component: () => import('@/views/AdminStatsView.vue'),
         },
+        {
+          path: 'dumps',
+          name: 'admin-dumps',
+          component: () => import('@/views/AdminDumpsView.vue'),
+        },
       ],
     },
     {

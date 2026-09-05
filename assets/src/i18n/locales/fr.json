@@ -624,7 +624,8 @@
     "nav": {
       "label": "Sections d'administration",
       "members": "Membres",
-      "analytics": "Statistiques"
+      "analytics": "Statistiques",
+      "dumps": "Sauvegardes"
     },
     "members": {
       "loadFailed": "Impossible de charger la liste des membres.",
@@ -673,6 +674,31 @@
       "deleteEffectFinal": "Cette action est irréversible.",
       "deleteTypeLabel": "Saisissez {email} pour confirmer",
       "deleteConfirm": "Supprimer définitivement"
+    },
+    "dumps": {
+      "lead": "Faites une copie de la base de données maintenant. Les sauvegardes restent sur le serveur et ne sont accessibles que depuis cette page.",
+      "createSql": "Créer une sauvegarde",
+      "sqlHint": "Une archive complète, restaurable avec pg_restore.",
+      "createJson": "Exporter les lignes en JSON",
+      "jsonHint": "Les lignes de toutes les tables, lisibles dans n'importe quel éditeur. Ce n'est pas une sauvegarde : le schéma n'y est pas.",
+      "unavailable": "Indisponible sur ce serveur.",
+      "empty": "Aucune sauvegarde pour le moment.",
+      "loadFailed": "Impossible de charger les sauvegardes.",
+      "created": "Sauvegarde créée.",
+      "createFailed": "La sauvegarde n'a pas pu être créée.",
+      "deleted": "Sauvegarde supprimée.",
+      "deleteFailed": "La sauvegarde n'a pas pu être supprimée.",
+      "downloadFailed": "La sauvegarde n'a pas pu être téléchargée.",
+      "confirmDelete": "Supprimer cette sauvegarde ?",
+      "download": "Télécharger",
+      "restorable": "Restaurable",
+      "rowsOnly": "Lignes seules",
+      "retention": "Les dix plus récentes de chaque type sont conservées ; les plus anciennes sont supprimées automatiquement.",
+      "colName": "Fichier",
+      "colKind": "Type",
+      "colSize": "Taille",
+      "colCreated": "Créée",
+      "colActions": "Actions"
     }
   }
 }

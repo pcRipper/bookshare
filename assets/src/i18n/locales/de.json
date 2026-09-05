@@ -624,7 +624,8 @@
     "nav": {
       "label": "Verwaltungsbereiche",
       "members": "Mitglieder",
-      "analytics": "Statistiken"
+      "analytics": "Statistiken",
+      "dumps": "Dumps"
     },
     "members": {
       "loadFailed": "Die Mitgliederliste konnte nicht geladen werden.",
@@ -673,6 +674,31 @@
       "deleteEffectFinal": "Das lässt sich nicht rückgängig machen.",
       "deleteTypeLabel": "Tippe {email}, um zu bestätigen",
       "deleteConfirm": "Endgültig löschen"
+    },
+    "dumps": {
+      "lead": "Erstelle jetzt eine Kopie der Datenbank. Dumps bleiben auf dem Server und sind nur über diese Seite erreichbar.",
+      "createSql": "Backup erstellen",
+      "sqlHint": "Ein vollständiges Archiv, das sich mit pg_restore wiederherstellen lässt.",
+      "createJson": "Zeilen als JSON exportieren",
+      "jsonHint": "Die Zeilen aller Tabellen, in jedem Editor lesbar. Kein Backup — ohne Schema.",
+      "unavailable": "Auf diesem Server nicht verfügbar.",
+      "empty": "Noch keine Dumps.",
+      "loadFailed": "Die Dumps konnten nicht geladen werden.",
+      "created": "Dump erstellt.",
+      "createFailed": "Der Dump konnte nicht erstellt werden.",
+      "deleted": "Dump gelöscht.",
+      "deleteFailed": "Der Dump konnte nicht gelöscht werden.",
+      "downloadFailed": "Der Dump konnte nicht heruntergeladen werden.",
+      "confirmDelete": "Diesen Dump löschen?",
+      "download": "Herunterladen",
+      "restorable": "Wiederherstellbar",
+      "rowsOnly": "Nur Zeilen",
+      "retention": "Die zehn neuesten je Art werden behalten, ältere automatisch entfernt.",
+      "colName": "Datei",
+      "colKind": "Art",
+      "colSize": "Größe",
+      "colCreated": "Erstellt",
+      "colActions": "Aktionen"
     }
   }
 }

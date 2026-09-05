@@ -624,7 +624,8 @@
     "nav": {
       "label": "Admin sections",
       "members": "Members",
-      "analytics": "Analytics"
+      "analytics": "Analytics",
+      "dumps": "Dumps"
     },
     "members": {
       "loadFailed": "Could not load the member list.",
@@ -673,6 +674,31 @@
       "deleteEffectFinal": "This cannot be undone.",
       "deleteTypeLabel": "Type {email} to confirm",
       "deleteConfirm": "Delete permanently"
+    },
+    "dumps": {
+      "lead": "Take a copy of the database now. Dumps are kept on the server and are only reachable from this page.",
+      "createSql": "Create backup",
+      "sqlHint": "A complete archive you can restore from with pg_restore.",
+      "createJson": "Export rows as JSON",
+      "jsonHint": "Every table’s rows, readable in any editor. Not a backup — it carries no schema.",
+      "unavailable": "Not available on this server.",
+      "empty": "No dumps yet.",
+      "loadFailed": "Could not load the dumps.",
+      "created": "Dump created.",
+      "createFailed": "The dump could not be created.",
+      "deleted": "Dump deleted.",
+      "deleteFailed": "The dump could not be deleted.",
+      "downloadFailed": "The dump could not be downloaded.",
+      "confirmDelete": "Delete this dump?",
+      "download": "Download",
+      "restorable": "Restorable",
+      "rowsOnly": "Rows only",
+      "retention": "The ten most recent of each kind are kept; older ones are removed automatically.",
+      "colName": "File",
+      "colKind": "Kind",
+      "colSize": "Size",
+      "colCreated": "Created",
+      "colActions": "Actions"
     }
   }
 }

@@ -624,7 +624,8 @@
     "nav": {
       "label": "Secciones de administración",
       "members": "Miembros",
-      "analytics": "Estadísticas"
+      "analytics": "Estadísticas",
+      "dumps": "Copias"
     },
     "members": {
       "loadFailed": "No se pudo cargar la lista de miembros.",
@@ -673,6 +674,31 @@
       "deleteEffectFinal": "Esto no se puede deshacer.",
       "deleteTypeLabel": "Escribe {email} para confirmar",
       "deleteConfirm": "Eliminar definitivamente"
+    },
+    "dumps": {
+      "lead": "Haz una copia de la base de datos ahora. Las copias se guardan en el servidor y solo se pueden obtener desde esta página.",
+      "createSql": "Crear copia de seguridad",
+      "sqlHint": "Un archivo completo que puedes restaurar con pg_restore.",
+      "createJson": "Exportar filas como JSON",
+      "jsonHint": "Las filas de todas las tablas, legibles en cualquier editor. No es una copia de seguridad: no incluye el esquema.",
+      "unavailable": "No disponible en este servidor.",
+      "empty": "Todavía no hay copias.",
+      "loadFailed": "No se pudieron cargar las copias.",
+      "created": "Copia creada.",
+      "createFailed": "No se pudo crear la copia.",
+      "deleted": "Copia eliminada.",
+      "deleteFailed": "No se pudo eliminar la copia.",
+      "downloadFailed": "No se pudo descargar la copia.",
+      "confirmDelete": "¿Eliminar esta copia?",
+      "download": "Descargar",
+      "restorable": "Restaurable",
+      "rowsOnly": "Solo filas",
+      "retention": "Se conservan las diez más recientes de cada tipo; las anteriores se eliminan automáticamente.",
+      "colName": "Archivo",
+      "colKind": "Tipo",
+      "colSize": "Tamaño",
+      "colCreated": "Creada",
+      "colActions": "Acciones"
     }
   }
 }
