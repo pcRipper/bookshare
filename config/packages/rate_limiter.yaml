@@ -15,6 +15,13 @@
 #                  than api_user (300/min) because a valid token could otherwise
 #                  burn 300 increments a minute into the counters, and nobody
 #                  navigates a SPA six times a second.
+#   admin_dump   → keyed by the authenticated operator, guards POST
+#                  /api/admin/dumps. Orders of magnitude tighter than anything
+#                  else here because a dump is the single most expensive thing an
+#                  authenticated request can ask for: it forks pg_dump or walks
+#                  every table, and each one lands on disk. Five an hour is more
+#                  than any human workflow needs and far less than it takes to
+#                  fill a droplet.
 #
 # Storage uses the cache pool (cache.rate_limiter); swap to a Redis/Lock-backed
 # pool for multi-node deployments so counters are shared.
@@ -44,6 +51,10 @@ framework:
             rate:
                 interval: '10 seconds'
                 amount: 1       # sustained 6/min
+        admin_dump:
+            policy: 'sliding_window'
+            limit: 5
+            interval: '1 hour'
 
 when@test:
     # Keep tests deterministic: very high ceilings so the limiter never trips
@@ -64,3 +75,5 @@ when@test:
                 limit: 100000
                 rate:
                     amount: 100000
+            admin_dump:
+                limit: 100000

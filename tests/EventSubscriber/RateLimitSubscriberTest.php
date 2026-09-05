@@ -67,8 +67,9 @@ class RateLimitSubscriberTest extends TestCase
         $errors = new ApiError(new IdentityTranslator());
         $publicIp = $this->fixedWindow('public_ip', 1000);
         $pageView = $this->fixedWindow('pageview_ip_user', 1000);
-        $alice = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $publicIp, $pageView, $this->tokenStorage('alice'), $errors);
-        $bob = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $publicIp, $pageView, $this->tokenStorage('bob'), $errors);
+        $adminDump = $this->fixedWindow('admin_dump', 1000);
+        $alice = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $publicIp, $pageView, $adminDump, $this->tokenStorage('alice'), $errors);
+        $bob = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $publicIp, $pageView, $adminDump, $this->tokenStorage('bob'), $errors);
 
         $alice->onKernelRequest($this->event('/api/books'));
         // Bob is a different key — unaffected by Alice exhausting hers.
@@ -212,6 +213,57 @@ class RateLimitSubscriberTest extends TestCase
         self::assertLessThan(8, $events[KernelEvents::REQUEST][1]);
     }
 
+    /**
+     * Creating a dump forks pg_dump or walks every table and leaves a file on
+     * disk. Five an hour, keyed to the operator.
+     */
+    public function testCreatingADumpIsThrottledHard(): void
+    {
+        $subscriber = $this->subscriber($this->tokenStorage('operator'), adminDump: 2);
+
+        $subscriber->onKernelRequest($this->event('/api/admin/dumps', method: 'POST'));
+        $subscriber->onKernelRequest($this->event('/api/admin/dumps', method: 'POST'));
+
+        $this->expectException(TooManyRequestsHttpException::class);
+        $subscriber->onKernelRequest($this->event('/api/admin/dumps', method: 'POST'));
+    }
+
+    /**
+     * Only the write. Listing and downloading are ordinary reads, and an
+     * operator who has spent the hour's dump budget must still be able to fetch
+     * the files that budget produced.
+     */
+    public function testListingAndDownloadingDumpsAreNotThrottledAsWrites(): void
+    {
+        $subscriber = $this->subscriber($this->tokenStorage('operator'), adminDump: 1);
+
+        $subscriber->onKernelRequest($this->event('/api/admin/dumps', method: 'POST'));
+
+        // Would throw if either of these consumed the exhausted dump bucket.
+        $subscriber->onKernelRequest($this->event('/api/admin/dumps'));
+        $subscriber->onKernelRequest($this->event('/api/admin/dumps/20260101-000000-abcd-sql.dump'));
+
+        $this->expectException(TooManyRequestsHttpException::class);
+        $subscriber->onKernelRequest($this->event('/api/admin/dumps', method: 'POST'));
+    }
+
+    /** The dump bucket is separate: spending it must not spend the general one. */
+    public function testTheDumpBucketIsItsOwn(): void
+    {
+        $subscriber = $this->subscriber($this->tokenStorage('operator'), apiUser: 2, adminDump: 5);
+
+        $subscriber->onKernelRequest($this->event('/api/admin/dumps', method: 'POST'));
+        $subscriber->onKernelRequest($this->event('/api/admin/dumps', method: 'POST'));
+        $subscriber->onKernelRequest($this->event('/api/admin/dumps', method: 'POST'));
+
+        // api_user still has its full budget.
+        $subscriber->onKernelRequest($this->event('/api/books'));
+        $subscriber->onKernelRequest($this->event('/api/books'));
+
+        $this->expectException(TooManyRequestsHttpException::class);
+        $subscriber->onKernelRequest($this->event('/api/books'));
+    }
+
     /* ───────────────────────── helpers ───────────────────────── */
 
     private function subscriber(
@@ -221,6 +273,7 @@ class RateLimitSubscriberTest extends TestCase
         int $apiIpUser = 1000,
         int $publicIp = 1000,
         int $pageView = 1000,
+        int $adminDump = 1000,
     ): RateLimitSubscriber {
         return new RateLimitSubscriber(
             $this->fixedWindow('auth_ip', $authIp),
@@ -228,6 +281,7 @@ class RateLimitSubscriberTest extends TestCase
             $this->fixedWindow('api_ip_user', $apiIpUser),
             $this->fixedWindow('public_ip', $publicIp),
             $this->fixedWindow('pageview_ip_user', $pageView),
+            $this->fixedWindow('admin_dump', $adminDump),
             $tokenStorage,
             // IdentityTranslator renders the id itself, so the 429 message the
             // assertions read is the English one.
@@ -260,9 +314,15 @@ class RateLimitSubscriberTest extends TestCase
         return $storage;
     }
 
-    private function event(string $path, string $ip = '1.2.3.4', int $type = HttpKernelInterface::MAIN_REQUEST): RequestEvent
-    {
-        $request = Request::create($path, 'GET', [], [], [], ['REMOTE_ADDR' => $ip]);
+    private function event(
+        string $path,
+        string $ip = '1.2.3.4',
+        int $type = HttpKernelInterface::MAIN_REQUEST,
+        // The dump limiter is the first branch that keys on the verb as well as
+        // the path, since only creating a dump is expensive.
+        string $method = 'GET',
+    ): RequestEvent {
+        $request = Request::create($path, $method, [], [], [], ['REMOTE_ADDR' => $ip]);
 
         return new RequestEvent($this->createStub(HttpKernelInterface::class), $request, $type);
     }

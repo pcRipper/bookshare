@@ -18,6 +18,8 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInt
  *
  *  - /api/auth/*  → keyed by client IP only (the caller isn't authenticated yet),
  *    blunting credential / OAuth-code brute-force.
+ *  - POST /api/admin/dumps → keyed by the operator, five an hour. Its own
+ *    bucket because one request forks pg_dump and writes a file.
  *  - every other /api/* → keyed by the authenticated user, and additionally by
  *    IP+user, so neither a single account nor a single client can flood the API.
  *
@@ -37,6 +39,8 @@ class RateLimitSubscriber implements EventSubscriberInterface
         private readonly RateLimiterFactoryInterface $publicIpLimiter,
         #[Autowire(service: 'limiter.pageview_ip_user')]
         private readonly RateLimiterFactoryInterface $pageViewLimiter,
+        #[Autowire(service: 'limiter.admin_dump')]
+        private readonly RateLimiterFactoryInterface $adminDumpLimiter,
         private readonly TokenStorageInterface $tokenStorage,
         private readonly ApiError $errors,
     ) {}
@@ -94,6 +98,18 @@ class RateLimitSubscriber implements EventSubscriberInterface
 
         // Authenticated traffic: per-user, then the tighter IP+user bucket.
         $userId = $this->tokenStorage->getToken()?->getUserIdentifier() ?? 'anonymous';
+
+        // Making a dump is the most expensive thing an authenticated request can
+        // ask for — it forks pg_dump or walks every table, and the result lands
+        // on disk. Its own bucket, and only for the write: listing and
+        // downloading are ordinary reads and must stay usable while the
+        // five-an-hour budget for creating them is spent.
+        if ($request->isMethod('POST') && $path === '/api/admin/dumps') {
+            $this->ensureAccepted($this->adminDumpLimiter->create($userId)->consume());
+
+            return;
+        }
+
         $this->ensureAccepted($this->apiUserLimiter->create($userId)->consume());
         $this->ensureAccepted($this->apiIpUserLimiter->create($ip.'|'.$userId)->consume());
     }
