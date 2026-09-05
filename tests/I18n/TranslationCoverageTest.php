@@ -24,12 +24,19 @@ class TranslationCoverageTest extends TestCase
      * Internal failures that mean "a developer wired this wrong", not
      * "the reader did something we have to explain". They surface as
      * InvalidArgumentException, never as an API message.
+     *
+     * The dump one is the same shape with a different cause: DumpService throws
+     * it when a file it just wrote cannot be read back, and
+     * AdminDumpRestController catches everything from that call and answers with
+     * its own translated sentence — the detail goes to the log, where an
+     * operator can act on it, rather than to a reader who cannot.
      */
     private const NOT_USER_FACING = [
         'Unknown template source "%s".',
         'Unknown loan signal reason "%s".',
         'Unknown collection signal reason "%s".',
         'Unknown loan mail reason "%s".',
+        'The dump was written but could not be read back.',
     ];
 
     /** @return array<string, list<string>> id => ["File.php:line", …] */

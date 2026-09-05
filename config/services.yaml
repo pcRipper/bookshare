@@ -73,3 +73,12 @@ services:
             $cache: '@cache.bookfinder'
             $cacheTtl: '%env(int:BOOKFINDER_CACHE_TTL)%'
             $logger: '@monolog.logger.book_template'
+
+    # Manual database dumps. Under var/, never public/: a dump carries every
+    # member's email and their whole library, and must be reachable only through
+    # the admin firewall. %kernel.project_dir% rather than a relative path so it
+    # resolves identically from the web root, the console and inside the
+    # container.
+    App\Service\Admin\DumpService:
+        arguments:
+            $dumpDir: '%kernel.project_dir%/var/dumps'

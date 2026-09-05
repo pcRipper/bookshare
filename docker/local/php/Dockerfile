@@ -3,12 +3,18 @@
 ARG PHP_VERSION=8.4
 FROM php:${PHP_VERSION}-fpm-alpine
 
+# postgresql16-client supplies pg_dump for the admin panel's manual backups.
+# The major version is pinned to match the `postgres:16` service: pg_dump refuses
+# outright to dump a server newer than itself, and Alpine's unversioned default
+# tracks whatever is current, so an unpinned client breaks the day the base image
+# moves. Bump the two together or not at all.
 RUN apk add --no-cache \
     bash \
     nodejs \
     npm \
     git \
     libpq-dev \
+    postgresql16-client \
     libzip-dev \
     libsodium-dev \
     icu-dev \
