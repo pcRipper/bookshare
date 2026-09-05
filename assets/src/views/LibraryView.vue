@@ -1031,60 +1031,8 @@ async function onCollectionDelete(id) {
 .wishlist-sort { min-width: 168px; }
 
 
-/* One filter-pill row, shared by the wish list (priority) and the Sharing panel
-   (loan state). The colour modifiers below belong to the wish list alone. */
-/* Block-level, not inline: in the Sharing panel it follows the subtab pills,
-   and as an inline row the two controls ran together into one pill strip that
-   looked like a single six-way choice. */
-.filter-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-xs);
-}
-.filter-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border: 1px solid var(--color-outline-variant);
-  border-radius: var(--radius-full);
-  background: var(--color-surface-container-lowest);
-  font-size: var(--text-label-md);
-  font-weight: 500;
-  color: var(--color-secondary);
-  white-space: nowrap;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
-}
-.filter-pill:hover:not(.filter-pill--active) {
-  background: var(--color-surface-container-low);
-  color: var(--color-on-background);
-}
-/* Only the selected pill wears its colour — three permanently-lit pills would
-   read as three states rather than one choice. */
-.filter-pill--active {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-on-primary);
-  font-weight: 600;
-}
-.filter-pill--amber.filter-pill--active {
-  background: var(--color-tertiary);
-  border-color: var(--color-tertiary);
-  color: #ffffff;
-}
-.filter-pill--red.filter-pill--active {
-  background: var(--color-error);
-  border-color: var(--color-error);
-  color: #ffffff;
-}
-/* The count rides inside the pill, so it inverts with it rather than sitting on
-   the same fill and disappearing. */
-.filter-pill__count {
-  font-size: 11px;
-  font-weight: 700;
-  opacity: 0.75;
-}
-.filter-pill--active .filter-pill__count { opacity: 0.9; }
+/* .filter-row / .filter-pill live in tokens.css — the admin panel's member
+   status filter is a second caller outside this scope id. */
 
 /* ── Book grid ────────────────────────────────────────────────────────── */
 .book-grid {

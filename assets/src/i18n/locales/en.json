@@ -294,7 +294,7 @@
     "main": "Main navigation",
     "releaseNotes": "Release Notes",
     "copyright": "© {year} FolioShare. Curating stories for a thoughtful community.",
-    "analytics": "Analytics"
+    "admin": "Admin"
   },
   "profile": {
     "follow": "Follow",
@@ -541,8 +541,8 @@
     "goToSettings": "Open settings"
   },
   "admin": {
-    "title": "Analytics",
-    "subtitle": "How FolioShare is growing, and how it is being used.",
+    "title": "Admin",
+    "subtitle": "Members, moderation and site analytics.",
     "refresh": "Refresh",
     "range": "{from} to {to}",
     "loadFailed": "Could not load the dashboard.",
@@ -620,6 +620,59 @@
       "wanted": "Wanted by",
       "wishlistTotal": "{count} book on wish lists across the community. | {count} books on wish lists across the community.",
       "empty": "No books catalogued yet."
+    },
+    "nav": {
+      "label": "Admin sections",
+      "members": "Members",
+      "analytics": "Analytics"
+    },
+    "members": {
+      "loadFailed": "Could not load the member list.",
+      "empty": "No members match this filter.",
+      "searchPlaceholder": "Search by name or email",
+      "filterLabel": "Filter members by state",
+      "filterAll": "All",
+      "filterActive": "Active",
+      "filterBanned": "Suspended",
+      "filterDeleted": "Deleted",
+      "total": "{count} member | {count} members",
+      "colMember": "Member",
+      "colJoined": "Joined",
+      "colBooks": "Books",
+      "colCollections": "Collections",
+      "colState": "State",
+      "colActions": "Actions",
+      "adminTag": "Admin",
+      "state": {
+        "active": "Active",
+        "banned": "Suspended",
+        "deleted": "Deleted"
+      },
+      "ban": "Suspend",
+      "unban": "Reinstate",
+      "delete": "Delete",
+      "lockedSelf": "This is you",
+      "lockedAdmin": "Administrator",
+      "lockedDeleted": "Deleted",
+      "banned": "{name} has been suspended.",
+      "unbanned": "{name} has been reinstated.",
+      "deleted": "{name}'s account has been deleted.",
+      "banTitle": "Suspend member",
+      "banIntro": "Suspend {name}?",
+      "banEffectSignIn": "They will be signed out and cannot sign in again.",
+      "banEffectContent": "Their books, collections and profile leave Discover and every public page.",
+      "banEffectReversible": "You can reinstate them at any time.",
+      "banReasonLabel": "Reason (optional, visible only here)",
+      "banReasonPlaceholder": "What prompted this?",
+      "banConfirm": "Suspend",
+      "deleteTitle": "Delete account",
+      "deleteIntro": "Permanently delete {name}?",
+      "deleteEffectLibrary": "Deletes {count} book. | Deletes {count} books.",
+      "deleteEffectCollections": "Deletes {count} collection. | Deletes {count} collections.",
+      "deleteEffectIdentity": "Erases their name, email and profile. Loan history stays with the other party, unnamed.",
+      "deleteEffectFinal": "This cannot be undone.",
+      "deleteTypeLabel": "Type {email} to confirm",
+      "deleteConfirm": "Delete permanently"
     }
   }
 }

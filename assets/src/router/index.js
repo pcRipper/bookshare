@@ -61,13 +61,33 @@ const router = createRouter({
       meta: { public: true },
     },
     {
-      // The operator dashboard. `meta.admin` is a client-side hint only — the
-      // API gates /api/admin on ROLE_ADMIN independently, and the store handles
-      // the 403 if the two ever disagree.
-      path: '/admin/stats',
-      name: 'admin-stats',
-      component: () => import('@/views/AdminStatsView.vue'),
+      // The operator panel. `meta.admin` is a client-side hint only — the API
+      // gates /api/admin on ROLE_ADMIN independently, and the stores handle the
+      // 403 if the two ever disagree. Children inherit the meta, so the guard
+      // below covers every section without repeating it.
+      //
+      // Nested rather than flat because AdminView is a real shell: it owns the
+      // layout, the page header and the section strip, and each child renders
+      // into its RouterView as a bare panel.
+      path: '/admin',
+      component: () => import('@/views/AdminView.vue'),
       meta: { admin: true },
+      children: [
+        { path: '', redirect: { name: 'admin-members' } },
+        {
+          path: 'members',
+          name: 'admin-members',
+          component: () => import('@/views/AdminMembersView.vue'),
+        },
+        {
+          // Keeps the path and the name it has always had: the dashboard was
+          // the whole of /admin before the panel existed, and a bookmark on it
+          // must not break just because it gained siblings.
+          path: 'stats',
+          name: 'admin-stats',
+          component: () => import('@/views/AdminStatsView.vue'),
+        },
+      ],
     },
     {
       path: '/',

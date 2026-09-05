@@ -26,9 +26,10 @@ final class AnalyticsRoutes
     /**
      * Deliberately excluded, and why:
      *   google-callback — a machine redirect hop, not a page anyone reads.
-     *   admin-stats     — the dashboard itself. An operator flipping between
-     *                     windows would otherwise make it the top route and
-     *                     inflate their own visitor counts.
+     *   admin-*         — the operator panel itself, every section of it. An
+     *                     operator flipping between windows and tabs would
+     *                     otherwise make their own tools the top routes and
+     *                     inflate the visitor counts they are reading.
      */
     public const NAMES = [
         'login',

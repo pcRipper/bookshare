@@ -8,7 +8,6 @@ import { apiErrorMessage } from '@/utils/apiError'
 import { relativeTime } from '@/utils/time'
 import { languageLabel } from '@/utils/languages'
 import { resolveCategoryColors } from '@/utils/categoryColors'
-import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseChart from '@/components/ui/BaseChart.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
@@ -267,14 +266,11 @@ const libraryEmpty = computed(() =>
 </script>
 
 <template>
-  <AppLayout>
-    <div class="admin">
-      <header class="admin__header">
-        <div class="admin__titles">
-          <h1 class="admin__title">{{ t('admin.title') }}</h1>
-          <p class="admin__subtitle">{{ t('admin.subtitle') }}</p>
-        </div>
-
+  <!-- No AppLayout and no page title: AdminView is the page, and this is one of
+       its sections. What stays is the window picker, which belongs to these
+       charts rather than to the panel around them. -->
+  <div class="admin">
+    <header class="admin__header">
         <div class="admin__controls">
           <BaseSelect
             v-model="selectedWindow"
@@ -496,45 +492,28 @@ const libraryEmpty = computed(() =>
             </div>
           </template>
         </section>
-      </template>
-    </div>
-  </AppLayout>
+    </template>
+  </div>
 </template>
 
 <style scoped>
 .admin {
-  max-width: var(--container-max);
-  margin: 0 auto;
-  padding: var(--space-xl) var(--space-gutter);
   display: flex;
   flex-direction: column;
   gap: var(--space-xl);
-}
-@media (max-width: 767px) {
-  .admin { padding: var(--space-lg) var(--space-gutter) var(--space-xl); }
 }
 
 .admin__header {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
+  /* The titles that shared this row moved to AdminView, so the controls are its
+     only child now and space-between leaves them at the leading edge — which is
+     where they want to be, lined up under the subtab strip rather than stranded
+     across 1200px of empty header. */
   justify-content: space-between;
   gap: var(--space-md);
 }
-.admin__title {
-  font-family: var(--font-display);
-  font-size: var(--text-headline-lg-mobile);
-  color: var(--color-on-surface);
-  margin: 0;
-}
-@media (min-width: 768px) {
-  .admin__title { font-size: var(--text-headline-lg); }
-}
-.admin__subtitle {
-  margin: var(--space-xs) 0 0;
-  color: var(--color-on-surface-variant);
-}
-
 .admin__controls {
   display: flex;
   align-items: center;

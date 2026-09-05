@@ -243,3 +243,65 @@ img { display: block; max-width: 100%; }
     gap: 0;
   }
 }
+
+/* ── Filter pills ──────────────────────────────────────────────────────────
+   One row of mutually-exclusive filters. Global for the same reason
+   .toolbar-btn is: it now has callers in more than one scope — the Library's
+   wish-list priority and Sharing loan-state rows, and the admin panel's member
+   status row — and a scoped rule cannot reach across a component boundary.
+
+   The colour modifiers (--amber, --red) belong to the wish list's traffic-light
+   priorities alone; nothing else should reach for them. */
+/* Block-level, not inline: in the Sharing panel it follows the subtab pills,
+   and as an inline row the two controls ran together into one pill strip that
+   looked like a single six-way choice. */
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-container-lowest);
+  font-size: var(--text-label-md);
+  font-weight: 500;
+  color: var(--color-secondary);
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.filter-pill:hover:not(.filter-pill--active) {
+  background: var(--color-surface-container-low);
+  color: var(--color-on-background);
+}
+/* Only the selected pill wears its colour — three permanently-lit pills would
+   read as three states rather than one choice. */
+.filter-pill--active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 600;
+}
+.filter-pill--amber.filter-pill--active {
+  background: var(--color-tertiary);
+  border-color: var(--color-tertiary);
+  color: #ffffff;
+}
+.filter-pill--red.filter-pill--active {
+  background: var(--color-error);
+  border-color: var(--color-error);
+  color: #ffffff;
+}
+/* The count rides inside the pill, so it inverts with it rather than sitting on
+   the same fill and disappearing. */
+.filter-pill__count {
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.75;
+}
+.filter-pill--active .filter-pill__count { opacity: 0.9; }
+

@@ -294,7 +294,7 @@
     "main": "Основна навігація",
     "releaseNotes": "Що нового",
     "copyright": "© {year} FolioShare. Історії для уважної спільноти.",
-    "analytics": "Аналітика"
+    "admin": "Адміністрування"
   },
   "profile": {
     "follow": "Підписатися",
@@ -541,8 +541,8 @@
     "goToSettings": "Відкрити налаштування"
   },
   "admin": {
-    "title": "Аналітика",
-    "subtitle": "Як зростає FolioShare і як ним користуються.",
+    "title": "Адміністрування",
+    "subtitle": "Учасники, модерація та статистика сайту.",
     "refresh": "Оновити",
     "range": "З {from} до {to}",
     "loadFailed": "Не вдалося завантажити панель.",
@@ -620,6 +620,59 @@
       "wanted": "Хочуть",
       "wishlistTotal": "{count} книга у списках бажань спільноти. | {count} книги у списках бажань спільноти. | {count} книг у списках бажань спільноти.",
       "empty": "Книг ще не внесено."
+    },
+    "nav": {
+      "label": "Розділи адміністрування",
+      "members": "Учасники",
+      "analytics": "Статистика"
+    },
+    "members": {
+      "loadFailed": "Не вдалося завантажити список учасників.",
+      "empty": "Жоден учасник не відповідає цьому фільтру.",
+      "searchPlaceholder": "Пошук за іменем або e-mail",
+      "filterLabel": "Фільтрувати учасників за станом",
+      "filterAll": "Усі",
+      "filterActive": "Активні",
+      "filterBanned": "Заблоковані",
+      "filterDeleted": "Видалені",
+      "total": "{count} учасник | {count} учасники | {count} учасників",
+      "colMember": "Учасник",
+      "colJoined": "Приєднався",
+      "colBooks": "Книги",
+      "colCollections": "Збірки",
+      "colState": "Стан",
+      "colActions": "Дії",
+      "adminTag": "Адмін",
+      "state": {
+        "active": "Активний",
+        "banned": "Заблокований",
+        "deleted": "Видалений"
+      },
+      "ban": "Заблокувати",
+      "unban": "Розблокувати",
+      "delete": "Видалити",
+      "lockedSelf": "Це ви",
+      "lockedAdmin": "Адміністратор",
+      "lockedDeleted": "Видалений",
+      "banned": "{name} заблоковано.",
+      "unbanned": "{name} розблоковано.",
+      "deleted": "Обліковий запис {name} видалено.",
+      "banTitle": "Заблокувати учасника",
+      "banIntro": "Заблокувати {name}?",
+      "banEffectSignIn": "Учасника буде відключено, і він не зможе увійти знову.",
+      "banEffectContent": "Його книги, збірки та профіль зникнуть з «Огляду» та всіх публічних сторінок.",
+      "banEffectReversible": "Ви можете розблокувати його будь-коли.",
+      "banReasonLabel": "Причина (необовʼязково, видно лише тут)",
+      "banReasonPlaceholder": "Що стало приводом?",
+      "banConfirm": "Заблокувати",
+      "deleteTitle": "Видалити обліковий запис",
+      "deleteIntro": "Остаточно видалити {name}?",
+      "deleteEffectLibrary": "Видалить {count} книгу. | Видалить {count} книги. | Видалить {count} книг.",
+      "deleteEffectCollections": "Видалить {count} збірку. | Видалить {count} збірки. | Видалить {count} збірок.",
+      "deleteEffectIdentity": "Стирає імʼя, e-mail і профіль. Історія позичок залишається в іншої сторони, без імені.",
+      "deleteEffectFinal": "Цю дію не можна скасувати.",
+      "deleteTypeLabel": "Введіть {email} для підтвердження",
+      "deleteConfirm": "Видалити остаточно"
     }
   }
 }

@@ -18,7 +18,7 @@ class AnalyticsRoutesTest extends TestCase
      * loosening the comparison means adding a route without deciding whether it
      * is counted fails the build.
      */
-    private const NOT_COUNTED = ['google-callback', 'admin-stats'];
+    private const NOT_COUNTED = ['google-callback', 'admin-stats', 'admin-members'];
 
     public function testTheListIsAFlatDuplicateFreeListOfStrings(): void
     {

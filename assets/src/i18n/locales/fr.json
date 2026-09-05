@@ -294,7 +294,7 @@
     "main": "Navigation principale",
     "releaseNotes": "Notes de version",
     "copyright": "© {year} FolioShare. Des histoires pour une communauté attentive.",
-    "analytics": "Statistiques"
+    "admin": "Administration"
   },
   "profile": {
     "follow": "Suivre",
@@ -541,8 +541,8 @@
     "goToSettings": "Ouvrir les réglages"
   },
   "admin": {
-    "title": "Statistiques",
-    "subtitle": "Comment FolioShare grandit, et comment il est utilisé.",
+    "title": "Administration",
+    "subtitle": "Membres, modération et statistiques du site.",
     "refresh": "Actualiser",
     "range": "Du {from} au {to}",
     "loadFailed": "Impossible de charger le tableau de bord.",
@@ -620,6 +620,59 @@
       "wanted": "Souhaité par",
       "wishlistTotal": "{count} livre figure sur les listes de souhaits de la communauté. | {count} livres figurent sur les listes de souhaits de la communauté.",
       "empty": "Aucun livre catalogué pour l'instant."
+    },
+    "nav": {
+      "label": "Sections d'administration",
+      "members": "Membres",
+      "analytics": "Statistiques"
+    },
+    "members": {
+      "loadFailed": "Impossible de charger la liste des membres.",
+      "empty": "Aucun membre ne correspond à ce filtre.",
+      "searchPlaceholder": "Rechercher par nom ou e-mail",
+      "filterLabel": "Filtrer les membres par état",
+      "filterAll": "Tous",
+      "filterActive": "Actifs",
+      "filterBanned": "Suspendus",
+      "filterDeleted": "Supprimés",
+      "total": "{count} membre | {count} membres",
+      "colMember": "Membre",
+      "colJoined": "Inscrit",
+      "colBooks": "Livres",
+      "colCollections": "Collections",
+      "colState": "État",
+      "colActions": "Actions",
+      "adminTag": "Admin",
+      "state": {
+        "active": "Actif",
+        "banned": "Suspendu",
+        "deleted": "Supprimé"
+      },
+      "ban": "Suspendre",
+      "unban": "Réactiver",
+      "delete": "Supprimer",
+      "lockedSelf": "C'est vous",
+      "lockedAdmin": "Administrateur",
+      "lockedDeleted": "Supprimé",
+      "banned": "{name} a été suspendu.",
+      "unbanned": "{name} a été réactivé.",
+      "deleted": "Le compte de {name} a été supprimé.",
+      "banTitle": "Suspendre le membre",
+      "banIntro": "Suspendre {name} ?",
+      "banEffectSignIn": "La personne sera déconnectée et ne pourra plus se connecter.",
+      "banEffectContent": "Ses livres, collections et profil quittent Découvrir et toutes les pages publiques.",
+      "banEffectReversible": "Vous pouvez la réactiver à tout moment.",
+      "banReasonLabel": "Motif (facultatif, visible ici seulement)",
+      "banReasonPlaceholder": "Qu'est-ce qui a motivé cela ?",
+      "banConfirm": "Suspendre",
+      "deleteTitle": "Supprimer le compte",
+      "deleteIntro": "Supprimer définitivement {name} ?",
+      "deleteEffectLibrary": "Supprime {count} livre. | Supprime {count} livres.",
+      "deleteEffectCollections": "Supprime {count} collection. | Supprime {count} collections.",
+      "deleteEffectIdentity": "Efface son nom, son e-mail et son profil. L'historique des prêts reste chez l'autre partie, sans nom.",
+      "deleteEffectFinal": "Cette action est irréversible.",
+      "deleteTypeLabel": "Saisissez {email} pour confirmer",
+      "deleteConfirm": "Supprimer définitivement"
     }
   }
 }

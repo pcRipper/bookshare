@@ -294,7 +294,7 @@
     "main": "Hauptnavigation",
     "releaseNotes": "Versionshinweise",
     "copyright": "© {year} FolioShare. Geschichten für eine aufmerksame Community.",
-    "analytics": "Statistiken"
+    "admin": "Verwaltung"
   },
   "profile": {
     "follow": "Folgen",
@@ -541,8 +541,8 @@
     "goToSettings": "Einstellungen öffnen"
   },
   "admin": {
-    "title": "Statistiken",
-    "subtitle": "Wie FolioShare wächst und wie es genutzt wird.",
+    "title": "Verwaltung",
+    "subtitle": "Mitglieder, Moderation und Statistiken.",
     "refresh": "Aktualisieren",
     "range": "{from} bis {to}",
     "loadFailed": "Das Dashboard konnte nicht geladen werden.",
@@ -620,6 +620,59 @@
       "wanted": "Gewünscht von",
       "wishlistTotal": "{count} Buch steht community-weit auf Wunschlisten. | {count} Bücher stehen community-weit auf Wunschlisten.",
       "empty": "Noch keine Bücher erfasst."
+    },
+    "nav": {
+      "label": "Verwaltungsbereiche",
+      "members": "Mitglieder",
+      "analytics": "Statistiken"
+    },
+    "members": {
+      "loadFailed": "Die Mitgliederliste konnte nicht geladen werden.",
+      "empty": "Keine Mitglieder passen zu diesem Filter.",
+      "searchPlaceholder": "Nach Name oder E-Mail suchen",
+      "filterLabel": "Mitglieder nach Status filtern",
+      "filterAll": "Alle",
+      "filterActive": "Aktiv",
+      "filterBanned": "Gesperrt",
+      "filterDeleted": "Gelöscht",
+      "total": "{count} Mitglied | {count} Mitglieder",
+      "colMember": "Mitglied",
+      "colJoined": "Dabei seit",
+      "colBooks": "Bücher",
+      "colCollections": "Sammlungen",
+      "colState": "Status",
+      "colActions": "Aktionen",
+      "adminTag": "Admin",
+      "state": {
+        "active": "Aktiv",
+        "banned": "Gesperrt",
+        "deleted": "Gelöscht"
+      },
+      "ban": "Sperren",
+      "unban": "Entsperren",
+      "delete": "Löschen",
+      "lockedSelf": "Das bist du",
+      "lockedAdmin": "Administrator",
+      "lockedDeleted": "Gelöscht",
+      "banned": "{name} wurde gesperrt.",
+      "unbanned": "{name} wurde entsperrt.",
+      "deleted": "Das Konto von {name} wurde gelöscht.",
+      "banTitle": "Mitglied sperren",
+      "banIntro": "{name} sperren?",
+      "banEffectSignIn": "Die Person wird abgemeldet und kann sich nicht mehr anmelden.",
+      "banEffectContent": "Bücher, Sammlungen und Profil verschwinden aus Entdecken und von allen öffentlichen Seiten.",
+      "banEffectReversible": "Du kannst die Sperre jederzeit aufheben.",
+      "banReasonLabel": "Grund (optional, nur hier sichtbar)",
+      "banReasonPlaceholder": "Was war der Anlass?",
+      "banConfirm": "Sperren",
+      "deleteTitle": "Konto löschen",
+      "deleteIntro": "{name} endgültig löschen?",
+      "deleteEffectLibrary": "Löscht {count} Buch. | Löscht {count} Bücher.",
+      "deleteEffectCollections": "Löscht {count} Sammlung. | Löscht {count} Sammlungen.",
+      "deleteEffectIdentity": "Löscht Name, E-Mail und Profil. Der Ausleihverlauf bleibt bei der anderen Seite, ohne Namen.",
+      "deleteEffectFinal": "Das lässt sich nicht rückgängig machen.",
+      "deleteTypeLabel": "Tippe {email}, um zu bestätigen",
+      "deleteConfirm": "Endgültig löschen"
     }
   }
 }
