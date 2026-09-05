@@ -2,8 +2,10 @@
 
 namespace App\Tests\Security;
 
+use App\Security\AdminAccess;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Yaml\Yaml;
 
 /**
@@ -64,24 +66,31 @@ class AdminAccessConfigTest extends TestCase
     }
 
     /**
-     * The attribute is not redundant with the access_control rule: it is the
-     * only thing that supplies a denial message the translator can resolve.
+     * The attribute is the second layer: if the access_control rule is ever
+     * narrowed or removed, this is what still refuses. (It is *not* what
+     * supplies the rendered message — the rule denies first, so
+     * ApiExceptionSubscriber does. Both read AdminAccess, so they agree.)
      *
      * Swept over every Admin*RestController rather than named one at a time, so
      * a controller added to the panel later is covered the day it lands instead
-     * of the day somebody remembers to extend this list.
+     * of the day somebody remembers to extend this list. Read through reflection
+     * rather than by lexing the source, so a constant reference counts and the
+     * assertion is about the *resolved* attribute rather than the spelling.
      */
     #[DataProvider('adminControllers')]
-    public function testEveryAdminControllerCarriesItsOwnRoleAttribute(string $file): void
+    public function testEveryAdminControllerCarriesItsOwnRoleAttribute(string $class): void
     {
-        $code = self::stripComments(file_get_contents($file));
+        $attributes = (new \ReflectionClass($class))->getAttributes(IsGranted::class);
 
-        self::assertStringContainsString('IsGranted', $code, basename($file));
-        self::assertStringContainsString('ROLE_ADMIN', $code, basename($file));
-        self::assertStringContainsString('Administrator access is required.', $code, basename($file));
+        self::assertCount(1, $attributes, $class . ' carries no #[IsGranted].');
+
+        $granted = $attributes[0]->newInstance();
+
+        self::assertSame(AdminAccess::ROLE, $granted->attribute);
+        self::assertSame(AdminAccess::DENIED_MESSAGE, $granted->message);
     }
 
-    /** @return iterable<string, array{string}> */
+    /** @return iterable<string, array{class-string}> */
     public static function adminControllers(): iterable
     {
         $files = glob(\dirname(__DIR__, 2) . '/src/Controller/Admin*RestController.php') ?: [];
@@ -91,8 +100,34 @@ class AdminAccessConfigTest extends TestCase
         self::assertNotEmpty($files, 'No admin controllers found — has the naming convention changed?');
 
         foreach ($files as $file) {
-            yield basename($file) => [$file];
+            $name = basename($file, '.php');
+            yield $name => ['App\\Controller\\' . $name];
         }
+    }
+
+    /**
+     * The rendered message comes from the subscriber, because access_control
+     * denies before any controller runs. This pins the two halves to the same
+     * constant — a literal in either place could drift from the other, and the
+     * symptom would be an untranslated sentence naming an internal role.
+     */
+    public function testTheDenialMessageHasOneSource(): void
+    {
+        $subscriber = self::stripComments(
+            file_get_contents(\dirname(__DIR__, 2) . '/src/EventSubscriber/ApiExceptionSubscriber.php'),
+        );
+
+        self::assertStringContainsString('AdminAccess::DENIED_MESSAGE', $subscriber);
+        self::assertStringContainsString('AdminAccess::PATH_PREFIX', $subscriber);
+        self::assertStringNotContainsString(AdminAccess::DENIED_MESSAGE, $subscriber);
+    }
+
+    /** The prefix constant and the shipped rule have to describe the same paths. */
+    public function testThePrefixConstantMatchesTheAccessControlRule(): void
+    {
+        $paths = array_column($this->security()['access_control'], 'path');
+
+        self::assertContains('^' . AdminAccess::PATH_PREFIX . '(/|$)', $paths);
     }
 
     /**

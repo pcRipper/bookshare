@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Dto\StatsWindow;
+use App\Security\AdminAccess;
 use App\Service\Analytics\StatsProvider;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -22,7 +23,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
  * which matches no catalog entry and would render English in all five languages.
  */
 #[Route('/admin/stats')]
-#[IsGranted('ROLE_ADMIN', message: 'Administrator access is required.')]
+#[IsGranted(AdminAccess::ROLE, message: AdminAccess::DENIED_MESSAGE)]
 class AdminStatsRestController extends AbstractController
 {
     public function __construct(private readonly StatsProvider $stats) {}

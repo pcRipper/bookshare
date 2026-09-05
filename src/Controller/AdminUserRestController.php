@@ -7,6 +7,7 @@ use App\Api\ResponseMapper;
 use App\Dto\Pagination;
 use App\Entity\User;
 use App\Repository\UserRepository;
+use App\Security\AdminAccess;
 use App\Service\Admin\AdminUserService;
 use App\Service\UserStatsProvider;
 use Doctrine\ORM\EntityManagerInterface;
@@ -27,7 +28,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
  * control and can translate.
  */
 #[Route('/admin/users')]
-#[IsGranted('ROLE_ADMIN', message: 'Administrator access is required.')]
+#[IsGranted(AdminAccess::ROLE, message: AdminAccess::DENIED_MESSAGE)]
 class AdminUserRestController extends AbstractController
 {
     /** Members per page. Denser than a reader-card grid: this is a table. */
