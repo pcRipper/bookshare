@@ -7,6 +7,16 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.27.0',
+    date: '2026-09-05',
+    notes: [
+      'Administrators now have a panel rather than a single statistics page. The statistics dashboard moved into it unchanged, keeping its address, and a Members section sits alongside it.',
+      'Members lists everyone on FolioShare, searchable by name or email and filterable by state, with how many books and collections each of them keeps.',
+      'An administrator can suspend an account. A suspended member is signed out immediately and cannot sign back in, and their books, collections and profile disappear from Discover, from search and from every public page. Nothing is deleted, and reinstating them puts it all back.',
+      'An administrator can also delete an account outright. This erases the person’s name, email and profile along with their whole library, and it cannot be undone — so it asks for their email address to be typed out first, and it refuses while they still have a book on loan in either direction.',
+    ],
+  },
+  {
     version: '1.26.0',
     date: '2026-09-02',
     notes: [
