@@ -1,6 +1,7 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { scrollToTopOf } from '@/utils/scroll'
 
 const { t } = useI18n()
 
@@ -36,15 +37,34 @@ const items = computed(() => {
   return out
 })
 
+/*
+ * The region this pager belongs to, for the scroll below.
+ *
+ * Its own parent element, deliberately, rather than a prop every caller would
+ * have to wire: in all eleven call sites the pager is the last thing inside the
+ * element that holds the list, so the parent's top *is* the top of what was
+ * paged. Making it a prop would mean eleven chances to pass the wrong node or
+ * forget, to buy a flexibility nothing has asked for. If a caller ever nests
+ * this differently, give it a `scrollTarget` prop then.
+ */
+const root = ref(null)
+
 function go(page) {
   if (props.disabled) return
   if (page < 1 || page > props.totalPages || page === props.page) return
+
   emit('change', page)
+
+  // Immediately, not after the fetch: the region's top does not move while the
+  // new page loads, so waiting would only delay the scroll behind a request —
+  // and the whole point is to leave the reader looking at the top of the list
+  // rather than at the pager they just clicked.
+  scrollToTopOf(root.value?.parentElement)
 }
 </script>
 
 <template>
-  <nav v-if="totalPages > 1" class="pagination" role="navigation" :aria-label="t('ui.pagination')">
+  <nav v-if="totalPages > 1" ref="root" class="pagination" role="navigation" :aria-label="t('ui.pagination')">
     <button
       type="button"
       class="pagination__arrow"
