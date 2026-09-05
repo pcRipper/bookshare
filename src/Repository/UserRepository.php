@@ -70,6 +70,45 @@ class UserRepository extends ServiceEntityRepository
     }
 
     /**
+     * One page of the admin panel's member list, newest member first.
+     *
+     * Deliberately does NOT go through VisibleUsers: showing the suspended and
+     * deleted rows is this query's entire job, and it is the one caller allowed
+     * to match on email — every community-facing search is name-only, because an
+     * email lookup would turn Discover into an address-book oracle.
+     *
+     * $status is one of the ADMIN_STATUSES keywords; anything else is treated as
+     * 'all', following Pagination's clamp-don't-reject rule — an operator's
+     * mistyped filter should show them everything, not a 422.
+     *
+     * @return PaginatedResult<User>
+     */
+    public function findForAdminPaginated(?string $query, string $status, Pagination $pagination): PaginatedResult
+    {
+        $qb = $this->createQueryBuilder('u')
+            ->orderBy('u.createdAt', 'DESC')
+            ->addOrderBy('u.id', 'DESC')
+            ->setFirstResult($pagination->offset())
+            ->setMaxResults($pagination->perPage);
+
+        match ($status) {
+            'active'  => $qb->andWhere('u.bannedAt IS NULL AND u.deletedAt IS NULL'),
+            'banned'  => $qb->andWhere('u.bannedAt IS NOT NULL AND u.deletedAt IS NULL'),
+            'deleted' => $qb->andWhere('u.deletedAt IS NOT NULL'),
+            default   => $qb,
+        };
+
+        if ($query !== null && $query !== '') {
+            $qb->andWhere('LOWER(u.fullName) LIKE :q OR LOWER(u.email) LIKE :q')
+                ->setParameter('q', '%' . $this->escapeLike(mb_strtolower($query)) . '%');
+        }
+
+        $paginator = new Paginator($qb->getQuery(), fetchJoinCollection: false);
+
+        return new PaginatedResult(iterator_to_array($paginator), \count($paginator));
+    }
+
+    /**
      * Other users (never the viewer) whose profile is public. With a query it is a
      * case-insensitive substring search on the name, ordered alphabetically; with a
      * blank one it browses the whole public membership newest-first, mirroring the
@@ -81,6 +120,8 @@ class UserRepository extends ServiceEntityRepository
             ->where('u.id != :viewer')
             ->andWhere('u.isPrivate = false')
             ->setParameter('viewer', $viewer->getId());
+
+        VisibleUsers::scope($qb, 'u');
 
         if ($query === null || $query === '') {
             // id breaks ties so paging stays stable when several members were

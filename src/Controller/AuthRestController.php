@@ -55,6 +55,20 @@ class AuthRestController extends AbstractController
             fullName: $info['name'],
         );
 
+        // The UserChecker guards every *authenticated* request, but this endpoint
+        // mints the token by hand and so never passes through it. Without this
+        // branch a suspended member could sign in freshly and hold a valid token
+        // until their next request bounced them — a confusing loop rather than a
+        // refusal. Deleted accounts are anonymized, google_id included, so
+        // findOrCreateFromGoogle() above hands back a *fresh* account rather than
+        // the old one; the isDeleted() half is belt-and-braces.
+        if (!$user->isActive()) {
+            return $errors->response(
+                $user->isDeleted() ? 'This account no longer exists.' : 'This account has been suspended.',
+                403,
+            );
+        }
+
         // A brand-new account is the only one still id-less at this point
         // (identity ids land at flush), which is what tells a first sign-in from
         // the hundreds that follow. Read it before the flush below.

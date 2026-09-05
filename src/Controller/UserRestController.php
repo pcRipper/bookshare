@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Api\ApiError;
+use App\Api\MemberVisibility;
 use App\Api\ResponseMapper;
 use App\Dto\Pagination;
 use App\Entity\Subscription;
@@ -27,6 +28,7 @@ class UserRestController extends AbstractController
         private readonly UserStatsProvider $stats,
         private readonly SubscriptionRepository $subscriptions,
         private readonly ApiError $errors,
+        private readonly MemberVisibility $visibility,
     ) {}
 
     /**
@@ -80,9 +82,10 @@ class UserRestController extends AbstractController
         $isSelf = $viewer->getId() === $user->getId();
 
         // A private profile is hidden from everyone but its owner — same rule the
-        // book listing applies to a private library.
-        if (!$isSelf && $user->isPrivate()) {
-            return $this->errors->response('This profile is private.', Response::HTTP_FORBIDDEN);
+        // book listing applies to a private library — and a suspended or deleted
+        // member 404s as though they had never existed.
+        if ($denied = $this->visibility->deny($user, $viewer, 'This profile is private.')) {
+            return $denied;
         }
 
         // The owner always sees their own location; others only if the user

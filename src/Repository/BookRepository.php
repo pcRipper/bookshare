@@ -452,11 +452,17 @@ class BookRepository extends ServiceEntityRepository
         $like = '%' . $this->escapeLike(mb_strtolower($query)) . '%';
 
         $qb = $this->createQueryBuilder('b')
+            ->innerJoin('b.owner', 'o')
             ->where('LOWER(b.title) LIKE :q OR LOWER(b.isbn) LIKE :q')
             ->setParameter('q', $like)
             ->orderBy('b.createdAt', 'DESC')
             ->addOrderBy('b.id', 'DESC')
             ->setMaxResults($limit);
+
+        // The owner is joined for this predicate alone and never selected: the
+        // whole point of the template shape is that it copies bibliographic
+        // fields and never names who holds the book.
+        VisibleUsers::scope($qb, 'o');
 
         return $this->onShelf($qb, false)->getQuery()->getResult();
     }
@@ -528,6 +534,9 @@ class BookRepository extends ServiceEntityRepository
             ->setParameter('viewer', $viewer->getId())
             ->setParameter('unavailable', BookStatus::Unavailable)
             ->orderBy('b.createdAt', 'DESC');
+
+        // A suspended or deleted member's shelf leaves Discover with them.
+        VisibleUsers::scope($qb, 'o');
 
         // Discover is what you could borrow; nobody can borrow a wanted book.
         $this->onShelf($qb, false);

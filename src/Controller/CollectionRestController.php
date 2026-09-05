@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Api\ApiError;
+use App\Api\MemberVisibility;
 use App\Api\ResponseMapper;
 use App\Dto\CollectionInput;
 use App\Dto\Pagination;
@@ -32,6 +33,7 @@ class CollectionRestController extends AbstractController
         private readonly CollectionService $service,
         private readonly EntityManagerInterface $em,
         private readonly ApiError $errors,
+        private readonly MemberVisibility $visibility,
     ) {}
 
     /**
@@ -55,8 +57,8 @@ class CollectionRestController extends AbstractController
             if (!$owner instanceof User) {
                 return $this->errors->response('User not found.', Response::HTTP_NOT_FOUND);
             }
-            if ($owner !== $viewer && $owner->isPrivate()) {
-                return $this->errors->response('This library is private.', Response::HTTP_FORBIDDEN);
+            if ($denied = $this->visibility->deny($owner, $viewer, 'This library is private.')) {
+                return $denied;
             }
         }
 
@@ -82,8 +84,8 @@ class CollectionRestController extends AbstractController
         $viewer = $this->getUser();
 
         $owner = $collection->getOwner();
-        if ($owner !== $viewer && $owner->isPrivate()) {
-            return $this->errors->response('This library is private.', Response::HTTP_FORBIDDEN);
+        if ($denied = $this->visibility->deny($owner, $viewer, 'This library is private.')) {
+            return $denied;
         }
 
         $pending = $owner !== $viewer ? array_flip($requests->findPendingBookIdsForRequester($viewer)) : [];

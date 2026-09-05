@@ -83,4 +83,70 @@ class UserTest extends TestCase
 
         $this->expectNotToPerformAssertions();
     }
+    public function testANewAccountIsActive(): void
+    {
+        $user = new User();
+
+        self::assertTrue($user->isActive());
+        self::assertFalse($user->isBanned());
+        self::assertFalse($user->isDeleted());
+        self::assertNull($user->getBannedAt());
+        self::assertNull($user->getBanReason());
+    }
+
+    public function testBanningStampsTheTimeAndKeepsTheReason(): void
+    {
+        $user = (new User())->ban('Spamming borrow requests');
+
+        self::assertTrue($user->isBanned());
+        self::assertFalse($user->isActive());
+        self::assertInstanceOf(\DateTimeImmutable::class, $user->getBannedAt());
+        self::assertSame('Spamming borrow requests', $user->getBanReason());
+    }
+
+    public function testBanningWithoutAReasonIsAllowed(): void
+    {
+        $user = (new User())->ban();
+
+        self::assertTrue($user->isBanned());
+        self::assertNull($user->getBanReason());
+    }
+
+    /**
+     * The stamp and the reason move together. A reason surviving a lifted ban
+     * would render in the admin table as an explanation for a state the member
+     * is no longer in.
+     */
+    public function testUnbanningClearsTheReasonAsWellAsTheStamp(): void
+    {
+        $user = (new User())->ban('Mistake')->unban();
+
+        self::assertFalse($user->isBanned());
+        self::assertTrue($user->isActive());
+        self::assertNull($user->getBannedAt());
+        self::assertNull($user->getBanReason());
+    }
+
+    public function testADeletedAccountIsNotActiveEvenWithoutABan(): void
+    {
+        $user = (new User())->setDeletedAt(new \DateTimeImmutable());
+
+        self::assertTrue($user->isDeleted());
+        self::assertFalse($user->isBanned());
+        self::assertFalse($user->isActive());
+    }
+
+    /**
+     * Unbanning is not a resurrection: it clears the suspension and nothing
+     * else, so an anonymized account stays gone.
+     */
+    public function testUnbanningDoesNotUndoADeletion(): void
+    {
+        $user = (new User())->ban('x')->setDeletedAt(new \DateTimeImmutable())->unban();
+
+        self::assertFalse($user->isBanned());
+        self::assertTrue($user->isDeleted());
+        self::assertFalse($user->isActive());
+    }
+
 }

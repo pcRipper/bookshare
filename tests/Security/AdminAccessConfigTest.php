@@ -2,6 +2,7 @@
 
 namespace App\Tests\Security;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Yaml\Yaml;
 
@@ -65,24 +66,75 @@ class AdminAccessConfigTest extends TestCase
     /**
      * The attribute is not redundant with the access_control rule: it is the
      * only thing that supplies a denial message the translator can resolve.
+     *
+     * Swept over every Admin*RestController rather than named one at a time, so
+     * a controller added to the panel later is covered the day it lands instead
+     * of the day somebody remembers to extend this list.
      */
-    public function testTheControllerCarriesItsOwnRoleAttribute(): void
+    #[DataProvider('adminControllers')]
+    public function testEveryAdminControllerCarriesItsOwnRoleAttribute(string $file): void
     {
-        $source = file_get_contents(
-            \dirname(__DIR__, 2) . '/src/Controller/AdminStatsRestController.php',
+        $code = self::stripComments(file_get_contents($file));
+
+        self::assertStringContainsString('IsGranted', $code, basename($file));
+        self::assertStringContainsString('ROLE_ADMIN', $code, basename($file));
+        self::assertStringContainsString('Administrator access is required.', $code, basename($file));
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function adminControllers(): iterable
+    {
+        $files = glob(\dirname(__DIR__, 2) . '/src/Controller/Admin*RestController.php') ?: [];
+
+        // A glob that silently matched nothing would make this whole sweep pass
+        // while proving nothing at all.
+        self::assertNotEmpty($files, 'No admin controllers found — has the naming convention changed?');
+
+        foreach ($files as $file) {
+            yield basename($file) => [$file];
+        }
+    }
+
+    /**
+     * Suspended and deleted members are refused by a user checker on the `main`
+     * firewall, not by a controller. Without the wiring the class is dead code
+     * and every ban silently stops working — a failure with no symptom short of
+     * a banned member going on using the site.
+     */
+    public function testTheMainFirewallRunsTheUserChecker(): void
+    {
+        $main = $this->security()['firewalls']['main'];
+
+        self::assertSame(\App\Security\UserChecker::class, $main['user_checker'] ?? null);
+    }
+
+    /**
+     * The checker only guards *authenticated* requests. The Google callback
+     * mints its token by hand and never passes through the firewall, so without
+     * its own branch a suspended member could sign in freshly and hold a valid
+     * token until their next request bounced them.
+     */
+    public function testTheSignInEndpointRefusesAnInactiveAccount(): void
+    {
+        $code = self::stripComments(
+            file_get_contents(\dirname(__DIR__, 2) . '/src/Controller/AuthRestController.php'),
         );
 
+        self::assertStringContainsString('isActive()', $code);
+        self::assertStringContainsString('This account has been suspended.', $code);
+    }
+
+    /** Source with comments removed, so a docblock explaining a rule can't satisfy it. */
+    private static function stripComments(string $source): string
+    {
         $code = '';
         foreach (token_get_all($source) as $token) {
-            // The docblock explains why both layers exist — don't match on it.
             if (\is_array($token) && \in_array($token[0], [\T_COMMENT, \T_DOC_COMMENT], true)) {
                 continue;
             }
             $code .= \is_array($token) ? $token[1] : $token;
         }
 
-        self::assertStringContainsString('IsGranted', $code);
-        self::assertStringContainsString('ROLE_ADMIN', $code);
-        self::assertStringContainsString('Administrator access is required.', $code);
+        return $code;
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Api\ApiError;
+use App\Api\MemberVisibility;
 use App\Api\ResponseMapper;
 use App\Dto\BookInput;
 use App\Dto\BookTemplate;
@@ -47,6 +48,7 @@ class BookRestController extends AbstractController
         private readonly ImageLocalizer $images,
         private readonly EntityManagerInterface $em,
         private readonly ApiError $errors,
+        private readonly MemberVisibility $visibility,
     ) {}
 
     #[Route('', methods: ['GET'])]
@@ -66,9 +68,10 @@ class BookRestController extends AbstractController
             if (!$owner instanceof User) {
                 return $this->errors->response('User not found.', Response::HTTP_NOT_FOUND);
             }
-            // A private profile's collection is visible only to its owner.
-            if ($owner !== $viewer && $owner->isPrivate()) {
-                return $this->errors->response('This library is private.', Response::HTTP_FORBIDDEN);
+            // A private profile's collection is visible only to its owner, and a
+            // suspended or deleted member's is visible to nobody.
+            if ($denied = $this->visibility->deny($owner, $viewer, 'This library is private.')) {
+                return $denied;
             }
         }
 

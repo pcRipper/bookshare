@@ -42,13 +42,13 @@ class SubscriptionRepository extends ServiceEntityRepository
      */
     public function findFollowing(User $subscriber): array
     {
-        return $this->createQueryBuilder('s')
+        $qb = $this->createQueryBuilder('s')
             ->innerJoin('s.subscribedTo', 'u')->addSelect('u')
             ->andWhere('s.subscriber = :subscriber')
             ->setParameter('subscriber', $subscriber)
-            ->orderBy('s.createdAt', 'DESC')
-            ->getQuery()
-            ->getResult();
+            ->orderBy('s.createdAt', 'DESC');
+
+        return VisibleUsers::scope($qb, 'u')->getQuery()->getResult();
     }
 
     /**
@@ -59,14 +59,18 @@ class SubscriptionRepository extends ServiceEntityRepository
      */
     public function findFollowingPaginated(User $subscriber, Pagination $pagination): PaginatedResult
     {
-        $query = $this->createQueryBuilder('s')
+        $qb = $this->createQueryBuilder('s')
             ->innerJoin('s.subscribedTo', 'u')->addSelect('u')
             ->andWhere('s.subscriber = :subscriber')
             ->setParameter('subscriber', $subscriber)
             ->orderBy('s.createdAt', 'DESC')
             ->setFirstResult($pagination->offset())
-            ->setMaxResults($pagination->perPage)
-            ->getQuery();
+            ->setMaxResults($pagination->perPage);
+
+        // The edge survives a suspension so a lifted ban restores the follow,
+        // but the person drops out of the list while it stands — the row would
+        // otherwise be the one place their state was visible to a member.
+        $query = VisibleUsers::scope($qb, 'u')->getQuery();
 
         $paginator = new Paginator($query, fetchJoinCollection: false);
 
@@ -83,14 +87,14 @@ class SubscriptionRepository extends ServiceEntityRepository
     {
         // Select the root subscription (Doctrine forbids selecting only a joined
         // alias) and the followed user, then map to the User entities.
-        $subscriptions = $this->createQueryBuilder('s')
+        $qb = $this->createQueryBuilder('s')
             ->innerJoin('s.subscribedTo', 'u')->addSelect('u')
             ->andWhere('s.subscriber = :subscriber')
             ->andWhere('u.isPrivate = false')
             ->setParameter('subscriber', $subscriber)
-            ->orderBy('s.createdAt', 'DESC')
-            ->getQuery()
-            ->getResult();
+            ->orderBy('s.createdAt', 'DESC');
+
+        $subscriptions = VisibleUsers::scope($qb, 'u')->getQuery()->getResult();
 
         return array_map(static fn (Subscription $s) => $s->getSubscribedTo(), $subscriptions);
     }

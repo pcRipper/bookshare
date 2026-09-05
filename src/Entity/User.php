@@ -70,6 +70,39 @@ class User implements UserInterface
     #[ORM\Column(type: 'json', options: ['default' => '[]'])]
     private array $roles = [];
 
+    /**
+     * Set when an administrator suspends the account. Two things follow from it,
+     * and they are deliberately separate mechanisms:
+     *
+     *   - Sign-in stops, enforced by App\Security\UserChecker. Because the
+     *     firewall reloads the user from the database on every request, an
+     *     already-issued JWT dies on the suspended member's next call — the same
+     *     property that lets `app:grant-admin` take effect without a re-login,
+     *     and the reason this needs no token-revocation path.
+     *   - Their content leaves the community surfaces, enforced query by query
+     *     through App\Repository\VisibleUsers.
+     *
+     * Reversible: unbanning clears the stamp and the reason together.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $bannedAt = null;
+
+    /** The operator's note on why, shown only inside the admin panel. */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $banReason = null;
+
+    /**
+     * Set when the account is deleted. The row survives, anonymized by
+     * App\Service\Admin\UserPurger — a hard DELETE would take the other party's
+     * loan history with it, since library_request.requester_id and book.owner_id
+     * carry no ON DELETE rule.
+     *
+     * Not reversible: by the time this is set the identifying columns have
+     * already been overwritten and the member's books are gone.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $deletedAt = null;
+
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
@@ -115,6 +148,39 @@ class User implements UserInterface
     }
 
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
+
+    public function getBannedAt(): ?\DateTimeImmutable { return $this->bannedAt; }
+    public function getBanReason(): ?string { return $this->banReason; }
+
+    /**
+     * The stamp and the reason move together: a reason left behind by a lifted
+     * ban would read in the admin table as an explanation for a state the member
+     * is no longer in.
+     */
+    public function ban(?string $reason = null): static
+    {
+        $this->bannedAt = new \DateTimeImmutable();
+        $this->banReason = $reason;
+
+        return $this;
+    }
+
+    public function unban(): static
+    {
+        $this->bannedAt = null;
+        $this->banReason = null;
+
+        return $this;
+    }
+
+    public function getDeletedAt(): ?\DateTimeImmutable { return $this->deletedAt; }
+    public function setDeletedAt(?\DateTimeImmutable $deletedAt): static { $this->deletedAt = $deletedAt; return $this; }
+
+    public function isBanned(): bool { return $this->bannedAt !== null; }
+    public function isDeleted(): bool { return $this->deletedAt !== null; }
+
+    /** Neither suspended nor deleted — the state every ordinary member is in. */
+    public function isActive(): bool { return !$this->isBanned() && !$this->isDeleted(); }
 
     /** @param string[] $roles */
     public function setRoles(array $roles): static { $this->roles = array_values(array_unique($roles)); return $this; }

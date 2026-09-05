@@ -41,6 +41,13 @@ class LibraryRequestService
         if ($book->getOwner() === $requester) {
             throw new DomainRuleException('You cannot request your own book.');
         }
+        // A suspended or deleted owner is gone from every list that could have
+        // surfaced this book, but the shelves must not be bridgeable by a
+        // hand-made request — the same reasoning the wish-list gate below uses.
+        if (!$book->getOwner()->isActive()) {
+            throw new DomainRuleException('This member is no longer available.');
+        }
+
         if ($book->getOwner()->isPrivate()) {
             throw new DomainRuleException('This reader\'s library is private.');
         }

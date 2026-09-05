@@ -25,6 +25,11 @@ security:
             stateless: true
             provider: app_user_provider
             jwt: ~
+            # Suspended and deleted members are refused here rather than in each
+            # controller. The firewall reloads the user from the database on
+            # every request, so this applies to tokens minted before the ban —
+            # which is why banning needs no token-revocation path.
+            user_checker: App\Security\UserChecker
 
     access_control:
         # Ordered: first match wins. The public entry is documentation as much

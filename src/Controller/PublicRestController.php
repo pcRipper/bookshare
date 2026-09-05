@@ -183,7 +183,8 @@ class PublicRestController extends AbstractController
     /**
      * The owner whose library is shared, or the 404 to return instead.
      *
-     * A private member and a member who doesn't exist give the **same** 404:
+     * A private member, a suspended or deleted one, and a member who doesn't
+     * exist all give the **same** 404:
      * ids are sequential, so a distinguishable 403 would turn the id space into
      * a membership oracle. (This is why the response differs from the 403
      * 'This library is private.' the authenticated endpoints return — there the
@@ -195,7 +196,7 @@ class PublicRestController extends AbstractController
     {
         $owner = $users->find($id);
 
-        if (!$owner instanceof User || $owner->isPrivate()) {
+        if (!$owner instanceof User || $owner->isPrivate() || !$owner->isActive()) {
             return $this->errors->response('This library is not shared.', Response::HTTP_NOT_FOUND);
         }
 
