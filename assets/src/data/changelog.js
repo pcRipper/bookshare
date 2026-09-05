@@ -14,6 +14,7 @@ export const CHANGELOG = [
       'Members lists everyone on FolioShare, searchable by name or email and filterable by state, with how many books and collections each of them keeps.',
       'An administrator can suspend an account. A suspended member is signed out immediately and cannot sign back in, and their books, collections and profile disappear from Discover, from search and from every public page. Nothing is deleted, and reinstating them puts it all back.',
       'An administrator can also delete an account outright. This erases the person’s name, email and profile along with their whole library, and it cannot be undone — so it asks for their email address to be typed out first, and it refuses while they still have a book on loan in either direction.',
+      'Administrators can take a copy of the database from the panel. A backup is a complete archive that can be restored; a JSON export is every table’s rows, readable in any editor but carrying no schema — they are offered as two separate things, and each file says which it is. The ten most recent of each are kept.',
       'Turning to the next page of any list — your books, Discover, your collections, the people you follow — now takes you back to the top of that list instead of leaving you level with the pager.',
     ],
   },
