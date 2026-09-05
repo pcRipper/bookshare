@@ -275,6 +275,38 @@ class ResponseMapper
      * and nothing more. No email, no location (even when `show_location` allows
      * it to members), no stats, no `isSelf`/`isSubscribed` — there is no viewer.
      */
+    /**
+     * A member as the operator's admin panel sees them.
+     *
+     * A separate whitelist rather than profile() plus a few fields, for the same
+     * reason publicBook() is a whitelist rather than book() minus a few: a field
+     * added to a shared shape later would ship here by default, and this is the
+     * one shape allowed to carry an email address and an isAdmin flag. Making it
+     * standalone means the next field has to be added here on purpose.
+     *
+     * $stats is one row of UserStatsProvider::forUsers() — grouped counts for the
+     * whole page, never a query per row.
+     *
+     * @param array{totalBooks:int,shared:int,loaned:int,collections:int,wished:int} $stats
+     */
+    public function adminUser(User $user, array $stats): array
+    {
+        return [
+            'id'          => $user->getId(),
+            'email'       => $user->getEmail(),
+            'fullName'    => $user->getFullName(),
+            'avatarUrl'   => $user->getAvatarUrl(),
+            'location'    => $user->getLocation(),
+            'isPrivate'   => $user->isPrivate(),
+            'isAdmin'     => $user->isAdmin(),
+            'createdAt'   => $user->getCreatedAt()->format(\DateTimeInterface::ATOM),
+            'bannedAt'    => $user->getBannedAt()?->format(\DateTimeInterface::ATOM),
+            'banReason'   => $user->getBanReason(),
+            'deletedAt'   => $user->getDeletedAt()?->format(\DateTimeInterface::ATOM),
+            'stats'       => $stats,
+        ];
+    }
+
     public function publicProfile(User $user): array
     {
         return [

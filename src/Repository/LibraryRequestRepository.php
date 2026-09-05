@@ -230,6 +230,32 @@ class LibraryRequestRepository extends ServiceEntityRepository
         return new PaginatedResult($requests, \count($paginator));
     }
 
+    /**
+     * Is this member on either side of a loan that is still in flight — a book
+     * they lent out, or one they are holding?
+     *
+     * The admin panel's delete guard. Deleting an account destroys its shelf, so
+     * doing it mid-loan would take the counterpart's live loan with it and leave
+     * them holding (or missing) a book with no record of why. Settled history is
+     * a different matter: it survives the deletion, attributed to an unnamed
+     * account.
+     *
+     * Pending requests are not "in flight" for this purpose — nobody has parted
+     * with a book yet, and UserPurger deletes those outright.
+     */
+    public function hasActiveLoanInvolving(User $user): bool
+    {
+        return (int) $this->createQueryBuilder('r')
+            ->select('COUNT(r.id)')
+            ->join('r.book', 'b')
+            ->andWhere('r.requester = :user OR b.owner = :user')
+            ->andWhere('r.status IN (:active)')
+            ->setParameter('user', $user)
+            ->setParameter('active', [RequestStatus::Approved, RequestStatus::ReturnPending])
+            ->getQuery()
+            ->getSingleScalarResult() > 0;
+    }
+
     public function countPendingForOwner(User $owner): int
     {
         return (int) $this->createQueryBuilder('r')
