@@ -47,6 +47,12 @@ services:
       # so the volume must live there and be visible to the nginx container too
       # (mounted read-only below).
       - app_uploads:/var/www/app/public/uploads
+      # Manual database dumps. Without this they live in the container's
+      # writable layer, which a redeploy throws away — so the backup an operator
+      # took *before* a risky deploy would be gone exactly when it was needed.
+      # Not shared with nginx: downloads go through the admin firewall in PHP,
+      # never straight off disk.
+      - app_dumps:/var/www/app/var/dumps
     healthcheck:
       test: ["CMD-SHELL", "SCRIPT_NAME=/fpm-ping SCRIPT_FILENAME=/fpm-ping REQUEST_METHOD=GET cgi-fcgi -bind -connect 127.0.0.1:9000 | grep -q pong"]
       interval: 10s
@@ -166,5 +172,6 @@ networks:
 volumes:
   postgresql_data:
   app_uploads:
+  app_dumps:
   mercure_data:
   mercure_config:

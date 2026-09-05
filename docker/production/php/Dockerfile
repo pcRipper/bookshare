@@ -79,7 +79,11 @@ WORKDIR /var/www/app
 # the autoloader optimised; nothing is installed at runtime.
 COPY --from=build --chown=www-data:www-data /app /var/www/app
 
-RUN mkdir -p var/cache var/log var/share var/sessions \
+# var/dumps is created here, not on first write, so the named volume mounted over
+# it (compose.prod.yaml) inherits www-data ownership. This container runs as
+# USER www-data and never as root, so a mount point Docker happened to create as
+# root:root could not be fixed at runtime — the dumps would simply fail.
+RUN mkdir -p var/cache var/log var/share var/sessions var/dumps \
     && chown -R www-data:www-data var/
 
 COPY --chmod=0755 docker/production/php/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh

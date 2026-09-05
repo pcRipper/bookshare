@@ -91,6 +91,16 @@ class DumpService
         $name = $this->newName($kind);
         $path = $this->dumpDir . '/' . $name;
 
+        // Production sets max_execution_time=60. Waiting on pg_dump would not
+        // trip it (blocking I/O accrues no CPU time), but JsonExporter's row
+        // loop is real PHP work and would, on a database of any size — killing
+        // the export mid-file. Lifted for this call only; the operator gate and
+        // the 5/hour limiter are what bound the cost, and nginx's own read
+        // timeout is raised alongside it.
+        if (\function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
+
         try {
             match ($kind) {
                 DumpKind::Sql => $this->pgDump->dumpTo($path),

@@ -49,7 +49,7 @@ RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-in
 COPY . .
 
 RUN composer dump-autoload --optimize --no-dev \
-    && mkdir -p var/cache var/log var/share var/sessions \
+    && mkdir -p var/cache var/log var/share var/sessions var/dumps \
     && chown -R www-data:www-data var/
 
 COPY --chmod=0755 <<'EOF' /usr/local/bin/docker-entrypoint.sh

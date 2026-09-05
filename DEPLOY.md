@@ -208,6 +208,66 @@ Grant the first administrator on the droplet with:
 docker compose exec phpfpm php bin/console app:grant-admin you@example.com
 ```
 
+## Post-deploy smoke check: member moderation and dumps
+
+Run after any deploy that touched `User`, `UserChecker`, `VisibleUsers` or
+`/api/admin/dumps`. Same blind spot as above — the suite cannot make an
+authenticated request, so nothing in it can observe a suspension actually taking
+effect.
+
+```bash
+BASE=https://your-host
+
+# 1. Suspending kills an already-issued token on the *next* request. This is the
+#    whole design: there is no revocation list, only the firewall reloading the
+#    user from the database each time. If this returns 200, the user_checker on
+#    the main firewall is not wired and every ban is cosmetic.
+curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $MEMBER_JWT" $BASE/api/books   # ⇒ 200
+curl -s -X POST -H "Authorization: Bearer $ADMIN_JWT" -H 'Content-Type: application/json' \
+     -d '{"reason":"smoke check"}' $BASE/api/admin/users/$MEMBER_ID/ban > /dev/null
+curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $MEMBER_JWT" $BASE/api/books   # ⇒ 401
+
+# 2. Their content leaves the community surfaces while suspended.
+curl -s -o /dev/null -w '%{http_code}\n' \
+     -H "Authorization: Bearer $ADMIN_JWT" $BASE/api/users/$MEMBER_ID                              # ⇒ 404
+
+# 3. Reinstating restores both.
+curl -s -X POST -H "Authorization: Bearer $ADMIN_JWT" $BASE/api/admin/users/$MEMBER_ID/unban > /dev/null
+curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $MEMBER_JWT" $BASE/api/books   # ⇒ 200
+
+# 4. pg_dump is present in the image and the volume is writable. `capabilities`
+#    reporting sql:false means the client is missing or var/dumps is not writable
+#    — the panel will disable the button rather than fail loudly, so check here.
+curl -s -H "Authorization: Bearer $ADMIN_JWT" $BASE/api/admin/dumps    # ⇒ "capabilities":{"sql":true,"json":true}
+
+# 5. A dump is produced and is a real archive.
+curl -s -X POST -H "Authorization: Bearer $ADMIN_JWT" -H 'Content-Type: application/json' \
+     -d '{"kind":"sql"}' $BASE/api/admin/dumps                                                    # ⇒ 201 + the file's name
+docker compose exec phpfpm pg_restore --list var/dumps/<name>   # ⇒ a TOC, not an error
+
+# 6. The download name cannot escape the dump directory.
+curl -s -o /dev/null -w '%{http_code}\n' \
+     -H "Authorization: Bearer $ADMIN_JWT" "$BASE/api/admin/dumps/..%2f..%2f.env"                 # ⇒ 403/404, never 200
+```
+
+**Dumps persist across redeploys** through the `app_dumps` named volume
+(`compose.prod.yaml`). Without it they would live in the container's writable
+layer, and the backup taken *before* a risky deploy would be destroyed by that
+deploy — precisely when it was wanted. `var/dumps` is also created in the image
+so the volume inherits `www-data` ownership; the container runs as `www-data` and
+never as root, so a root-owned mount point could not be repaired at runtime.
+
+**Nightly backups**, if wanted, alongside the reminder cron:
+
+```cron
+30 3 * * * cd /opt/bookshare && docker compose exec -T phpfpm php bin/console app:dump --kind=sql >> /var/log/bookshare-dump.log 2>&1
+```
+
+Ten of each kind are kept and older ones pruned automatically, so this needs no
+rotation of its own. It does **not** replace off-box backups: the volume lives on
+the same droplet as the database it copies. Pull them down periodically with
+`docker compose cp phpfpm:/var/www/app/var/dumps ./backups`.
+
 ## Mail
 
 Transactional mail (loan lifecycle, welcome, new follower, due/overdue reminders) is
