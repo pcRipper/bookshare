@@ -15,6 +15,13 @@
 #                  than api_user (300/min) because a valid token could otherwise
 #                  burn 300 increments a minute into the counters, and nobody
 #                  navigates a SPA six times a second.
+#   admin_intercom → keyed by the operator, guards POST /api/admin/intercom/*.
+#                  Three an hour, because this is the only endpoint whose blast
+#                  radius is other people's inboxes: a mistake here cannot be
+#                  taken back, and the provider's free tier is 300 mails a day.
+#                  Verb-scoped like admin_dump, so reading the audience count
+#                  stays usable after the budget is spent.
+#
 #   admin_dump   → keyed by the authenticated operator, guards POST
 #                  /api/admin/dumps. Orders of magnitude tighter than anything
 #                  else here because a dump is the single most expensive thing an
@@ -56,6 +63,11 @@ framework:
             limit: 5
             interval: '1 hour'
 
+        admin_intercom:
+            policy: 'sliding_window'
+            limit: 3
+            interval: '1 hour'
+
 when@test:
     # Keep tests deterministic: very high ceilings so the limiter never trips
     # incidentally. The subscriber's own behaviour is unit-tested in isolation.
@@ -75,5 +87,7 @@ when@test:
                 limit: 100000
                 rate:
                     amount: 100000
+            admin_intercom:
+                limit: 100000
             admin_dump:
                 limit: 100000

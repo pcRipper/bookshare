@@ -68,8 +68,9 @@ class RateLimitSubscriberTest extends TestCase
         $publicIp = $this->fixedWindow('public_ip', 1000);
         $pageView = $this->fixedWindow('pageview_ip_user', 1000);
         $adminDump = $this->fixedWindow('admin_dump', 1000);
-        $alice = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $publicIp, $pageView, $adminDump, $this->tokenStorage('alice'), $errors);
-        $bob = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $publicIp, $pageView, $adminDump, $this->tokenStorage('bob'), $errors);
+        $intercom = $this->fixedWindow('admin_intercom', 1000);
+        $alice = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $publicIp, $pageView, $adminDump, $intercom, $this->tokenStorage('alice'), $errors);
+        $bob = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $publicIp, $pageView, $adminDump, $intercom, $this->tokenStorage('bob'), $errors);
 
         $alice->onKernelRequest($this->event('/api/books'));
         // Bob is a different key — unaffected by Alice exhausting hers.
@@ -274,6 +275,7 @@ class RateLimitSubscriberTest extends TestCase
         int $publicIp = 1000,
         int $pageView = 1000,
         int $adminDump = 1000,
+        int $adminIntercom = 1000,
     ): RateLimitSubscriber {
         return new RateLimitSubscriber(
             $this->fixedWindow('auth_ip', $authIp),
@@ -282,6 +284,7 @@ class RateLimitSubscriberTest extends TestCase
             $this->fixedWindow('public_ip', $publicIp),
             $this->fixedWindow('pageview_ip_user', $pageView),
             $this->fixedWindow('admin_dump', $adminDump),
+            $this->fixedWindow('admin_intercom', $adminIntercom),
             $tokenStorage,
             // IdentityTranslator renders the id itself, so the 429 message the
             // assertions read is the English one.

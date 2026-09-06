@@ -1,0 +1,23 @@
+{#
+  Plain-text twin. Spacing is explicit for the reason base.txt.twig documents:
+  Twig eats the first newline after a `%}`, which once shipped sentences run
+  together in the inbox.
+#}
+{% extends 'emails/base.txt.twig' %}
+
+{% block heading %}{{ subject }}{% endblock %}
+{% block intro %}{{ intro|default('Here is what has changed in FolioShare recently.'|trans({}, 'mails')) }}{% endblock %}
+
+{% block summary %}
+{% for entry in items %}
+{{ entry.version }}
+{% for line in entry.lines %}
+  - {{ line }}
+{% endfor %}
+
+{% endfor %}
+{% endblock %}
+
+{% block action_url %}{{ appUrl }}/changelog{% endblock %}
+{% block action_label %}{{ 'Read the full release notes'|trans({}, 'mails') }}{% endblock %}
+{% block footer_note %}{{ 'You are receiving this because you asked to hear about FolioShare updates.'|trans({}, 'mails') }}{% endblock %}

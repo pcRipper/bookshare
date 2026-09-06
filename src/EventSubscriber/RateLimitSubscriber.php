@@ -18,6 +18,8 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInt
  *
  *  - /api/auth/*  → keyed by client IP only (the caller isn't authenticated yet),
  *    blunting credential / OAuth-code brute-force.
+ *  - POST /api/admin/intercom/* → keyed by the operator, three an hour. The one
+ *    endpoint whose blast radius is other people's inboxes.
  *  - POST /api/admin/dumps → keyed by the operator, five an hour. Its own
  *    bucket because one request forks pg_dump and writes a file.
  *  - every other /api/* → keyed by the authenticated user, and additionally by
@@ -41,6 +43,8 @@ class RateLimitSubscriber implements EventSubscriberInterface
         private readonly RateLimiterFactoryInterface $pageViewLimiter,
         #[Autowire(service: 'limiter.admin_dump')]
         private readonly RateLimiterFactoryInterface $adminDumpLimiter,
+        #[Autowire(service: 'limiter.admin_intercom')]
+        private readonly RateLimiterFactoryInterface $adminIntercomLimiter,
         private readonly TokenStorageInterface $tokenStorage,
         private readonly ApiError $errors,
     ) {}
@@ -106,6 +110,16 @@ class RateLimitSubscriber implements EventSubscriberInterface
         // five-an-hour budget for creating them is spent.
         if ($request->isMethod('POST') && $path === '/api/admin/dumps') {
             $this->ensureAccepted($this->adminDumpLimiter->create($userId)->consume());
+
+            return;
+        }
+
+        // Sending a letter is the only request whose effect leaves the building.
+        // Same shape as the dump branch and for a sharper reason: a mail cannot
+        // be unsent, and the provider's daily allowance is finite. Reads on the
+        // same controller (the audience count) stay on the ordinary limiters.
+        if ($request->isMethod('POST') && str_starts_with($path, '/api/admin/intercom/')) {
+            $this->ensureAccepted($this->adminIntercomLimiter->create($userId)->consume());
 
             return;
         }

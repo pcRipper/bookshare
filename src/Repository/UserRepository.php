@@ -70,6 +70,31 @@ class UserRepository extends ServiceEntityRepository
     }
 
     /**
+     * Members who asked to hear about product updates — the audience of the
+     * Intercom tab's letter.
+     *
+     * An INNER JOIN on settings is the point, not an optimisation: a member with
+     * no settings row behaves as if every setting is at its default, and
+     * notify_newsletter defaults to *false*. "Never touched their settings"
+     * therefore means "not subscribed", and only an explicit opt-in counts.
+     *
+     * Scoped through VisibleUsers, so a suspended or deleted account is never
+     * mailed. Forgetting that here would be worse than forgetting it in a list
+     * query: this one leaves the building.
+     *
+     * @return User[]
+     */
+    public function findNewsletterRecipients(): array
+    {
+        return VisibleUsers::scope(
+            $this->createQueryBuilder('u')
+                ->innerJoin('u.settings', 's')
+                ->andWhere('s.notifyNewsletter = true')
+                ->orderBy('u.id', 'ASC'),
+        )->getQuery()->getResult();
+    }
+
+    /**
      * One page of the admin panel's member list, newest member first.
      *
      * Deliberately does NOT go through VisibleUsers: showing the suspended and
