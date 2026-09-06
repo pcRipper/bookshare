@@ -640,7 +640,8 @@
       "label": "Sections d'administration",
       "members": "Membres",
       "analytics": "Statistiques",
-      "dumps": "Sauvegardes"
+      "dumps": "Sauvegardes",
+      "intercom": "Intercom"
     },
     "members": {
       "loadFailed": "Impossible de charger la liste des membres.",
@@ -714,6 +715,30 @@
       "colSize": "Taille",
       "colCreated": "Créée",
       "colActions": "Actions"
+    },
+    "intercom": {
+      "lead": "Rédigez une courte lettre de nouveautés à partir des notes de version et envoyez-la aux membres qui souhaitent être informés.",
+      "audience": "{count} membre la recevra | {count} membres la recevront",
+      "audienceEmpty": "Personne ne s’est encore abonné aux e-mails de nouveautés.",
+      "audienceUnknown": "Nombre de destinataires indisponible.",
+      "pick": "Choisissez les nouveautés",
+      "pickHint": "Cocher une note ajoute une version courte et modifiable. Raccourcissez-la : ce que vous voyez ici est ce qui part.",
+      "lineLabel": "La ligne qui apparaîtra dans la lettre",
+      "compose": "Rédiger",
+      "subject": "Objet",
+      "intro": "Phrase d’introduction (facultatif)",
+      "defaultSubject": "Les nouveautés de FolioShare",
+      "test": "M’envoyer un test",
+      "testSent": "Lettre de test mise en file pour vous.",
+      "testSkipped": "Non envoyée : vous n’êtes pas abonné aux e-mails de nouveautés.",
+      "send": "Envoyer {count} nouveauté | Envoyer {count} nouveautés",
+      "confirm": "Ceci envoie un e-mail à {count} membre et est irréversible. | Ceci envoie un e-mail à {count} membres et est irréversible.",
+      "confirmSend": "Envoyer",
+      "sent": "Lettre mise en file pour {count} membre. | Lettre mise en file pour {count} membres.",
+      "sendFailed": "La lettre n’a pas pu être envoyée.",
+      "history": "Déjà envoyées",
+      "historyEmpty": "Aucune lettre n’a encore été envoyée.",
+      "sentTo": "{count} destinataire | {count} destinataires"
     }
   }
 }

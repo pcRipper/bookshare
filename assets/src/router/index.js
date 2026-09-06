@@ -92,6 +92,11 @@ const router = createRouter({
           name: 'admin-dumps',
           component: () => import('@/views/AdminDumpsView.vue'),
         },
+        {
+          path: 'intercom',
+          name: 'admin-intercom',
+          component: () => import('@/views/AdminIntercomView.vue'),
+        },
       ],
     },
     {

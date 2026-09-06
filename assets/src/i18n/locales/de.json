@@ -640,7 +640,8 @@
       "label": "Verwaltungsbereiche",
       "members": "Mitglieder",
       "analytics": "Statistiken",
-      "dumps": "Dumps"
+      "dumps": "Dumps",
+      "intercom": "Intercom"
     },
     "members": {
       "loadFailed": "Die Mitgliederliste konnte nicht geladen werden.",
@@ -714,6 +715,30 @@
       "colSize": "Größe",
       "colCreated": "Erstellt",
       "colActions": "Aktionen"
+    },
+    "intercom": {
+      "lead": "Verfasse aus den Versionshinweisen einen kurzen Neuigkeiten-Brief und sende ihn an Mitglieder, die davon hören möchten.",
+      "audience": "{count} Mitglied erhält ihn | {count} Mitglieder erhalten ihn",
+      "audienceEmpty": "Bisher hat niemand Update-E-Mails abonniert.",
+      "audienceUnknown": "Empfängerzahl nicht verfügbar.",
+      "pick": "Neuerungen auswählen",
+      "pickHint": "Ein Haken fügt eine bearbeitbare Kurzfassung hinzu. Kürze sie — was hier steht, wird versendet.",
+      "lineLabel": "Die Zeile, die im Brief erscheint",
+      "compose": "Verfassen",
+      "subject": "Betreff",
+      "intro": "Einleitung (optional)",
+      "defaultSubject": "Neues bei FolioShare",
+      "test": "Test an mich senden",
+      "testSent": "Testbrief an dich eingereiht.",
+      "testSkipped": "Nicht gesendet — du hast Update-E-Mails selbst nicht abonniert.",
+      "send": "{count} Neuerung senden | {count} Neuerungen senden",
+      "confirm": "Das schickt eine E-Mail an {count} Mitglied und kann nicht rückgängig gemacht werden. | Das schickt eine E-Mail an {count} Mitglieder und kann nicht rückgängig gemacht werden.",
+      "confirmSend": "Senden",
+      "sent": "Brief an {count} Mitglied eingereiht. | Brief an {count} Mitglieder eingereiht.",
+      "sendFailed": "Der Brief konnte nicht gesendet werden.",
+      "history": "Bereits gesendet",
+      "historyEmpty": "Es wurden noch keine Briefe gesendet.",
+      "sentTo": "{count} Empfänger | {count} Empfänger"
     }
   }
 }

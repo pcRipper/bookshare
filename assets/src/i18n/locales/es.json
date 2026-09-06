@@ -640,7 +640,8 @@
       "label": "Secciones de administración",
       "members": "Miembros",
       "analytics": "Estadísticas",
-      "dumps": "Copias"
+      "dumps": "Copias",
+      "intercom": "Intercom"
     },
     "members": {
       "loadFailed": "No se pudo cargar la lista de miembros.",
@@ -714,6 +715,30 @@
       "colSize": "Tamaño",
       "colCreated": "Creada",
       "colActions": "Acciones"
+    },
+    "intercom": {
+      "lead": "Redacta una breve carta de novedades a partir de las notas de la versión y envíala a los miembros que quieren estar al tanto.",
+      "audience": "{count} miembro la recibirá | {count} miembros la recibirán",
+      "audienceEmpty": "Todavía nadie se ha suscrito a los correos de novedades.",
+      "audienceUnknown": "Número de destinatarios no disponible.",
+      "pick": "Elige las novedades",
+      "pickHint": "Marcar una nota añade una versión breve y editable. Resúmela: lo que ves aquí es lo que se envía.",
+      "lineLabel": "La línea que aparecerá en la carta",
+      "compose": "Redactar",
+      "subject": "Asunto",
+      "intro": "Primera línea (opcional)",
+      "defaultSubject": "Novedades de FolioShare",
+      "test": "Enviarme una prueba",
+      "testSent": "Carta de prueba en cola para ti.",
+      "testSkipped": "No enviada: tú mismo no te has suscrito a los correos de novedades.",
+      "send": "Enviar {count} novedad | Enviar {count} novedades",
+      "confirm": "Esto envía un correo a {count} miembro y no se puede deshacer. | Esto envía un correo a {count} miembros y no se puede deshacer.",
+      "confirmSend": "Enviar",
+      "sent": "Carta en cola para {count} miembro. | Carta en cola para {count} miembros.",
+      "sendFailed": "No se ha podido enviar la carta.",
+      "history": "Ya enviadas",
+      "historyEmpty": "Todavía no se ha enviado ninguna carta.",
+      "sentTo": "{count} destinatario | {count} destinatarios"
     }
   }
 }
