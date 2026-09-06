@@ -464,8 +464,8 @@
       "requestUpdatesHint": "Cuando una solicitud tuya se aprueba o se rechaza.",
       "activity": "Actividad de la comunidad",
       "activityHint": "Seguidores, comentarios y libros nuevos de quienes sigues.",
-      "newsletter": "Boletín de FolioShare",
-      "newsletterHint": "Recomendaciones de lectura de vez en cuando."
+      "newsletter": "Novedades del producto",
+      "newsletterHint": "Avisos ocasionales sobre las novedades de FolioShare."
     },
     "errors": {
       "load": "No se pudieron cargar tus ajustes.",

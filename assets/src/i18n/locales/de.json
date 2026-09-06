@@ -464,8 +464,8 @@
       "requestUpdatesHint": "Wenn eine deiner Anfragen genehmigt oder abgelehnt wird.",
       "activity": "Community-Aktivität",
       "activityHint": "Neue Follower, Kommentare und Bücher von Leuten, denen du folgst.",
-      "newsletter": "FolioShare-Newsletter",
-      "newsletterHint": "Gelegentliche Leseempfehlungen."
+      "newsletter": "Produkt-Neuigkeiten",
+      "newsletterHint": "Gelegentliche Hinweise auf Neues bei FolioShare."
     },
     "errors": {
       "load": "Deine Einstellungen konnten nicht geladen werden.",

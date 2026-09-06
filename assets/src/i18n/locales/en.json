@@ -464,8 +464,8 @@
       "requestUpdatesHint": "When a request you made is approved or declined.",
       "activity": "Community activity",
       "activityHint": "Follows, comments and new books from people you follow.",
-      "newsletter": "FolioShare newsletter",
-      "newsletterHint": "Occasional curated reading highlights."
+      "newsletter": "Product updates",
+      "newsletterHint": "Occasional notes about what’s new in FolioShare."
     },
     "errors": {
       "load": "Could not load your settings.",
