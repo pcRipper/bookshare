@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import StarRating from '@/components/ui/StarRating.vue'
@@ -21,7 +21,9 @@ const { t } = useI18n()
  * exists — the old hover overlay clipped the start of long blurbs).
  *
  * Two tabs over the info column, so the cover stays put while the right side
- * swaps. The **Review** tab is editable only under `canReview`, which is a
+ * swaps. The panels are **stacked in one grid cell** rather than swapped in and
+ * out of the DOM, so both are always measurable and the sheet can decide what to
+ * do about the difference between them — see syncPanelHeight(). The **Review** tab is editable only under `canReview`, which is a
  * separate prop and deliberately NOT `isSelf`: the public share page passes
  * `is-self` to mean "no borrow button", so gating an editor on it would hand one
  * to signed-out visitors. For everyone else the tab is read-only, and it is not
@@ -69,9 +71,72 @@ watch(
     if (!props.open) return
     activeTab.value = 'details'
     draft.value = { rating: props.book?.rating ?? null, review: props.book?.review ?? '' }
+    animateHeight.value = false
+    nextTick(() => {
+      syncPanelHeight()
+      observePanels()
+      // One frame later, so the first height lands untransitioned and every
+      // switch after it animates.
+      requestAnimationFrame(() => { animateHeight.value = true })
+    })
   },
   { immediate: true },
 )
+
+/* ── Panel height ─────────────────────────────────────────────────────────
+   Two panels of different length inside one dialog means the sheet resizes on
+   every tab click. A jump of a few pixels reads as a glitch, and a large one
+   that happens instantly reads as a different dialog opening. So:
+
+     - below SNAP_PX the sheet does not move at all — both panels take the
+       height of the taller one, and the shorter simply has room to spare;
+     - above it the height animates between the two.
+
+   The panels share a grid cell and the inactive one is hidden with
+   `visibility`, never `display: none`, because a display-none panel measures
+   zero and there would be nothing to compare. `inert` keeps its form controls
+   out of the tab order while they sit there invisible. ─────────────────── */
+const SNAP_PX = 120
+
+const detailsPanel = ref(null)
+const reviewPanel = ref(null)
+const panelHeight = ref(null)
+// The transition is armed one frame *after* the opening measurement, never in
+// the same tick as a height change: a browser given both the transition
+// property and the new value in one style resolution applies the value and
+// skips the animation. It also means opening the sheet doesn't animate up from
+// nothing.
+const animateHeight = ref(false)
+
+function syncPanelHeight() {
+  const details = detailsPanel.value?.scrollHeight ?? 0
+  const review = reviewPanel.value?.scrollHeight ?? 0
+
+  // One panel only (no review to show): nothing to reconcile, stay natural.
+  if (!review) {
+    panelHeight.value = null
+    return
+  }
+
+  const active = activeTab.value === 'review' ? review : details
+  panelHeight.value = Math.abs(details - review) <= SNAP_PX ? Math.max(details, review) : active
+}
+
+let observer = null
+
+function observePanels() {
+  observer?.disconnect()
+  if (typeof ResizeObserver === 'undefined') return
+  // Measured, not derived: a description's height depends on wrapping, which
+  // depends on the locale, the font and the viewport. The observer keeps the
+  // lock correct when any of those change (including a drag-resized textarea).
+  observer = new ResizeObserver(() => syncPanelHeight())
+  for (const el of [detailsPanel.value, reviewPanel.value]) {
+    if (el) observer.observe(el)
+  }
+}
+
+watch(activeTab, syncPanelHeight)
 
 function onSaveReview() {
   const review = draft.value.review.trim()
@@ -128,7 +193,10 @@ function onKeydown(e) {
   if (e.key === 'Escape' && props.open) close()
 }
 onMounted(() => window.addEventListener('keydown', onKeydown))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
+  observer?.disconnect()
+})
 </script>
 
 <template>
@@ -166,7 +234,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
               :aria-label="t('bookDetail.aria', { title: book.title })"
             />
 
-            <div v-show="!showReviewTab || activeTab === 'details'" class="detail-panel">
+            <div
+              class="detail-panels"
+              :class="{ 'detail-panels--animated': animateHeight }"
+              :style="panelHeight !== null ? { height: `${panelHeight}px` } : null"
+            >
+            <div
+              ref="detailsPanel"
+              class="detail-panel"
+              :class="{ 'detail-panel--hidden': showReviewTab && activeTab !== 'details' }"
+              :inert="showReviewTab && activeTab !== 'details'"
+            >
             <div v-if="statusPill || book.isRead" class="detail-pills">
               <span
                 v-if="statusPill"
@@ -232,7 +310,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             </div>
 
             <!-- Review: a form for the owner, prose for everyone else. -->
-            <div v-if="showReviewTab" v-show="activeTab === 'review'" class="detail-panel">
+            <div
+              v-if="showReviewTab"
+              ref="reviewPanel"
+              class="detail-panel"
+              :class="{ 'detail-panel--hidden': activeTab !== 'review' }"
+              :inert="activeTab !== 'review'"
+            >
               <template v-if="canReview">
                 <div class="review-field">
                   <span class="review-field__label">{{ t('book.rating') }}</span>
@@ -269,6 +353,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
                   {{ t('bookDetail.reviewBy', { name: book.owner.fullName }) }}
                 </p>
               </template>
+            </div>
             </div>
           </div>
         </div>
@@ -553,10 +638,33 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   color: var(--color-secondary);
 }
 
+/* Both panels live in the same grid cell, so the container can be sized from
+   either — and the inactive one stays measurable. */
+.detail-panels {
+  display: grid;
+  align-items: start;
+  overflow: hidden;
+}
+.detail-panels--animated { transition: height 220ms ease; }
+.detail-panels > .detail-panel { grid-area: 1 / 1; }
+
 .detail-panel {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
+  transition: opacity 140ms ease;
+}
+/* visibility, never display:none — a display-none panel measures zero and the
+   height lock above would have nothing to compare. */
+.detail-panel--hidden {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .detail-panels--animated { transition: none; }
+  .detail-panel { transition: none; }
 }
 
 .detail-rating__link {
