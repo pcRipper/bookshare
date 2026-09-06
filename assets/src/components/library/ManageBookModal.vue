@@ -6,6 +6,7 @@ import BookTemplateSearch from '@/components/library/BookTemplateSearch.vue'
 import LanguageSelect from '@/components/ui/LanguageSelect.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import ModalTabs from '@/components/ui/ModalTabs.vue'
 import StarRating from '@/components/ui/StarRating.vue'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 import { WISH_PRIORITIES, WISH_DEFAULT, wishPriorityKey } from '@/utils/wishPriority'
@@ -47,6 +48,11 @@ const errorMsg = ref(null)
 const activeTab = ref('manual')
 
 const isEdit = computed(() => !!props.book)
+
+const createTabs = computed(() => [
+  { key: 'manual', label: t('manageBook.tabManual') },
+  { key: 'template', label: t('manageBook.tabTemplate') },
+])
 
 // A book that's out on loan is locked server-side (BookVoter): show its details
 // but block any mutation until it's returned. `canEdit` comes from the API.
@@ -201,28 +207,12 @@ function applyTemplate(t) {
           </p>
 
           <!-- Create mode: enter details by hand or fill from an existing book -->
-          <div v-if="!isEdit && !readOnly" class="modal__tabs" role="tablist">
-            <button
-              type="button"
-              class="modal__tab"
-              :class="{ 'modal__tab--active': activeTab === 'manual' }"
-              role="tab"
-              :aria-selected="activeTab === 'manual'"
-              @click="activeTab = 'manual'"
-            >
-              {{ t('manageBook.tabManual') }}
-            </button>
-            <button
-              type="button"
-              class="modal__tab"
-              :class="{ 'modal__tab--active': activeTab === 'template' }"
-              role="tab"
-              :aria-selected="activeTab === 'template'"
-              @click="activeTab = 'template'"
-            >
-              {{ t('manageBook.tabTemplate') }}
-            </button>
-          </div>
+          <ModalTabs
+            v-if="!isEdit && !readOnly"
+            v-model="activeTab"
+            :items="createTabs"
+            :aria-label="t('manageBook.createTitle')"
+          />
 
           <!-- Template search (create mode only) -->
           <BookTemplateSearch v-if="!isEdit && activeTab === 'template'" @select="applyTemplate" />
@@ -484,23 +474,6 @@ function applyTemplate(t) {
 }
 
 /* Create-mode tabs */
-.modal__tabs {
-  display: flex;
-  gap: var(--space-xs);
-  border-bottom: 1px solid var(--color-surface-container-highest);
-}
-.modal__tab {
-  padding: var(--space-sm) var(--space-base);
-  font-size: var(--text-label-md);
-  font-weight: 500;
-  color: var(--color-secondary);
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: color 0.2s, border-color 0.2s;
-}
-.modal__tab:hover { color: var(--color-on-background); }
-.modal__tab--active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
-
 .field { display: flex; flex-direction: column; gap: var(--space-xs); }
 .field-row {
   display: grid;
