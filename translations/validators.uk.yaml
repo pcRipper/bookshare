@@ -4,6 +4,7 @@
 'A collection name is required.': 'Вкажіть назву збірки.'
 'A colour is required.': 'Виберіть колір.'
 'A rating must be between 1 and 5 stars.': 'Оцінка має бути від 1 до 5 зірок.'
+'A review cannot be longer than 1000 characters.': 'Відгук не може бути довшим за 1000 символів.'
 'A route name is required.': 'Потрібна назва сторінки.'
 'A loan can only be set through the borrow-request flow.': 'Статус «позичено» встановлюється лише через запит на позику.'
 'Author is required.': 'Вкажіть автора.'

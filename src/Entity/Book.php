@@ -69,6 +69,18 @@ class Book
     private ?int $rating = null;
 
     /**
+     * The owner's written review, or null when they haven't written one. Capped
+     * at 1000 characters by the DTO, the way $description is capped at 500.
+     *
+     * Paired with $rating rather than folded into $description: a description is
+     * what the book is about (and is copied wholesale from a template), a review
+     * is what the owner thought of it. They are written by different people as
+     * often as not.
+     */
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $review = null;
+
+    /**
      * True when this is a book the owner *wants*, not one they hold.
      *
      * A wish-list book is a Book so the whole cataloguing flow (template search,
@@ -145,6 +157,9 @@ class Book
 
     public function getRating(): ?int { return $this->rating; }
     public function setRating(?int $rating): static { $this->rating = $rating; return $this; }
+
+    public function getReview(): ?string { return $this->review; }
+    public function setReview(?string $review): static { $this->review = $review; return $this; }
 
     public function isWished(): bool { return $this->isWished; }
 

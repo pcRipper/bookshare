@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Api\ApiError;
 use App\Dto\BookInput;
+use App\Dto\BookReviewInput;
 use App\Entity\Book;
 use App\Entity\User;
 use App\Enum\BookStatus;
@@ -19,7 +20,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  * CSV export / import for a user's book collection.
  *
  * The CSV carries one book per row with the columns: title, author, description,
- * isbn, cover, language (ISO 639-1 code), status, read, rating, wished,
+ * isbn, cover, language (ISO 639-1 code), status, read, rating, review, wished,
  * priority, categories (semicolon-joined names). `cover` exports the remote URL the image
  * came from rather than our localized copy of it (see coverLink()).
  *
@@ -47,7 +48,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class BookCsvService
 {
     /** Columns, in export order. Import matches them case-insensitively by header. */
-    private const COLUMNS = ['title', 'author', 'description', 'isbn', 'cover', 'language', 'status', 'read', 'rating', 'wished', 'priority', 'categories'];
+    private const COLUMNS = ['title', 'author', 'description', 'isbn', 'cover', 'language', 'status', 'read', 'rating', 'review', 'wished', 'priority', 'categories'];
 
     /** Statuses a book may be imported as — never 'lent', which needs a live loan. */
     private const IMPORTABLE_STATUSES = ['own', 'unavailable', 'currently_reading'];
@@ -86,6 +87,7 @@ class BookCsvService
                 $book->getStatus()->value,
                 $book->isRead() ? '1' : '0',
                 (string) ($book->getRating() ?? ''),
+                $book->getReview() ?? '',
                 $book->isWished() ? '1' : '0',
                 (string) ($book->getWishPriority()?->value ?? ''),
                 implode('; ', array_map(static fn ($c) => $c->getName(), $book->getCategories()->toArray())),
@@ -138,7 +140,7 @@ class BookCsvService
             }
         }
 
-        /** @var array<array{line:int, input:BookInput}> $valid */
+        /** @var array<array{line:int, input:BookInput, review:BookReviewInput}> $valid */
         $valid = [];
         $errors = [];
         $line = 1; // header was line 1
@@ -154,12 +156,12 @@ class BookCsvService
                 return $this->fatal('Too many rows — the limit is %limit%.', ['%limit%' => self::MAX_ROWS]);
             }
 
-            [$input, $rowErrors] = $this->buildRow($index, $row);
+            [$input, $review, $rowErrors] = $this->buildRow($index, $row);
             if ($rowErrors !== []) {
                 $errors[] = ['line' => $line, 'errors' => $rowErrors];
                 continue;
             }
-            $valid[] = ['line' => $line, 'input' => $input];
+            $valid[] = ['line' => $line, 'input' => $input, 'review' => $review];
         }
         fclose($handle);
 
@@ -186,7 +188,7 @@ class BookCsvService
 
         $imported = 0;
         $duplicates = [];
-        foreach ($valid as ['line' => $rowLine, 'input' => $input]) {
+        foreach ($valid as ['line' => $rowLine, 'input' => $input, 'review' => $review]) {
             $key = $this->dedupeKey($input->title, $input->author, $input->isWished);
             if (isset($seen[$key])) {
                 $duplicates[] = ['line' => $rowLine, 'errors' => [
@@ -195,7 +197,9 @@ class BookCsvService
                 continue;
             }
             $seen[$key] = true;
-            $this->books->create($owner, $input);
+            // The review rides its own DTO, as it does everywhere else — the two
+            // are applied one after the other rather than folded into BookInput.
+            $this->books->review($this->books->create($owner, $input), $review);
             ++$imported;
         }
 
@@ -255,7 +259,8 @@ class BookCsvService
      *
      * @param array<string, int> $index
      * @param string[]           $row
-     * @return array{0: BookInput, 1: string[]} the input plus any per-row errors
+     * @return array{0: BookInput, 1: BookReviewInput, 2: string[]} the two inputs
+     *         a row maps to, plus any per-row errors
      */
     private function buildRow(array $index, array $row): array
     {
@@ -277,17 +282,6 @@ class BookCsvService
 
         // Truthy read flag; a missing column (older files) defaults to unread.
         $input->isRead = self::truthy($get('read'));
-
-        // The owner's rating. Blank (and a file predating the column) means
-        // unrated; a value off the 1-5 scale is caught by BookInput's own Range
-        // assert, so only a non-numeric one needs saying here.
-        $rating = $get('rating');
-        if ($rating !== '') {
-            $input->rating = ctype_digit($rating) ? (int) $rating : null;
-            if ($input->rating === null) {
-                $errors[] = $this->errors->translate('Unsupported rating "%rating%".', ['%rating%' => $rating]);
-            }
-        }
 
         // Wish list. A missing column (a file exported before the feature) imports
         // as an owned book, which is what it was.
@@ -313,11 +307,28 @@ class BookCsvService
             $input->categoryIds = array_map(static fn ($c) => $c->getId(), $this->categories->findByNames($names));
         }
 
-        foreach ($this->validator->validate($input) as $violation) {
-            $errors[] = $violation->getMessage();
+        // The owner's verdict, on its own DTO — the same one the review endpoint
+        // takes, so the file and the UI are held to identical rules. Blank cells
+        // (and a file predating either column) mean "not reviewed"; a value off
+        // the 1-5 scale is caught by the Range assert below, so only a
+        // non-numeric one needs saying here.
+        $review = new BookReviewInput();
+        $rating = $get('rating');
+        if ($rating !== '') {
+            $review->rating = ctype_digit($rating) ? (int) $rating : null;
+            if ($review->rating === null) {
+                $errors[] = $this->errors->translate('Unsupported rating "%rating%".', ['%rating%' => $rating]);
+            }
+        }
+        $review->review = $get('review') !== '' ? $get('review') : null;
+
+        foreach ([$input, $review] as $dto) {
+            foreach ($this->validator->validate($dto) as $violation) {
+                $errors[] = $violation->getMessage();
+            }
         }
 
-        return [$input, $errors];
+        return [$input, $review, $errors];
     }
 
     /** @return array{imported:int, skipped:int, aborted:bool, errors:list<array{line:int, errors:string[]}>} */

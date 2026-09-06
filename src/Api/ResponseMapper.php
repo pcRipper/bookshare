@@ -67,12 +67,15 @@ class ResponseMapper
             // Language as both the stored ISO code and its display name (null when unset).
             'language'     => $book->getLanguage(),
             'languageName' => \App\Language\LanguageCatalog::name($book->getLanguage()),
-            // Owner's personal "already read" flag, and their own 1-5 rating of
-            // this copy (null when unrated — never an average; a Book is one
-            // member's copy). The SPA owns the star presentation, the same
-            // front/back split as `status` and `wishPriority`.
+            // Owner's personal "already read" flag, and their own review of this
+            // copy — a 1-5 rating (null when unrated, never an average; a Book is
+            // one member's copy) and the words that go with it. The SPA owns the
+            // star presentation, the same front/back split as `status` and
+            // `wishPriority`. Both are written through PUT /books/{id}/review,
+            // never through BookInput.
             'isRead'       => $book->isRead(),
             'rating'       => $book->getRating(),
+            'review'       => $book->getReview(),
             // Wish list: wanted rather than held, and how badly. The priority is
             // the enum's number — the SPA owns the green/yellow/red labels, the
             // same split as `status`.
@@ -124,8 +127,10 @@ class ResponseMapper
             'isRead'       => $book->isRead(),
             // Published on purpose: the owner's rating is their public judgement
             // of a book they are offering to lend, the same standing the "Read"
-            // badge already has, and it names no third party.
+            // badge already has, and it names no third party. So is the review:
+            // the reason to write one is for other readers to read it.
             'rating'       => $book->getRating(),
+            'review'       => $book->getReview(),
             // Published on purpose: the share page carries a wish-list section,
             // and "books I'd like" is exactly the sort of thing a link is shared
             // for. Neither field is viewer-relative or names a third party.

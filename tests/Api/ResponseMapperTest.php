@@ -72,6 +72,17 @@ class ResponseMapperTest extends TestCase
         self::assertSame(4, $this->mapper()->book($rated)['rating']);
     }
 
+    public function testBookReviewIsEmittedAndNullWhenUnwritten(): void
+    {
+        $owner = (new User())->setFullName('Jane');
+        $silent = (new Book())->setOwner($owner)->setTitle('T')->setAuthor('A');
+        $reviewed = (new Book())->setOwner($owner)->setTitle('T')->setAuthor('A')
+            ->setReview('Kept me up all night.');
+
+        self::assertNull($this->mapper()->book($silent)['review']);
+        self::assertSame('Kept me up all night.', $this->mapper()->book($reviewed)['review']);
+    }
+
     public function testBookCreatedAtIsEmittedInAtomFormat(): void
     {
         $book = (new Book())->setOwner((new User())->setFullName('Jane'))->setTitle('T')->setAuthor('A');

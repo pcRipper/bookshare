@@ -77,7 +77,7 @@ class BookCsvServiceTest extends TestCase
         $csv = $this->service()->export([$book]);
 
         $lines = preg_split('/\r\n|\n/', trim($csv));
-        self::assertSame('title,author,description,isbn,cover,language,status,read,rating,wished,priority,categories', $lines[0]);
+        self::assertSame('title,author,description,isbn,cover,language,status,read,rating,review,wished,priority,categories', $lines[0]);
         self::assertStringContainsString('Dune', $lines[1]);
         self::assertStringContainsString('Herbert', $lines[1]);
         self::assertStringContainsString('/covers/dune.jpg', $lines[1]);
@@ -113,7 +113,7 @@ class BookCsvServiceTest extends TestCase
 
         $row = preg_split('/\r\n|\n/', trim($this->service()->export([$book])))[1];
 
-        self::assertSame('Dune,Herbert,,,,,own,0,,0,,', $row);
+        self::assertSame('Dune,Herbert,,,,,own,0,,,0,,', $row);
     }
 
     public function testWishListRowsRoundTrip(): void
@@ -244,6 +244,39 @@ class BookCsvServiceTest extends TestCase
         self::assertSame(4, $created[0]->getRating());
         // An unrated book exports a blank cell and comes back unrated, not zero.
         self::assertNull($created[1]->getRating());
+    }
+
+    public function testExportAndImportRoundTripTheWrittenReview(): void
+    {
+        $reviewed = (new Book())->setOwner(new User())->setTitle('Dune')->setAuthor('Herbert')
+            ->setRating(4)->setReview('Kept me up all night; the sequels less so.');
+        $silent = (new Book())->setOwner(new User())->setTitle('1984')->setAuthor('Orwell');
+
+        $csv = $this->service()->export([$reviewed, $silent]);
+
+        $created = [];
+        $em = $this->createStub(EntityManagerInterface::class);
+        $em->method('persist')->willReturnCallback(function (Book $b) use (&$created) { $created[] = $b; });
+
+        $summary = $this->service($em)->import(new User(), $csv, replace: false, abortOnError: false);
+
+        self::assertSame(2, $summary['imported']);
+        self::assertSame('Kept me up all night; the sequels less so.', $created[0]->getReview());
+        self::assertNull($created[1]->getReview());
+    }
+
+    public function testAReviewOverTheCapIsRejected(): void
+    {
+        // Caught by BookReviewInput's Length assert — the file is held to the
+        // same rule as the endpoint.
+        $csv = "title,author,review
+Dune,Herbert," . str_repeat('a', 1001) . "
+";
+
+        $summary = $this->service()->import(new User(), $csv, replace: false, abortOnError: false);
+
+        self::assertSame(0, $summary['imported']);
+        self::assertSame(1, $summary['skipped']);
     }
 
     public function testAFileWithoutTheRatingColumnImportsAsUnrated(): void

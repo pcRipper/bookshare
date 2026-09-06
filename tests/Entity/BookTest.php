@@ -117,6 +117,19 @@ class BookTest extends TestCase
         self::assertNull($book->setRating(null)->getRating());
     }
 
+    public function testANewBookHasNoReview(): void
+    {
+        self::assertNull((new Book())->getReview());
+    }
+
+    public function testReviewRoundTripsAndClearsBackToNull(): void
+    {
+        $book = (new Book())->setReview('Kept me up all night.');
+        self::assertSame('Kept me up all night.', $book->getReview());
+
+        self::assertNull($book->setReview(null)->getReview());
+    }
+
     public function testRatingIsIndependentOfTheReadFlag(): void
     {
         // Deliberately orthogonal: rating a book that was never marked read is

@@ -28,7 +28,7 @@ class PublicShapeTest extends TestCase
 {
     private const PUBLIC_BOOK_KEYS = [
         'id', 'title', 'author', 'description', 'isbn', 'coverPath', 'status',
-        'language', 'languageName', 'isRead', 'rating', 'isWished', 'wishPriority',
+        'language', 'languageName', 'isRead', 'rating', 'review', 'isWished', 'wishPriority',
         'createdAt', 'categories',
     ];
 

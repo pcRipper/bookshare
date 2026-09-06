@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Dto\BookInput;
+use App\Dto\BookReviewInput;
 use App\Entity\Book;
 use App\Entity\User;
 use App\Enum\ActivityType;
@@ -64,6 +65,21 @@ class BookService
         $this->activity->record($book->getOwner(), ActivityType::AddedBook, targetBook: $book);
     }
 
+    /**
+     * Record (or clear) the owner's verdict on their own book.
+     *
+     * Blank words normalise to null so "not reviewed" has one representation,
+     * the way applyInput() normalises every other optional string. The rating
+     * and the text are independent: either alone is a complete review.
+     */
+    public function review(Book $book, BookReviewInput $input): void
+    {
+        $review = $input->review !== null ? trim($input->review) : null;
+
+        $book->setRating($input->rating)
+            ->setReview($review !== '' ? $review : null);
+    }
+
     public function delete(Book $book): void
     {
         $this->em->remove($book);
@@ -89,7 +105,6 @@ class BookService
             ->setStatus($input->status)
             ->setLanguage($input->language !== null && trim($input->language) !== '' ? trim($input->language) : null)
             ->setIsRead($input->isRead)
-            ->setRating($input->rating)
             // setWish keeps the pair coherent: a priority is stored only for a
             // wanted book, and a wanted book always ends up with a level.
             ->setWish($input->isWished, $input->wishPriority);

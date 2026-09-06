@@ -59,6 +59,7 @@
 'Unsupported wish-list priority "%priority%".': 'Nicht unterstützte Wunschlisten-Priorität "%priority%".'
 'User not found.': 'Benutzer nicht gefunden.'
 'You already have a pending request for this book.': 'Du hast für dieses Buch schon eine offene Anfrage.'
+'You can only review your own books.': 'Du kannst nur deine eigenen Bücher bewerten.'
 'You cannot borrow your own collection.': 'Du kannst deine eigene Sammlung nicht ausleihen.'
 'You cannot do this to your own account.': 'Das kannst du nicht mit deinem eigenen Konto tun.'
 'You cannot follow yourself.': 'Du kannst dir nicht selbst folgen.'

@@ -3,6 +3,7 @@
 namespace App\Tests\Service;
 
 use App\Dto\BookInput;
+use App\Dto\BookReviewInput;
 use App\Entity\ActivityItem;
 use App\Entity\Book;
 use App\Entity\Category;
@@ -49,7 +50,6 @@ class BookServiceTest extends TestCase
         $input->description = '  A desert epic.  ';
         $input->status = BookStatus::Lent;
         $input->isRead = true;
-        $input->rating = 5;
         $input->categoryIds = [7];
 
         $book = $service->create($owner, $input);
@@ -63,7 +63,6 @@ class BookServiceTest extends TestCase
         self::assertNull($book->getCoverPath());
         self::assertSame(BookStatus::Lent, $book->getStatus());
         self::assertTrue($book->isRead());
-        self::assertSame(5, $book->getRating());
         self::assertTrue($book->getCategories()->contains($category));
 
         self::assertSame($owner, $recorded['actor']);
@@ -194,7 +193,6 @@ class BookServiceTest extends TestCase
         $input->title = 'New Title';
         $input->author = 'New Author';
         $input->isRead = true;
-        $input->rating = 2;
         $input->categoryIds = [];
 
         $service->update($book, $input);
@@ -202,7 +200,6 @@ class BookServiceTest extends TestCase
         self::assertSame('New Title', $book->getTitle());
         self::assertSame('New Author', $book->getAuthor());
         self::assertTrue($book->isRead());
-        self::assertSame(2, $book->getRating());
         // Categories are rebuilt from the input — the previous one is cleared.
         self::assertCount(0, $book->getCategories());
     }
@@ -266,6 +263,57 @@ class BookServiceTest extends TestCase
         $input->coverPath = $coverPath;
 
         return $input;
+    }
+
+    /* ── reviews ──────────────────────────────────────────────────────── */
+
+    private function reviewService(): BookService
+    {
+        return new BookService(
+            $this->createStub(EntityManagerInterface::class),
+            $this->createStub(CategoryRepository::class),
+            $this->createStub(ActivityRecorder::class),
+        );
+    }
+
+    public function testReviewAppliesBothHalves(): void
+    {
+        $book = (new Book())->setOwner(new User());
+
+        $input = new BookReviewInput();
+        $input->rating = 4;
+        $input->review = '  Kept me up all night.  ';
+
+        $this->reviewService()->review($book, $input);
+
+        self::assertSame(4, $book->getRating());
+        // Trimmed like every other optional string applyInput() handles.
+        self::assertSame('Kept me up all night.', $book->getReview());
+    }
+
+    public function testReviewClearsBothOnAnEmptyPayload(): void
+    {
+        $book = (new Book())->setOwner(new User())->setRating(5)->setReview('Loved it.');
+
+        $this->reviewService()->review($book, new BookReviewInput());
+
+        // Clearing both is how a review is deleted — there is no DELETE route.
+        self::assertNull($book->getRating());
+        self::assertNull($book->getReview());
+    }
+
+    public function testBlankWordsNormaliseToNullSoNotReviewedHasOneRepresentation(): void
+    {
+        $book = (new Book())->setOwner(new User());
+
+        $input = new BookReviewInput();
+        $input->rating = 3;
+        $input->review = '   ';
+
+        $this->reviewService()->review($book, $input);
+
+        self::assertSame(3, $book->getRating());
+        self::assertNull($book->getReview());
     }
 
     public function testDeleteRemovesTheBook(): void
