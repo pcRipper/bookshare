@@ -1,0 +1,36 @@
+{#
+  The "what's new" letter — the only mail a human composes rather than an event
+  triggers. `items` is what the operator actually approved in the Intercom tab:
+  each entry is a version heading plus the short lines they edited down from the
+  release notes, so nothing here is generated from the full changelog prose.
+
+  Colours are literal hex copied from assets/src/styles/tokens.css, as in every
+  other mail (an email client has no CSS variables); MailStyleTest fails on any
+  value that isn't in that file.
+#}
+{% extends 'emails/base.html.twig' %}
+
+{% block preheader %}{{ intro|default('Here is what has changed in FolioShare recently.'|trans({}, 'mails')) }}{% endblock %}
+{% block heading %}{{ subject }}{% endblock %}
+{% block intro %}{{ intro|default('Here is what has changed in FolioShare recently.'|trans({}, 'mails')) }}{% endblock %}
+
+{% block summary %}
+  {% for entry in items %}
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 16px;background-color:#eef1f5;border-left:4px solid #223b54;border-radius:4px;">
+      <tr>
+        <td style="padding:16px;font-family:'IBM Plex Sans',Helvetica,Arial,sans-serif;">
+          <p style="margin:0 0 8px;color:#171b21;font-family:'Literata',Georgia,'Times New Roman',serif;font-size:18px;font-weight:600;line-height:1.4;">{{ entry.version }}</p>
+          <ul style="margin:0;padding:0 0 0 20px;color:#3c434c;font-size:15px;line-height:1.6;">
+            {% for line in entry.lines %}
+              <li style="margin:0 0 6px;">{{ line }}</li>
+            {% endfor %}
+          </ul>
+        </td>
+      </tr>
+    </table>
+  {% endfor %}
+{% endblock %}
+
+{% block action_url %}{{ appUrl }}/changelog{% endblock %}
+{% block action_label %}{{ 'Read the full release notes'|trans({}, 'mails') }}{% endblock %}
+{% block footer_note %}{{ 'You are receiving this because you asked to hear about FolioShare updates.'|trans({}, 'mails') }}{% endblock %}

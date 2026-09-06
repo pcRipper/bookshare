@@ -12,7 +12,8 @@ namespace App\Mail;
  * new case here plus two template files; `MailTypeTest` fails if the templates
  * are missing or the gate names an accessor `UserSettings` doesn't have.
  *
- * The set is deliberately small — 8 types for 16 candidate notifications:
+ * The set is deliberately small — 9 types, 8 of them for 16 candidate loan and
+ * account notifications, plus the one letter an operator sends by hand:
  *
  *  - A collection borrow reuses the five per-book loan types with `isCollection`
  *    set, because the two differ only in "a book" vs "a collection of N books".
@@ -47,6 +48,16 @@ enum MailType: string
     case SocialNewFollower = 'social.new_follower';
 
     /**
+     * "Here's what's new" — the only mail no event triggers. An operator picks
+     * release notes in the admin panel's Intercom tab, edits them down and sends
+     * the letter by hand; see App\Service\Admin\IntercomService.
+     *
+     * This is the content pipeline `notify_newsletter` had been waiting for: the
+     * toggle shipped with the other three and, until now, gated nothing.
+     */
+    case IntercomUpdates = 'intercom.updates';
+
+    /**
      * The `UserSettings` predicate that must be true for this mail to go out, or
      * null when the mail is transactional and always sent.
      *
@@ -67,6 +78,9 @@ enum MailType: string
             self::LoanReminder => 'notifiesRequestUpdates',
             // Community noise, off by default.
             self::SocialNewFollower => 'notifiesActivity',
+            // Off by default too, and the only mail a human composes: nobody is
+            // subscribed to product news unless they said so.
+            self::IntercomUpdates => 'notifiesNewsletter',
             // No opt-out: it is the first thing a new account ever receives.
             self::AccountWelcome => null,
         };
@@ -87,6 +101,9 @@ enum MailType: string
             self::LoanReminder         => 'A reminder about %item%',
             self::AccountWelcome       => 'Welcome to FolioShare',
             self::SocialNewFollower    => '%follower% is now following you',
+            // The operator writes the real subject; this is the fallback for a
+            // letter sent without one.
+            self::IntercomUpdates      => 'What is new in FolioShare',
         };
     }
 

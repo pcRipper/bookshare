@@ -100,6 +100,21 @@ class PreviewMailsCommand extends Command
             'loan.reminder.overdue'     => [MailType::LoanReminder, ['state' => 'overdue'] + $fromOwner],
             'account.welcome'           => [MailType::AccountWelcome, []],
             'social.new_follower'       => [MailType::SocialNewFollower, ['follower' => 'Ada Lovelace', 'followerId' => 42]],
+            // The one letter a human composes: the fixture stands in for what an
+            // operator would have edited down in the Intercom tab.
+            'intercom.updates'          => [MailType::IntercomUpdates, [
+                'subject' => 'What is new in FolioShare',
+                'intro'   => 'A short round-up of what has changed since you last looked.',
+                'items'   => [
+                    ['version' => '1.28.0', 'lines' => [
+                        'You can now review the books you own — five stars and up to a thousand words.',
+                        'Discover can sort by rating.',
+                    ]],
+                    ['version' => '1.27.0', 'lines' => [
+                        'Turning a page now takes you back to the top of the list.',
+                    ]],
+                ],
+            ]],
         ];
     }
 
