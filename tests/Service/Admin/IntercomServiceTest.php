@@ -7,8 +7,11 @@ use App\Dto\IntercomLetterItem;
 use App\Entity\User;
 use App\Entity\UserSettings;
 use App\Mail\Mailer;
+use App\Entity\IntercomLetter;
+use App\Repository\IntercomLetterRepository;
 use App\Repository\UserRepository;
 use App\Service\Admin\IntercomService;
+use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
@@ -58,12 +61,21 @@ class IntercomServiceTest extends TestCase
         return $user;
     }
 
+    /** @var list<IntercomLetter> */
+    private array $recorded = [];
+
     private function service(array $recipients): IntercomService
     {
         $users = $this->createStub(UserRepository::class);
         $users->method('findNewsletterRecipients')->willReturn($recipients);
 
-        return new IntercomService($users, $this->mailer);
+        $em = $this->createStub(EntityManagerInterface::class);
+        $em->method('persist')->willReturnCallback(function (object $entity) {
+            self::assertInstanceOf(IntercomLetter::class, $entity);
+            $this->recorded[] = $entity;
+        });
+
+        return new IntercomService($users, $this->mailer, $em, $this->createStub(IntercomLetterRepository::class));
     }
 
     private function letter(): IntercomLetterInput
@@ -130,6 +142,41 @@ class IntercomServiceTest extends TestCase
         // A blank intro becomes null so the template falls back to its own
         // translated opening rather than printing an empty paragraph.
         self::assertNull($context['intro']);
+    }
+
+    /**
+     * The record is written even when nothing was queued: "we sent this and it
+     * reached nobody" is exactly the fact an operator needs to see.
+     */
+    public function testTheSendIsRecordedWithTheQueuedCount(): void
+    {
+        $operator = $this->subscriber('operator@example.com');
+
+        $this->service([
+            $this->subscriber('in@example.com'),
+            $this->subscriber('out@example.com', optedIn: false),
+        ])->send($this->letter(), $operator);
+
+        self::assertCount(1, $this->recorded);
+        $letter = $this->recorded[0];
+        self::assertSame('What is new in FolioShare', $letter->getSubject());
+        // One queued of two attempted — the opted-out member is not a recipient.
+        self::assertSame(1, $letter->getRecipientCount());
+        self::assertSame($operator, $letter->getSentBy());
+        self::assertSame(
+            [['version' => '1.28.0', 'lines' => ['Ratings arrived.', 'Discover can sort by rating.']]],
+            $letter->getItems(),
+        );
+    }
+
+    /** A test send is not a send: it must leave no trace in the history. */
+    public function testATestLetterIsNotRecorded(): void
+    {
+        $operator = $this->subscriber('operator@example.com');
+
+        $this->service([$this->subscriber('a@example.com')])->sendTest($operator, $this->letter());
+
+        self::assertSame([], $this->recorded);
     }
 
     public function testAudienceSizeCountsTheOptedIn(): void
