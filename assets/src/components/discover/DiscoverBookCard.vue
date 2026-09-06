@@ -5,6 +5,7 @@ import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
 import { languageLabel } from '@/utils/languages'
+import StarRating from '@/components/ui/StarRating.vue'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 
 const { hasCover, onCoverError } = useCoverFallback()
@@ -69,10 +70,16 @@ function onAction() {
       <h3 class="discover-card__title">{{ book.title }}</h3>
       <p class="discover-card__author">{{ book.author }}</p>
 
-      <p v-if="book.language" class="discover-card__lang">
-        <span class="material-symbols-outlined">language</span>
-        {{ languageLabel(book.language, book.languageName) }}
-      </p>
+      <!-- The owner's rating and the language share one line: two short facts,
+           and a rating on a line of its own would push the tags off a phone card.
+           Both render nothing when absent, so an unrated card looks unchanged. -->
+      <div v-if="book.rating || book.language" class="discover-card__meta">
+        <StarRating :model-value="book.rating" size="sm" />
+        <span v-if="book.language" class="discover-card__lang">
+          <span class="material-symbols-outlined">language</span>
+          {{ languageLabel(book.language, book.languageName) }}
+        </span>
+      </div>
 
       <RouterLink
         v-if="book.owner"
@@ -202,13 +209,20 @@ function onAction() {
   margin: 0 0 var(--space-sm);
 }
 
+.discover-card__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin: 0 0 var(--space-sm);
+}
 .discover-card__lang {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   font-size: 12px;
   color: var(--color-secondary);
-  margin: 0 0 var(--space-sm);
+  margin: 0;
 }
 .discover-card__lang .material-symbols-outlined { font-size: 14px; }
 

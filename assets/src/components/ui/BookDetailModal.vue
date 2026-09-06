@@ -2,6 +2,7 @@
 import { computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
+import StarRating from '@/components/ui/StarRating.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
 import { languageLabel } from '@/utils/languages'
@@ -120,6 +121,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
             <h2 class="detail-title">{{ book.title }}</h2>
             <p class="detail-author">{{ t('bookDetail.byAuthor', { author: book.author }) }}</p>
+
+            <!-- The one surface that is about a single book, so it gets the full
+                 scale rather than the lists' compact star. -->
+            <p v-if="book.rating" class="detail-rating">
+              <StarRating :model-value="book.rating" variant="stars" size="lg" />
+              <span class="detail-rating__label">{{ t('book.rating') }}</span>
+            </p>
 
             <RouterLink
               v-if="book.owner"
@@ -338,6 +346,19 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   font-size: var(--text-body-md);
   color: var(--color-on-surface-variant);
   margin: 0;
+}
+
+.detail-rating {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: 0;
+}
+.detail-rating__label {
+  font-size: var(--text-label-sm);
+  letter-spacing: var(--ls-label-sm);
+  text-transform: uppercase;
+  color: var(--color-secondary);
 }
 
 .detail-owner {

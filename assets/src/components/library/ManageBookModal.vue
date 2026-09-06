@@ -6,6 +6,7 @@ import BookTemplateSearch from '@/components/library/BookTemplateSearch.vue'
 import LanguageSelect from '@/components/ui/LanguageSelect.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import StarRating from '@/components/ui/StarRating.vue'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 import { WISH_PRIORITIES, WISH_DEFAULT, wishPriorityKey } from '@/utils/wishPriority'
 
@@ -80,7 +81,7 @@ function blank() {
   // categories: array of { id, name, colorHex }
   return {
     title: '', author: '', description: '', isbn: '', status: 'own', language: null,
-    coverPath: '', isRead: false, isWished: props.wished, wishPriority: WISH_DEFAULT,
+    coverPath: '', isRead: false, rating: null, isWished: props.wished, wishPriority: WISH_DEFAULT,
     categories: [],
   }
 }
@@ -103,6 +104,7 @@ watch(
           language: props.book.language ?? null,
           coverPath: props.book.coverPath ?? '',
           isRead: props.book.isRead ?? false,
+          rating: props.book.rating ?? null,
           isWished: props.book.isWished ?? false,
           // A book on the shelf still needs a level in hand, so ticking the
           // checkbox doesn't leave the picker empty.
@@ -133,6 +135,7 @@ function onSave() {
     language: form.value.language || null,
     coverPath: form.value.coverPath.trim() || null,
     isRead: form.value.isRead,
+    rating: form.value.rating,
     isWished: form.value.isWished,
     // Sent only when it means something; the server drops it otherwise anyway.
     wishPriority: form.value.isWished ? form.value.wishPriority : null,
@@ -165,6 +168,9 @@ function applyTemplate(t) {
     language: t.language ?? null,
     coverPath: t.coverPath ?? '',
     isRead: false,
+    // Nobody else's rating is yours: a template carries none, and neither does
+    // the form it seeds.
+    rating: null,
     // A template says nothing about which shelf you're filling — keep the one
     // the modal was opened for.
     isWished: form.value.isWished,
@@ -332,6 +338,14 @@ function applyTemplate(t) {
             <span class="material-symbols-outlined">check_circle</span>
             {{ t('manageBook.markRead') }}
           </label>
+
+          <!-- Deliberately not coupled to the checkbox above: rating a book you
+               never ticked as read is unusual, not incoherent. -->
+          <div class="field">
+            <span class="field__label">{{ t('manageBook.rating') }}</span>
+            <StarRating v-model="form.rating" editable size="lg" :disabled="readOnly" />
+            <p class="field__hint">{{ t('manageBook.ratingHint') }}</p>
+          </div>
 
           <!-- The wish-list switch. Offered from the Books tab too (already
                ticked when the Wish List tab opened the modal), so cataloguing a
@@ -515,6 +529,10 @@ function applyTemplate(t) {
 .checkbox-field .material-symbols-outlined { font-size: 18px; color: var(--color-secondary); }
 
 .textarea { resize: vertical; min-height: 88px; font-family: var(--font-body); line-height: 1.5; }
+.field__hint {
+  font-size: var(--text-label-sm);
+  color: var(--color-secondary);
+}
 .field__counter {
   align-self: flex-end;
   font-size: var(--text-label-sm);

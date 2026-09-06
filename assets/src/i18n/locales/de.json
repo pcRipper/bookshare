@@ -42,7 +42,10 @@
       "currentlyReading": "Lese ich gerade",
       "unavailable": "Nicht verfügbar",
       "lent": "Verliehen"
-    }
+    },
+    "rating": "Bewertung",
+    "ratingValue": "{rating} von {max} Sternen",
+    "notRated": "Nicht bewertet"
   },
   "manageBook": {
     "editTitle": "Buch bearbeiten",
@@ -65,7 +68,9 @@
     "categories": "Kategorien",
     "markRead": "Ich habe dieses Buch gelesen",
     "requiredFields": "Titel und Autor sind erforderlich.",
-    "deleting": "Wird gelöscht…"
+    "deleting": "Wird gelöscht…",
+    "rating": "Deine Bewertung",
+    "ratingHint": "Wie du dieses Buch bewertest — klicke den Stern erneut, um sie zu löschen."
   },
   "templateSearch": {
     "searchPlaceholder": "Nach Titel oder ISBN suchen…",
@@ -202,7 +207,10 @@
     "noReaders": "Hier gibt es noch keine anderen Leser.",
     "sharedCount": "{count} geteilt",
     "noBookMatches": "Bisher passt kein Buch zu deiner Suche.",
-    "noBooks": "Derzeit teilt die Community keine Bücher. Schau bald wieder vorbei."
+    "noBooks": "Derzeit teilt die Community keine Bücher. Schau bald wieder vorbei.",
+    "sort": "Sortieren nach",
+    "sortNewest": "Neueste",
+    "sortTopRated": "Beste Bewertung"
   },
   "errors": {
     "generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
@@ -508,7 +516,8 @@
     "toggleToUnread": "Gelesen — klicken, um als ungelesen zu markieren",
     "toggleToRead": "Noch nicht gelesen — klicken, um als gelesen zu markieren",
     "isRead": "Gelesen",
-    "notRead": "Noch nicht gelesen"
+    "notRead": "Noch nicht gelesen",
+    "rating": "Bewertung"
   },
   "time": {
     "today": "heute",

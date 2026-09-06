@@ -42,7 +42,10 @@
       "currentlyReading": "Leyéndolo ahora",
       "unavailable": "No disponible",
       "lent": "Prestado"
-    }
+    },
+    "rating": "Valoración",
+    "ratingValue": "{rating} de {max} estrellas",
+    "notRated": "Sin valorar"
   },
   "manageBook": {
     "editTitle": "Editar libro",
@@ -65,7 +68,9 @@
     "categories": "Categorías",
     "markRead": "He leído este libro",
     "requiredFields": "El título y el autor son obligatorios.",
-    "deleting": "Eliminando…"
+    "deleting": "Eliminando…",
+    "rating": "Tu valoración",
+    "ratingHint": "Cómo valoras este libro: vuelve a pulsar la estrella para borrarla."
   },
   "templateSearch": {
     "searchPlaceholder": "Buscar por título o ISBN…",
@@ -202,7 +207,10 @@
     "noReaders": "Aún no hay otros lectores por aquí.",
     "sharedCount": "{count} compartidos",
     "noBookMatches": "Todavía no hay libros que coincidan con tu búsqueda.",
-    "noBooks": "Ahora mismo la comunidad no comparte ningún libro. Vuelve pronto."
+    "noBooks": "Ahora mismo la comunidad no comparte ningún libro. Vuelve pronto.",
+    "sort": "Ordenar por",
+    "sortNewest": "Más recientes",
+    "sortTopRated": "Mejor valorados"
   },
   "errors": {
     "generic": "Algo ha fallado. Inténtalo de nuevo.",
@@ -508,7 +516,8 @@
     "toggleToUnread": "Leído — haz clic para marcarlo como no leído",
     "toggleToRead": "Sin leer — haz clic para marcarlo como leído",
     "isRead": "Leído",
-    "notRead": "Sin leer"
+    "notRead": "Sin leer",
+    "rating": "Valoración"
   },
   "time": {
     "today": "hoy",

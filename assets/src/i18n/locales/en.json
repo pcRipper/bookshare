@@ -42,7 +42,10 @@
       "currentlyReading": "Currently reading",
       "unavailable": "Unavailable",
       "lent": "Lent out"
-    }
+    },
+    "rating": "Rating",
+    "ratingValue": "Rated {rating} out of {max}",
+    "notRated": "Not rated"
   },
   "manageBook": {
     "editTitle": "Edit Book",
@@ -65,7 +68,9 @@
     "categories": "Categories",
     "markRead": "I've read this book",
     "requiredFields": "Title and author are required.",
-    "deleting": "Deleting…"
+    "deleting": "Deleting…",
+    "rating": "Your rating",
+    "ratingHint": "How you rate this book — click the star again to clear it."
   },
   "templateSearch": {
     "searchPlaceholder": "Search by title or ISBN…",
@@ -202,7 +207,10 @@
     "noReaders": "No other readers here yet.",
     "sharedCount": "{count} shared",
     "noBookMatches": "No books match your search just yet.",
-    "noBooks": "No books are being shared by the community right now. Check back soon."
+    "noBooks": "No books are being shared by the community right now. Check back soon.",
+    "sort": "Sort by",
+    "sortNewest": "Newest",
+    "sortTopRated": "Top rated"
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",
@@ -508,7 +516,8 @@
     "toggleToUnread": "Read — click to mark unread",
     "toggleToRead": "Not read yet — click to mark read",
     "isRead": "Read",
-    "notRead": "Not read yet"
+    "notRead": "Not read yet",
+    "rating": "Rating"
   },
   "time": {
     "today": "today",

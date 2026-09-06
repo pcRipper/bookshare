@@ -20,6 +20,7 @@
 import { useI18n } from 'vue-i18n'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
+import StarRating from '@/components/ui/StarRating.vue'
 import { currentLocale } from '@/i18n'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 import { languageLabel } from '@/utils/languages'
@@ -85,6 +86,7 @@ function absoluteDate(iso) {
             <th class="book-table__col-isbn" scope="col">{{ t('table.isbn') }}</th>
           </template>
           <th class="book-table__col-lang" scope="col">{{ t('table.language') }}</th>
+          <th class="book-table__col-rating" scope="col">{{ t('table.rating') }}</th>
           <th class="book-table__col-status" scope="col">{{ wish ? t('wishlist.priorityLabel') : t('table.status') }}</th>
           <th v-if="detailed && showHolder && !wish" class="book-table__col-person" scope="col">{{ t('table.holder') }}</th>
           <th v-if="showOwner" class="book-table__col-person" scope="col">{{ t('table.owner') }}</th>
@@ -168,6 +170,14 @@ function absoluteDate(iso) {
             <span v-else class="book-table__muted">—</span>
           </td>
 
+          <!-- Read-only on every surface, the owner's own library included: a
+               five-target control has no place in a 32px row. Rating is set in
+               the Manage Book modal, which the row click opens. -->
+          <td class="book-table__col-rating">
+            <StarRating v-if="book.rating" :model-value="book.rating" size="sm" />
+            <span v-else class="book-table__muted">—</span>
+          </td>
+
           <td class="book-table__col-status">
             <span
               v-if="wish"
@@ -230,13 +240,13 @@ function absoluteDate(iso) {
 
 .book-table {
   width: 100%;
-  min-width: 520px;
+  min-width: 580px;
   border-collapse: collapse;
   margin-top: var(--space-sm);
   font-size: var(--text-body-md);
 }
 /* The full record needs more room than a phone has — the wrapper scrolls. */
-.book-table--detailed { min-width: 1080px; }
+.book-table--detailed { min-width: 1140px; }
 
 .book-table thead th {
   text-align: left;
@@ -260,6 +270,8 @@ function absoluteDate(iso) {
 
 /* Read column */
 .book-table__col-read { width: 48px; text-align: center; }
+
+.book-table__col-rating { width: 72px; }
 .book-table__check {
   width: 18px;
   height: 18px;

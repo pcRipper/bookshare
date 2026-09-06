@@ -15,6 +15,9 @@ export function toBookInput(book) {
     status: book.status,
     language: book.language ?? null,
     isRead: book.isRead,
+    // Same trap as the wish fields below: the inline read toggle resends the
+    // whole DTO, so leaving this out would clear the owner's rating on a tick.
+    rating: book.rating ?? null,
     // Carried for the same reason as everything else here: a PATCH that omitted
     // these would quietly move a wanted book onto the shelf.
     isWished: book.isWished ?? false,
