@@ -10,6 +10,7 @@ import DiscoverUserCard from '@/components/discover/DiscoverUserCard.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import UserCardSkeleton from '@/components/ui/UserCardSkeleton.vue'
 import LanguageSelect from '@/components/ui/LanguageSelect.vue'
+import BaseSelect from '@/components/ui/BaseSelect.vue'
 import Pagination from '@/components/ui/Pagination.vue'
 import ViewToggle from '@/components/ui/ViewToggle.vue'
 import BookTable from '@/components/ui/BookTable.vue'
@@ -19,7 +20,14 @@ import { resolveCategoryColors } from '@/utils/categoryColors'
 
 const store = useDiscoverStore()
 const { t } = useI18n()
-const { mode, books, booksMeta, accounts, accountsMeta, categories, loading, error, query, activeCategory, activeLanguage } = storeToRefs(store)
+const { mode, books, booksMeta, accounts, accountsMeta, categories, loading, error, query, activeCategory, activeLanguage, sort } = storeToRefs(store)
+
+// Ordering. Newest is the default browse; "top rated" ranks by the owners' own
+// ratings, with unrated books last (the server does that ordering).
+const sortOptions = computed(() => [
+  { value: 'newest', label: t('discover.sortNewest') },
+  { value: 'rating', label: t('discover.sortTopRated') },
+])
 const { bookView, tableDetailed } = useBookView()
 
 onMounted(store.init)
@@ -165,13 +173,25 @@ async function onToggleFollow(action, id) {
           </div>
         </div>
 
-        <div class="discover-filters__group discover-filters__group--language">
-          <h2 class="discover-filters__label">{{ t('discover.language') }}</h2>
-          <LanguageSelect
-            :model-value="activeLanguage"
-            class="discover-filters__lang"
-            @update:model-value="store.setLanguage($event)"
-          />
+        <div class="discover-filters__row">
+          <div class="discover-filters__group discover-filters__group--language">
+            <h2 class="discover-filters__label">{{ t('discover.language') }}</h2>
+            <LanguageSelect
+              :model-value="activeLanguage"
+              class="discover-filters__lang"
+              @update:model-value="store.setLanguage($event)"
+            />
+          </div>
+
+          <div class="discover-filters__group discover-filters__group--sort">
+            <h2 class="discover-filters__label">{{ t('discover.sort') }}</h2>
+            <BaseSelect
+              :model-value="sort"
+              :options="sortOptions"
+              class="discover-filters__lang"
+              @update:model-value="store.setSort($event)"
+            />
+          </div>
         </div>
       </section>
 
@@ -435,7 +455,13 @@ async function onToggleFollow(action, id) {
 /* ── Filters ──────────────────────────────────────────────────────────── */
 .discover-filters { display: flex; flex-direction: column; gap: var(--space-md); }
 .discover-filters__group { display: flex; flex-direction: column; gap: var(--space-sm); }
-.discover-filters__group--language { max-width: 280px; }
+.discover-filters__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+.discover-filters__group--language,
+.discover-filters__group--sort { flex: 1 1 200px; max-width: 280px; }
 .discover-filters__lang { width: 100%; }
 .discover-filters__label {
   font-size: var(--text-label-sm);

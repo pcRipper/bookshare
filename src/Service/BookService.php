@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Dto\BookInput;
+use App\Dto\BookReviewInput;
 use App\Entity\Book;
 use App\Entity\User;
 use App\Enum\ActivityType;
@@ -62,6 +63,21 @@ class BookService
 
         $book->acquire();
         $this->activity->record($book->getOwner(), ActivityType::AddedBook, targetBook: $book);
+    }
+
+    /**
+     * Record (or clear) the owner's verdict on their own book.
+     *
+     * Blank words normalise to null so "not reviewed" has one representation,
+     * the way applyInput() normalises every other optional string. The rating
+     * and the text are independent: either alone is a complete review.
+     */
+    public function review(Book $book, BookReviewInput $input): void
+    {
+        $review = $input->review !== null ? trim($input->review) : null;
+
+        $book->setRating($input->rating)
+            ->setReview($review !== '' ? $review : null);
     }
 
     public function delete(Book $book): void

@@ -6,6 +6,7 @@ use App\Api\ApiError;
 use App\Api\MemberVisibility;
 use App\Api\ResponseMapper;
 use App\Dto\BookInput;
+use App\Dto\BookReviewInput;
 use App\Dto\BookTemplate;
 use App\Dto\Pagination;
 use App\Entity\Book;
@@ -30,6 +31,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 #[Route('/books')]
 class BookRestController extends AbstractController
@@ -169,8 +171,13 @@ class BookRestController extends AbstractController
             $language = (string) $raw;
         }
 
+        // Ordering: `rating` ranks by the owner's rating, anything else (and no
+        // value at all) is newest-first. Clamped rather than rejected, like every
+        // other browse parameter — a stray ?sort= must not break browsing.
+        $sort = (string) $request->query->get('sort', '');
+
         $pagination = Pagination::fromRequest($request, self::DISCOVER_PER_PAGE);
-        $result = $repo->findForDiscoverPaginated($viewer, $q !== '' ? $q : null, $category, $language, $pagination);
+        $result = $repo->findForDiscoverPaginated($viewer, $q !== '' ? $q : null, $category, $language, $pagination, $sort);
 
         $pending = array_flip($requests->findPendingBookIdsForRequester($viewer));
 
@@ -283,6 +290,37 @@ class BookRestController extends AbstractController
         $this->denyAccessUnlessGranted(BookVoter::EDIT, $book, self::lockedMessage($book));
 
         $this->books->update($book, $input, $this->localizeCover($input));
+        $this->em->flush();
+
+        return $this->json($this->mapper->book($book));
+    }
+
+    /**
+     * Record the owner's verdict on their own book: stars, words, or both.
+     *
+     * Its own endpoint for the same reason /acquire is — one deliberate act with
+     * no other input — and, more importantly, so a review can never be collateral
+     * damage of a PATCH from the Manage Book modal, which resends the whole
+     * BookInput.
+     *
+     * Guarded on **plain ownership, not BookVoter::EDIT**: that voter also
+     * requires the book to be home, and a book sitting at a borrower's house has
+     * nothing to do with what its owner thought of it. Being unable to rate a
+     * book you had just lent out was the concrete failure of keeping this control
+     * in the locked edit form. A wish-list book is reviewable too: you can have
+     * read a book you don't own.
+     *
+     * Sending nulls clears the review — there is no separate DELETE, since
+     * "no rating, no words" is the state every book starts in.
+     */
+    #[Route('/{id}/review', methods: ['PUT'], requirements: ['id' => '\d+'])]
+    public function review(Book $book, #[MapRequestPayload] BookReviewInput $input): JsonResponse
+    {
+        if ($book->getOwner() !== $this->getUser()) {
+            throw new AccessDeniedException('You can only review your own books.');
+        }
+
+        $this->books->review($book, $input);
         $this->em->flush();
 
         return $this->json($this->mapper->book($book));

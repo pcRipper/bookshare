@@ -42,7 +42,10 @@
       "currentlyReading": "Currently reading",
       "unavailable": "Unavailable",
       "lent": "Lent out"
-    }
+    },
+    "rating": "Rating",
+    "ratingValue": "Rated {rating} out of {max}",
+    "notRated": "Not rated"
   },
   "manageBook": {
     "editTitle": "Edit Book",
@@ -132,7 +135,14 @@
       "lent": "On loan",
       "reading": "Being read",
       "unavailable": "Unavailable"
-    }
+    },
+    "tabDetails": "Details",
+    "tabReview": "Review",
+    "reviewBy": "— {name}",
+    "noReview": "No review has been written for this book.",
+    "reviewPlaceholder": "What did you make of it?",
+    "saveReview": "Save review",
+    "reviewSaved": "Review saved."
   },
   "collections": {
     "badge": "Collection",
@@ -202,7 +212,10 @@
     "noReaders": "No other readers here yet.",
     "sharedCount": "{count} shared",
     "noBookMatches": "No books match your search just yet.",
-    "noBooks": "No books are being shared by the community right now. Check back soon."
+    "noBooks": "No books are being shared by the community right now. Check back soon.",
+    "sort": "Sort by",
+    "sortNewest": "Newest",
+    "sortTopRated": "Top rated"
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",
@@ -331,7 +344,8 @@
       "unfollow": "Could not unfollow.",
       "collections": "Could not load collections.",
       "borrowCollection": "Could not borrow this collection.",
-      "borrowRequest": "Could not send your borrow request."
+      "borrowRequest": "Could not send your borrow request.",
+      "saveReview": "Could not save your review."
     },
     "collectionRequested": "Collection borrow request sent.",
     "editTitle": "Edit Profile",
@@ -508,7 +522,8 @@
     "toggleToUnread": "Read — click to mark unread",
     "toggleToRead": "Not read yet — click to mark read",
     "isRead": "Read",
-    "notRead": "Not read yet"
+    "notRead": "Not read yet",
+    "rating": "Rating"
   },
   "time": {
     "today": "today",

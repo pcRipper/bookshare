@@ -4,6 +4,11 @@
  * field must be resent — omitting one resets it to the DTO default (e.g. a
  * blank title would 422). Used by the inline "mark as read" toggle, which
  * changes only `isRead` but has to carry the book's current values along.
+ *
+ * The rating and the written review are absent on purpose: they are not part of
+ * BookInput at all, so this payload cannot disturb them. They travel through
+ * PUT /books/{id}/review instead — which is precisely why they were taken off
+ * this DTO when the control moved to the profile.
  */
 export function toBookInput(book) {
   return {

@@ -149,4 +149,14 @@ class BookInputTest extends TestCase
 
         self::assertCount(0, $this->validator->validate($input));
     }
+
+    /**
+     * The review fields live on BookReviewInput, so a payload from the Manage
+     * Book modal cannot carry — or clear — them. See BookReviewInputTest.
+     */
+    public function testTheFormDtoCarriesNoReviewFields(): void
+    {
+        self::assertFalse(property_exists(BookInput::class, 'rating'));
+        self::assertFalse(property_exists(BookInput::class, 'review'));
+    }
 }

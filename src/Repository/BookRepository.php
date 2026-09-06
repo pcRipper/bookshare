@@ -18,6 +18,9 @@ use Doctrine\Persistence\ManagerRegistry;
 
 class BookRepository extends ServiceEntityRepository
 {
+    /** Discover's non-default ordering: highest owner rating first. */
+    public const SORT_RATING = 'rating';
+
     use CountsCreatedByDay;
 
     public function __construct(ManagerRegistry $registry)
@@ -484,8 +487,9 @@ class BookRepository extends ServiceEntityRepository
         ?Category $category = null,
         ?string $language = null,
         int $limit = 60,
+        ?string $sort = null,
     ): array {
-        return $this->discoverQuery($viewer, $query, $category, $language)
+        return $this->discoverQuery($viewer, $query, $category, $language, $sort)
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
@@ -504,8 +508,9 @@ class BookRepository extends ServiceEntityRepository
         ?Category $category,
         ?string $language,
         Pagination $pagination,
+        ?string $sort = null,
     ): PaginatedResult {
-        $query = $this->discoverQuery($viewer, $query, $category, $language)
+        $query = $this->discoverQuery($viewer, $query, $category, $language, $sort)
             ->setFirstResult($pagination->offset())
             ->setMaxResults($pagination->perPage)
             ->getQuery();
@@ -519,12 +524,18 @@ class BookRepository extends ServiceEntityRepository
     /**
      * Builds the shared Discover filter query (community books from public
      * members, excluding the viewer and unavailable books), newest first.
+     *
+     * $sort='rating' ranks by the owner's rating instead. Any other value falls
+     * back to newest rather than failing — the same clamp-don't-reject rule
+     * Pagination and the wish list's own ?sort= follow, since a browse UI must
+     * never 422 on a stray query param.
      */
     private function discoverQuery(
         User $viewer,
         ?string $query,
         ?Category $category,
         ?string $language,
+        ?string $sort = null,
     ): \Doctrine\ORM\QueryBuilder {
         $qb = $this->createQueryBuilder('b')
             ->innerJoin('b.owner', 'o')->addSelect('o')
@@ -532,8 +543,20 @@ class BookRepository extends ServiceEntityRepository
             ->andWhere('o.isPrivate = false')
             ->andWhere('b.status != :unavailable')
             ->setParameter('viewer', $viewer->getId())
-            ->setParameter('unavailable', BookStatus::Unavailable)
-            ->orderBy('b.createdAt', 'DESC');
+            ->setParameter('unavailable', BookStatus::Unavailable);
+
+        if ($sort === self::SORT_RATING) {
+            // Ranked on a HIDDEN COALESCE rather than on b.rating directly: DQL
+            // has no NULLS LAST, PostgreSQL sorts nulls *first* on a DESC column,
+            // and COALESCE is only grammatical in the SELECT — so an unrated book
+            // would otherwise lead the list whose whole point is the rated ones.
+            // Zero puts it below one star, where it belongs; newest breaks ties.
+            $qb->addSelect('COALESCE(b.rating, 0) AS HIDDEN ranking')
+                ->orderBy('ranking', 'DESC')
+                ->addOrderBy('b.createdAt', 'DESC');
+        } else {
+            $qb->orderBy('b.createdAt', 'DESC');
+        }
 
         // A suspended or deleted member's shelf leaves Discover with them.
         VisibleUsers::scope($qb, 'o');

@@ -3,6 +3,7 @@
 namespace App\Tests\Service;
 
 use App\Dto\BookInput;
+use App\Dto\BookReviewInput;
 use App\Entity\ActivityItem;
 use App\Entity\Book;
 use App\Entity\Category;
@@ -262,6 +263,57 @@ class BookServiceTest extends TestCase
         $input->coverPath = $coverPath;
 
         return $input;
+    }
+
+    /* ── reviews ──────────────────────────────────────────────────────── */
+
+    private function reviewService(): BookService
+    {
+        return new BookService(
+            $this->createStub(EntityManagerInterface::class),
+            $this->createStub(CategoryRepository::class),
+            $this->createStub(ActivityRecorder::class),
+        );
+    }
+
+    public function testReviewAppliesBothHalves(): void
+    {
+        $book = (new Book())->setOwner(new User());
+
+        $input = new BookReviewInput();
+        $input->rating = 4;
+        $input->review = '  Kept me up all night.  ';
+
+        $this->reviewService()->review($book, $input);
+
+        self::assertSame(4, $book->getRating());
+        // Trimmed like every other optional string applyInput() handles.
+        self::assertSame('Kept me up all night.', $book->getReview());
+    }
+
+    public function testReviewClearsBothOnAnEmptyPayload(): void
+    {
+        $book = (new Book())->setOwner(new User())->setRating(5)->setReview('Loved it.');
+
+        $this->reviewService()->review($book, new BookReviewInput());
+
+        // Clearing both is how a review is deleted — there is no DELETE route.
+        self::assertNull($book->getRating());
+        self::assertNull($book->getReview());
+    }
+
+    public function testBlankWordsNormaliseToNullSoNotReviewedHasOneRepresentation(): void
+    {
+        $book = (new Book())->setOwner(new User());
+
+        $input = new BookReviewInput();
+        $input->rating = 3;
+        $input->review = '   ';
+
+        $this->reviewService()->review($book, $input);
+
+        self::assertSame(3, $book->getRating());
+        self::assertNull($book->getReview());
     }
 
     public function testDeleteRemovesTheBook(): void

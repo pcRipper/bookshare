@@ -28,6 +28,9 @@ export const useDiscoverStore = defineStore('discover', () => {
   const query = ref('')
   const activeCategory = ref(null) // category id | null (= all) — books mode only
   const activeLanguage = ref(null) // ISO code | null (= any) — books mode only
+  // Ordering, books mode only: 'newest' (the default) | 'rating'. Sent as-is;
+  // the server clamps an unknown value rather than rejecting it.
+  const sort = ref('newest')
 
   let reqToken = 0
 
@@ -50,6 +53,7 @@ export const useDiscoverStore = defineStore('discover', () => {
       if (query.value.trim()) params.q = query.value.trim()
       if (activeCategory.value != null) params.category = activeCategory.value
       if (activeLanguage.value != null) params.language = activeLanguage.value
+      if (sort.value !== 'newest') params.sort = sort.value
       const { data } = await api.get('/books/discover', { params })
       if (token === reqToken) {
         books.value = data.items
@@ -98,6 +102,7 @@ export const useDiscoverStore = defineStore('discover', () => {
     if (next === 'accounts') {
       activeCategory.value = null
       activeLanguage.value = null
+      sort.value = 'newest'
     }
     return fetchActive()
   }
@@ -118,10 +123,16 @@ export const useDiscoverStore = defineStore('discover', () => {
     return fetchBooks()
   }
 
+  function setSort(next) {
+    sort.value = next
+    return fetchBooks()
+  }
+
   function clearFilters() {
     query.value = ''
     activeCategory.value = null
     activeLanguage.value = null
+    sort.value = 'newest'
     return fetchActive()
   }
 
@@ -158,8 +169,8 @@ export const useDiscoverStore = defineStore('discover', () => {
   }
 
   return {
-    mode, books, booksMeta, accounts, accountsMeta, categories, loading, error, query, activeCategory, activeLanguage,
-    init, fetchBooks, fetchAccounts, fetchActive, setMode, setQuery, setCategory, setLanguage,
+    mode, books, booksMeta, accounts, accountsMeta, categories, loading, error, query, activeCategory, activeLanguage, sort,
+    init, fetchBooks, fetchAccounts, fetchActive, setMode, setQuery, setCategory, setLanguage, setSort,
     clearFilters, requestBorrow, follow, unfollow,
   }
 })

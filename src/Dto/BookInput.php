@@ -50,6 +50,11 @@ class BookInput
     /** Owner's "already read" flag; defaults to unread. */
     public bool $isRead = false;
 
+    // The rating and the written review are deliberately NOT here: they are not
+    // things this form edits, and keeping them out means a PATCH from the Manage
+    // Book modal can never overwrite a review. They travel through their own
+    // endpoint and their own DTO (BookReviewInput).
+
     /** True to file this as a book the owner *wants* rather than one they hold. */
     public bool $isWished = false;
 

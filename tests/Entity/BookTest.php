@@ -101,4 +101,42 @@ class BookTest extends TestCase
         self::assertSame('/covers/dune.jpg', $book->getCoverPath());
         self::assertSame(BookStatus::Lent, $book->getStatus());
     }
+
+    public function testANewBookIsUnrated(): void
+    {
+        // Null is meaningful — "not rated" is not "rated badly" — and every
+        // surface keys its v-if on it, so the default must stay null.
+        self::assertNull((new Book())->getRating());
+    }
+
+    public function testRatingRoundTripsAndClearsBackToNull(): void
+    {
+        $book = (new Book())->setRating(4);
+        self::assertSame(4, $book->getRating());
+
+        self::assertNull($book->setRating(null)->getRating());
+    }
+
+    public function testANewBookHasNoReview(): void
+    {
+        self::assertNull((new Book())->getReview());
+    }
+
+    public function testReviewRoundTripsAndClearsBackToNull(): void
+    {
+        $book = (new Book())->setReview('Kept me up all night.');
+        self::assertSame('Kept me up all night.', $book->getReview());
+
+        self::assertNull($book->setReview(null)->getReview());
+    }
+
+    public function testRatingIsIndependentOfTheReadFlag(): void
+    {
+        // Deliberately orthogonal: rating a book that was never marked read is
+        // unusual, not incoherent, so nothing couples the two.
+        $book = (new Book())->setRating(5);
+
+        self::assertFalse($book->isRead());
+        self::assertSame(5, $book->getRating());
+    }
 }

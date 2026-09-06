@@ -42,7 +42,10 @@
       "currentlyReading": "Lese ich gerade",
       "unavailable": "Nicht verfügbar",
       "lent": "Verliehen"
-    }
+    },
+    "rating": "Bewertung",
+    "ratingValue": "{rating} von {max} Sternen",
+    "notRated": "Nicht bewertet"
   },
   "manageBook": {
     "editTitle": "Buch bearbeiten",
@@ -132,7 +135,14 @@
       "lent": "Verliehen",
       "reading": "Wird gelesen",
       "unavailable": "Nicht verfügbar"
-    }
+    },
+    "tabDetails": "Details",
+    "tabReview": "Rezension",
+    "reviewBy": "— {name}",
+    "noReview": "Zu diesem Buch wurde noch keine Rezension geschrieben.",
+    "reviewPlaceholder": "Was hältst du davon?",
+    "saveReview": "Rezension speichern",
+    "reviewSaved": "Rezension gespeichert."
   },
   "collections": {
     "badge": "Sammlung",
@@ -202,7 +212,10 @@
     "noReaders": "Hier gibt es noch keine anderen Leser.",
     "sharedCount": "{count} geteilt",
     "noBookMatches": "Bisher passt kein Buch zu deiner Suche.",
-    "noBooks": "Derzeit teilt die Community keine Bücher. Schau bald wieder vorbei."
+    "noBooks": "Derzeit teilt die Community keine Bücher. Schau bald wieder vorbei.",
+    "sort": "Sortieren nach",
+    "sortNewest": "Neueste",
+    "sortTopRated": "Beste Bewertung"
   },
   "errors": {
     "generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
@@ -331,7 +344,8 @@
       "unfollow": "Das Entfolgen ist fehlgeschlagen.",
       "collections": "Die Sammlungen konnten nicht geladen werden.",
       "borrowCollection": "Diese Sammlung konnte nicht ausgeliehen werden.",
-      "borrowRequest": "Deine Leihanfrage konnte nicht gesendet werden."
+      "borrowRequest": "Deine Leihanfrage konnte nicht gesendet werden.",
+      "saveReview": "Deine Rezension konnte nicht gespeichert werden."
     },
     "collectionRequested": "Anfrage zum Ausleihen der Sammlung gesendet.",
     "editTitle": "Profil bearbeiten",
@@ -508,7 +522,8 @@
     "toggleToUnread": "Gelesen — klicken, um als ungelesen zu markieren",
     "toggleToRead": "Noch nicht gelesen — klicken, um als gelesen zu markieren",
     "isRead": "Gelesen",
-    "notRead": "Noch nicht gelesen"
+    "notRead": "Noch nicht gelesen",
+    "rating": "Bewertung"
   },
   "time": {
     "today": "heute",

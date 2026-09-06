@@ -42,7 +42,10 @@
       "currentlyReading": "En cours de lecture",
       "unavailable": "Indisponible",
       "lent": "Prêté"
-    }
+    },
+    "rating": "Note",
+    "ratingValue": "{rating} sur {max} étoiles",
+    "notRated": "Non noté"
   },
   "manageBook": {
     "editTitle": "Modifier le livre",
@@ -132,7 +135,14 @@
       "lent": "Prêté",
       "reading": "En lecture",
       "unavailable": "Indisponible"
-    }
+    },
+    "tabDetails": "Détails",
+    "tabReview": "Avis",
+    "reviewBy": "— {name}",
+    "noReview": "Aucun avis n’a encore été écrit sur ce livre.",
+    "reviewPlaceholder": "Qu’en avez-vous pensé ?",
+    "saveReview": "Enregistrer l’avis",
+    "reviewSaved": "Avis enregistré."
   },
   "collections": {
     "badge": "Collection",
@@ -202,7 +212,10 @@
     "noReaders": "Il n’y a pas encore d’autres lecteurs ici.",
     "sharedCount": "{count} partagés",
     "noBookMatches": "Aucun livre ne correspond encore à votre recherche.",
-    "noBooks": "La communauté ne partage aucun livre pour le moment. Revenez bientôt."
+    "noBooks": "La communauté ne partage aucun livre pour le moment. Revenez bientôt.",
+    "sort": "Trier par",
+    "sortNewest": "Plus récents",
+    "sortTopRated": "Mieux notés"
   },
   "errors": {
     "generic": "Une erreur est survenue. Veuillez réessayer.",
@@ -331,7 +344,8 @@
       "unfollow": "Impossible de ne plus le suivre.",
       "collections": "Les collections n’ont pas pu être chargées.",
       "borrowCollection": "Cette collection n’a pas pu être empruntée.",
-      "borrowRequest": "Votre demande d’emprunt n’a pas pu être envoyée."
+      "borrowRequest": "Votre demande d’emprunt n’a pas pu être envoyée.",
+      "saveReview": "Impossible d’enregistrer votre avis."
     },
     "collectionRequested": "Demande d’emprunt de la collection envoyée.",
     "editTitle": "Modifier le profil",
@@ -508,7 +522,8 @@
     "toggleToUnread": "Lu — cliquez pour marquer comme non lu",
     "toggleToRead": "Pas encore lu — cliquez pour marquer comme lu",
     "isRead": "Lu",
-    "notRead": "Pas encore lu"
+    "notRead": "Pas encore lu",
+    "rating": "Note"
   },
   "time": {
     "today": "aujourd’hui",

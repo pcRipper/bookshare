@@ -7,6 +7,18 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.28.0',
+    date: '2026-09-06',
+    notes: [
+      'You can review the books you own — five stars, up to a thousand words, or just one of the two. Open a book on your profile and pick the Review tab; click a star again to clear it.',
+      'A review is your own verdict on your own copy, not an average, and it is shown to anyone who can see the book: on your profile, in Discover and on a shared library link. Books you have not reviewed look exactly as they did, and their Review tab simply is not there.',
+      'You can review a book that is out on loan. Everything else about a lent book is frozen until it comes back, but what you thought of it is not.',
+      'Discover can now sort by rating. “Top rated” puts the community’s best-liked books first and leaves the unrated ones at the end.',
+      'Exported CSV files carry the rating and the review, and importing one restores both. A file exported before today imports as it always did.',
+      'A collection with no cover of its own now shows its books in the detail view as well as on the card, instead of falling back to a plain icon.',
+    ],
+  },
+  {
     version: '1.27.0',
     date: '2026-09-05',
     notes: [

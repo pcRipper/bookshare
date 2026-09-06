@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
+import StarRating from '@/components/ui/StarRating.vue'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 import { languageLabel } from '@/utils/languages'
 import { wishPriorityMeta, wishPriorityKey } from '@/utils/wishPriority'
@@ -77,10 +78,16 @@ const statusBadge = computed(() => {
 
       <!-- Keyed on the code, not the server's English name: the label is
            re-derived in the active UI locale, with languageName as fallback. -->
-      <p v-if="book.language" class="book-card__lang">
-        <span class="material-symbols-outlined">language</span>
-        {{ languageLabel(book.language, book.languageName) }}
-      </p>
+      <!-- The owner's rating and the language share one line: two short facts,
+           and a rating on a line of its own would push the tags off a phone card.
+           Both render nothing when absent, so an unrated card looks unchanged. -->
+      <div v-if="book.rating || book.language" class="book-card__meta">
+        <StarRating :model-value="book.rating" size="sm" />
+        <span v-if="book.language" class="book-card__lang">
+          <span class="material-symbols-outlined">language</span>
+          {{ languageLabel(book.language, book.languageName) }}
+        </span>
+      </div>
 
       <div class="book-card__tags">
         <CategoryTag
@@ -255,13 +262,20 @@ const statusBadge = computed(() => {
   .book-card__author { font-size: var(--text-label-md); }
 }
 
+.book-card__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin: 0 0 var(--space-base);
+}
 .book-card__lang {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   font-size: 12px;
   color: var(--color-secondary);
-  margin: 0 0 var(--space-base);
+  margin: 0;
 }
 .book-card__lang .material-symbols-outlined { font-size: 14px; }
 

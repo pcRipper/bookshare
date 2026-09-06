@@ -134,7 +134,15 @@ router.beforeEach(to => {
   // authenticated — on first load if already logged in, or right after the
   // OAuth callback redirects in. Fire-and-forget; memoized, so repeat
   // navigations are no-ops and the picker/filter never wait on the fetch.
-  if (auth.isAuthenticated) {
+  //
+  // Never on a public route, even when we believe we are signed in. /api/languages
+  // is not under /api/public, so a *stale* token 401s there — and the axios
+  // interceptor reads that as "your session died", wipes the credentials and
+  // bounces to /login. A share link would throw its visitor at a sign-in screen
+  // they don't need, which is the exact failure the public firewall exists to
+  // prevent (see CLAUDE.md, Public library access). The page needs no vocabulary
+  // anyway: it renders language labels from the book's own ISO code.
+  if (auth.isAuthenticated && !to.meta.public) {
     loadLanguages().catch(() => {})
   }
 })

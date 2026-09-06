@@ -3,6 +3,8 @@
 'A collection is required.': 'La colección es obligatoria.'
 'A collection name is required.': 'El nombre de la colección es obligatorio.'
 'A colour is required.': 'El color es obligatorio.'
+'A rating must be between 1 and 5 stars.': 'La valoración debe estar entre 1 y 5 estrellas.'
+'A review cannot be longer than 1000 characters.': 'Una reseña no puede superar los 1000 caracteres.'
 'A route name is required.': 'El nombre de la página es obligatorio.'
 'A loan can only be set through the borrow-request flow.': 'El estado «prestado» solo se puede asignar mediante una solicitud de préstamo.'
 'Author is required.': 'El autor es obligatorio.'
