@@ -68,9 +68,7 @@
     "categories": "Categories",
     "markRead": "I've read this book",
     "requiredFields": "Title and author are required.",
-    "deleting": "Deleting…",
-    "rating": "Your rating",
-    "ratingHint": "How you rate this book — click the star again to clear it."
+    "deleting": "Deleting…"
   },
   "templateSearch": {
     "searchPlaceholder": "Search by title or ISBN…",

@@ -68,9 +68,7 @@
     "categories": "Kategorien",
     "markRead": "Ich habe dieses Buch gelesen",
     "requiredFields": "Titel und Autor sind erforderlich.",
-    "deleting": "Wird gelöscht…",
-    "rating": "Deine Bewertung",
-    "ratingHint": "Wie du dieses Buch bewertest — klicke den Stern erneut, um sie zu löschen."
+    "deleting": "Wird gelöscht…"
   },
   "templateSearch": {
     "searchPlaceholder": "Nach Titel oder ISBN suchen…",

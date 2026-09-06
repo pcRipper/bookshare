@@ -4,6 +4,11 @@
  * field must be resent — omitting one resets it to the DTO default (e.g. a
  * blank title would 422). Used by the inline "mark as read" toggle, which
  * changes only `isRead` but has to carry the book's current values along.
+ *
+ * The rating and the written review are absent on purpose: they are not part of
+ * BookInput at all, so this payload cannot disturb them. They travel through
+ * PUT /books/{id}/review instead — which is precisely why they were taken off
+ * this DTO when the control moved to the profile.
  */
 export function toBookInput(book) {
   return {
@@ -15,9 +20,6 @@ export function toBookInput(book) {
     status: book.status,
     language: book.language ?? null,
     isRead: book.isRead,
-    // Same trap as the wish fields below: the inline read toggle resends the
-    // whole DTO, so leaving this out would clear the owner's rating on a tick.
-    rating: book.rating ?? null,
     // Carried for the same reason as everything else here: a PATCH that omitted
     // these would quietly move a wanted book onto the shelf.
     isWished: book.isWished ?? false,

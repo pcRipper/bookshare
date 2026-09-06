@@ -68,9 +68,7 @@
     "categories": "Categorías",
     "markRead": "He leído este libro",
     "requiredFields": "El título y el autor son obligatorios.",
-    "deleting": "Eliminando…",
-    "rating": "Tu valoración",
-    "ratingHint": "Cómo valoras este libro: vuelve a pulsar la estrella para borrarla."
+    "deleting": "Eliminando…"
   },
   "templateSearch": {
     "searchPlaceholder": "Buscar por título o ISBN…",

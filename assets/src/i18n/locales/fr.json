@@ -68,9 +68,7 @@
     "categories": "Catégories",
     "markRead": "J’ai lu ce livre",
     "requiredFields": "Le titre et l’auteur sont obligatoires.",
-    "deleting": "Suppression…",
-    "rating": "Votre note",
-    "ratingHint": "Votre appréciation de ce livre — cliquez à nouveau sur l’étoile pour l’effacer."
+    "deleting": "Suppression…"
   },
   "templateSearch": {
     "searchPlaceholder": "Rechercher par titre ou ISBN…",

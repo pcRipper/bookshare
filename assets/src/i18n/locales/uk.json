@@ -68,9 +68,7 @@
     "categories": "Категорії",
     "markRead": "Я прочитав цю книгу",
     "requiredFields": "Назва та автор обовʼязкові.",
-    "deleting": "Видалення…",
-    "rating": "Ваша оцінка",
-    "ratingHint": "Як ви оцінюєте цю книжку — натисніть зірку ще раз, щоб прибрати оцінку."
+    "deleting": "Видалення…"
   },
   "templateSearch": {
     "searchPlaceholder": "Пошук за назвою або ISBN…",
