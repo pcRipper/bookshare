@@ -140,8 +140,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
         </button>
 
         <div class="modal__content">
-          <!-- Cover -->
-          <div class="modal__cover">
+          <!-- Cover. On a phone it stacks above the info column, where 55% of
+               the width is a fine reading illustration but would push a form's
+               Save button off the screen — so it halves while the Review tab is
+               being written on. Desktop is a side column and never shrinks. -->
+          <div class="modal__cover" :class="{ 'modal__cover--compact': canReview && activeTab === 'review' }">
             <img
               v-if="hasCover(book)"
               :src="book.coverPath"
@@ -363,6 +366,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   aspect-ratio: 2 / 3;
   background: var(--color-surface-container-low);
   overflow: hidden;
+}
+@media (max-width: 639px) {
+  .modal__cover--compact { width: 34%; }
 }
 @media (min-width: 640px) {
   .modal__cover { width: 220px; margin: 0; aspect-ratio: auto; }
