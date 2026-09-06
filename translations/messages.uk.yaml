@@ -53,6 +53,7 @@
 'Too many rows — the limit is %limit%.': 'Забагато рядків — ліміт становить %limit%.'
 'Unknown dump kind.': 'Невідомий тип дампа.'
 'Unknown template source.': 'Невідоме джерело шаблонів.'
+'Unsupported rating "%rating%".': 'Непідтримувана оцінка "%rating%".'
 'Unsupported status "%status%".': 'Непідтримуваний статус "%status%".'
 'Unsupported wish-list priority "%priority%".': 'Непідтримуваний пріоритет списку бажань "%priority%".'
 'User not found.': 'Користувача не знайдено.'

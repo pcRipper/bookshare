@@ -77,7 +77,7 @@ class BookCsvServiceTest extends TestCase
         $csv = $this->service()->export([$book]);
 
         $lines = preg_split('/\r\n|\n/', trim($csv));
-        self::assertSame('title,author,description,isbn,cover,language,status,read,wished,priority,categories', $lines[0]);
+        self::assertSame('title,author,description,isbn,cover,language,status,read,rating,wished,priority,categories', $lines[0]);
         self::assertStringContainsString('Dune', $lines[1]);
         self::assertStringContainsString('Herbert', $lines[1]);
         self::assertStringContainsString('/covers/dune.jpg', $lines[1]);
@@ -113,7 +113,7 @@ class BookCsvServiceTest extends TestCase
 
         $row = preg_split('/\r\n|\n/', trim($this->service()->export([$book])))[1];
 
-        self::assertSame('Dune,Herbert,,,,,own,0,0,,', $row);
+        self::assertSame('Dune,Herbert,,,,,own,0,,0,,', $row);
     }
 
     public function testWishListRowsRoundTrip(): void
@@ -225,6 +225,68 @@ class BookCsvServiceTest extends TestCase
         self::assertSame(2, $summary['imported']);
         self::assertTrue($created[0]->isRead());
         self::assertFalse($created[1]->isRead());
+    }
+
+    public function testExportAndImportRoundTripTheRating(): void
+    {
+        $rated = (new Book())->setOwner(new User())->setTitle('Dune')->setAuthor('Herbert')->setRating(4);
+        $unrated = (new Book())->setOwner(new User())->setTitle('1984')->setAuthor('Orwell');
+
+        $csv = $this->service()->export([$rated, $unrated]);
+
+        $created = [];
+        $em = $this->createStub(EntityManagerInterface::class);
+        $em->method('persist')->willReturnCallback(function (Book $b) use (&$created) { $created[] = $b; });
+
+        $summary = $this->service($em)->import(new User(), $csv, replace: false, abortOnError: false);
+
+        self::assertSame(2, $summary['imported']);
+        self::assertSame(4, $created[0]->getRating());
+        // An unrated book exports a blank cell and comes back unrated, not zero.
+        self::assertNull($created[1]->getRating());
+    }
+
+    public function testAFileWithoutTheRatingColumnImportsAsUnrated(): void
+    {
+        $created = [];
+        $em = $this->createStub(EntityManagerInterface::class);
+        $em->method('persist')->willReturnCallback(function (Book $b) use (&$created) { $created[] = $b; });
+
+        // A file exported before the column existed — the header map is
+        // name-based, so it imports exactly as it used to.
+        $csv = "title,author,read
+Dune,Herbert,1
+";
+
+        $summary = $this->service($em)->import(new User(), $csv, replace: false, abortOnError: false);
+
+        self::assertSame(1, $summary['imported']);
+        self::assertNull($created[0]->getRating());
+    }
+
+    public function testARatingOffTheScaleIsRejected(): void
+    {
+        // Caught by BookInput's Range assert rather than by the parser.
+        $csv = "title,author,rating
+Dune,Herbert,7
+";
+
+        $summary = $this->service()->import(new User(), $csv, replace: false, abortOnError: false);
+
+        self::assertSame(0, $summary['imported']);
+        self::assertSame(1, $summary['skipped']);
+    }
+
+    public function testANonNumericRatingIsRejected(): void
+    {
+        $csv = "title,author,rating
+Dune,Herbert,great
+";
+
+        $summary = $this->service()->import(new User(), $csv, replace: false, abortOnError: false);
+
+        self::assertSame(0, $summary['imported']);
+        self::assertSame(1, $summary['skipped']);
     }
 
     public function testImportDefaultsReadToFalseWhenColumnMissing(): void

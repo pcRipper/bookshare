@@ -54,6 +54,7 @@
 'Too many rows — the limit is %limit%.': 'Zu viele Zeilen — das Limit liegt bei %limit%.'
 'Unknown dump kind.': 'Unbekannter Dump-Typ.'
 'Unknown template source.': 'Unbekannte Vorlagenquelle.'
+'Unsupported rating "%rating%".': 'Nicht unterstützte Bewertung "%rating%".'
 'Unsupported status "%status%".': 'Nicht unterstützter Status "%status%".'
 'Unsupported wish-list priority "%priority%".': 'Nicht unterstützte Wunschlisten-Priorität "%priority%".'
 'User not found.': 'Benutzer nicht gefunden.'

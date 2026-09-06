@@ -53,6 +53,7 @@
 'Too many rows — the limit is %limit%.': 'Demasiadas filas: el límite es %limit%.'
 'Unknown dump kind.': 'Tipo de copia desconocido.'
 'Unknown template source.': 'Fuente de plantillas desconocida.'
+'Unsupported rating "%rating%".': 'Valoración no admitida "%rating%".'
 'Unsupported status "%status%".': 'Estado no admitido "%status%".'
 'Unsupported wish-list priority "%priority%".': 'Prioridad de lista de deseos no admitida "%priority%".'
 'User not found.': 'Usuario no encontrado.'

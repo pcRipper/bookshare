@@ -19,8 +19,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  * CSV export / import for a user's book collection.
  *
  * The CSV carries one book per row with the columns: title, author, description,
- * isbn, cover, language (ISO 639-1 code), status, read, wished, priority,
- * categories (semicolon-joined names). `cover` exports the remote URL the image
+ * isbn, cover, language (ISO 639-1 code), status, read, rating, wished,
+ * priority, categories (semicolon-joined names). `cover` exports the remote URL the image
  * came from rather than our localized copy of it (see coverLink()).
  *
  * Both shelves travel in one file: `wished` marks a row as a book the owner
@@ -47,7 +47,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class BookCsvService
 {
     /** Columns, in export order. Import matches them case-insensitively by header. */
-    private const COLUMNS = ['title', 'author', 'description', 'isbn', 'cover', 'language', 'status', 'read', 'wished', 'priority', 'categories'];
+    private const COLUMNS = ['title', 'author', 'description', 'isbn', 'cover', 'language', 'status', 'read', 'rating', 'wished', 'priority', 'categories'];
 
     /** Statuses a book may be imported as — never 'lent', which needs a live loan. */
     private const IMPORTABLE_STATUSES = ['own', 'unavailable', 'currently_reading'];
@@ -85,6 +85,7 @@ class BookCsvService
                 $book->getLanguage() ?? '',
                 $book->getStatus()->value,
                 $book->isRead() ? '1' : '0',
+                (string) ($book->getRating() ?? ''),
                 $book->isWished() ? '1' : '0',
                 (string) ($book->getWishPriority()?->value ?? ''),
                 implode('; ', array_map(static fn ($c) => $c->getName(), $book->getCategories()->toArray())),
@@ -276,6 +277,17 @@ class BookCsvService
 
         // Truthy read flag; a missing column (older files) defaults to unread.
         $input->isRead = self::truthy($get('read'));
+
+        // The owner's rating. Blank (and a file predating the column) means
+        // unrated; a value off the 1-5 scale is caught by BookInput's own Range
+        // assert, so only a non-numeric one needs saying here.
+        $rating = $get('rating');
+        if ($rating !== '') {
+            $input->rating = ctype_digit($rating) ? (int) $rating : null;
+            if ($input->rating === null) {
+                $errors[] = $this->errors->translate('Unsupported rating "%rating%".', ['%rating%' => $rating]);
+            }
+        }
 
         // Wish list. A missing column (a file exported before the feature) imports
         // as an owned book, which is what it was.
