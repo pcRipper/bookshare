@@ -3,6 +3,7 @@
 'A collection is required.': 'La collection est obligatoire.'
 'A collection name is required.': 'Le nom de la collection est obligatoire.'
 'A colour is required.': 'La couleur est obligatoire.'
+'A rating must be between 1 and 5 stars.': 'Une note doit être comprise entre 1 et 5 étoiles.'
 'A route name is required.': 'Le nom de la page est obligatoire.'
 'A loan can only be set through the borrow-request flow.': 'Le statut « prêté » ne peut être défini que via une demande d''emprunt.'
 'Author is required.': 'L''auteur est obligatoire.'

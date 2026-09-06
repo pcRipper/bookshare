@@ -60,6 +60,18 @@ class ResponseMapperTest extends TestCase
         self::assertTrue($this->mapper()->book($read)['isRead']);
     }
 
+    public function testBookRatingIsEmittedAndNullWhenUnrated(): void
+    {
+        $owner = (new User())->setFullName('Jane');
+        $unrated = (new Book())->setOwner($owner)->setTitle('T')->setAuthor('A');
+        $rated = (new Book())->setOwner($owner)->setTitle('T')->setAuthor('A')->setRating(4);
+
+        // Null rather than 0: the SPA keys its v-if on it, so "not rated" has to
+        // stay distinguishable from a low score.
+        self::assertNull($this->mapper()->book($unrated)['rating']);
+        self::assertSame(4, $this->mapper()->book($rated)['rating']);
+    }
+
     public function testBookCreatedAtIsEmittedInAtomFormat(): void
     {
         $book = (new Book())->setOwner((new User())->setFullName('Jane'))->setTitle('T')->setAuthor('A');

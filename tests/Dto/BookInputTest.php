@@ -4,6 +4,7 @@ namespace App\Tests\Dto;
 
 use App\Dto\BookInput;
 use App\Enum\BookStatus;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -148,5 +149,49 @@ class BookInputTest extends TestCase
         $input->isRead = true;
 
         self::assertCount(0, $this->validator->validate($input));
+    }
+
+    public function testNullRatingIsValid(): void
+    {
+        $input = $this->validBook();
+        $input->rating = null;
+
+        self::assertNotContains('rating', $this->violations($input));
+    }
+
+    #[TestWith([1])]
+    #[TestWith([3])]
+    #[TestWith([5])]
+    public function testRatingsOnTheScaleAreAccepted(int $stars): void
+    {
+        $input = $this->validBook();
+        $input->rating = $stars;
+
+        self::assertNotContains('rating', $this->violations($input));
+    }
+
+    /**
+     * Rejected rather than clamped: a value off the scale means the client is
+     * counting something else, and silently storing 5 for a 10 hides that.
+     */
+    #[TestWith([0])]
+    #[TestWith([-1])]
+    #[TestWith([6])]
+    #[TestWith([10])]
+    public function testRatingsOffTheScaleAreRejected(int $stars): void
+    {
+        $input = $this->validBook();
+        $input->rating = $stars;
+
+        self::assertContains('rating', $this->violations($input));
+    }
+
+    private function validBook(): BookInput
+    {
+        $input = new BookInput();
+        $input->title = 'Dune';
+        $input->author = 'Frank Herbert';
+
+        return $input;
     }
 }

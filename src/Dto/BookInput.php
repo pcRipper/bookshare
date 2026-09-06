@@ -50,6 +50,16 @@ class BookInput
     /** Owner's "already read" flag; defaults to unread. */
     public bool $isRead = false;
 
+    /**
+     * The owner's rating of the book, 1-5 stars, or null for "not rated".
+     *
+     * Rejected rather than clamped, unlike $wishPriority: a rating outside the
+     * scale is a client that means something else by the number, and silently
+     * storing 5 for a 10 would be worse than saying so.
+     */
+    #[Assert\Range(min: 1, max: 5, notInRangeMessage: 'A rating must be between 1 and 5 stars.')]
+    public ?int $rating = null;
+
     /** True to file this as a book the owner *wants* rather than one they hold. */
     public bool $isWished = false;
 

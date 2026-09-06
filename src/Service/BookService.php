@@ -89,6 +89,7 @@ class BookService
             ->setStatus($input->status)
             ->setLanguage($input->language !== null && trim($input->language) !== '' ? trim($input->language) : null)
             ->setIsRead($input->isRead)
+            ->setRating($input->rating)
             // setWish keeps the pair coherent: a priority is stored only for a
             // wanted book, and a wanted book always ends up with a level.
             ->setWish($input->isWished, $input->wishPriority);

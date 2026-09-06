@@ -3,6 +3,7 @@
 'A collection is required.': 'Вкажіть збірку.'
 'A collection name is required.': 'Вкажіть назву збірки.'
 'A colour is required.': 'Виберіть колір.'
+'A rating must be between 1 and 5 stars.': 'Оцінка має бути від 1 до 5 зірок.'
 'A route name is required.': 'Потрібна назва сторінки.'
 'A loan can only be set through the borrow-request flow.': 'Статус «позичено» встановлюється лише через запит на позику.'
 'Author is required.': 'Вкажіть автора.'

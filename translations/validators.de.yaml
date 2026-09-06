@@ -4,6 +4,7 @@
 'A collection is required.': 'Eine Sammlung ist erforderlich.'
 'A collection name is required.': 'Ein Sammlungsname ist erforderlich.'
 'A colour is required.': 'Eine Farbe ist erforderlich.'
+'A rating must be between 1 and 5 stars.': 'Eine Bewertung muss zwischen 1 und 5 Sternen liegen.'
 'A route name is required.': 'Ein Seitenname ist erforderlich.'
 'A loan can only be set through the borrow-request flow.': 'Der Status „verliehen“ kann nur über eine Leihanfrage gesetzt werden.'
 'Author is required.': 'Ein Autor ist erforderlich.'

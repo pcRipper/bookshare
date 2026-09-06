@@ -54,6 +54,21 @@ class Book
     private bool $isRead = false;
 
     /**
+     * The owner's own rating of this copy, 1-5, or null when they haven't rated it.
+     *
+     * Null is meaningful — "not rated" is not "rated badly" — so every surface
+     * renders nothing rather than an empty star row. A plain smallint rather than
+     * a backed enum like $wishPriority: these values carry no vocabulary, only
+     * order, so there is nothing for an enum to name. Deliberately orthogonal to
+     * $isRead: rating a book you never marked read is unusual, not incoherent.
+     *
+     * A Book is one member's physical copy, so this is one person's judgement and
+     * never an average — see the Ratings section of CLAUDE.md.
+     */
+    #[ORM\Column(type: 'smallint', nullable: true)]
+    private ?int $rating = null;
+
+    /**
      * True when this is a book the owner *wants*, not one they hold.
      *
      * A wish-list book is a Book so the whole cataloguing flow (template search,
@@ -127,6 +142,9 @@ class Book
 
     public function isRead(): bool { return $this->isRead; }
     public function setIsRead(bool $isRead): static { $this->isRead = $isRead; return $this; }
+
+    public function getRating(): ?int { return $this->rating; }
+    public function setRating(?int $rating): static { $this->rating = $rating; return $this; }
 
     public function isWished(): bool { return $this->isWished; }
 

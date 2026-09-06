@@ -67,8 +67,12 @@ class ResponseMapper
             // Language as both the stored ISO code and its display name (null when unset).
             'language'     => $book->getLanguage(),
             'languageName' => \App\Language\LanguageCatalog::name($book->getLanguage()),
-            // Owner's personal "already read" flag.
+            // Owner's personal "already read" flag, and their own 1-5 rating of
+            // this copy (null when unrated — never an average; a Book is one
+            // member's copy). The SPA owns the star presentation, the same
+            // front/back split as `status` and `wishPriority`.
             'isRead'       => $book->isRead(),
+            'rating'       => $book->getRating(),
             // Wish list: wanted rather than held, and how badly. The priority is
             // the enum's number — the SPA owns the green/yellow/red labels, the
             // same split as `status`.
@@ -118,6 +122,10 @@ class ResponseMapper
             'language'     => $book->getLanguage(),
             'languageName' => \App\Language\LanguageCatalog::name($book->getLanguage()),
             'isRead'       => $book->isRead(),
+            // Published on purpose: the owner's rating is their public judgement
+            // of a book they are offering to lend, the same standing the "Read"
+            // badge already has, and it names no third party.
+            'rating'       => $book->getRating(),
             // Published on purpose: the share page carries a wish-list section,
             // and "books I'd like" is exactly the sort of thing a link is shared
             // for. Neither field is viewer-relative or names a third party.
