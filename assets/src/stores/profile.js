@@ -104,6 +104,22 @@ export const useProfileStore = defineStore('profile', () => {
 
   /* ── Own-profile mutations (only meaningful when profile.isSelf) ──────── */
 
+  /**
+   * Save the owner's verdict on one of their books. Its own endpoint, so nothing
+   * else about the book can be disturbed by a rating; the response is the mapped
+   * book, and patching the store's copy from it also updates the open modal,
+   * which holds the same object.
+   */
+  async function saveReview(bookId, { rating, review }) {
+    const { data } = await api.put(`/books/${bookId}/review`, { rating, review })
+    const book = books.value.find(b => b.id === bookId)
+    if (book) {
+      book.rating = data.rating
+      book.review = data.review
+    }
+    return data
+  }
+
   // Update the current user's editable profile fields (bio, location).
   async function updateProfile(payload) {
     const { data } = await api.patch('/me', payload)
@@ -117,6 +133,6 @@ export const useProfileStore = defineStore('profile', () => {
   return {
     profile, books, booksMeta, booksLoading, availableCount, shelf, booksQuery, loading, error,
     fetchProfile, fetchBooksPage, setShelf, setBooksSearch, requestBorrow,
-    updateProfile,
+    updateProfile, saveReview,
   }
 })

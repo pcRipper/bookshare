@@ -153,10 +153,26 @@ async function onRequest(bookId) {
   }
 }
 
-/* ── Book detail modal (read-only preview for all profiles, own included ─
-   book management lives in the library, not here) ─────────────────────── */
+/* ── Book detail modal ────────────────────────────────────────────────────
+   A read-only preview of the book itself on every profile, own included —
+   book management lives in the library, not here. The exception is the Review
+   tab: a verdict on a book is not inventory, so this is where the owner writes
+   one. `canReview` is gated on isSelf here and nowhere else. ─────────────── */
 const detailBook = ref(null)
 function openDetail(book) { detailBook.value = book }
+
+const savingReview = ref(false)
+async function onSaveReview({ id, rating, review }) {
+  savingReview.value = true
+  try {
+    await store.saveReview(id, { rating, review })
+    toast.success(t('bookDetail.reviewSaved'))
+  } catch (e) {
+    toast.error(apiErrorMessage(e, t('profile.errors.saveReview')))
+  } finally {
+    savingReview.value = false
+  }
+}
 
 /* ── Collection borrow modal ──────────────────────────────────────────── */
 const borrowCollection = ref(null)  // the collection (with fresh books) being borrowed
@@ -400,8 +416,11 @@ async function onProfileSave(payload) {
       :open="!!detailBook"
       :book="detailBook"
       :is-self="profile?.isSelf"
+      :can-review="!!profile?.isSelf"
+      :saving-review="savingReview"
       :pending="!!detailBook && requesting.has(detailBook.id)"
       @request="onRequest"
+      @save-review="onSaveReview"
       @close="detailBook = null"
     />
 

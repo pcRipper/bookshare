@@ -1,8 +1,9 @@
 <script setup>
-import { computed, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import StarRating from '@/components/ui/StarRating.vue'
+import ModalTabs from '@/components/ui/ModalTabs.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import CategoryTag from '@/components/ui/CategoryTag.vue'
 import { languageLabel } from '@/utils/languages'
@@ -12,12 +13,19 @@ import { useCoverFallback } from '@/composables/useCoverFallback'
 const { t } = useI18n()
 
 /**
- * Read-only book overview. Opens from browse surfaces (Discover, the Following
- * feed, other readers' profiles) where a click can't edit the book — never from
- * the owner's own library/profile, where a click opens the Manage Book modal.
+ * Book overview. Opens from browse surfaces (Discover, the Following feed, other
+ * readers' profiles) and from the owner's own profile, where it doubles as the
+ * place a review is written. Editing the *book* still lives in /library.
  *
  * The full description reads top-to-bottom in normal flow (the reason this modal
  * exists — the old hover overlay clipped the start of long blurbs).
+ *
+ * Two tabs over the info column, so the cover stays put while the right side
+ * swaps. The **Review** tab is editable only under `canReview`, which is a
+ * separate prop and deliberately NOT `isSelf`: the public share page passes
+ * `is-self` to mean "no borrow button", so gating an editor on it would hand one
+ * to signed-out visitors. For everyone else the tab is read-only, and it is not
+ * rendered at all when there is nothing to read — a dead tab is worse than none.
  */
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -25,11 +33,54 @@ const props = defineProps({
   // Parent-controlled: true while this book's borrow request is in flight.
   pending: { type: Boolean, default: false },
   // When the viewer owns this book (own profile) there's no borrow action —
-  // the footer shows only Close and the modal is a pure preview.
+  // the footer shows only Close and the modal is a pure preview. Also true on
+  // the signed-out share page, where it means the same thing for a different
+  // reason — which is why it must never gate the review editor.
   isSelf: { type: Boolean, default: false },
+  // The viewer is this book's owner *and* signed in: the Review tab is a form.
+  canReview: { type: Boolean, default: false },
+  // Parent-controlled: true while a review save is in flight.
+  savingReview: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['close', 'request'])
+const emit = defineEmits(['close', 'request', 'save-review'])
+
+const REVIEW_MAX = 1000
+
+const activeTab = ref('details')
+const draft = ref({ rating: null, review: '' })
+
+const hasReview = computed(() => !!props.book?.rating || !!props.book?.review?.trim())
+// Read-only viewers get the tab only when there is something behind it.
+const showReviewTab = computed(() => props.canReview || hasReview.value)
+
+const tabs = computed(() => [
+  { key: 'details', label: t('bookDetail.tabDetails') },
+  { key: 'review', label: t('bookDetail.tabReview') },
+])
+
+const reviewRemaining = computed(() => REVIEW_MAX - (draft.value.review?.length ?? 0))
+
+// Re-seed the draft (and go back to Details) whenever the modal opens on a book:
+// the same modal instance is reused for every card in a list.
+watch(
+  () => [props.open, props.book?.id],
+  () => {
+    if (!props.open) return
+    activeTab.value = 'details'
+    draft.value = { rating: props.book?.rating ?? null, review: props.book?.review ?? '' }
+  },
+  { immediate: true },
+)
+
+function onSaveReview() {
+  const review = draft.value.review.trim()
+  emit('save-review', {
+    id: props.book.id,
+    rating: draft.value.rating,
+    review: review !== '' ? review : null,
+  })
+}
 
 const { hasCover, onCoverError } = useCoverFallback()
 
@@ -105,6 +156,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
           <!-- Info (scrolls independently on desktop) -->
           <div class="modal__info">
+            <ModalTabs
+              v-if="showReviewTab"
+              v-model="activeTab"
+              :items="tabs"
+              :aria-label="t('bookDetail.aria', { title: book.title })"
+            />
+
+            <div v-show="!showReviewTab || activeTab === 'details'" class="detail-panel">
             <div v-if="statusPill || book.isRead" class="detail-pills">
               <span
                 v-if="statusPill"
@@ -122,11 +181,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             <h2 class="detail-title">{{ book.title }}</h2>
             <p class="detail-author">{{ t('bookDetail.byAuthor', { author: book.author }) }}</p>
 
-            <!-- The one surface that is about a single book, so it gets the full
-                 scale rather than the lists' compact star. -->
+            <!-- The stars stay on Details as a fact about the book; the words
+                 (and the form) live one tab over. -->
             <p v-if="book.rating" class="detail-rating">
               <StarRating :model-value="book.rating" variant="stars" size="lg" />
-              <span class="detail-rating__label">{{ t('book.rating') }}</span>
+              <button
+                v-if="showReviewTab && book.review"
+                class="detail-rating__link"
+                type="button"
+                @click="activeTab = 'review'"
+              >{{ t('bookDetail.tabReview') }}</button>
+              <span v-else class="detail-rating__label">{{ t('book.rating') }}</span>
             </p>
 
             <RouterLink
@@ -161,6 +226,47 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
               <p v-if="hasDescription" class="detail-about__text">{{ book.description }}</p>
               <p v-else class="detail-about__empty">{{ t('bookDetail.noDescription') }}</p>
             </section>
+            </div>
+
+            <!-- Review: a form for the owner, prose for everyone else. -->
+            <div v-if="showReviewTab" v-show="activeTab === 'review'" class="detail-panel">
+              <template v-if="canReview">
+                <div class="review-field">
+                  <span class="review-field__label">{{ t('book.rating') }}</span>
+                  <StarRating v-model="draft.rating" editable size="lg" :disabled="savingReview" />
+                </div>
+
+                <div class="review-field">
+                  <label class="review-field__label" for="bd-review">{{ t('bookDetail.tabReview') }}</label>
+                  <textarea
+                    id="bd-review"
+                    v-model="draft.review"
+                    class="review-field__text"
+                    rows="6"
+                    :maxlength="REVIEW_MAX"
+                    :disabled="savingReview"
+                    :placeholder="t('bookDetail.reviewPlaceholder')"
+                  ></textarea>
+                  <span class="review-field__counter">{{ reviewRemaining }}</span>
+                </div>
+
+                <button class="btn-save-review" type="button" :disabled="savingReview" @click="onSaveReview">
+                  <BaseSpinner v-if="savingReview" size="sm" />
+                  {{ t('bookDetail.saveReview') }}
+                </button>
+              </template>
+
+              <template v-else>
+                <StarRating v-if="book.rating" :model-value="book.rating" variant="stars" size="lg" />
+                <p v-if="book.review" class="review-text">{{ book.review }}</p>
+                <p v-else class="detail-about__empty">{{ t('bookDetail.noReview') }}</p>
+                <!-- Named only where the payload carries an owner (Discover):
+                     on a profile the whole page already says whose shelf it is. -->
+                <p v-if="book.owner" class="review-byline">
+                  {{ t('bookDetail.reviewBy', { name: book.owner.fullName }) }}
+                </p>
+              </template>
+            </div>
           </div>
         </div>
 
@@ -437,6 +543,87 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 .detail-about__empty {
   margin: 0;
   font-size: var(--text-body-md);
+  font-style: italic;
+  color: var(--color-secondary);
+}
+
+.detail-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.detail-rating__link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-label-sm);
+  letter-spacing: var(--ls-label-sm);
+  text-transform: uppercase;
+  color: var(--color-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.review-field { display: flex; flex-direction: column; gap: var(--space-xs); }
+.review-field__label {
+  font-size: var(--text-label-sm);
+  letter-spacing: var(--ls-label-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-on-surface-variant);
+}
+.review-field__text {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-default);
+  background: var(--color-surface-container-lowest);
+  font-family: var(--font-body);
+  font-size: var(--text-body-md);
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 120px;
+}
+.review-field__text:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -1px;
+  border-color: var(--color-primary);
+}
+.review-field__counter {
+  align-self: flex-end;
+  font-size: var(--text-label-sm);
+  color: var(--color-secondary);
+}
+
+.btn-save-review {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 10px 20px;
+  border: 0;
+  border-radius: var(--radius-default);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-label-md);
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-save-review:disabled { opacity: 0.7; cursor: default; }
+
+.review-text {
+  margin: 0;
+  font-size: var(--text-body-md);
+  line-height: 1.55;
+  color: var(--color-on-background);
+  white-space: pre-line;   /* honour the writer's line breaks */
+}
+.review-byline {
+  margin: 0;
+  font-size: var(--text-label-sm);
   font-style: italic;
   color: var(--color-secondary);
 }

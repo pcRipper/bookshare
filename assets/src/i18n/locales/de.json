@@ -137,7 +137,14 @@
       "lent": "Verliehen",
       "reading": "Wird gelesen",
       "unavailable": "Nicht verfügbar"
-    }
+    },
+    "tabDetails": "Details",
+    "tabReview": "Rezension",
+    "reviewBy": "— {name}",
+    "noReview": "Zu diesem Buch wurde noch keine Rezension geschrieben.",
+    "reviewPlaceholder": "Was hältst du davon?",
+    "saveReview": "Rezension speichern",
+    "reviewSaved": "Rezension gespeichert."
   },
   "collections": {
     "badge": "Sammlung",
@@ -339,7 +346,8 @@
       "unfollow": "Das Entfolgen ist fehlgeschlagen.",
       "collections": "Die Sammlungen konnten nicht geladen werden.",
       "borrowCollection": "Diese Sammlung konnte nicht ausgeliehen werden.",
-      "borrowRequest": "Deine Leihanfrage konnte nicht gesendet werden."
+      "borrowRequest": "Deine Leihanfrage konnte nicht gesendet werden.",
+      "saveReview": "Deine Rezension konnte nicht gespeichert werden."
     },
     "collectionRequested": "Anfrage zum Ausleihen der Sammlung gesendet.",
     "editTitle": "Profil bearbeiten",

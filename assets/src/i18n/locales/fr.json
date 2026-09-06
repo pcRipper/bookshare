@@ -137,7 +137,14 @@
       "lent": "Prêté",
       "reading": "En lecture",
       "unavailable": "Indisponible"
-    }
+    },
+    "tabDetails": "Détails",
+    "tabReview": "Avis",
+    "reviewBy": "— {name}",
+    "noReview": "Aucun avis n’a encore été écrit sur ce livre.",
+    "reviewPlaceholder": "Qu’en avez-vous pensé ?",
+    "saveReview": "Enregistrer l’avis",
+    "reviewSaved": "Avis enregistré."
   },
   "collections": {
     "badge": "Collection",
@@ -339,7 +346,8 @@
       "unfollow": "Impossible de ne plus le suivre.",
       "collections": "Les collections n’ont pas pu être chargées.",
       "borrowCollection": "Cette collection n’a pas pu être empruntée.",
-      "borrowRequest": "Votre demande d’emprunt n’a pas pu être envoyée."
+      "borrowRequest": "Votre demande d’emprunt n’a pas pu être envoyée.",
+      "saveReview": "Impossible d’enregistrer votre avis."
     },
     "collectionRequested": "Demande d’emprunt de la collection envoyée.",
     "editTitle": "Modifier le profil",

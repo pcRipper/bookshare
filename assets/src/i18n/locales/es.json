@@ -137,7 +137,14 @@
       "lent": "Prestado",
       "reading": "En lectura",
       "unavailable": "No disponible"
-    }
+    },
+    "tabDetails": "Detalles",
+    "tabReview": "Reseña",
+    "reviewBy": "— {name}",
+    "noReview": "Todavía no hay ninguna reseña de este libro.",
+    "reviewPlaceholder": "¿Qué te ha parecido?",
+    "saveReview": "Guardar reseña",
+    "reviewSaved": "Reseña guardada."
   },
   "collections": {
     "badge": "Colección",
@@ -339,7 +346,8 @@
       "unfollow": "No se pudo dejar de seguir.",
       "collections": "No se pudieron cargar las colecciones.",
       "borrowCollection": "No se pudo pedir prestada esta colección.",
-      "borrowRequest": "No se pudo enviar tu solicitud de préstamo."
+      "borrowRequest": "No se pudo enviar tu solicitud de préstamo.",
+      "saveReview": "No se ha podido guardar tu reseña."
     },
     "collectionRequested": "Solicitud de préstamo de la colección enviada.",
     "editTitle": "Editar perfil",

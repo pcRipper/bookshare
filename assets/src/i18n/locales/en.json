@@ -137,7 +137,14 @@
       "lent": "On loan",
       "reading": "Being read",
       "unavailable": "Unavailable"
-    }
+    },
+    "tabDetails": "Details",
+    "tabReview": "Review",
+    "reviewBy": "— {name}",
+    "noReview": "No review has been written for this book.",
+    "reviewPlaceholder": "What did you make of it?",
+    "saveReview": "Save review",
+    "reviewSaved": "Review saved."
   },
   "collections": {
     "badge": "Collection",
@@ -339,7 +346,8 @@
       "unfollow": "Could not unfollow.",
       "collections": "Could not load collections.",
       "borrowCollection": "Could not borrow this collection.",
-      "borrowRequest": "Could not send your borrow request."
+      "borrowRequest": "Could not send your borrow request.",
+      "saveReview": "Could not save your review."
     },
     "collectionRequested": "Collection borrow request sent.",
     "editTitle": "Edit Profile",
