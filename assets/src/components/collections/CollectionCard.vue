@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import CollectionCoverMotif from '@/components/collections/CollectionCoverMotif.vue'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 
 const { hasCover, onCoverError } = useCoverFallback()
@@ -38,14 +39,6 @@ const isOwner = computed(() => props.variant === 'owner')
 // A collection is borrowable only when at least two of its books are available.
 const borrowable = computed(() => props.collection.availableCount >= 2)
 
-// Up to three member covers to hint at the contents behind the header.
-const previewCovers = computed(() =>
-  (props.collection.books ?? [])
-    .map(b => b.coverPath)
-    .filter(Boolean)
-    .slice(0, 3),
-)
-
 function onCardClick() {
   emit(isOwner.value ? 'edit' : 'open', props.collection)
 }
@@ -62,19 +55,7 @@ function onCardClick() {
         loading="lazy"
         @error="onCoverError(collection.id)"
       />
-      <div v-else class="collection-card__motif" aria-hidden="true">
-        <div v-if="previewCovers.length" class="collection-card__stack">
-          <img
-            v-for="(cover, i) in previewCovers"
-            :key="i"
-            :src="cover"
-            class="collection-card__stack-img"
-            :style="{ '--i': i }"
-            alt=""
-          />
-        </div>
-        <span v-else class="material-symbols-outlined collection-card__motif-icon">library_books</span>
-      </div>
+      <CollectionCoverMotif v-else :books="collection.books" variant="card" />
 
       <!-- Always mark it as a collection. On a phone the label folds away and the
            icon carries the meaning — see the badge styles for why. -->
@@ -138,36 +119,6 @@ function onCardClick() {
   position: relative;
 }
 .collection-card__img { width: 100%; height: 100%; object-fit: cover; }
-
-.collection-card__motif {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--color-primary-container) 0%, var(--color-surface-variant) 100%);
-}
-.collection-card__motif-icon { font-size: 48px; color: var(--color-primary); opacity: 0.6; }
-
-/* Fanned member covers as a preview when there's no explicit cover. */
-.collection-card__stack {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  height: 100%;
-  padding: var(--space-sm);
-}
-.collection-card__stack-img {
-  width: 64px;
-  height: 92px;
-  object-fit: cover;
-  border-radius: var(--radius-sm);
-  border: 2px solid var(--color-surface-container-lowest);
-  box-shadow: 0 2px 6px rgba(35, 44, 51, 0.2);
-  margin-left: calc(var(--i) * -14px);
-  transform: rotate(calc((var(--i) - 1) * 4deg));
-}
 
 .collection-card__badge {
   position: absolute;

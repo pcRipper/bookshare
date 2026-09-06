@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import CollectionCoverMotif from '@/components/collections/CollectionCoverMotif.vue'
 import { useCoverFallback } from '@/composables/useCoverFallback'
 
 const { hasCover, onCoverError } = useCoverFallback()
@@ -102,9 +103,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
               class="modal__cover-img"
               @error="onCoverError(collection.id)"
             />
-            <div v-else class="modal__cover-placeholder" aria-hidden="true">
-              <span class="material-symbols-outlined">library_books</span>
-            </div>
+            <CollectionCoverMotif v-else :books="books" variant="detail" />
           </div>
 
           <!-- Info -->
@@ -278,15 +277,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   .modal__cover { width: 280px; }
 }
 .modal__cover-img { width: 100%; height: 100%; object-fit: cover; }
-.modal__cover-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--color-primary-container) 0%, var(--color-surface-variant) 100%);
-}
-.modal__cover-placeholder .material-symbols-outlined { font-size: 56px; color: var(--color-primary); opacity: 0.6; }
 
 .modal__info {
   padding: var(--space-lg) var(--space-md) var(--space-md);
