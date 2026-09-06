@@ -138,4 +138,53 @@ class BookRepositoryTest extends RepositoryTestCase
         self::assertSame(1, $this->repo()->countByStatus()[BookStatus::Own->value]);
         self::assertSame(1, $this->repo()->countByWishPriority()[WishPriority::Urgent->value]);
     }
+
+    /**
+     * Discover's rating order. DQL has no NULLS LAST, and PostgreSQL sorts nulls
+     * *first* on a DESC column, so an unrated book would otherwise lead the list
+     * whose entire point is the rated ones — hence the COALESCE.
+     */
+    public function testDiscoverCanRankByRatingWithUnratedBooksLast(): void
+    {
+        $viewer = $this->makeUser();
+        $owner = $this->makeUser();
+
+        $unrated = $this->makeBook($owner);
+        $three = $this->makeBook($owner)->setRating(3);
+        $five = $this->makeBook($owner)->setRating(5);
+
+        $this->em->flush();
+
+        $page = $this->repo()->findForDiscoverPaginated(
+            $viewer, null, null, null, new Pagination(1, 100), BookRepository::SORT_RATING,
+        );
+
+        self::assertSame(
+            [$five->getId(), $three->getId(), $unrated->getId()],
+            array_map(static fn (Book $b) => $b->getId(), $page->items),
+        );
+    }
+
+    public function testAnUnknownDiscoverSortFallsBackToNewestFirst(): void
+    {
+        $viewer = $this->makeUser();
+        $owner = $this->makeUser();
+
+        // Highly rated but catalogued first, so the two orders disagree.
+        $older = $this->makeBook($owner)->setRating(5);
+        $newer = $this->makeBook($owner);
+        // createdAt is stamped in the constructor, so back-date by reflection —
+        // both books would otherwise share a second and tie.
+        new \ReflectionProperty(Book::class, 'createdAt')
+            ->setValue($older, new \DateTimeImmutable('-2 days'));
+
+        $this->em->flush();
+
+        // Clamp, don't reject: a stray ?sort= browses, it does not 422.
+        $page = $this->repo()->findForDiscoverPaginated(
+            $viewer, null, null, null, new Pagination(1, 100), 'nonsense',
+        );
+
+        self::assertSame($newer->getId(), $page->items[0]->getId());
+    }
 }

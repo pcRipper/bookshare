@@ -169,8 +169,13 @@ class BookRestController extends AbstractController
             $language = (string) $raw;
         }
 
+        // Ordering: `rating` ranks by the owner's rating, anything else (and no
+        // value at all) is newest-first. Clamped rather than rejected, like every
+        // other browse parameter — a stray ?sort= must not break browsing.
+        $sort = (string) $request->query->get('sort', '');
+
         $pagination = Pagination::fromRequest($request, self::DISCOVER_PER_PAGE);
-        $result = $repo->findForDiscoverPaginated($viewer, $q !== '' ? $q : null, $category, $language, $pagination);
+        $result = $repo->findForDiscoverPaginated($viewer, $q !== '' ? $q : null, $category, $language, $pagination, $sort);
 
         $pending = array_flip($requests->findPendingBookIdsForRequester($viewer));
 
