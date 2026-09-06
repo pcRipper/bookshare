@@ -136,6 +136,16 @@ final class Mailer
      */
     private function subject(MailType $type, array $context, string $locale): string
     {
+        // One exception to translating the type's own subject: a letter a human
+        // composed carries the line they wrote, verbatim. Translating it is not
+        // possible (it isn't a catalog id) and overriding it would silently
+        // discard what the operator typed into the Intercom tab. Every
+        // event-triggered mail leaves this key unset and is unaffected.
+        $authored = trim((string) ($context['subject'] ?? ''));
+        if ($authored !== '') {
+            return $authored;
+        }
+
         $parameters = [];
         $missing = [];
         foreach ($type->subjectPlaceholders() as $name) {

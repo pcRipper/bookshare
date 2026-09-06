@@ -6,6 +6,7 @@ use App\Dto\Pagination;
 use App\Entity\Book;
 use App\Entity\Subscription;
 use App\Entity\User;
+use App\Entity\UserSettings;
 use App\Repository\BookRepository;
 use App\Repository\SubscriptionRepository;
 use App\Repository\UserRepository;
@@ -207,6 +208,52 @@ class VisibleUsersTest extends RepositoryTestCase
         $this->em->flush();
 
         self::assertCount(1, $this->subscriptions()->findFollowing($subscriber));
+    }
+
+    /* ── Outbound mail ───────────────────────────────────────────────────── */
+
+    /**
+     * The Intercom letter's audience. Of every surface in this file this is the
+     * one where forgetting the predicate is worst: the others would show a
+     * suspended member's content to somebody browsing, this one would put mail
+     * in the inbox of an account the operator removed.
+     */
+    public function testTheNewsletterAudienceExcludesSuspendedAndDeletedMembers(): void
+    {
+        $subscribe = function (User $user): User {
+            $settings = (new UserSettings())->setUser($user)->setNotifyNewsletter(true);
+            $this->em->persist($settings);
+            $user->setSettings($settings);
+
+            return $user;
+        };
+
+        $active = $subscribe($this->makeUser());
+        $banned = $subscribe($this->makeUser());
+        $banned->ban('Spam');
+        $deleted = $subscribe($this->makeUser());
+        $deleted->setDeletedAt(new \DateTimeImmutable());
+        // Opted out, and never touched their settings at all: neither counts.
+        $optedOut = $this->makeUser();
+        $optedOutSettings = (new UserSettings())->setUser($optedOut)->setNotifyNewsletter(false);
+        $this->em->persist($optedOutSettings);
+        $optedOut->setSettings($optedOutSettings);
+        $never = $this->makeUser();
+
+        $this->em->flush();
+
+        $ids = array_map(
+            static fn (User $u) => $u->getId(),
+            self::getContainer()->get(UserRepository::class)->findNewsletterRecipients(),
+        );
+
+        self::assertContains($active->getId(), $ids);
+        self::assertNotContains($banned->getId(), $ids);
+        self::assertNotContains($deleted->getId(), $ids);
+        self::assertNotContains($optedOut->getId(), $ids);
+        // No settings row means every setting is at its default, and the
+        // newsletter default is off — "never chose" is not "subscribed".
+        self::assertNotContains($never->getId(), $ids);
     }
 
     /* ── The admin list is the deliberate exception ───────────────────────── */
