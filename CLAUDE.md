@@ -126,6 +126,7 @@ Sign-in is **Google OAuth only** (the original email/password + register screens
 | `/admin` | `AdminView` | **Admin only** — the operator panel shell: layout, page header and a `SubTabNav` strip over its sections. Redirects to `/admin/members`. Reached from the account dropdown, which only shows the link to an administrator. See _Admin panel_ |
 | `/admin/members` | `AdminMembersView` | **Admin only** — the member table: search, status filter, suspend / reinstate / delete. See _Admin panel_ |
 | `/admin/dumps` | `AdminDumpsView` | **Admin only** — manual database dumps: make one, download it, delete it. See _Admin panel_ |
+| `/admin/intercom` | `AdminIntercomView` | **Admin only** — compose a "what's new" letter from the release notes and send it to members who opted in. See _Intercom_ |
 | `/admin/stats` | `AdminStatsView` | **Admin only** — the analytics section: growth, engagement, traffic and library health, over a 7/30/90-day window. Keeps its original path and route name, from when it was the whole of `/admin`. See _Analytics_ |
 | `/changelog` | `ChangelogView` | Static **Release Notes** — a flat list of versions (label + date + change notes). Data lives in `assets/src/data/changelog.js` (no API); reached via the footer's "Release Notes" link (the old dead-end footer links were removed) |
 | `/` | — | Redirects to `/library` |
@@ -426,7 +427,7 @@ The **reason** a voter gives (`denyAccessUnlessGranted`'s third argument, e.g. `
 **Roles.** `User.roles` is a JSON grant list holding *extra* grants only — today just `ROLE_ADMIN`. `ROLE_USER` is merged in by `getRoles()` and never stored, so an ordinary member's column is `[]` and "no grants" and "ordinary" can't drift apart. Plain `JSON`, **not JSONB**: it's never queried into, and Doctrine's `json` type maps to `JSON`, so JSONB would make every `migrations:diff` emit a phantom `ALTER … TYPE`. Grant with **`php bin/console app:grant-admin <email> [--revoke]`** — there is deliberately no endpoint. It goes through the ORM so `user_audit` records the change; raw SQL would bypass that and one malformed JSON literal would break `getRoles()` for that user. **The JWT carries nothing**: the firewall reloads the user from the DB each request, so a grant *or revoke* takes effect on the next request with no re-login. The API emits a `isAdmin` **boolean** (not the role array) on the login payload and `ResponseMapper::me()` only — never on `profile()`/`userCard()`/`userSummary()`/`public*()`, since who the operator is isn't community-visible. `me()` is load-bearing: the SPA persists the login payload in `localStorage`, so it's the only path by which a grant made *after* sign-in reaches a live session.
 
 ### Rate limiting
-`config/packages/rate_limiter.yaml` defines six limiters — `auth_ip` (per-IP, guards `/api/auth/*`), `api_user` (per authenticated user), `api_ip_user` (IP+user), `public_ip` (the share pages), `pageview_ip_user` (the traffic beacon: token bucket, burst 30, sustained 6/min — far tighter than `api_user`'s 300/min, because a valid token could otherwise burn 300 counter increments a minute and nobody navigates a SPA six times a second), and **`admin_dump`** (5/hour, keyed to the operator: one request forks `pg_dump` or walks every table and leaves a file on disk). The dump branch is the only one that keys on the **verb** as well as the path — `POST /api/admin/dumps` alone, so listing and downloading stay usable once the hour's budget is spent. `App\EventSubscriber\RateLimitSubscriber` applies them on `kernel.request` at **priority 6** (after the firewall at 8, so the user is resolved). Over-limit → **429 + Retry-After**. The `when@test` block raises limits so tests aren't throttled. **Branch order in the subscriber is load-bearing**: `/api/public` must return before the token storage is read (on a lazy firewall, reading it forces the deferred authentication), so the `/api/pageviews` branch sits *after* it.
+`config/packages/rate_limiter.yaml` defines seven limiters — `auth_ip` (per-IP, guards `/api/auth/*`), `api_user` (per authenticated user), `api_ip_user` (IP+user), `public_ip` (the share pages), `pageview_ip_user` (the traffic beacon: token bucket, burst 30, sustained 6/min — far tighter than `api_user`'s 300/min, because a valid token could otherwise burn 300 counter increments a minute and nobody navigates a SPA six times a second), **`admin_dump`** (5/hour, keyed to the operator: one request forks `pg_dump` or walks every table and leaves a file on disk), and **`admin_intercom`** (3/hour, keyed to the operator: the only endpoint whose blast radius is other people's inboxes, where a mistake cannot be taken back and the provider's free tier is 300 mails a day). Those two branches are the only ones that key on the **verb** as well as the path — `POST /api/admin/dumps` and `POST /api/admin/intercom/*` — so listing dumps, and reading the audience count and the letter history, stay usable once the hour's budget is spent. `App\EventSubscriber\RateLimitSubscriber` applies them on `kernel.request` at **priority 6** (after the firewall at 8, so the user is resolved). Over-limit → **429 + Retry-After**. The `when@test` block raises limits so tests aren't throttled. **Branch order in the subscriber is load-bearing**: `/api/public` must return before the token storage is read (on a lazy firewall, reading it forces the deferred authentication), so the `/api/pageviews` branch sits *after* it.
 
 ### Audit trail
 `damienharper/auditor-bundle` (`config/packages/dh_auditor.yaml`) writes an `<table>_audit` companion (insert/update/delete diffs + acting user) for a **whitelist**: `Book`, `User`, `Category`, `LibraryRequest`. Append-only logs (`ActivityItem`, `LibraryRequestEvent`) are intentionally excluded — and so are `PageViewDaily`/`PageViewVisitor`, for the same reason: auditing a hit counter would double every write and produce a diff log longer than the data. Because `User` *is* on the list, every admin grant and revocation is recorded for free — and so is every **suspension, reinstatement and account deletion** (`user_audit` stores a generic `diffs JSON`, so neither `roles` nor the moderation columns needed an audit migration). That trail is the reason `UserPurger` anonymizes rather than deleting: it is the only place an operator can afterwards answer "what happened to this account". The bundle's web **viewer is disabled** (this is a JSON API); its Twig/asset/translation deps come along only to satisfy the bundle and are unused. Pinned to `6.3.*` because 7.x requires Symfony 8.
@@ -527,6 +528,17 @@ The JSON kind goes **table-by-table through DBAL, not entity-by-entity through t
 
 **`app:dump [--kind=sql|json] [--list]`** is the console twin, sharing `DumpService` so a cron'd backup and a clicked one cannot produce different files under different retention.
 
+### Intercom
+
+The letters an operator sends by hand, at `/admin/intercom` (`AdminIntercomRestController`, `App\Service\Admin\IntercomService`, `stores/adminIntercom.js`, `AdminIntercomView`). One kind so far: **"what's new"**, composed from the release notes.
+
+- **This is the content pipeline `notify_newsletter` was waiting for.** That toggle shipped with the other three opt-ins and, until now, gated nothing. `MailType::IntercomUpdates` gates on it, so a member hears from us only if they said so — and it defaults to **off**, which is why the recipient count leads the compose screen and a **test send to yourself** sits beside the real one. Without both, the first letter would be written for an audience of nobody and no one would notice until afterwards.
+- **"Short version" means the operator edits, not that we truncate.** A release note is prose written for a page — several sentences, often 300 characters — and a letter wants one line. Ticking a note therefore inserts an **editable line** pre-filled with its first sentence (the notes are written headline-first, so that is usually the substance). What the composer shows is what goes out: nothing is cut behind the operator's back, and the mail is **never re-derived from `changelog.js` at send time** — the stored letter is their edited text, so replaying it later shows what was actually sent.
+- **`IntercomService` is deliberately thin.** Every rule about outbound mail already lives in `App\Mail\Mailer` — the opt-in gate, the *recipient's* locale (never the operator's), the queue hop, the logging of sends **and** deliberate skips — so a mass mail takes exactly the path a transactional one takes. `Mailer` gained a single narrow exception for it: a context carrying an authored `subject` uses it verbatim, since a line a human typed is not a catalog id and translating it would discard what they wrote.
+- **The gate is checked twice, on purpose.** `UserRepository::findNewsletterRecipients()` asks for opted-in members so the operator sees a truthful count before sending, and `Mailer` re-checks per recipient so somebody who unsubscribes in between is still not mailed. That query **INNER JOINs** settings rather than LEFT JOINing: no settings row means every setting sits at its default, and this one defaults to off — "never chose" is not "subscribed". It is scoped through `VisibleUsers`, with its own case in `VisibleUsersTest`, because of every surface that predicate guards this is the one where forgetting it puts mail in the inbox of an account the operator removed.
+- **`IntercomLetter` gives the tab a memory.** Without it the obvious mistake is sending the same round-up twice, and nothing else can answer "did the 1.28 letter already go out?" — the `mail` channel records one line per recipient, which is the wrong shape for that question and is rotated away in production. Append-only like `ActivityItem`; `sent_by` is `ON DELETE SET NULL` so an anonymized operator does not take the record with them. The row is written **even when nothing was queued**: "we sent this and it reached nobody" is exactly the fact worth seeing.
+- Sending is rate-limited hard and the panel is excluded from analytics — see _Rate limiting_ and `AnalyticsRoutes`.
+
 Creating is rate-limited hard — see _Rate limiting_.
 
 ### Analytics (operator dashboard)
@@ -586,10 +598,12 @@ would otherwise have to remember:
   buffered handler would discard precisely these records). It is the only way to tell "nobody was
   notified" from "nobody needed to be".
 
-**Eight mails, from sixteen candidates** — `MailType` is the single source of truth (template
-stem, subject, gate) and nothing else branches on mail kind:
+**Nine mails** — eight from sixteen candidate loan and account notifications, plus the one letter
+an operator sends by hand. `MailType` is the single source of truth (template stem, subject, gate)
+and nothing else branches on mail kind:
 `loan.requested` · `loan.approved` · `loan.declined` · `loan.return_requested` ·
-`loan.return_confirmed` · `loan.reminder` · `account.welcome` · `social.new_follower`.
+`loan.return_confirmed` · `loan.reminder` · `account.welcome` · `social.new_follower` ·
+`intercom.updates` (see _Intercom_).
 The consolidation is deliberate and is what keeps the provider footprint and the template count
 down:
 - **A collection borrow reuses the five per-book loan mails** with `isCollection` + `bookCount`
@@ -602,7 +616,9 @@ down:
   explicitly to `null` in `LoanMailer::TYPE_BY_REASON` and pinned by `MailTypeTest`, so
   "we decided not to" stays distinguishable from "we forgot".
 - **Due-soon and overdue are one type with a `state`**, not two mails.
-- `notify_newsletter` is deliberately **unimplemented** (no content pipeline); it keeps its toggle.
+- `notify_newsletter` **is** implemented now — the Intercom tab is the content pipeline it was
+  waiting for, and its Settings copy was reworded from "curated reading highlights" to describe the
+  product updates it actually sends.
 
 **Templates** (`templates/emails/`) are table-based with **inlined styles**, copied from
 `assets/src/styles/tokens.css` (see _Design System_ for why that file and not the design study) —
