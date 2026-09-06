@@ -7,6 +7,17 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.28.0',
+    date: '2026-09-06',
+    notes: [
+      'You can rate the books in your library out of five stars. The rating sits in the edit dialog under “I’ve read this book” — click a star to set it, click the same star again to clear it.',
+      'A rating is your own verdict on your own copy, not an average, and it is shown to anyone who can see the book: on your profile, in Discover and on a shared library link. Books you have not rated look exactly as they did.',
+      'Discover can now sort by rating. “Top rated” puts the community’s best-liked books first and leaves the unrated ones at the end.',
+      'Exported CSV files carry the rating, and importing one restores it. A file exported before today imports as it always did.',
+      'A collection with no cover of its own now shows its books in the detail view as well as on the card, instead of falling back to a plain icon.',
+    ],
+  },
+  {
     version: '1.27.0',
     date: '2026-09-05',
     notes: [
