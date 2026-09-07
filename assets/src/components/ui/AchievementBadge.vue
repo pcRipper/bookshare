@@ -74,16 +74,30 @@ const label = computed(() => `${name.value} — ${tier.value}`)
 </template>
 
 <style scoped>
+/* Sized off the app's chip recipe — the one CategoryTag and `.count-chip`
+   already use — rather than off numbers of its own: 12px/600 on the label
+   scale, a pill radius, 8px of side padding. A badge that came out 27px next to
+   23px chips read as a different kind of object.
+
+   The typography is set on the **root**, not just on the label: the strip's
+   trigger is a <button>, and a badge that declared no font inherited the UA's
+   13.33px/400 through it, which is why nothing here lined up with the tags a
+   few pixels away. */
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   max-width: 100%;
   padding: 3px 8px;
   border: 1px solid var(--color-outline-variant);
   border-radius: var(--radius-full);
   background: var(--color-surface-container-lowest);
   color: var(--color-secondary);
+  font-family: var(--font-body);
+  font-size: var(--text-label-sm);
+  line-height: var(--lh-label-sm);
+  letter-spacing: var(--ls-label-sm);
+  font-weight: 600;
 }
 
 /* Earned: navy, the app's primary. Locked: the muted outline on the low
@@ -106,7 +120,10 @@ const label = computed(() => `${name.value} — ${tier.value}`)
 
 .badge__icon {
   flex-shrink: 0;
-  font-size: 17px;
+  /* `line-height: 1` so the glyph's own leading doesn't set the chip's height —
+     that is what pushed the box past the 23px the app's chips sit at. */
+  font-size: 15px;
+  line-height: 1;
 }
 .badge--maxed .badge__icon,
 .badge--earned .badge__icon {
@@ -114,16 +131,18 @@ const label = computed(() => `${name.value} — ${tier.value}`)
      same signal the tab strip's icons use for selection. */
   font-variation-settings: 'FILL' 1;
 }
-.badge--md .badge__icon { font-size: 20px; }
+.badge--md {
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: var(--text-label-md);
+}
+.badge--md .badge__icon { font-size: 18px; }
 
 .badge__name {
-  font-size: var(--text-label-md);
-  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.badge--md .badge__name { font-size: var(--text-label-md); }
 
 /* Compact: the strip's badges lose their label on a phone and become medals.
    The modal's `md` badges keep theirs — there the label is the row's heading
@@ -144,17 +163,17 @@ const label = computed(() => `${name.value} — ${tier.value}`)
   align-items: flex-end;
   flex-shrink: 0;
   gap: 2px;
-  padding: 3px 4px;
+  padding: 2px 4px;
   border-radius: var(--radius-full);
   background: var(--color-surface-container-lowest);
 }
 .badge__bar {
   width: 3px;
-  height: 7px;
+  height: 6px;
   border-radius: 1px;
   background: currentColor;
   opacity: 0.2;
 }
 .badge__bar--on { opacity: 1; }
-.badge--md .badge__bar { height: 9px; }
+.badge--md .badge__bar { height: 8px; }
 </style>

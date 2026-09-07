@@ -511,7 +511,11 @@ async function onProfileSave(payload) {
     align-items: center;
     text-align: left;
     gap: var(--space-lg);
-    padding-bottom: var(--space-lg);
+    /* `md`, not `lg`: the page already puts 24px between this header and the
+       tab strip, and 48px on top of that left an 84px hole under a header that
+       now ends on a row of hard-edged chips rather than on text. Same call the
+       library header's own gap got, so the two pages match. */
+    padding-bottom: var(--space-md);
   }
 }
 

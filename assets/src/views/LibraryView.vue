@@ -850,7 +850,13 @@ async function onCollectionDelete(id) {
   padding: var(--space-lg) var(--space-gutter);
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  /* This gap has exactly one job — the header-to-tabs boundary, those being the
+     only two children — and `lg` (48px) was too much for it. It read as page
+     rhythm while the bio's text descenders softened the header's bottom edge;
+     with the badge strip ending the header on a row of hard-edged chips it
+     became a visible hole, 48px under a 126px header. `md` is the step the tab
+     nav already uses to separate itself from its own content. */
+  gap: var(--space-md);
 }
 @media (max-width: 767px) {
   .library-page {

@@ -123,7 +123,17 @@ const ready = computed(() => Array.isArray(props.items) && props.items.length > 
 </template>
 
 <style scoped>
-.shelf { min-width: 0; }
+/* Full width, with the row itself hugging its chips.
+   Both halves matter. In a column flex parent with `align-items: flex-start`
+   (the profile and share headers) the shelf would otherwise shrink-to-fit — and
+   the trigger's -6px side margins make that fit 12px narrower than the row
+   actually needs, so the last chip wrapped to its own line with hundreds of
+   pixels of free space beside it. `fit-content` on the trigger then keeps the
+   hover tint hugging the chips instead of spanning the whole column. */
+.shelf {
+  width: 100%;
+  min-width: 0;
+}
 
 /* A button that looks like a row of chips: the affordance is the chips
    themselves, so the trigger contributes only the hover tint and the focus
@@ -133,16 +143,28 @@ const ready = computed(() => Array.isArray(props.items) && props.items.length > 
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
+  width: fit-content;
   max-width: 100%;
-  margin: 0 -6px;
-  padding: 4px 6px;
+  /* No side padding and **no negative margin**. A -6px margin was buying the
+     hover tint some bleed while keeping the first chip aligned with the text
+     above, but it also subtracted 12px from this row's max-content
+     contribution — so every shrink-to-fit ancestor (the profile and share
+     header columns are both content-sized flex items) sized the row 12px
+     narrower than it needs and the last chip wrapped to its own line with
+     hundreds of pixels free beside it. The bleed comes from a box-shadow on
+     hover instead, which paints outside the box without touching layout. */
+  padding: 4px 0;
   border: none;
   border-radius: var(--radius-default);
   background: none;
   text-align: left;
   cursor: pointer;
 }
-.shelf__trigger:hover { background: var(--color-surface-container-low); }
+.shelf__trigger:hover {
+  background: var(--color-surface-container-low);
+  /* Stands in for the 6px of side padding this row deliberately doesn't have. */
+  box-shadow: 0 0 0 6px var(--color-surface-container-low);
+}
 .shelf__trigger:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
@@ -152,18 +174,32 @@ const ready = computed(() => Array.isArray(props.items) && props.items.length > 
    left-aligned from 768px up, and the library's header is left-aligned at every
    width. */
 @media (max-width: 767px) {
-  .shelf__trigger--centered { justify-content: center; }
+  .shelf__trigger--centered {
+    /* The row is fit-content, so centring its *contents* is not enough — the
+       row itself has to be centred in the shelf. */
+    width: 100%;
+    justify-content: center;
+  }
 }
 
-/* Shaped like a badge so the row ends on a chip, not on stray text. */
+/* Shaped like a badge so the row ends on a chip, not on stray text — and on
+   the same chip recipe, so it matches the badges beside it and the count chips
+   elsewhere on the page. */
 .shelf__more {
   display: inline-flex;
   align-items: center;
+  /* Stretches to the badges' height instead of to its own text, so the row's
+     chips share one baseline box — a badge is sized by its 15px icon, this by
+     12px text, and left alone the two sat half a pixel apart. */
+  align-self: stretch;
   padding: 3px 8px;
   border: 1px dashed var(--color-outline-variant);
   border-radius: var(--radius-full);
+  font-family: var(--font-body);
   font-size: var(--text-label-sm);
-  font-weight: 500;
+  line-height: var(--lh-label-sm);
+  letter-spacing: var(--ls-label-sm);
+  font-weight: 600;
   color: var(--color-on-surface-variant);
   white-space: nowrap;
 }
