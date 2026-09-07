@@ -37,6 +37,9 @@ class TranslationCoverageTest extends TestCase
         'Unknown collection signal reason "%s".',
         'Unknown loan mail reason "%s".',
         'The dump was written but could not be read back.',
+        // A catalogue/provider mismatch is a wiring bug, not something a reader
+        // can act on — the same call as the publisher's "unknown reason" guards.
+        'No value supplied for achievement metric "%s" (needed by "%s").',
     ];
 
     /** @return array<string, list<string>> id => ["File.php:line", …] */

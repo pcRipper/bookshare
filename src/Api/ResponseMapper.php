@@ -340,13 +340,21 @@ class ResponseMapper
         ];
     }
 
-    public function publicProfile(User $user): array
+    /**
+     * @param list<array<string, mixed>> $achievements from AchievementProvider
+     */
+    public function publicProfile(User $user, array $achievements): array
     {
         return [
             'id'        => $user->getId(),
             'fullName'  => $user->getFullName(),
             'avatarUrl' => $user->getAvatarUrl(),
             'bio'       => $user->getBio(),
+            // Published here on purpose, unlike the stat counters this shape
+            // still drops: a badge is an aggregate of the member's own shelves,
+            // names no third party and is not viewer-relative — the same call
+            // publicBook() makes about the owner's rating and review.
+            'achievements' => $achievements,
         ];
     }
 
@@ -461,7 +469,8 @@ class ResponseMapper
         return $events;
     }
 
-    public function me(User $user, array $stats): array
+    /** @param list<array<string, mixed>> $achievements from AchievementProvider */
+    public function me(User $user, array $stats, array $achievements): array
     {
         return [
             'id'        => $user->getId(),
@@ -478,6 +487,9 @@ class ResponseMapper
             // the login payload in localStorage.
             'isAdmin'   => $user->isAdmin(),
             'stats'     => $stats,
+            // The header renders the collection on every library visit, so it
+            // travels with the profile rather than behind an endpoint of its own.
+            'achievements' => $achievements,
         ];
     }
 
@@ -487,10 +499,11 @@ class ResponseMapper
      * fetched via `GET /api/books?owner={id}`.
      *
      * @param array{totalBooks:int, shared:int, loaned:int} $stats
+     * @param list<array<string, mixed>> $achievements from AchievementProvider
      * @param bool $showLocation Whether the viewer may see the location; the
      *   owner always sees their own, others honour the user's `showLocation` pref.
      */
-    public function profile(User $user, array $stats, bool $isSelf, bool $showLocation = true, bool $isSubscribed = false): array
+    public function profile(User $user, array $stats, array $achievements, bool $isSelf, bool $showLocation = true, bool $isSubscribed = false): array
     {
         return [
             'id'           => $user->getId(),
@@ -502,6 +515,7 @@ class ResponseMapper
             // Whether the viewer currently follows this reader (false on own profile).
             'isSubscribed' => $isSubscribed,
             'stats'        => $stats,
+            'achievements' => $achievements,
         ];
     }
 
@@ -509,6 +523,9 @@ class ResponseMapper
      * Compact user card for the Discover "Accounts" search results: identity,
      * a bio snippet, stats and the viewer's follow state. No location — it isn't
      * shown on the card and respects the user's location-privacy preference.
+     * No achievements either: a page of eighteen cards would cost seven queries
+     * each, and a card exists to make somebody look worth following, which a
+     * badge count doesn't help with. See AchievementProvider.
      *
      * @param array{totalBooks:int, shared:int, loaned:int} $stats
      */

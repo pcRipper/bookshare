@@ -13,6 +13,7 @@ use App\Enum\BookStatus;
 use App\Repository\BookRepository;
 use App\Repository\CollectionRepository;
 use App\Repository\UserRepository;
+use App\Service\AchievementProvider;
 use App\Service\Analytics\PageViewRecorder;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Color\Color;
@@ -59,12 +60,12 @@ class PublicRestController extends AbstractController
     ) {}
 
     #[Route('/users/{id}', methods: ['GET'], requirements: ['id' => '\d+'])]
-    public function profile(string $id, UserRepository $users): JsonResponse
+    public function profile(string $id, UserRepository $users, AchievementProvider $achievements): JsonResponse
     {
         $owner = $this->findShared($id, $users);
 
         return $owner instanceof User
-            ? $this->json($this->mapper->publicProfile($owner))
+            ? $this->json($this->mapper->publicProfile($owner, $achievements->forUser($owner)))
             : $owner;
     }
 

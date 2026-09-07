@@ -10,6 +10,7 @@ use App\Entity\Subscription;
 use App\Entity\User;
 use App\Repository\SubscriptionRepository;
 use App\Repository\UserRepository;
+use App\Service\AchievementProvider;
 use App\Service\UserStatsProvider;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -26,6 +27,7 @@ class UserRestController extends AbstractController
     public function __construct(
         private readonly ResponseMapper $mapper,
         private readonly UserStatsProvider $stats,
+        private readonly AchievementProvider $achievements,
         private readonly SubscriptionRepository $subscriptions,
         private readonly ApiError $errors,
         private readonly MemberVisibility $visibility,
@@ -98,6 +100,7 @@ class UserRestController extends AbstractController
         return $this->json($this->mapper->profile(
             $user,
             $this->stats->forUser($user),
+            $this->achievements->forUser($user),
             $isSelf,
             $showLocation,
             $isSubscribed,

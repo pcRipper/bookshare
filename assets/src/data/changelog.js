@@ -7,6 +7,15 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.30.0',
+    date: '2026-09-07',
+    notes: [
+      'Your library and your profile now carry an achievement collection, where the three-figure stat block used to sit. There are ten badges — collecting, reading, reviewing, curating, wishing, lending, borrowing, languages, categories and who you follow — and each one has three tiers.',
+      'Badges are worked out from your shelves rather than handed out once, so nothing needed to be earned again: if you already hold a hundred books, you already have the badge. Open the collection to see all ten, including the ones you have not reached yet, with how far along you are and what the next tier asks for.',
+      'The strip in your header shows only the badges you hold, so it stays a single row. A shared library link shows its owner’s collection too — a badge is a summary of their own shelves and names nobody else.',
+    ],
+  },
+  {
     version: '1.29.0',
     date: '2026-09-06',
     notes: [

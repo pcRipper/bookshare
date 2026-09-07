@@ -596,6 +596,58 @@ class BookRepository extends ServiceEntityRepository
         return $this->onShelf($qb, false)->getQuery()->getSingleScalarResult();
     }
 
+    /**
+     * The four owned-shelf figures behind a member's achievement collection, in
+     * one aggregate row rather than four COUNTs.
+     *
+     * `read` is a conditional SUM because Doctrine has no COUNT-with-predicate;
+     * `reviewed` leans on COUNT ignoring nulls, which is exactly the "null is
+     * meaningful" rule the rating field is built on — an unrated book must not
+     * count as a reviewed one. `languages` counts distinct non-null codes, so a
+     * shelf of books with no language set scores zero rather than one.
+     *
+     * @return array{owned: int, read: int, reviewed: int, languages: int}
+     */
+    public function achievementCountsForOwner(User $owner): array
+    {
+        $qb = $this->createQueryBuilder('b')
+            ->select(
+                'COUNT(b.id) AS owned',
+                'SUM(CASE WHEN b.isRead = true THEN 1 ELSE 0 END) AS readCount',
+                'COUNT(b.rating) AS reviewed',
+                'COUNT(DISTINCT b.language) AS languages',
+            )
+            ->where('b.owner = :owner')
+            ->setParameter('owner', $owner);
+
+        $row = $this->onShelf($qb, false)->getQuery()->getSingleResult();
+
+        return [
+            // SUM over no rows is null, so every figure is cast rather than trusted.
+            'owned'     => (int) $row['owned'],
+            'read'      => (int) $row['readCount'],
+            'reviewed'  => (int) $row['reviewed'],
+            'languages' => (int) $row['languages'],
+        ];
+    }
+
+    /**
+     * How many distinct categories a member's own shelf spans — the "explorer"
+     * achievement. An inner join, so a member with no categorised books scores
+     * zero, and DISTINCT over the category rather than the book, since one book
+     * in three categories broadens a shelf three ways.
+     */
+    public function countDistinctCategoriesForOwner(User $owner): int
+    {
+        $qb = $this->createQueryBuilder('b')
+            ->select('COUNT(DISTINCT c.id)')
+            ->innerJoin('b.categories', 'c')
+            ->where('b.owner = :owner')
+            ->setParameter('owner', $owner);
+
+        return (int) $this->onShelf($qb, false)->getQuery()->getSingleScalarResult();
+    }
+
     /** Escapes LIKE wildcards so user input is matched literally. */
     private function escapeLike(string $value): string
     {

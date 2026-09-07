@@ -95,6 +95,46 @@ class LibraryRequestRepository extends ServiceEntityRepository
     }
 
     /**
+     * How many loans a member has been on each side of — the "lender" and
+     * "borrower" achievements.
+     *
+     * Reuses LOANED_STATUSES, so what counts as a loan here is exactly what
+     * counts on the dashboard: an unapproved request is an intention, and a
+     * declined one never happened. A loan still out counts — you lent the book,
+     * whether or not it is back yet.
+     *
+     * Collection children are deliberately **counted**: a five-book collection
+     * borrow really is five loans, the same call the analytics rankings make
+     * and the opposite of the inbox lists' `parentRequest IS NULL` rule, which
+     * exists to stop one borrow appearing twice in one list.
+     *
+     * @return array{lent: int, borrowed: int}
+     */
+    public function countLoansFor(User $user): array
+    {
+        $lent = (int) $this->createQueryBuilder('r')
+            ->select('COUNT(r.id)')
+            ->join('r.book', 'b')
+            ->where('b.owner = :user')
+            ->andWhere('r.status IN (:statuses)')
+            ->setParameter('user', $user)
+            ->setParameter('statuses', self::LOANED_STATUSES)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $borrowed = (int) $this->createQueryBuilder('r')
+            ->select('COUNT(r.id)')
+            ->where('r.requester = :user')
+            ->andWhere('r.status IN (:statuses)')
+            ->setParameter('user', $user)
+            ->setParameter('statuses', self::LOANED_STATUSES)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return ['lent' => $lent, 'borrowed' => $borrowed];
+    }
+
+    /**
      * Incoming requests for books owned by $owner, filtered by status, newest first.
      *
      * @param RequestStatus[] $statuses

@@ -740,5 +740,60 @@
       "historyEmpty": "Es wurden noch keine Briefe gesendet.",
       "sentTo": "{count} Empfänger | {count} Empfänger"
     }
+  },
+  "achievements": {
+    "title": "Erfolge",
+    "subtitleSelf": "Du hast {earned} von {total} Abzeichen erhalten.",
+    "subtitleOther": "{name} hat {earned} von {total} Abzeichen erhalten.",
+    "viewAll": "Alle Erfolge ansehen",
+    "more": "+{count} weitere",
+    "emptySelf": "Noch keine Abzeichen – katalogisiere ein Buch für dein erstes.",
+    "emptyOther": "{name} hat noch keine Abzeichen erhalten.",
+    "tierOf": "Stufe {tier} von {total}",
+    "progress": "{value} von {next}",
+    "maxed": "Abgeschlossen – {value}",
+    "ladder": "Stufen bei {thresholds}",
+    "items": {
+      "collector": {
+        "name": "Sammler",
+        "description": "Bücher im Regal."
+      },
+      "reader": {
+        "name": "Leser",
+        "description": "Als gelesen markierte Bücher."
+      },
+      "critic": {
+        "name": "Kritiker",
+        "description": "Bewertete oder besprochene Bücher."
+      },
+      "curator": {
+        "name": "Kurator",
+        "description": "Zusammengestellte Sammlungen."
+      },
+      "dreamer": {
+        "name": "Träumer",
+        "description": "Bücher auf der Wunschliste."
+      },
+      "lender": {
+        "name": "Verleiher",
+        "description": "An andere Leser verliehene Bücher."
+      },
+      "borrower": {
+        "name": "Ausleiher",
+        "description": "Von anderen Lesern geliehene Bücher."
+      },
+      "polyglot": {
+        "name": "Sprachtalent",
+        "description": "Sprachen, die das Regal umfasst."
+      },
+      "explorer": {
+        "name": "Entdecker",
+        "description": "Kategorien, die das Regal umfasst."
+      },
+      "connector": {
+        "name": "Netzwerker",
+        "description": "Gefolgte Leser."
+      }
+    }
   }
 }

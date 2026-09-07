@@ -10,6 +10,7 @@ import { useToastStore } from '@/stores/toast'
 import { apiErrorMessage } from '@/utils/apiError'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
+import AchievementShelf from '@/components/ui/AchievementShelf.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
@@ -280,6 +281,16 @@ async function onProfileSave(payload) {
             <p v-else class="profile-header__bio profile-header__bio--muted">{{ t('profile.noBio') }}</p>
 
             <!-- Tags (desktop: full list + book count chip) -->
+            <!-- The collection, below the bio. Read-only here whoever is
+                 looking: a badge is derived from the shelves, so there is
+                 nothing on it to edit. -->
+            <AchievementShelf
+              :items="profile.achievements"
+              :owner-name="profile.isSelf ? null : profile.fullName"
+              align="center"
+              class="profile-header__achievements"
+            />
+
             <div class="profile-header__tags profile-header__tags--desktop">
               <CategoryTag
                 v-for="cat in topCategories"
@@ -500,9 +511,15 @@ async function onProfileSave(payload) {
     align-items: center;
     text-align: left;
     gap: var(--space-lg);
-    padding-bottom: var(--space-lg);
+    /* `md`, not `lg`: the page already puts 24px between this header and the
+       tab strip, and 48px on top of that left an 84px hole under a header that
+       now ends on a row of hard-edged chips rather than on text. Same call the
+       library header's own gap got, so the two pages match. */
+    padding-bottom: var(--space-md);
   }
 }
+
+.profile-header__achievements { margin-top: var(--space-xs); }
 
 .profile-header__avatar { flex-shrink: 0; }
 /* Larger avatar on desktop to match the reference proportions. The base size

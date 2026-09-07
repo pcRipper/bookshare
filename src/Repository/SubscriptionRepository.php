@@ -35,6 +35,25 @@ class SubscriptionRepository extends ServiceEntityRepository
     }
 
     /**
+     * How many people a subscriber follows — the "connector" achievement.
+     *
+     * Deliberately **not** scoped through VisibleUsers, unlike every list query
+     * in this class. Those publish a followed member's identity, so hiding a
+     * suspended one matters; this is one number on its owner's own collection,
+     * and joining the user table to shave it by one would cost a join to make a
+     * badge marginally harder to keep.
+     */
+    public function countFollowing(User $subscriber): int
+    {
+        return (int) $this->createQueryBuilder('s')
+            ->select('COUNT(s.id)')
+            ->andWhere('s.subscriber = :subscriber')
+            ->setParameter('subscriber', $subscriber)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
      * The people a subscriber follows, most recently followed first. The followed
      * user is eager-loaded so the mapper can shape each row without an N+1.
      *

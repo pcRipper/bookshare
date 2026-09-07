@@ -740,5 +740,60 @@
       "historyEmpty": "No letters have been sent yet.",
       "sentTo": "{count} recipient | {count} recipients"
     }
+  },
+  "achievements": {
+    "title": "Achievements",
+    "subtitleSelf": "You have earned {earned} of {total} badges.",
+    "subtitleOther": "{name} has earned {earned} of {total} badges.",
+    "viewAll": "View all achievements",
+    "more": "+{count} more",
+    "emptySelf": "No badges yet — catalogue a book to earn your first.",
+    "emptyOther": "{name} has not earned any badges yet.",
+    "tierOf": "Tier {tier} of {total}",
+    "progress": "{value} of {next}",
+    "maxed": "Complete — {value}",
+    "ladder": "Tiers at {thresholds}",
+    "items": {
+      "collector": {
+        "name": "Collector",
+        "description": "Books on the shelf."
+      },
+      "reader": {
+        "name": "Reader",
+        "description": "Books marked as read."
+      },
+      "critic": {
+        "name": "Critic",
+        "description": "Books rated or reviewed."
+      },
+      "curator": {
+        "name": "Curator",
+        "description": "Collections put together."
+      },
+      "dreamer": {
+        "name": "Dreamer",
+        "description": "Books on the wish list."
+      },
+      "lender": {
+        "name": "Lender",
+        "description": "Books lent to other readers."
+      },
+      "borrower": {
+        "name": "Borrower",
+        "description": "Books borrowed from other readers."
+      },
+      "polyglot": {
+        "name": "Polyglot",
+        "description": "Languages the shelf spans."
+      },
+      "explorer": {
+        "name": "Explorer",
+        "description": "Categories the shelf spans."
+      },
+      "connector": {
+        "name": "Connector",
+        "description": "Readers followed."
+      }
+    }
   }
 }

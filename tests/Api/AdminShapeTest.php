@@ -100,9 +100,17 @@ class AdminShapeTest extends TestCase
         $mapper = $this->mapper();
         $member = $this->member();
 
-        foreach (['userSummary', 'publicProfile'] as $shapeName) {
-            self::assertArrayNotHasKey('email', $mapper->{$shapeName}($member), $shapeName);
-            self::assertArrayNotHasKey('isAdmin', $mapper->{$shapeName}($member), $shapeName);
+        $shapes = [
+            'userSummary'   => $mapper->userSummary($member),
+            // The public profile carries an achievement collection, which is an
+            // aggregate of the member's own shelves and names nobody — but it
+            // must still not have dragged identity along with it.
+            'publicProfile' => $mapper->publicProfile($member, []),
+        ];
+
+        foreach ($shapes as $shapeName => $shape) {
+            self::assertArrayNotHasKey('email', $shape, $shapeName);
+            self::assertArrayNotHasKey('isAdmin', $shape, $shapeName);
         }
     }
 }

@@ -11,6 +11,7 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
+import AchievementShelf from '@/components/ui/AchievementShelf.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import BookShelfPanel from '@/components/library/BookShelfPanel.vue'
 import LoanCard from '@/components/library/LoanCard.vue'
@@ -491,6 +492,17 @@ async function onCollectionDelete(id) {
               <p v-if="profile.bio" class="profile-header__bio">{{ profile.bio }}</p>
               <p v-else class="profile-header__bio profile-header__bio--muted">{{ t('library.bioEmpty') }}</p>
             </div>
+
+            <!-- Where the three-figure stat block used to be — earned badges
+                 only, so it stays one row rather than the 232px column that
+                 block cost, with the whole collection a click away in its
+                 modal. A sibling of the text column rather than a child of it:
+                 nested, it had ~230px beside the avatar on a phone and stacked
+                 into a four-deep ragged staircase. The grid below spans it
+                 across both columns there, and tucks it under the text on a
+                 wide screen, so neither position needs the avatar's width
+                 written down anywhere. -->
+            <AchievementShelf :items="profile.achievements" class="profile-header__achievements" />
           </template>
 
           <!-- Skeleton while the profile loads -->
@@ -506,7 +518,8 @@ async function onCollectionDelete(id) {
         <!-- The primary action, and nothing else. The three-figure stat block
              that used to sit under it (total / shared / loaned) is gone: the
              numbers restated what the shelves themselves show, and the panel
-             they lived in cost the top of every visit a 232px column. -->
+             they lived in cost the top of every visit a 232px column. The
+             achievement strip took its place, up in the identity column. -->
         <button class="btn-add-book" @click="openCreate">
           <span class="material-symbols-outlined">add</span>
           {{ t('library.addNewBook') }}
@@ -837,7 +850,13 @@ async function onCollectionDelete(id) {
   padding: var(--space-lg) var(--space-gutter);
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  /* This gap has exactly one job — the header-to-tabs boundary, those being the
+     only two children — and `lg` (48px) was too much for it. It read as page
+     rhythm while the bio's text descenders softened the header's bottom edge;
+     with the badge strip ending the header on a row of hard-edged chips it
+     became a visible hole, 48px under a 126px header. `md` is the step the tab
+     nav already uses to separate itself from its own content. */
+  gap: var(--space-md);
 }
 @media (max-width: 767px) {
   .library-page {
@@ -862,18 +881,41 @@ async function onCollectionDelete(id) {
   .profile-header__info { flex: 1; }
 }
 
+/* A grid rather than a flex row, so the badge strip can sit on a second row
+   spanning the full width on a phone and tuck in beside the avatar on a wide
+   screen — both from the same markup, and with the avatar's width never
+   written down as a number. */
 .profile-header__info {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "avatar text"
+    "badges badges";
+  align-items: flex-start;
+  column-gap: var(--space-md);
+  row-gap: var(--space-sm);
 }
 /* Let the text column shrink so long names/bios wrap instead of widening the row. */
 .profile-header__info > * { min-width: 0; }
-@media (max-width: 767px) {
-  .profile-header__info { align-items: flex-start; }
+.profile-header__text { grid-area: text; }
+.profile-header__achievements { grid-area: badges; }
+
+@media (min-width: 768px) {
+  /* The avatar spans both rows, so the strip lines up under the bio instead of
+     under the avatar — the indent comes from the grid, not from a margin. */
+  .profile-header__info {
+    grid-template-areas:
+      "avatar text"
+      "avatar badges";
+    row-gap: var(--space-xs);
+  }
 }
 
-.profile-header__avatar { flex-shrink: 0; }
+.profile-header__avatar {
+  grid-area: avatar;
+  align-self: center;
+  flex-shrink: 0;
+}
 
 .profile-header__name {
   font-family: var(--font-display);

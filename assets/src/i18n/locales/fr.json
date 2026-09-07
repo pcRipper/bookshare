@@ -740,5 +740,60 @@
       "historyEmpty": "Aucune lettre n’a encore été envoyée.",
       "sentTo": "{count} destinataire | {count} destinataires"
     }
+  },
+  "achievements": {
+    "title": "Distinctions",
+    "subtitleSelf": "Vous avez obtenu {earned} badges sur {total}.",
+    "subtitleOther": "{name} a obtenu {earned} badges sur {total}.",
+    "viewAll": "Voir toutes les distinctions",
+    "more": "+{count} de plus",
+    "emptySelf": "Aucun badge pour l’instant — cataloguez un livre pour obtenir le premier.",
+    "emptyOther": "{name} n’a encore obtenu aucun badge.",
+    "tierOf": "Niveau {tier} sur {total}",
+    "progress": "{value} sur {next}",
+    "maxed": "Terminé — {value}",
+    "ladder": "Niveaux à {thresholds}",
+    "items": {
+      "collector": {
+        "name": "Collectionneur",
+        "description": "Livres sur l’étagère."
+      },
+      "reader": {
+        "name": "Lecteur",
+        "description": "Livres marqués comme lus."
+      },
+      "critic": {
+        "name": "Critique",
+        "description": "Livres notés ou commentés."
+      },
+      "curator": {
+        "name": "Conservateur",
+        "description": "Collections constituées."
+      },
+      "dreamer": {
+        "name": "Rêveur",
+        "description": "Livres de la liste de souhaits."
+      },
+      "lender": {
+        "name": "Prêteur",
+        "description": "Livres prêtés à d’autres lecteurs."
+      },
+      "borrower": {
+        "name": "Emprunteur",
+        "description": "Livres empruntés à d’autres lecteurs."
+      },
+      "polyglot": {
+        "name": "Polyglotte",
+        "description": "Langues couvertes par l’étagère."
+      },
+      "explorer": {
+        "name": "Explorateur",
+        "description": "Catégories couvertes par l’étagère."
+      },
+      "connector": {
+        "name": "Passeur",
+        "description": "Lecteurs suivis."
+      }
+    }
   }
 }
