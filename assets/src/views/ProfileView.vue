@@ -287,6 +287,7 @@ async function onProfileSave(payload) {
             <AchievementShelf
               :items="profile.achievements"
               :owner-name="profile.isSelf ? null : profile.fullName"
+              align="center"
               class="profile-header__achievements"
             />
 

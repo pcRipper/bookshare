@@ -491,12 +491,18 @@ async function onCollectionDelete(id) {
               <h1 class="profile-header__name">{{ profile.fullName }}</h1>
               <p v-if="profile.bio" class="profile-header__bio">{{ profile.bio }}</p>
               <p v-else class="profile-header__bio profile-header__bio--muted">{{ t('library.bioEmpty') }}</p>
-              <!-- Where the three-figure stat block used to be. Earned badges
-                   only, so this stays a single row rather than the 232px
-                   column that block cost; the whole collection, locked
-                   families included, is one click away in its modal. -->
-              <AchievementShelf :items="profile.achievements" class="profile-header__achievements" />
             </div>
+
+            <!-- Where the three-figure stat block used to be — earned badges
+                 only, so it stays one row rather than the 232px column that
+                 block cost, with the whole collection a click away in its
+                 modal. A sibling of the text column rather than a child of it:
+                 nested, it had ~230px beside the avatar on a phone and stacked
+                 into a four-deep ragged staircase. The grid below spans it
+                 across both columns there, and tucks it under the text on a
+                 wide screen, so neither position needs the avatar's width
+                 written down anywhere. -->
+            <AchievementShelf :items="profile.achievements" class="profile-header__achievements" />
           </template>
 
           <!-- Skeleton while the profile loads -->
@@ -869,18 +875,41 @@ async function onCollectionDelete(id) {
   .profile-header__info { flex: 1; }
 }
 
+/* A grid rather than a flex row, so the badge strip can sit on a second row
+   spanning the full width on a phone and tuck in beside the avatar on a wide
+   screen — both from the same markup, and with the avatar's width never
+   written down as a number. */
 .profile-header__info {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "avatar text"
+    "badges badges";
+  align-items: flex-start;
+  column-gap: var(--space-md);
+  row-gap: var(--space-sm);
 }
 /* Let the text column shrink so long names/bios wrap instead of widening the row. */
 .profile-header__info > * { min-width: 0; }
-@media (max-width: 767px) {
-  .profile-header__info { align-items: flex-start; }
+.profile-header__text { grid-area: text; }
+.profile-header__achievements { grid-area: badges; }
+
+@media (min-width: 768px) {
+  /* The avatar spans both rows, so the strip lines up under the bio instead of
+     under the avatar — the indent comes from the grid, not from a margin. */
+  .profile-header__info {
+    grid-template-areas:
+      "avatar text"
+      "avatar badges";
+    row-gap: var(--space-xs);
+  }
 }
 
-.profile-header__avatar { flex-shrink: 0; }
+.profile-header__avatar {
+  grid-area: avatar;
+  align-self: center;
+  flex-shrink: 0;
+}
 
 .profile-header__name {
   font-family: var(--font-display);
@@ -899,8 +928,6 @@ async function onCollectionDelete(id) {
     margin-bottom: var(--space-xs);
   }
 }
-
-.profile-header__achievements { margin-top: var(--space-xs); }
 
 .profile-header__bio {
   font-size: var(--text-body-md);

@@ -144,6 +144,7 @@ watch(() => route.params.id, load)
             <AchievementShelf
               :items="owner.achievements"
               :owner-name="owner.fullName"
+              align="center"
               class="public-header-card__achievements"
             />
           </div>

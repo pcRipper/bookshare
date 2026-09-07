@@ -12,6 +12,14 @@
  * a tier — so they are upright bars inside their own light capsule, which reads
  * as a gauge no matter how many are filled.
  *
+ * **The `sm` badge drops its label below 768px.** A labelled pill is ~110px, so
+ * a phone fitted three per row and the strip became a four-deep ragged
+ * staircase — reintroducing exactly the vertical column the stat block was
+ * removed to reclaim. Compact, it is an icon and its meter: a medal. The name
+ * is a tap away in the modal, and stays on the badge's accessible name, which
+ * is why that is set explicitly rather than left to the (display:none, and so
+ * untree'd) label.
+ *
  * The state (locked / earned / maxed) is derived from the item, not passed in,
  * so a caller cannot mislabel a badge — the same reasoning behind LoanCard
  * deriving its variant from (perspective, status) rather than taking one.
@@ -23,11 +31,8 @@ import { achievementIcon, achievementNameKey, achievementState } from '@/utils/a
 const props = defineProps({
   // One entry from the API's `achievements` array.
   item: { type: Object, required: true },
-  // 'sm' for the header strip, 'md' for the modal's grid.
+  // 'sm' for the header strip (label hidden on phones), 'md' for the modal.
   size: { type: String, default: 'sm' },
-  // The header strip is one button, so its badges must not be focusable
-  // themselves; the modal's are inert cells.
-  showLabel: { type: Boolean, default: true },
 })
 
 const { t } = useI18n()
@@ -35,21 +40,29 @@ const { t } = useI18n()
 const state = computed(() => achievementState(props.item))
 const icon = computed(() => achievementIcon(props.item.key))
 const name = computed(() => t(achievementNameKey(props.item.key)))
+const tier = computed(() => t('achievements.tierOf', { tier: props.item.tier, total: props.item.tiers }))
+
+// One accessible name for the whole badge, so it reads the same whether the
+// label is on screen or hidden by the compact breakpoint. The parts are then
+// decorative, and the meter needs no label of its own.
+const label = computed(() => `${name.value} — ${tier.value}`)
 </script>
 
 <template>
   <div
     class="badge"
     :class="[`badge--${state}`, `badge--${size}`]"
-    :title="showLabel ? null : name"
+    role="img"
+    :aria-label="label"
+    :title="label"
   >
-    <span class="material-symbols-outlined badge__icon">{{ icon }}</span>
+    <span class="material-symbols-outlined badge__icon" aria-hidden="true">{{ icon }}</span>
 
-    <span v-if="showLabel" class="badge__name">{{ name }}</span>
+    <span class="badge__name" aria-hidden="true">{{ name }}</span>
 
     <!-- The meter: filled up to the tier reached. A locked family shows the
          empty ladder rather than nothing, so the modal's rows stay one height. -->
-    <span class="badge__meter" :aria-label="t('achievements.tierOf', { tier: item.tier, total: item.tiers })">
+    <span class="badge__meter" aria-hidden="true">
       <i
         v-for="level in item.tiers"
         :key="level"
@@ -64,9 +77,9 @@ const name = computed(() => t(achievementNameKey(props.item.key)))
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-xs);
+  gap: 6px;
   max-width: 100%;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border: 1px solid var(--color-outline-variant);
   border-radius: var(--radius-full);
   background: var(--color-surface-container-lowest);
@@ -93,7 +106,7 @@ const name = computed(() => t(achievementNameKey(props.item.key)))
 
 .badge__icon {
   flex-shrink: 0;
-  font-size: 18px;
+  font-size: 17px;
 }
 .badge--maxed .badge__icon,
 .badge--earned .badge__icon {
@@ -101,17 +114,27 @@ const name = computed(() => t(achievementNameKey(props.item.key)))
      same signal the tab strip's icons use for selection. */
   font-variation-settings: 'FILL' 1;
 }
-.badge--md .badge__icon { font-size: 22px; }
+.badge--md .badge__icon { font-size: 20px; }
 
 .badge__name {
-  margin-right: 2px;
   font-size: var(--text-label-md);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.badge--md .badge__name { font-size: var(--text-body-md); }
+.badge--md .badge__name { font-size: var(--text-label-md); }
+
+/* Compact: the strip's badges lose their label on a phone and become medals.
+   The modal's `md` badges keep theirs — there the label is the row's heading
+   and the sheet is full width, so nothing is cramped. */
+@media (max-width: 767px) {
+  .badge--sm {
+    gap: 4px;
+    padding: 3px 6px;
+  }
+  .badge--sm .badge__name { display: none; }
+}
 
 /* The capsule is what stops the bars reading as punctuation: a light track
    behind them turns three marks into one gauge. White works on all three of
@@ -127,11 +150,11 @@ const name = computed(() => t(achievementNameKey(props.item.key)))
 }
 .badge__bar {
   width: 3px;
-  height: 8px;
+  height: 7px;
   border-radius: 1px;
   background: currentColor;
   opacity: 0.2;
 }
 .badge__bar--on { opacity: 1; }
-.badge--md .badge__bar { height: 10px; }
+.badge--md .badge__bar { height: 9px; }
 </style>
