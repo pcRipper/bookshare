@@ -7,6 +7,15 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.29.0',
+    date: '2026-09-06',
+    notes: [
+      'Administrators can send a short “what’s new” email from the new Intercom section of the admin panel. Pick the updates from the release notes, shorten each one to a line, and send.',
+      'You choose whether to receive those emails. The switch is in Settings under Product updates, and it is off until you turn it on — nothing is sent to anyone who has not asked for it.',
+      'The panel shows how many members would receive a letter before it goes out, offers a test send to yourself first, and keeps a list of what has already been sent so the same update cannot go twice.',
+    ],
+  },
+  {
     version: '1.28.0',
     date: '2026-09-06',
     notes: [

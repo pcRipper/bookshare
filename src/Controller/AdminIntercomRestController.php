@@ -2,10 +2,13 @@
 
 namespace App\Controller;
 
+use App\Api\ResponseMapper;
 use App\Dto\IntercomLetterInput;
+use App\Entity\IntercomLetter;
 use App\Entity\User;
 use App\Security\AdminAccess;
 use App\Service\Admin\IntercomService;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
@@ -15,9 +18,10 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 /**
  * Intercom — the letters an operator sends by hand.
  *
- * No flush in here: nothing on this controller writes to the ORM. What it
- * changes is mail on its way out, which is exactly why POST /send is the most
- * carefully guarded route in the application — it is the only one whose blast
+ * POST /send is the one route here that writes — it records the letter — and it
+ * flushes once, at the controller boundary, as everything else does. What it
+ * mainly changes is mail on its way out, which is why it is the most carefully
+ * guarded route in the application — it is the only one whose blast
  * radius is other people's inboxes. It carries its own rate limiter
  * (`admin_intercom`, see RateLimitSubscriber) on top of the admin gate.
  *
@@ -29,6 +33,8 @@ class AdminIntercomRestController extends AbstractController
 {
     public function __construct(
         private readonly IntercomService $intercom,
+        private readonly ResponseMapper $mapper,
+        private readonly EntityManagerInterface $em,
     ) {}
 
     /**
@@ -54,10 +60,31 @@ class AdminIntercomRestController extends AbstractController
         return $this->json(['queued' => $this->intercom->sendTest($operator, $letter)]);
     }
 
-    /** Send it to everyone who opted in. */
+    /** Send it to everyone who opted in, and record that it went out. */
     #[Route('/send', methods: ['POST'])]
     public function send(#[MapRequestPayload] IntercomLetterInput $letter): JsonResponse
     {
-        return $this->json($this->intercom->send($letter));
+        /** @var User $operator */
+        $operator = $this->getUser();
+
+        $summary = $this->intercom->send($letter, $operator);
+        $this->em->flush();
+
+        return $this->json($summary);
+    }
+
+    /**
+     * What has already been sent — the panel's memory, and the only thing that
+     * stops the same round-up going out twice.
+     */
+    #[Route('/letters', methods: ['GET'])]
+    public function letters(): JsonResponse
+    {
+        return $this->json([
+            'items' => array_map(
+                fn (IntercomLetter $l) => $this->mapper->intercomLetter($l),
+                $this->intercom->history(),
+            ),
+        ]);
     }
 }

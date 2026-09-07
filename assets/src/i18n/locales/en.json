@@ -464,8 +464,8 @@
       "requestUpdatesHint": "When a request you made is approved or declined.",
       "activity": "Community activity",
       "activityHint": "Follows, comments and new books from people you follow.",
-      "newsletter": "FolioShare newsletter",
-      "newsletterHint": "Occasional curated reading highlights."
+      "newsletter": "Product updates",
+      "newsletterHint": "Occasional notes about what’s new in FolioShare."
     },
     "errors": {
       "load": "Could not load your settings.",
@@ -640,7 +640,8 @@
       "label": "Admin sections",
       "members": "Members",
       "analytics": "Analytics",
-      "dumps": "Dumps"
+      "dumps": "Dumps",
+      "intercom": "Intercom"
     },
     "members": {
       "loadFailed": "Could not load the member list.",
@@ -714,6 +715,30 @@
       "colSize": "Size",
       "colCreated": "Created",
       "colActions": "Actions"
+    },
+    "intercom": {
+      "lead": "Compose a short update letter from the release notes and send it to members who asked to hear about updates.",
+      "audience": "{count} member will receive it | {count} members will receive it",
+      "audienceEmpty": "Nobody has opted in to update emails yet.",
+      "audienceUnknown": "Recipient count unavailable.",
+      "pick": "Pick the updates",
+      "pickHint": "Ticking a note adds an editable one-line version of it. Edit it down — what you see here is what goes out.",
+      "lineLabel": "The line that will appear in the letter",
+      "compose": "Compose",
+      "subject": "Subject",
+      "intro": "Opening line (optional)",
+      "defaultSubject": "What’s new in FolioShare",
+      "test": "Send test to me",
+      "testSent": "Test letter queued to you.",
+      "testSkipped": "Not sent — you have not opted in to update emails yourself.",
+      "send": "Send {count} update | Send {count} updates",
+      "confirm": "This emails {count} member and cannot be undone. | This emails {count} members and cannot be undone.",
+      "confirmSend": "Send it",
+      "sent": "Letter queued to {count} member. | Letter queued to {count} members.",
+      "sendFailed": "The letter could not be sent.",
+      "history": "Already sent",
+      "historyEmpty": "No letters have been sent yet.",
+      "sentTo": "{count} recipient | {count} recipients"
     }
   }
 }

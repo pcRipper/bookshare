@@ -31,6 +31,7 @@ const sections = computed(() => [
   { key: 'admin-members', label: t('admin.nav.members'), icon: 'group' },
   { key: 'admin-stats', label: t('admin.nav.analytics'), icon: 'insights' },
   { key: 'admin-dumps', label: t('admin.nav.dumps'), icon: 'database' },
+  { key: 'admin-intercom', label: t('admin.nav.intercom'), icon: 'campaign' },
 ])
 
 const current = computed({

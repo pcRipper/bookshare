@@ -3,10 +3,13 @@
 namespace App\Service\Admin;
 
 use App\Dto\IntercomLetterInput;
+use App\Entity\IntercomLetter;
 use App\Entity\User;
 use App\Mail\MailType;
 use App\Mail\Mailer;
+use App\Repository\IntercomLetterRepository;
 use App\Repository\UserRepository;
+use Doctrine\ORM\EntityManagerInterface;
 
 /**
  * Sending the letter an operator composed in the Intercom tab.
@@ -27,6 +30,8 @@ final class IntercomService
     public function __construct(
         private readonly UserRepository $users,
         private readonly Mailer $mailer,
+        private readonly EntityManagerInterface $em,
+        private readonly IntercomLetterRepository $letters,
     ) {}
 
     /** How many members would receive a letter sent right now. */
@@ -36,11 +41,16 @@ final class IntercomService
     }
 
     /**
-     * Queues the letter to every opted-in member.
+     * Queues the letter to every opted-in member and records that it went out.
+     *
+     * Persists but never flushes — the controller owns the transaction, as
+     * everywhere else. The record is written even when nothing was queued: "we
+     * sent this and it reached nobody" is exactly the fact an operator needs to
+     * see, and it is the one a silent no-op would hide.
      *
      * @return array{queued: int, skipped: int}
      */
-    public function send(IntercomLetterInput $letter): array
+    public function send(IntercomLetterInput $letter, ?User $operator = null): array
     {
         $queued = 0;
         $skipped = 0;
@@ -52,6 +62,16 @@ final class IntercomService
                 ++$skipped;
             }
         }
+
+        $context = self::context($letter);
+        $this->em->persist(
+            (new IntercomLetter())
+                ->setSubject($context['subject'])
+                ->setIntro($context['intro'])
+                ->setItems($context['items'])
+                ->setRecipientCount($queued)
+                ->setSentBy($operator),
+        );
 
         return ['queued' => $queued, 'skipped' => $skipped];
     }
@@ -68,6 +88,16 @@ final class IntercomService
     public function sendTest(User $operator, IntercomLetterInput $letter): bool
     {
         return $this->mailer->send($operator, MailType::IntercomUpdates, self::context($letter));
+    }
+
+    /**
+     * The last few letters, for the panel's own memory.
+     *
+     * @return IntercomLetter[]
+     */
+    public function history(): array
+    {
+        return $this->letters->findRecent();
     }
 
     /** @return array<string, mixed> */

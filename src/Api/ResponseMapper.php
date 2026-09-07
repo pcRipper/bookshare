@@ -320,6 +320,26 @@ class ResponseMapper
         ];
     }
 
+    /**
+     * A letter the Intercom tab already sent.
+     *
+     * Its own whitelist in the adminUser() spirit: the operator's name is the
+     * only thing about a person in it, and `sentBy` is nullable because an
+     * anonymized account leaves the record standing.
+     */
+    public function intercomLetter(\App\Entity\IntercomLetter $letter): array
+    {
+        return [
+            'id'             => $letter->getId(),
+            'subject'        => $letter->getSubject(),
+            'intro'          => $letter->getIntro(),
+            'items'          => $letter->getItems(),
+            'recipientCount' => $letter->getRecipientCount(),
+            'sentBy'         => $letter->getSentBy()?->getFullName(),
+            'sentAt'         => $letter->getSentAt()->format(\DateTimeInterface::ATOM),
+        ];
+    }
+
     public function publicProfile(User $user): array
     {
         return [
