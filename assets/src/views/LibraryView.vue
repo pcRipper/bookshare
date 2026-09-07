@@ -11,6 +11,7 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
+import AchievementShelf from '@/components/ui/AchievementShelf.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import BookShelfPanel from '@/components/library/BookShelfPanel.vue'
 import LoanCard from '@/components/library/LoanCard.vue'
@@ -490,6 +491,11 @@ async function onCollectionDelete(id) {
               <h1 class="profile-header__name">{{ profile.fullName }}</h1>
               <p v-if="profile.bio" class="profile-header__bio">{{ profile.bio }}</p>
               <p v-else class="profile-header__bio profile-header__bio--muted">{{ t('library.bioEmpty') }}</p>
+              <!-- Where the three-figure stat block used to be. Earned badges
+                   only, so this stays a single row rather than the 232px
+                   column that block cost; the whole collection, locked
+                   families included, is one click away in its modal. -->
+              <AchievementShelf :items="profile.achievements" class="profile-header__achievements" />
             </div>
           </template>
 
@@ -506,7 +512,8 @@ async function onCollectionDelete(id) {
         <!-- The primary action, and nothing else. The three-figure stat block
              that used to sit under it (total / shared / loaned) is gone: the
              numbers restated what the shelves themselves show, and the panel
-             they lived in cost the top of every visit a 232px column. -->
+             they lived in cost the top of every visit a 232px column. The
+             achievement strip took its place, up in the identity column. -->
         <button class="btn-add-book" @click="openCreate">
           <span class="material-symbols-outlined">add</span>
           {{ t('library.addNewBook') }}
@@ -892,6 +899,8 @@ async function onCollectionDelete(id) {
     margin-bottom: var(--space-xs);
   }
 }
+
+.profile-header__achievements { margin-top: var(--space-xs); }
 
 .profile-header__bio {
   font-size: var(--text-body-md);

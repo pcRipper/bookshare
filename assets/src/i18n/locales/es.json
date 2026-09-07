@@ -740,5 +740,60 @@
       "historyEmpty": "Todavía no se ha enviado ninguna carta.",
       "sentTo": "{count} destinatario | {count} destinatarios"
     }
+  },
+  "achievements": {
+    "title": "Logros",
+    "subtitleSelf": "Has conseguido {earned} de {total} insignias.",
+    "subtitleOther": "{name} ha conseguido {earned} de {total} insignias.",
+    "viewAll": "Ver todos los logros",
+    "more": "+{count} más",
+    "emptySelf": "Aún sin insignias: cataloga un libro para conseguir la primera.",
+    "emptyOther": "{name} aún no ha conseguido ninguna insignia.",
+    "tierOf": "Nivel {tier} de {total}",
+    "progress": "{value} de {next}",
+    "maxed": "Completado: {value}",
+    "ladder": "Niveles en {thresholds}",
+    "items": {
+      "collector": {
+        "name": "Coleccionista",
+        "description": "Libros en la estantería."
+      },
+      "reader": {
+        "name": "Lector",
+        "description": "Libros marcados como leídos."
+      },
+      "critic": {
+        "name": "Crítico",
+        "description": "Libros valorados o reseñados."
+      },
+      "curator": {
+        "name": "Curador",
+        "description": "Colecciones creadas."
+      },
+      "dreamer": {
+        "name": "Soñador",
+        "description": "Libros en la lista de deseos."
+      },
+      "lender": {
+        "name": "Prestamista",
+        "description": "Libros prestados a otros lectores."
+      },
+      "borrower": {
+        "name": "Prestatario",
+        "description": "Libros pedidos prestados a otros lectores."
+      },
+      "polyglot": {
+        "name": "Políglota",
+        "description": "Idiomas que abarca la estantería."
+      },
+      "explorer": {
+        "name": "Explorador",
+        "description": "Categorías que abarca la estantería."
+      },
+      "connector": {
+        "name": "Conector",
+        "description": "Lectores seguidos."
+      }
+    }
   }
 }

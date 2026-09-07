@@ -8,6 +8,7 @@ import { useToastStore } from '@/stores/toast'
 import { apiErrorMessage } from '@/utils/apiError'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseAvatar from '@/components/ui/BaseAvatar.vue'
+import AchievementShelf from '@/components/ui/AchievementShelf.vue'
 import BaseSkeleton from '@/components/ui/BaseSkeleton.vue'
 import BookGridSkeleton from '@/components/ui/BookGridSkeleton.vue'
 import BookTableSkeleton from '@/components/ui/BookTableSkeleton.vue'
@@ -136,6 +137,15 @@ watch(() => route.params.id, load)
             <p class="public-header-card__eyebrow">{{ t('public.eyebrow') }}</p>
             <h1 class="public-header-card__name">{{ owner.fullName }}</h1>
             <p v-if="owner.bio" class="public-header-card__bio">{{ owner.bio }}</p>
+
+            <!-- Published to signed-out readers on purpose: a badge aggregates
+                 this member's own shelves and names nobody else, the same call
+                 publicBook() makes about their rating and review. -->
+            <AchievementShelf
+              :items="owner.achievements"
+              :owner-name="owner.fullName"
+              class="public-header-card__achievements"
+            />
           </div>
         </section>
 
@@ -339,6 +349,8 @@ watch(() => route.params.id, load)
   max-width: 48rem;
   white-space: pre-line;
 }
+
+.public-header-card__achievements { margin-top: var(--space-xs); }
 
 /* ── Tabs ─────────────────────────────────────────────────────────────── */
 .tab-nav {

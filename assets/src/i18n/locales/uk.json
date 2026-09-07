@@ -740,5 +740,60 @@
       "historyEmpty": "Ще жодного листа не надіслано.",
       "sentTo": "{count} отримувач | {count} отримувачі | {count} отримувачів"
     }
+  },
+  "achievements": {
+    "title": "Досягнення",
+    "subtitleSelf": "Ви здобули {earned} з {total} значків.",
+    "subtitleOther": "{name}: {earned} з {total} значків.",
+    "viewAll": "Показати всі досягнення",
+    "more": "+{count} ще",
+    "emptySelf": "Значків ще немає — додайте книгу, щоб здобути перший.",
+    "emptyOther": "{name} ще не має жодного значка.",
+    "tierOf": "Рівень {tier} з {total}",
+    "progress": "{value} з {next}",
+    "maxed": "Завершено — {value}",
+    "ladder": "Рівні на {thresholds}",
+    "items": {
+      "collector": {
+        "name": "Колекціонер",
+        "description": "Книги на полиці."
+      },
+      "reader": {
+        "name": "Читач",
+        "description": "Книги, позначені як прочитані."
+      },
+      "critic": {
+        "name": "Критик",
+        "description": "Книги з оцінкою або відгуком."
+      },
+      "curator": {
+        "name": "Куратор",
+        "description": "Створені збірки."
+      },
+      "dreamer": {
+        "name": "Мріяник",
+        "description": "Книги зі списку бажань."
+      },
+      "lender": {
+        "name": "Позикодавець",
+        "description": "Книги, позичені іншим читачам."
+      },
+      "borrower": {
+        "name": "Позичальник",
+        "description": "Книги, позичені в інших читачів."
+      },
+      "polyglot": {
+        "name": "Поліглот",
+        "description": "Мови, які охоплює полиця."
+      },
+      "explorer": {
+        "name": "Дослідник",
+        "description": "Категорії, які охоплює полиця."
+      },
+      "connector": {
+        "name": "Нетворкер",
+        "description": "Читачі, за якими ведеться спостереження."
+      }
+    }
   }
 }
