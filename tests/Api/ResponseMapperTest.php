@@ -213,7 +213,7 @@ class ResponseMapperTest extends TestCase
         $user = (new User())->setFullName('Jane')->setBio('Bio')->setLocation('Lviv');
         $stats = ['totalBooks' => 3, 'shared' => 2, 'loaned' => 1];
 
-        $data = $this->mapper()->profile($user, $stats, true);
+        $data = $this->mapper()->profile($user, $stats, [], true);
 
         self::assertSame('Jane', $data['fullName']);
         self::assertSame('Bio', $data['bio']);
@@ -222,13 +222,27 @@ class ResponseMapperTest extends TestCase
         self::assertSame($stats, $data['stats']);
     }
 
+    /**
+     * The collection travels with the profile rather than behind an endpoint of
+     * its own, because all three surfaces that show it render it in the header.
+     */
+    public function testProfileAndMeCarryTheAchievementCollection(): void
+    {
+        $user = (new User())->setEmail('jane@example.test')->setFullName('Jane');
+        $stats = ['totalBooks' => 0, 'shared' => 0, 'loaned' => 0];
+        $achievements = [['key' => 'collector', 'tier' => 1, 'tiers' => 3, 'value' => 4, 'next' => 25, 'thresholds' => [1, 25, 100]]];
+
+        self::assertSame($achievements, $this->mapper()->profile($user, $stats, $achievements, true)['achievements']);
+        self::assertSame($achievements, $this->mapper()->me($user, $stats, $achievements)['achievements']);
+    }
+
     public function testProfileIncludesIsSubscribed(): void
     {
         $user = (new User())->setFullName('Jane');
         $stats = ['totalBooks' => 0, 'shared' => 0, 'loaned' => 0];
 
-        self::assertFalse($this->mapper()->profile($user, $stats, true)['isSubscribed']);
-        self::assertTrue($this->mapper()->profile($user, $stats, false, isSubscribed: true)['isSubscribed']);
+        self::assertFalse($this->mapper()->profile($user, $stats, [], true)['isSubscribed']);
+        self::assertTrue($this->mapper()->profile($user, $stats, [], false, isSubscribed: true)['isSubscribed']);
     }
 
     public function testUserCardShape(): void
@@ -290,7 +304,7 @@ class ResponseMapperTest extends TestCase
         $user = (new User())->setFullName('Jane')->setLocation('Lviv');
         $stats = ['totalBooks' => 0, 'shared' => 0, 'loaned' => 0];
 
-        $data = $this->mapper()->profile($user, $stats, false, showLocation: false);
+        $data = $this->mapper()->profile($user, $stats, [], false, showLocation: false);
 
         self::assertNull($data['location']);
         self::assertSame('Jane', $data['fullName']);
@@ -317,7 +331,7 @@ class ResponseMapperTest extends TestCase
         $user = (new User())->setEmail('me@example.test')->setFullName('Me')->setIsPrivate(true);
         $stats = ['totalBooks' => 0, 'shared' => 0, 'loaned' => 0];
 
-        $data = $this->mapper()->me($user, $stats);
+        $data = $this->mapper()->me($user, $stats, []);
 
         self::assertSame('me@example.test', $data['email']);
         self::assertTrue($data['isPrivate']);

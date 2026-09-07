@@ -6,6 +6,7 @@ use App\Api\ApiError;
 use App\Api\ResponseMapper;
 use App\Dto\ProfileInput;
 use App\Entity\User;
+use App\Service\AchievementProvider;
 use App\Service\UserStatsProvider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -21,6 +22,7 @@ class MeRestController extends AbstractController
     public function __construct(
         private readonly ResponseMapper $mapper,
         private readonly UserStatsProvider $stats,
+        private readonly AchievementProvider $achievements,
         private readonly ApiError $errors,
     ) {}
 
@@ -30,7 +32,7 @@ class MeRestController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        return $this->json($this->mapper->me($user, $this->stats->forUser($user)));
+        return $this->json($this->mapper->me($user, $this->stats->forUser($user), $this->achievements->forUser($user)));
     }
 
     #[Route('', methods: ['PATCH'])]
@@ -77,6 +79,6 @@ class MeRestController extends AbstractController
 
         $em->flush();
 
-        return $this->json($this->mapper->me($user, $this->stats->forUser($user)));
+        return $this->json($this->mapper->me($user, $this->stats->forUser($user), $this->achievements->forUser($user)));
     }
 }

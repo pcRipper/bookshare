@@ -37,7 +37,7 @@ class PublicShapeTest extends TestCase
         'createdAt', 'books',
     ];
 
-    private const PUBLIC_PROFILE_KEYS = ['id', 'fullName', 'avatarUrl', 'bio'];
+    private const PUBLIC_PROFILE_KEYS = ['id', 'fullName', 'avatarUrl', 'bio', 'achievements'];
 
     /** Fields that must never reach a signed-out reader, wherever they nest. */
     private const FORBIDDEN = ['currentHolder', 'owner', 'canEdit', 'isHome', 'requested', 'email', 'location'];
@@ -81,7 +81,7 @@ class PublicShapeTest extends TestCase
     {
         $user = (new User())->setFullName('Jane')->setBio('Reader')->setLocation('Kyiv');
 
-        self::assertSame(self::PUBLIC_PROFILE_KEYS, array_keys($this->mapper()->publicProfile($user)));
+        self::assertSame(self::PUBLIC_PROFILE_KEYS, array_keys($this->mapper()->publicProfile($user, [])));
     }
 
     public function testPublicCollectionPublishesExactlyTheWhitelistedKeys(): void
@@ -130,7 +130,7 @@ class PublicShapeTest extends TestCase
         $collection->addBook($lent);
 
         $json = json_encode([
-            $this->mapper()->publicProfile($owner),
+            $this->mapper()->publicProfile($owner, []),
             $this->mapper()->publicBook($lent),
             $this->mapper()->publicCollection($collection),
         ], \JSON_THROW_ON_ERROR);
