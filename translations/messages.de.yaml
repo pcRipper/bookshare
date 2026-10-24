@@ -78,3 +78,9 @@
 'A query may only modify data at its top level; data-modifying subqueries are not allowed.': 'Eine Abfrage darf Daten nur auf oberster Ebene ändern; datenändernde Unterabfragen sind nicht erlaubt.'
 'UPDATE and DELETE need a WHERE clause.': 'UPDATE und DELETE benötigen eine WHERE-Klausel.'
 'The statement is not terminated: a quote or comment is left open.': 'Die Anweisung ist nicht abgeschlossen: Ein Anführungszeichen oder Kommentar ist noch offen.'
+
+# Admin SQL sandbox — SqlSandbox
+'The SQL sandbox is not available on this server.': 'Die SQL-Sandbox ist auf diesem Server nicht verfügbar.'
+'Preview the change before committing it.': 'Zeige die Änderung in der Vorschau an, bevor du sie übernimmst.'
+'This would change %count% rows; the sandbox changes at most %max% at once.': 'Dies würde %count% Zeilen ändern; die Sandbox ändert höchstens %max% auf einmal.'
+'The data changed since the preview: this would now change %count% rows, not %expected%. Preview it again.': 'Die Daten haben sich seit der Vorschau geändert: Dies würde jetzt %count% Zeilen ändern, nicht %expected%. Zeige die Vorschau erneut an.'

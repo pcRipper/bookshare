@@ -77,3 +77,9 @@
 'A query may only modify data at its top level; data-modifying subqueries are not allowed.': 'Запит може змінювати дані лише на верхньому рівні; підзапити, що змінюють дані, заборонені.'
 'UPDATE and DELETE need a WHERE clause.': 'UPDATE і DELETE потребують умови WHERE.'
 'The statement is not terminated: a quote or comment is left open.': 'Інструкцію не завершено: лапки або коментар залишилися відкритими.'
+
+# Admin SQL sandbox — SqlSandbox
+'The SQL sandbox is not available on this server.': 'SQL-пісочниця недоступна на цьому сервері.'
+'Preview the change before committing it.': 'Перегляньте зміну, перш ніж застосувати її.'
+'This would change %count% rows; the sandbox changes at most %max% at once.': 'Це змінило б рядків: %count%; пісочниця змінює щонайбільше %max% за раз.'
+'The data changed since the preview: this would now change %count% rows, not %expected%. Preview it again.': 'Дані змінилися після попереднього перегляду: тепер це змінило б рядків: %count%, а не %expected%. Перегляньте ще раз.'

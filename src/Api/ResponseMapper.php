@@ -327,6 +327,26 @@ class ResponseMapper
      * only thing about a person in it, and `sentBy` is nullable because an
      * anonymized account leaves the record standing.
      */
+    /**
+     * One row of the SQL sandbox's shared log. The operator is named, not
+     * identified further: the log is read by administrators only, and their
+     * name is what "who ran this?" needs.
+     */
+    public function sqlSandboxEntry(\App\Entity\SqlSandboxEntry $entry): array
+    {
+        return [
+            'id'         => $entry->getId(),
+            'operator'   => $entry->getOperator()?->getFullName(),
+            'statement'  => $entry->getStatement(),
+            'kind'       => $entry->getKind()?->value,
+            'outcome'    => $entry->getOutcome()->value,
+            'rowCount'   => $entry->getRowCount(),
+            'durationMs' => $entry->getDurationMs(),
+            'error'      => $entry->getError(),
+            'executedAt' => $entry->getExecutedAt()->format(\DateTimeInterface::ATOM),
+        ];
+    }
+
     public function intercomLetter(\App\Entity\IntercomLetter $letter): array
     {
         return [

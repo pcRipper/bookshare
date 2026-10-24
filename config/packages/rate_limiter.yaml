@@ -22,6 +22,10 @@
 #                  Verb-scoped like admin_dump, so reading the audience count
 #                  stays usable after the budget is spent.
 #
+#   admin_sql    → keyed by the operator, guards POST /api/admin/sql. 120 an
+#                  hour: generous for someone working through a problem, a
+#                  ceiling on a stolen admin token scripting the database.
+#                  Reading the query log stays on the ordinary limiters.
 #   admin_dump   → keyed by the authenticated operator, guards POST
 #                  /api/admin/dumps. Orders of magnitude tighter than anything
 #                  else here because a dump is the single most expensive thing an
@@ -68,6 +72,11 @@ framework:
             limit: 3
             interval: '1 hour'
 
+        admin_sql:
+            policy: 'sliding_window'
+            limit: 120
+            interval: '1 hour'
+
 when@test:
     # Keep tests deterministic: very high ceilings so the limiter never trips
     # incidentally. The subscriber's own behaviour is unit-tested in isolation.
@@ -90,4 +99,6 @@ when@test:
             admin_intercom:
                 limit: 100000
             admin_dump:
+                limit: 100000
+            admin_sql:
                 limit: 100000
