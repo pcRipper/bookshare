@@ -32,6 +32,7 @@ services:
       #   • DATABASE_URL — must target the `postgresql` compose service, not the
       #     host-oriented value in .env. Credentials still come from .env.
       DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-changeme}@postgresql:5432/${POSTGRES_DB:-bookshare}?serverVersion=16&charset=utf8
+      SANDBOX_DATABASE_URL: postgresql://bookshare_sandbox:${SANDBOX_DB_PASSWORD:-}@postgresql:5432/${POSTGRES_DB:-bookshare}?serverVersion=16&charset=utf8
       #   • RUN_MIGRATIONS — apply pending migrations on boot (set 0 to skip and
       #     run `make prod-migrate` manually).
       RUN_MIGRATIONS: ${RUN_MIGRATIONS:-1}
