@@ -46,7 +46,21 @@ also reads it for `${...}` substitution. Edit it in place:
 git clone <repo-url> bookshare && cd bookshare
 $EDITOR .env            # set APP_ENV=prod; fill APP_SECRET, POSTGRES_PASSWORD, JWT_PASSPHRASE,
                         # CORS_ALLOW_ORIGIN, GOOGLE_*, DEFAULT_URI for production
+                        # optional: SANDBOX_DB_PASSWORD to enable the admin SQL sandbox
 ```
+
+> **Enabling the admin SQL sandbox (optional).** It is off while `SANDBOX_DB_PASSWORD` is blank.
+> To turn it on: set a long random value (`openssl rand -hex 24`), restart `phpfpm` so it receives
+> the derived `SANDBOX_DATABASE_URL`, then — after the migrations have run — let the restricted role
+> log in:
+>
+> ```bash
+> docker compose -f compose.prod.yaml exec phpfpm php bin/console app:sql-sandbox:provision
+> ```
+>
+> The migration creates `bookshare_sandbox` with its grants but `NOLOGIN`; this command only sets the
+> password and enables login (it also connects once, so a typo fails here rather than in the panel).
+> `--disable` turns it off again. Re-run it after changing the password.
 
 Generate `APP_SECRET`: `php -r 'echo bin2hex(random_bytes(16)), "\n";'` (or `openssl rand -hex 16`).
 

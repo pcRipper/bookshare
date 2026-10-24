@@ -640,7 +640,7 @@
       "label": "Admin sections",
       "members": "Members",
       "analytics": "Analytics",
-      "dumps": "Dumps",
+      "database": "Database",
       "intercom": "Intercom"
     },
     "members": {
@@ -739,6 +739,49 @@
       "history": "Already sent",
       "historyEmpty": "No letters have been sent yet.",
       "sentTo": "{count} recipient | {count} recipients"
+    },
+    "database": {
+      "backups": "Backups",
+      "sandbox": "SQL sandbox",
+      "log": "Query log"
+    },
+    "sql": {
+      "lead": "Read data or make careful fixes on the live database, one statement at a time. Every attempt — including refused ones — is recorded in the query log below.",
+      "unavailable": "The sandbox is not configured on this server.",
+      "editorLabel": "SQL statement",
+      "placeholder": "SELECT id, title FROM book ORDER BY id DESC",
+      "run": "Run",
+      "shortcut": "Ctrl + Enter",
+      "ruleStatements": "SELECT, UPDATE and DELETE only. INSERT, schema changes and more than one statement are refused.",
+      "ruleWrites": "UPDATE and DELETE need a WHERE clause and are previewed first — nothing changes until you commit.",
+      "limits": "Up to {rows} rows are shown, at most {affected} rows can change at once, and a statement stops after {seconds} s.",
+      "runFailed": "The statement could not be run.",
+      "loadFailed": "Could not load the SQL sandbox.",
+      "committed": "{count} row changed. | {count} rows changed.",
+      "previewRows": "This would change {count} row. | This would change {count} rows.",
+      "previewNote": "Nothing has been changed yet.",
+      "commit": "Commit",
+      "rows": "{count} row | {count} rows",
+      "duration": "{ms} ms",
+      "truncated": "Showing the first {rows}.",
+      "noRows": "No rows.",
+      "log": {
+        "empty": "No statements have been run yet.",
+        "colWhen": "When",
+        "colOperator": "Operator",
+        "colOutcome": "Outcome",
+        "colStatement": "Statement",
+        "colRows": "Rows",
+        "colDuration": "Time",
+        "removedOperator": "Removed account",
+        "outcome": {
+          "ok": "Ran",
+          "previewed": "Previewed",
+          "committed": "Committed",
+          "rejected": "Refused",
+          "failed": "Failed"
+        }
+      }
     }
   },
   "achievements": {

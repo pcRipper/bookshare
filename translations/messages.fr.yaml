@@ -66,3 +66,20 @@
 'You do not own the requested book.': 'Le livre demandé ne vous appartient pas.'
 'You do not own this book.': 'Ce livre ne vous appartient pas.'
 'You do not own this collection.': 'Cette collection ne vous appartient pas.'
+
+# Admin SQL sandbox — StatementGuard
+'Enter a statement to run.': 'Saisissez une instruction à exécuter.'
+'Only one statement can run at a time.': 'Une seule instruction peut être exécutée à la fois.'
+'INSERT statements are not allowed in the sandbox.': 'Les instructions INSERT ne sont pas autorisées dans le bac à sable.'
+'Only SELECT, UPDATE and DELETE statements can run in the sandbox.': 'Seules les instructions SELECT, UPDATE et DELETE peuvent être exécutées dans le bac à sable.'
+'%keyword% is not allowed in the sandbox.': '%keyword% n''est pas autorisé dans le bac à sable.'
+'The function %name% is not allowed in the sandbox.': 'La fonction %name% n''est pas autorisée dans le bac à sable.'
+'A query may only modify data at its top level; data-modifying subqueries are not allowed.': 'Une requête ne peut modifier des données qu''à son niveau supérieur ; les sous-requêtes qui modifient des données ne sont pas autorisées.'
+'UPDATE and DELETE need a WHERE clause.': 'UPDATE et DELETE nécessitent une clause WHERE.'
+'The statement is not terminated: a quote or comment is left open.': 'L''instruction n''est pas terminée : un guillemet ou un commentaire est resté ouvert.'
+
+# Admin SQL sandbox — SqlSandbox
+'The SQL sandbox is not available on this server.': 'Le bac à sable SQL n''est pas disponible sur ce serveur.'
+'Preview the change before committing it.': 'Prévisualisez la modification avant de la valider.'
+'This would change %count% rows; the sandbox changes at most %max% at once.': 'Cela modifierait %count% lignes ; le bac à sable en modifie au plus %max% à la fois.'
+'The data changed since the preview: this would now change %count% rows, not %expected%. Preview it again.': 'Les données ont changé depuis l''aperçu : cela modifierait maintenant %count% lignes, et non %expected%. Prévisualisez à nouveau.'

@@ -13,6 +13,10 @@ monolog:
         # this feed is the only way to tell "nobody was notified" from "nobody
         # needed to be".
         - mail
+        # The admin SQL sandbox. One record per attempt — run, previewed,
+        # committed, rejected or failed — alongside the sql_sandbox_entry row,
+        # so the trail survives even a database restore.
+        - sql_sandbox
 
 when@dev:
     monolog:
@@ -23,7 +27,7 @@ when@dev:
                 level: debug
                 # book_template gets its own file below — excluded here so a
                 # search feed doesn't drown the application log.
-                channels: ["!event", "!book_template", "!mail"]
+                channels: ["!event", "!book_template", "!mail", "!sql_sandbox"]
             book_template:
                 type: stream
                 path: "%kernel.logs_dir%/book_template.log"
@@ -34,6 +38,11 @@ when@dev:
                 path: "%kernel.logs_dir%/mail.log"
                 level: debug
                 channels: [mail]
+            sql_sandbox:
+                type: stream
+                path: "%kernel.logs_dir%/sql_sandbox.log"
+                level: debug
+                channels: [sql_sandbox]
             console:
                 type: console
                 process_psr_3_messages: false
@@ -65,7 +74,7 @@ when@prod:
                 # successful-but-slow search logs at info and raises no error, so
                 # the gate would hold — and then discard — exactly the records we
                 # added the channel for. It streams unconditionally below.
-                channels: ["!deprecation", "!book_template", "!mail"]
+                channels: ["!deprecation", "!book_template", "!mail", "!sql_sandbox"]
                 buffer_size: 50 # How many messages should be saved? Prevent memory leaks
             nested:
                 type: stream
@@ -83,6 +92,14 @@ when@prod:
             mail:
                 type: stream
                 channels: [mail]
+                path: php://stderr
+                level: info
+                formatter: monolog.formatter.json
+            # Same again: a statement an operator ran is logged at info and must
+            # never wait on — or be discarded by — the fingers_crossed gate.
+            sql_sandbox:
+                type: stream
+                channels: [sql_sandbox]
                 path: php://stderr
                 level: info
                 formatter: monolog.formatter.json

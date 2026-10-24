@@ -20,6 +20,8 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInt
  *    blunting credential / OAuth-code brute-force.
  *  - POST /api/admin/intercom/* → keyed by the operator, three an hour. The one
  *    endpoint whose blast radius is other people's inboxes.
+ *  - POST /api/admin/sql → keyed by the operator, 120 an hour: each one is a
+ *    statement against the live database.
  *  - POST /api/admin/dumps → keyed by the operator, five an hour. Its own
  *    bucket because one request forks pg_dump and writes a file.
  *  - every other /api/* → keyed by the authenticated user, and additionally by
@@ -45,6 +47,8 @@ class RateLimitSubscriber implements EventSubscriberInterface
         private readonly RateLimiterFactoryInterface $adminDumpLimiter,
         #[Autowire(service: 'limiter.admin_intercom')]
         private readonly RateLimiterFactoryInterface $adminIntercomLimiter,
+        #[Autowire(service: 'limiter.admin_sql')]
+        private readonly RateLimiterFactoryInterface $adminSqlLimiter,
         private readonly TokenStorageInterface $tokenStorage,
         private readonly ApiError $errors,
     ) {}
@@ -120,6 +124,15 @@ class RateLimitSubscriber implements EventSubscriberInterface
         // same controller (the audience count) stay on the ordinary limiters.
         if ($request->isMethod('POST') && str_starts_with($path, '/api/admin/intercom/')) {
             $this->ensureAccepted($this->adminIntercomLimiter->create($userId)->consume());
+
+            return;
+        }
+
+        // Every statement run in the SQL sandbox. Its own bucket, verb-scoped
+        // like the two above, so the query log stays readable while the hour's
+        // budget is spent — and a stolen admin token can't script the database.
+        if ($request->isMethod('POST') && $path === '/api/admin/sql') {
+            $this->ensureAccepted($this->adminSqlLimiter->create($userId)->consume());
 
             return;
         }

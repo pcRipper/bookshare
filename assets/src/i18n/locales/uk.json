@@ -640,7 +640,7 @@
       "label": "Розділи адміністрування",
       "members": "Учасники",
       "analytics": "Статистика",
-      "dumps": "Дампи",
+      "database": "База даних",
       "intercom": "Intercom"
     },
     "members": {
@@ -739,6 +739,49 @@
       "history": "Вже надіслані",
       "historyEmpty": "Ще жодного листа не надіслано.",
       "sentTo": "{count} отримувач | {count} отримувачі | {count} отримувачів"
+    },
+    "database": {
+      "backups": "Резервні копії",
+      "sandbox": "SQL-пісочниця",
+      "log": "Журнал запитів"
+    },
+    "sql": {
+      "lead": "Читайте дані або обережно виправляйте їх у робочій базі даних — по одній інструкції. Кожна спроба, зокрема відхилена, записується в журнал запитів нижче.",
+      "unavailable": "Пісочницю не налаштовано на цьому сервері.",
+      "editorLabel": "SQL-інструкція",
+      "placeholder": "SELECT id, title FROM book ORDER BY id DESC",
+      "run": "Виконати",
+      "shortcut": "Ctrl + Enter",
+      "ruleStatements": "Лише SELECT, UPDATE і DELETE. INSERT, зміни схеми та більше однієї інструкції відхиляються.",
+      "ruleWrites": "UPDATE і DELETE потребують умови WHERE і спершу показуються в попередньому перегляді — нічого не зміниться, доки ви не підтвердите.",
+      "limits": "Показується до {rows} рядків, за раз можна змінити щонайбільше {affected} рядків, а інструкція зупиняється через {seconds} с.",
+      "runFailed": "Не вдалося виконати інструкцію.",
+      "loadFailed": "Не вдалося завантажити SQL-пісочницю.",
+      "committed": "Змінено {count} рядок. | Змінено {count} рядки. | Змінено {count} рядків.",
+      "previewRows": "Це змінить {count} рядок. | Це змінить {count} рядки. | Це змінить {count} рядків.",
+      "previewNote": "Поки що нічого не змінено.",
+      "commit": "Підтвердити",
+      "rows": "{count} рядок | {count} рядки | {count} рядків",
+      "duration": "{ms} мс",
+      "truncated": "Показано перші {rows}.",
+      "noRows": "Рядків немає.",
+      "log": {
+        "empty": "Ще не виконано жодної інструкції.",
+        "colWhen": "Коли",
+        "colOperator": "Адмін",
+        "colOutcome": "Результат",
+        "colStatement": "Інструкція",
+        "colRows": "Рядки",
+        "colDuration": "Час",
+        "removedOperator": "Видалений обліковий запис",
+        "outcome": {
+          "ok": "Виконано",
+          "previewed": "Переглянуто",
+          "committed": "Підтверджено",
+          "rejected": "Відхилено",
+          "failed": "Помилка"
+        }
+      }
     }
   },
   "achievements": {

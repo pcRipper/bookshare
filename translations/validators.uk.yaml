@@ -27,3 +27,7 @@
 'Unknown route.': 'Невідома сторінка.'
 'Unsupported colour.': 'Колір не підтримується.'
 'Unsupported language.': 'Мова не підтримується.'
+
+# Admin SQL sandbox — SqlSandboxInput
+'Enter a statement to run.': 'Введіть інструкцію для виконання.'
+'A statement cannot be longer than 10000 characters.': 'Інструкція не може бути довшою за 10000 символів.'

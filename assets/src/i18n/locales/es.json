@@ -640,7 +640,7 @@
       "label": "Secciones de administración",
       "members": "Miembros",
       "analytics": "Estadísticas",
-      "dumps": "Copias",
+      "database": "Base de datos",
       "intercom": "Intercom"
     },
     "members": {
@@ -739,6 +739,49 @@
       "history": "Ya enviadas",
       "historyEmpty": "Todavía no se ha enviado ninguna carta.",
       "sentTo": "{count} destinatario | {count} destinatarios"
+    },
+    "database": {
+      "backups": "Copias de seguridad",
+      "sandbox": "Sandbox SQL",
+      "log": "Registro de consultas"
+    },
+    "sql": {
+      "lead": "Consulta datos o haz correcciones cuidadosas en la base de datos en vivo, una sentencia cada vez. Cada intento —incluidos los rechazados— queda en el registro de consultas de abajo.",
+      "unavailable": "El sandbox no está configurado en este servidor.",
+      "editorLabel": "Sentencia SQL",
+      "placeholder": "SELECT id, title FROM book ORDER BY id DESC",
+      "run": "Ejecutar",
+      "shortcut": "Ctrl + Intro",
+      "ruleStatements": "Solo SELECT, UPDATE y DELETE. Se rechazan INSERT, los cambios de esquema y más de una sentencia.",
+      "ruleWrites": "UPDATE y DELETE necesitan una cláusula WHERE y se previsualizan primero: nada cambia hasta que confirmes.",
+      "limits": "Se muestran hasta {rows} filas, se pueden cambiar como máximo {affected} filas a la vez y una sentencia se detiene a los {seconds} s.",
+      "runFailed": "No se pudo ejecutar la sentencia.",
+      "loadFailed": "No se pudo cargar el sandbox SQL.",
+      "committed": "{count} fila cambiada. | {count} filas cambiadas.",
+      "previewRows": "Esto cambiaría {count} fila. | Esto cambiaría {count} filas.",
+      "previewNote": "Todavía no se ha cambiado nada.",
+      "commit": "Confirmar",
+      "rows": "{count} fila | {count} filas",
+      "duration": "{ms} ms",
+      "truncated": "Se muestran las primeras {rows}.",
+      "noRows": "No hay filas.",
+      "log": {
+        "empty": "Todavía no se ha ejecutado ninguna sentencia.",
+        "colWhen": "Cuándo",
+        "colOperator": "Admin",
+        "colOutcome": "Resultado",
+        "colStatement": "Sentencia",
+        "colRows": "Filas",
+        "colDuration": "Tiempo",
+        "removedOperator": "Cuenta eliminada",
+        "outcome": {
+          "ok": "Ejecutada",
+          "previewed": "Previsualizada",
+          "committed": "Confirmada",
+          "rejected": "Rechazada",
+          "failed": "Fallida"
+        }
+      }
     }
   },
   "achievements": {

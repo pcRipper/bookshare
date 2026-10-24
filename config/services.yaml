@@ -39,6 +39,12 @@ services:
             $logger: '@monolog.logger.mail'
             $appUrl: '%env(DEFAULT_URI)%'
 
+    # The admin SQL sandbox. `sql_sandbox` is its own monolog channel (see
+    # monolog.yaml): one record per attempt, next to the SqlSandboxEntry row.
+    App\Service\Admin\Sql\SqlSandbox:
+        arguments:
+            $logger: '@monolog.logger.sql_sandbox'
+
     # Deterministic mail previews (design review + the visual-regression
     # baselines). %kernel.project_dir% rather than a relative path so it works
     # from any working directory, including inside the container.

@@ -27,3 +27,7 @@
 'Unknown route.': 'Página desconocida.'
 'Unsupported colour.': 'Color no admitido.'
 'Unsupported language.': 'Idioma no admitido.'
+
+# Admin SQL sandbox — SqlSandboxInput
+'Enter a statement to run.': 'Escribe una sentencia para ejecutar.'
+'A statement cannot be longer than 10000 characters.': 'Una sentencia no puede tener más de 10000 caracteres.'

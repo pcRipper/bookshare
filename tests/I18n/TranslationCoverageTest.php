@@ -40,6 +40,9 @@ class TranslationCoverageTest extends TestCase
         // A catalogue/provider mismatch is a wiring bug, not something a reader
         // can act on — the same call as the publisher's "unknown reason" guards.
         'No value supplied for achievement metric "%s" (needed by "%s").',
+        // Callers check SandboxConnection::isConfigured() first; reaching it
+        // is a programming error, never something an operator reads.
+        'The SQL sandbox connection is not configured.',
     ];
 
     /** @return array<string, list<string>> id => ["File.php:line", …] */

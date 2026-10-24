@@ -640,7 +640,7 @@
       "label": "Sections d'administration",
       "members": "Membres",
       "analytics": "Statistiques",
-      "dumps": "Sauvegardes",
+      "database": "Base de données",
       "intercom": "Intercom"
     },
     "members": {
@@ -739,6 +739,49 @@
       "history": "Déjà envoyées",
       "historyEmpty": "Aucune lettre n’a encore été envoyée.",
       "sentTo": "{count} destinataire | {count} destinataires"
+    },
+    "database": {
+      "backups": "Sauvegardes",
+      "sandbox": "Bac à sable SQL",
+      "log": "Journal des requêtes"
+    },
+    "sql": {
+      "lead": "Lisez des données ou apportez des corrections prudentes à la base de données en production, une instruction à la fois. Chaque tentative — y compris les refus — est consignée dans le journal des requêtes ci-dessous.",
+      "unavailable": "Le bac à sable n’est pas configuré sur ce serveur.",
+      "editorLabel": "Instruction SQL",
+      "placeholder": "SELECT id, title FROM book ORDER BY id DESC",
+      "run": "Exécuter",
+      "shortcut": "Ctrl + Entrée",
+      "ruleStatements": "SELECT, UPDATE et DELETE uniquement. INSERT, les modifications de schéma et plus d’une instruction sont refusés.",
+      "ruleWrites": "UPDATE et DELETE exigent une clause WHERE et sont d’abord prévisualisés : rien ne change avant votre validation.",
+      "limits": "Jusqu’à {rows} lignes sont affichées, au plus {affected} lignes peuvent changer à la fois, et une instruction s’arrête après {seconds} s.",
+      "runFailed": "L’instruction n’a pas pu être exécutée.",
+      "loadFailed": "Impossible de charger le bac à sable SQL.",
+      "committed": "{count} ligne modifiée. | {count} lignes modifiées.",
+      "previewRows": "Cela modifierait {count} ligne. | Cela modifierait {count} lignes.",
+      "previewNote": "Rien n’a encore été modifié.",
+      "commit": "Valider",
+      "rows": "{count} ligne | {count} lignes",
+      "duration": "{ms} ms",
+      "truncated": "Affichage des {rows} premières.",
+      "noRows": "Aucune ligne.",
+      "log": {
+        "empty": "Aucune instruction n’a encore été exécutée.",
+        "colWhen": "Quand",
+        "colOperator": "Admin",
+        "colOutcome": "Résultat",
+        "colStatement": "Instruction",
+        "colRows": "Lignes",
+        "colDuration": "Durée",
+        "removedOperator": "Compte supprimé",
+        "outcome": {
+          "ok": "Exécutée",
+          "previewed": "Prévisualisée",
+          "committed": "Validée",
+          "rejected": "Refusée",
+          "failed": "Échouée"
+        }
+      }
     }
   },
   "achievements": {

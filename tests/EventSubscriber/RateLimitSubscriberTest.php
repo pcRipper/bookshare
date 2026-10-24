@@ -69,8 +69,9 @@ class RateLimitSubscriberTest extends TestCase
         $pageView = $this->fixedWindow('pageview_ip_user', 1000);
         $adminDump = $this->fixedWindow('admin_dump', 1000);
         $intercom = $this->fixedWindow('admin_intercom', 1000);
-        $alice = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $publicIp, $pageView, $adminDump, $intercom, $this->tokenStorage('alice'), $errors);
-        $bob = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $publicIp, $pageView, $adminDump, $intercom, $this->tokenStorage('bob'), $errors);
+        $sql = $this->fixedWindow('admin_sql', 1000);
+        $alice = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $publicIp, $pageView, $adminDump, $intercom, $sql, $this->tokenStorage('alice'), $errors);
+        $bob = new RateLimitSubscriber($authIp, $apiUser, $apiIpUser, $publicIp, $pageView, $adminDump, $intercom, $sql, $this->tokenStorage('bob'), $errors);
 
         $alice->onKernelRequest($this->event('/api/books'));
         // Bob is a different key — unaffected by Alice exhausting hers.
@@ -265,6 +266,32 @@ class RateLimitSubscriberTest extends TestCase
         $subscriber->onKernelRequest($this->event('/api/books'));
     }
 
+    public function testRunningSandboxStatementsIsThrottled(): void
+    {
+        $subscriber = $this->subscriber($this->tokenStorage('operator'), adminSql: 2);
+
+        $subscriber->onKernelRequest($this->event('/api/admin/sql', method: 'POST'));
+        $subscriber->onKernelRequest($this->event('/api/admin/sql', method: 'POST'));
+
+        $this->expectException(TooManyRequestsHttpException::class);
+        $subscriber->onKernelRequest($this->event('/api/admin/sql', method: 'POST'));
+    }
+
+    /** The query log must stay readable once the hour's statement budget is spent. */
+    public function testReadingTheSandboxLogIsNotThrottledAsAStatement(): void
+    {
+        $subscriber = $this->subscriber($this->tokenStorage('operator'), adminSql: 1);
+
+        $subscriber->onKernelRequest($this->event('/api/admin/sql', method: 'POST'));
+
+        // Would throw if either of these consumed the exhausted sql bucket.
+        $subscriber->onKernelRequest($this->event('/api/admin/sql'));
+        $subscriber->onKernelRequest($this->event('/api/admin/sql/log'));
+
+        $this->expectException(TooManyRequestsHttpException::class);
+        $subscriber->onKernelRequest($this->event('/api/admin/sql', method: 'POST'));
+    }
+
     /* ───────────────────────── helpers ───────────────────────── */
 
     private function subscriber(
@@ -276,6 +303,7 @@ class RateLimitSubscriberTest extends TestCase
         int $pageView = 1000,
         int $adminDump = 1000,
         int $adminIntercom = 1000,
+        int $adminSql = 1000,
     ): RateLimitSubscriber {
         return new RateLimitSubscriber(
             $this->fixedWindow('auth_ip', $authIp),
@@ -285,6 +313,7 @@ class RateLimitSubscriberTest extends TestCase
             $this->fixedWindow('pageview_ip_user', $pageView),
             $this->fixedWindow('admin_dump', $adminDump),
             $this->fixedWindow('admin_intercom', $adminIntercom),
+            $this->fixedWindow('admin_sql', $adminSql),
             $tokenStorage,
             // IdentityTranslator renders the id itself, so the 429 message the
             // assertions read is the English one.
