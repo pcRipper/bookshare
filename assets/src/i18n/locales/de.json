@@ -640,7 +640,7 @@
       "label": "Verwaltungsbereiche",
       "members": "Mitglieder",
       "analytics": "Statistiken",
-      "dumps": "Dumps",
+      "database": "Datenbank",
       "intercom": "Intercom"
     },
     "members": {
@@ -739,6 +739,49 @@
       "history": "Bereits gesendet",
       "historyEmpty": "Es wurden noch keine Briefe gesendet.",
       "sentTo": "{count} Empfänger | {count} Empfänger"
+    },
+    "database": {
+      "backups": "Sicherungen",
+      "sandbox": "SQL-Sandbox",
+      "log": "Abfrageprotokoll"
+    },
+    "sql": {
+      "lead": "Lies Daten oder nimm vorsichtige Korrekturen an der Live-Datenbank vor, eine Anweisung nach der anderen. Jeder Versuch – auch abgelehnte – wird im Abfrageprotokoll unten festgehalten.",
+      "unavailable": "Die Sandbox ist auf diesem Server nicht eingerichtet.",
+      "editorLabel": "SQL-Anweisung",
+      "placeholder": "SELECT id, title FROM book ORDER BY id DESC",
+      "run": "Ausführen",
+      "shortcut": "Strg + Enter",
+      "ruleStatements": "Nur SELECT, UPDATE und DELETE. INSERT, Schemaänderungen und mehr als eine Anweisung werden abgelehnt.",
+      "ruleWrites": "UPDATE und DELETE brauchen eine WHERE-Klausel und werden zuerst in der Vorschau gezeigt – nichts ändert sich, bevor du übernimmst.",
+      "limits": "Bis zu {rows} Zeilen werden angezeigt, höchstens {affected} Zeilen können auf einmal geändert werden, und eine Anweisung bricht nach {seconds} s ab.",
+      "runFailed": "Die Anweisung konnte nicht ausgeführt werden.",
+      "loadFailed": "Die SQL-Sandbox konnte nicht geladen werden.",
+      "committed": "{count} Zeile geändert. | {count} Zeilen geändert.",
+      "previewRows": "Dies würde {count} Zeile ändern. | Dies würde {count} Zeilen ändern.",
+      "previewNote": "Noch wurde nichts geändert.",
+      "commit": "Übernehmen",
+      "rows": "{count} Zeile | {count} Zeilen",
+      "duration": "{ms} ms",
+      "truncated": "Die ersten {rows} werden angezeigt.",
+      "noRows": "Keine Zeilen.",
+      "log": {
+        "empty": "Es wurden noch keine Anweisungen ausgeführt.",
+        "colWhen": "Wann",
+        "colOperator": "Admin",
+        "colOutcome": "Ergebnis",
+        "colStatement": "Anweisung",
+        "colRows": "Zeilen",
+        "colDuration": "Dauer",
+        "removedOperator": "Entferntes Konto",
+        "outcome": {
+          "ok": "Ausgeführt",
+          "previewed": "Vorschau",
+          "committed": "Übernommen",
+          "rejected": "Abgelehnt",
+          "failed": "Fehlgeschlagen"
+        }
+      }
     }
   },
   "achievements": {

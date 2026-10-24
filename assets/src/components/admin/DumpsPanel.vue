@@ -1,7 +1,8 @@
 <script setup>
 /**
- * The admin panel's Dumps tab: make a backup now, keep the last ten, take one
- * away.
+ * The Backups section of the admin Database tab: make a backup now, keep the
+ * last ten, take one away. (It was the whole Dumps tab until the SQL sandbox
+ * joined it; the content is unchanged.)
  *
  * The two kinds are presented as two different things rather than a format
  * dropdown, because they are: only the SQL archive can be restored from. A

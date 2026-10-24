@@ -88,10 +88,13 @@ const router = createRouter({
           component: () => import('@/views/AdminStatsView.vue'),
         },
         {
-          path: 'dumps',
-          name: 'admin-dumps',
-          component: () => import('@/views/AdminDumpsView.vue'),
+          // Backups plus the SQL sandbox and its query log. It was the Dumps
+          // tab, and the old path still lands here.
+          path: 'database',
+          name: 'admin-database',
+          component: () => import('@/views/AdminDatabaseView.vue'),
         },
+        { path: 'dumps', redirect: { name: 'admin-database' } },
         {
           path: 'intercom',
           name: 'admin-intercom',
