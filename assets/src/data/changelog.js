@@ -7,6 +7,16 @@
  */
 export const CHANGELOG = [
   {
+    version: '1.31.0',
+    date: '2026-10-24',
+    notes: [
+      'The admin panel’s Dumps section is now Database. Backups are unchanged and stay at the top; beneath them is a new SQL sandbox for reading data and making careful fixes on the live database.',
+      'The sandbox runs one SELECT, UPDATE or DELETE at a time — never INSERT and never a schema change — on a restricted database account that cannot touch the audit trail, cannot change who is an administrator and cannot delete accounts. Reads show up to 500 rows and change nothing.',
+      'An UPDATE or DELETE must have a WHERE clause and is previewed first: you see how many rows it would change, and nothing changes until you press Commit. If the data has moved in between, the commit is refused and you preview again.',
+      'Every statement is recorded in a query log shown under the sandbox, including the ones that were refused or failed, with who ran it, when, and what came of it.',
+    ],
+  },
+  {
     version: '1.30.0',
     date: '2026-09-07',
     notes: [
