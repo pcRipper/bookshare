@@ -66,3 +66,14 @@
 'You do not own the requested book.': 'Запитана книга вам не належить.'
 'You do not own this book.': 'Ця книга вам не належить.'
 'You do not own this collection.': 'Ця збірка вам не належить.'
+
+# Admin SQL sandbox — StatementGuard
+'Enter a statement to run.': 'Введіть інструкцію для виконання.'
+'Only one statement can run at a time.': 'Можна виконати лише одну інструкцію за раз.'
+'INSERT statements are not allowed in the sandbox.': 'Інструкції INSERT заборонені в пісочниці.'
+'Only SELECT, UPDATE and DELETE statements can run in the sandbox.': 'У пісочниці можна виконувати лише інструкції SELECT, UPDATE і DELETE.'
+'%keyword% is not allowed in the sandbox.': '%keyword% заборонено в пісочниці.'
+'The function %name% is not allowed in the sandbox.': 'Функція %name% заборонена в пісочниці.'
+'A query may only modify data at its top level; data-modifying subqueries are not allowed.': 'Запит може змінювати дані лише на верхньому рівні; підзапити, що змінюють дані, заборонені.'
+'UPDATE and DELETE need a WHERE clause.': 'UPDATE і DELETE потребують умови WHERE.'
+'The statement is not terminated: a quote or comment is left open.': 'Інструкцію не завершено: лапки або коментар залишилися відкритими.'

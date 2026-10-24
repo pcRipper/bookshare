@@ -67,3 +67,14 @@
 'You do not own the requested book.': 'Das angefragte Buch gehört dir nicht.'
 'You do not own this book.': 'Dieses Buch gehört dir nicht.'
 'You do not own this collection.': 'Diese Sammlung gehört dir nicht.'
+
+# Admin SQL sandbox — StatementGuard
+'Enter a statement to run.': 'Gib eine Anweisung zum Ausführen ein.'
+'Only one statement can run at a time.': 'Es kann nur eine Anweisung auf einmal ausgeführt werden.'
+'INSERT statements are not allowed in the sandbox.': 'INSERT-Anweisungen sind in der Sandbox nicht erlaubt.'
+'Only SELECT, UPDATE and DELETE statements can run in the sandbox.': 'In der Sandbox können nur SELECT-, UPDATE- und DELETE-Anweisungen ausgeführt werden.'
+'%keyword% is not allowed in the sandbox.': '%keyword% ist in der Sandbox nicht erlaubt.'
+'The function %name% is not allowed in the sandbox.': 'Die Funktion %name% ist in der Sandbox nicht erlaubt.'
+'A query may only modify data at its top level; data-modifying subqueries are not allowed.': 'Eine Abfrage darf Daten nur auf oberster Ebene ändern; datenändernde Unterabfragen sind nicht erlaubt.'
+'UPDATE and DELETE need a WHERE clause.': 'UPDATE und DELETE benötigen eine WHERE-Klausel.'
+'The statement is not terminated: a quote or comment is left open.': 'Die Anweisung ist nicht abgeschlossen: Ein Anführungszeichen oder Kommentar ist noch offen.'
